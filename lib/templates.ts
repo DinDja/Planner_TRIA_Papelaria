@@ -32,6 +32,17 @@ export interface TemplateColors {
   faint: string
 }
 
+/** Paleta do papel/template adaptada ao tema atual */
+export function getTemplateColors(isDark: boolean): TemplateColors {
+  return {
+    paper: isDark ? '#2a2a28' : '#ffffff',
+    line: isDark ? 'rgba(255,255,255,0.09)' : 'rgba(0,0,0,0.08)',
+    accent: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.06)',
+    text: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.35)',
+    faint: isDark ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.2)',
+  }
+}
+
 /**
  * Desenha o fundo do template no canvas.
  * As cores se adaptam ao tema (recebidas como parâmetro).

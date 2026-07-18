@@ -10,14 +10,14 @@ import type {
   Stroke,
   StrokePoint,
   StickerInstance,
-  TextItem,
 } from '@/lib/types'
 import { EMPTY_CANVAS, PAGE_HEIGHT, PAGE_WIDTH } from '@/lib/types'
-import { PAGE_TEMPLATES, drawTemplate, type TemplateColors } from '@/lib/templates'
+import { PAGE_TEMPLATES, drawTemplate, getTemplateColors, type TemplateColors } from '@/lib/templates'
 import { cn } from '@/lib/utils'
 import { motion, AnimatePresence } from 'framer-motion'
 import { getStroke } from 'perfect-freehand'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { TemplateThumbnail } from '../templates-page/template-thumbnail'
 import { Button } from '../ui/button'
 import { Card } from '../ui/card'
 import { Input, ScrollArea } from '../ui/primitives'
@@ -88,30 +88,20 @@ import {
   Check,
 } from 'lucide-react'
 
-// Stickers panel import (will load from library)
-import { STICKERS, ALL_STICKERS, STICKER_CATEGORIES, stickerToDataUrl } from '@/lib/stickers'
+import { ALL_STICKERS, STICKER_CATEGORIES, stickerToDataUrl } from '@/lib/stickers'
+import { Player as LottiePlayer } from '@lottiefiles/react-lottie-player'
+import { useCanvasPointer } from './hooks/use-canvas-pointer'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const uid = () => Math.random().toString(36).slice(2, 10)
 
-/** Convert Vec2[] (perfect-freehand output) to SVG path data */
 function vecToSvgPath(points: [number, number][]): string {
   if (points.length < 2) return ''
   return `M ${points[0][0]} ${points[0][1]} L ${points
     .slice(1)
     .map((p) => `${p[0]} ${p[1]}`)
     .join(' ')} Z`
-}
-
-function getTemplateColors(isDark: boolean): TemplateColors {
-  return {
-    paper: isDark ? '#2a2a28' : '#ffffff',
-    line: isDark ? 'rgba(255,255,255,0.09)' : 'rgba(0,0,0,0.08)',
-    accent: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.06)',
-    text: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.35)',
-    faint: isDark ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.2)',
-  }
 }
 
 import type { ToolType } from '@/lib/types'
@@ -146,6 +136,11 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
   const activeTool = editor.activeTool
   const setTool = editor.setActiveTool
 
+  const zoom = editor.zoom || 1
+  const displayWidth = (PAGE_WIDTH * zoom) / 1.5
+  const displayHeight = (PAGE_HEIGHT * zoom) / 1.5
+  const displayScale = displayWidth / PAGE_WIDTH
+
   const [currentPageIdx, setCurrentPageIdx] = useState(0)
   const [showPagesPanel, setShowPagesPanel] = useState(false)
   const [showStickerPanel, setShowStickerPanel] = useState(false)
@@ -156,8 +151,8 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
   const [showInsertMenu, setShowInsertMenu] = useState(false)
   const [showExportMenu, setShowExportMenu] = useState(false)
   const [showImportMenu, setShowImportMenu] = useState(false)
+  const [autoSaveStatus, setAutoSaveStatus] = useState<'saved' | 'saving'>('saved')
 
-  // Ensure pages exist
   const pages = planner.pages.length > 0 ? planner.pages : []
   const currentPage = pages[currentPageIdx] ?? null
   const data: CanvasData = currentPage?.data ?? { ...EMPTY_CANVAS }
@@ -165,15 +160,6 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
   const goToPage = (idx: number) => {
     if (idx >= 0 && idx < pages.length) setCurrentPageIdx(idx)
   }
-
-  const commit = useCallback(
-    (newData: CanvasData) => {
-      if (!currentPage) return
-      editor.pushHistory(currentPage.id, data)
-      updatePageData(planner.id, currentPage.id, newData)
-    },
-    [currentPage, data, planner.id, updatePageData, editor],
-  )
 
   const handleAddPage = () => {
     addPageAction(planner.id, 'blank')
@@ -207,18 +193,40 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
     if (next) updatePageData(planner.id, currentPage.id, next)
   }
 
-  // ─── Canvas drawing state ───────────────────────────────────────────────────
+  // ─── Canvas refs & pointer hook ─────────────────────────────────────────────
 
   const canvasRef = useRef<HTMLDivElement>(null)
   const bgCanvasRef = useRef<HTMLCanvasElement>(null)
-  const [isDrawing, setIsDrawing] = useState(false)
-  const [currentPoints, setCurrentPoints] = useState<StrokePoint[]>([])
-  const [rulerStart, setRulerStart] = useState<StrokePoint | null>(null)
-  const [rulerEnd, setRulerEnd] = useState<StrokePoint | null>(null)
-  const [textInput, setTextInput] = useState<{ x: number; y: number; show: boolean } | null>(null)
-  const [textValue, setTextValue] = useState('')
+  const canvasContainerRef = useRef<HTMLDivElement>(null)
 
-  // Render template background on canvas
+  const {
+    isDrawing,
+    currentPoints,
+    rulerStart,
+    rulerEnd,
+    textInput,
+    textValue,
+    setTextValue,
+    draggingItem,
+    selectedStickerId,
+    selectedShapeId,
+    selectedNoteId,
+    resizingHandle,
+    clearSelection,
+    getPageCoords,
+    handlePointerDown,
+    handlePointerMove,
+    handlePointerUp,
+    setResizingHandle,
+    setTextInput,
+    commit,
+  } = useCanvasPointer({
+    plannerId: planner.id,
+    currentPageId: currentPage?.id ?? null,
+    data,
+    canvasRef,
+  })
+
   useEffect(() => {
     const canvas = bgCanvasRef.current
     if (!canvas || !currentPage) return
@@ -229,130 +237,26 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
     drawTemplate(ctx, currentPage.template, PAGE_WIDTH, PAGE_HEIGHT, tc)
   }, [currentPage, tc])
 
-  // Pointer event helpers
-  const getPageCoords = useCallback(
-    (e: React.PointerEvent) => {
-      const rect = canvasRef.current?.getBoundingClientRect()
-      if (!rect) return { x: 0, y: 0, pressure: 0.5 }
-      const scaleX = PAGE_WIDTH / rect.width
-      const scaleY = PAGE_HEIGHT / rect.height
-      return {
-        x: (e.clientX - rect.left) * scaleX,
-        y: (e.clientY - rect.top) * scaleY,
-        pressure: e.pressure > 0 ? e.pressure : 0.5,
+  // Ctrl+wheel zoom
+  useEffect(() => {
+    const el = canvasContainerRef.current
+    if (!el) return
+    const onWheel = (e: WheelEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault()
+        if (e.deltaY < 0) editor.zoomIn()
+        else editor.zoomOut()
       }
-    },
-    [],
-  )
-
-  const handlePointerDown = useCallback(
-    (e: React.PointerEvent) => {
-      if (activeTool === 'pan' || activeTool === 'sticker') return
-      if (activeTool === 'text') {
-        const pt = getPageCoords(e)
-        setTextInput({ x: pt.x, y: pt.y, show: true })
-        setTextValue('')
-        return
-      }
-      if (activeTool === 'ruler') {
-        const pt = getPageCoords(e)
-        setRulerStart(pt)
-        setRulerEnd(pt)
-        setIsDrawing(true)
-        return
-      }
-      const pt = getPageCoords(e)
-      setIsDrawing(true)
-      setCurrentPoints([pt])
-    },
-    [activeTool, getPageCoords],
-  )
-
-  const handlePointerMove = useCallback(
-    (e: React.PointerEvent) => {
-      if (!isDrawing) return
-      const pt = getPageCoords(e)
-      if (activeTool === 'ruler') {
-        setRulerEnd(pt)
-        return
-      }
-      setCurrentPoints((prev) => [...prev, pt])
-    },
-    [isDrawing, activeTool, getPageCoords],
-  )
-
-  const handlePointerUp = useCallback(() => {
-    if (!isDrawing && !textInput) return
-    if (activeTool === 'ruler' && rulerStart && rulerEnd) {
-      const dx = rulerEnd.x - rulerStart.x
-      const dy = rulerEnd.y - rulerStart.y
-      if (Math.abs(dx) < 3 && Math.abs(dy) < 3) {
-        setIsDrawing(false)
-        setRulerStart(null)
-        setRulerEnd(null)
-        return
-      }
-      const stroke: Stroke = {
-        id: uid(),
-        tool: 'ruler',
-        color: editor.rulerColor,
-        size: editor.rulerSize,
-        opacity: editor.rulerOpacity,
-        points: [rulerStart, rulerEnd],
-      }
-      const newData = JSON.parse(JSON.stringify(data)) as CanvasData
-      newData.strokes = [...newData.strokes, stroke]
-      commit(newData)
-      setIsDrawing(false)
-      setRulerStart(null)
-      setRulerEnd(null)
-      return
     }
-    if (activeTool === 'eraser' && currentPoints.length > 0) {
-      // Object eraser: remove strokes that intersect
-      const newData = JSON.parse(JSON.stringify(data)) as CanvasData
-      const eraserPath = currentPoints
-      const survived = newData.strokes.filter((s) => {
-        // Simple: check if any eraser point is near any stroke point
-        return !eraserPath.some((ep) =>
-          s.points.some((sp) => Math.hypot(ep.x - sp.x, ep.y - sp.y) < editor.eraserSize),
-        )
-      })
-      newData.strokes = survived
-      commit(newData)
-      setIsDrawing(false)
-      setCurrentPoints([])
-      return
-    }
-    if ((activeTool === 'pen' || activeTool === 'pencil' || activeTool === 'highlighter') && currentPoints.length > 1) {
-      const stroke: Stroke = {
-        id: uid(),
-        tool: activeTool as 'pen' | 'pencil' | 'highlighter',
-        color: editor.getToolColor(),
-        size: editor.getToolSize(),
-        opacity: editor.getToolOpacity(),
-        points: [...currentPoints],
-      }
-      const newData = JSON.parse(JSON.stringify(data)) as CanvasData
-      newData.strokes = [...newData.strokes, stroke]
-      commit(newData)
-      setIsDrawing(false)
-      setCurrentPoints([])
-      return
-    }
-    setIsDrawing(false)
-    setCurrentPoints([])
-  }, [
-    isDrawing,
-    textInput,
-    activeTool,
-    currentPoints,
-    rulerStart,
-    rulerEnd,
-    data,
-    commit,
-    editor,
-  ])
+    el.addEventListener('wheel', onWheel, { passive: false })
+    return () => el.removeEventListener('wheel', onWheel)
+  }, [editor])
+
+  useEffect(() => {
+    setAutoSaveStatus('saving')
+    const timer = setTimeout(() => setAutoSaveStatus('saved'), 300)
+    return () => clearTimeout(timer)
+  }, [data])
 
   // ─── Filters ────────────────────────────────────────────────────────────────
 
@@ -382,16 +286,34 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
       if (e.key === 'ArrowRight' && e.altKey) {
         goToPage(currentPageIdx + 1)
       }
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        if (selectedStickerId) {
+          const newData = JSON.parse(JSON.stringify(data)) as CanvasData
+          newData.stickers = newData.stickers.filter((s) => s.id !== selectedStickerId)
+          commit(newData)
+          clearSelection()
+        } else if (selectedShapeId) {
+          const newData = JSON.parse(JSON.stringify(data)) as CanvasData
+          newData.shapes = newData.shapes.filter((s) => s.id !== selectedShapeId)
+          commit(newData)
+          clearSelection()
+        } else if (selectedNoteId) {
+          const newData = JSON.parse(JSON.stringify(data)) as CanvasData
+          newData.stickyNotes = newData.stickyNotes.filter((n) => n.id !== selectedNoteId)
+          commit(newData)
+          clearSelection()
+        }
+      }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [currentPageIdx, handleUndo, handleRedo])
+  }, [currentPageIdx, handleUndo, handleRedo, selectedStickerId, selectedShapeId, selectedNoteId, data, commit, clearSelection])
 
   // ─── Sticker drop onto canvas ───────────────────────────────────────────────
 
   const [droppingStickerId, setDroppingStickerId] = useState<string | null>(null)
 
-  const placeSticker = (stickerId: string, x: number, y: number) => {
+  const placeSticker = useCallback((stickerId: string, x: number, y: number) => {
     const newData = JSON.parse(JSON.stringify(data)) as CanvasData
     const inst: StickerInstance = {
       id: uid(),
@@ -404,13 +326,13 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
     }
     newData.stickers = [...newData.stickers, inst]
     commit(newData)
-  }
+  }, [commit, data])
 
   // ─── Render strokes as SVG ──────────────────────────────────────────────────
 
   const renderStrokes = () => {
     const allStrokes = [...data.strokes]
-    if (isDrawing && currentPoints.length > 0 && activeTool !== 'eraser' && activeTool !== 'ruler') {
+    if (isDrawing && currentPoints.length > 0 && activeTool !== 'eraser' && activeTool !== 'ruler' && activeTool !== 'lasso') {
       allStrokes.push({
         id: 'preview',
         tool: activeTool as 'pen' | 'pencil' | 'highlighter',
@@ -431,15 +353,12 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
         return (
           <g key={s.id}>
             {s.tool === 'highlighter' ? (
-              <>
-                {/* Highlighter: semi-transparent wide path */}
-                <path
-                  d={pathD}
-                  fill={s.color}
-                  opacity={s.opacity * 0.7}
-                  style={{ mixBlendMode: 'multiply' }}
-                />
-              </>
+              <path
+                d={pathD}
+                fill={s.color}
+                opacity={s.opacity * 0.7}
+                style={{ mixBlendMode: 'multiply' }}
+              />
             ) : (
               <path d={pathD} fill={s.color} opacity={s.opacity} />
             )}
@@ -510,11 +429,17 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
             <>
               <p className="text-[11px] text-muted-foreground mb-1.5">Cor</p>
               <div className="flex flex-wrap gap-1.5 mb-3">
+                <input
+                  type="color"
+                  value={color}
+                  onChange={(e) => setterColor?.(e.target.value)}
+                  className="size-6 rounded cursor-pointer border-0 p-0"
+                />
                 {colors.map((c) => (
                   <button
                     key={c}
                     onClick={() => setterColor?.(c)}
-                    className="size-6 rounded-full border-2 transition-all hover:scale-110"
+                    className="size-6 rounded-full border-2 transition-all hover:scale-110 cursor-pointer"
                     style={{
                       backgroundColor: c,
                       borderColor: c === color ? (isDark ? '#fff' : '#333') : 'transparent',
@@ -575,8 +500,8 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
                     key={f}
                     onClick={() => editor.setTextFontFamily(f)}
                     className={cn(
-                      'flex-1 rounded-lg py-1 text-xs',
-                      editor.textFontFamily === f ? 'bg-primary text-primary-foreground' : 'bg-muted',
+                      'flex-1 rounded-lg py-1 text-xs transition-colors cursor-pointer',
+                      editor.textFontFamily === f ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/70',
                     )}
                   >
                     {f === 'hand' ? 'Mão' : f === 'serif' ? 'Serif' : 'Sans'}
@@ -601,9 +526,129 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
         </Button>
         <span className="text-sm font-semibold truncate max-w-[200px]">{planner.name}</span>
         <div className="w-px h-5 bg-border mx-1" />
-        <span className="text-xs text-muted-foreground">
-          Página {currentPageIdx + 1} de {pages.length}
+        {/* Page rename */}
+        <input
+          value={currentPage?.title ?? ''}
+          onChange={(e) => {
+            if (!currentPage) return
+            useAppStore.getState().updatePlanner(planner.id, {
+              pages: pages.map((p) => (p.id === currentPage.id ? { ...p, title: e.target.value } : p)),
+            })
+          }}
+          className="text-xs bg-transparent border-b border-transparent hover:border-border focus:border-primary outline-none px-1 max-w-[100px] text-muted-foreground"
+        />
+        <div className="w-px h-5 bg-border mx-1" />
+        {/* Autosave indicator */}
+        <span className={cn(
+          'text-[10px] transition-opacity duration-500',
+          autoSaveStatus === 'saving' ? 'opacity-100 text-amber-500' : 'opacity-50 text-muted-foreground'
+        )}>
+          {autoSaveStatus === 'saving' ? 'Salvando…' : 'Salvo ✓'}
         </span>
+        {/* Page navigator dropdown */}
+        <Popover>
+          <PopoverTrigger className="text-xs text-muted-foreground ml-1 hover:text-foreground transition-colors rounded-md px-1.5 py-0.5 cursor-pointer">
+            Página {currentPageIdx + 1} de {pages.length}
+          </PopoverTrigger>
+          <PopoverContent className="w-56 p-2" align="start">
+            <div className="flex items-center justify-between mb-2 px-1">
+              <span className="text-xs font-semibold">Ir para página</span>
+              <Button variant="ghost" size="icon-xs" className="rounded-lg" onClick={handleAddPage}>
+                <Plus size={12} />
+              </Button>
+            </div>
+            <ScrollArea className="max-h-48">
+              <div className="space-y-0.5">
+                {pages.map((page, i) => (
+                  <button
+                    key={page.id}
+                    onClick={() => goToPage(i)}
+                    className={cn(
+                      'flex items-center gap-2.5 w-full rounded-lg px-2.5 py-1.5 text-left transition-colors',
+                      i === currentPageIdx
+                        ? 'bg-primary/10 text-primary font-medium'
+                        : 'hover:bg-muted text-foreground/80',
+                    )}
+                  >
+                    <span className="text-[11px] font-mono tabular-nums text-muted-foreground w-5">
+                      {i + 1}
+                    </span>
+                    <span className="text-xs truncate flex-1">{page.title}</span>
+                    <span className="text-[10px] text-muted-foreground capitalize">{page.template}</span>
+                  </button>
+                ))}
+              </div>
+            </ScrollArea>
+          </PopoverContent>
+        </Popover>
+        {/* Duplicate page */}
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          className="rounded-xl"
+          onClick={() => {
+            if (!currentPage) return
+            const newPage: PlannerPage = {
+              id: `pg-${uid()}`,
+              title: `${currentPage.title} (cópia)`,
+              template: currentPage.template,
+              data: JSON.parse(JSON.stringify(currentPage.data)),
+            }
+            useAppStore.getState().updatePlanner(planner.id, {
+              pages: [...pages.slice(0, currentPageIdx + 1), newPage, ...pages.slice(currentPageIdx + 1)],
+            })
+            toast({ title: 'Página duplicada' })
+          }}
+        >
+          <Copy size={14} />
+        </Button>
+        {/* Template selector */}
+        <Popover>
+          <PopoverTrigger className="rounded-xl p-1 px-2 text-[11px] hover:bg-muted transition-colors flex items-center gap-1">
+            <Grid3X3 size={14} />
+            <span className="capitalize">{currentPage?.template ?? 'blank'}</span>
+          </PopoverTrigger>
+          <PopoverContent className="w-[300px] p-3.5">
+            <p className="text-xs font-semibold mb-2.5">Template da página</p>
+            <ScrollArea className="max-h-[320px] -mr-1 pr-1">
+              <div className="grid grid-cols-3 gap-2">
+                {(['blank', 'grid', 'dotted', 'lined', 'cornell', 'daily', 'weekly', 'monthly', 'kanban', 'checklist', 'habit', 'meal', 'finance', 'calendar'] as PageTemplateId[]).map((tpl) => {
+                  const isActive = currentPage?.template === tpl
+                  return (
+                    <button
+                      key={tpl}
+                      onClick={() => handleChangeTemplate(tpl)}
+                      className="group flex flex-col items-center gap-1.5 cursor-pointer"
+                    >
+                      <span
+                        className={cn(
+                          'block w-full overflow-hidden rounded-[5px] transition-all duration-200 aspect-[820/1160]',
+                          isActive
+                            ? 'ring-2 ring-primary ring-offset-2 ring-offset-popover shadow-md'
+                            : 'ring-1 ring-border/60 shadow-sm group-hover:ring-primary/40 group-hover:shadow-md group-hover:-translate-y-0.5',
+                        )}
+                      >
+                        {tpl === 'blank' ? (
+                          <span className="block size-full bg-[color:light-dark(#ffffff,#2a2a28)]" />
+                        ) : (
+                          <TemplateThumbnail template={tpl} width={90} className="block w-full" />
+                        )}
+                      </span>
+                      <span
+                        className={cn(
+                          'text-[10px] font-medium capitalize transition-colors',
+                          isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground',
+                        )}
+                      >
+                        {PAGE_TEMPLATES.find((t) => t.id === tpl)?.name ?? tpl}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            </ScrollArea>
+          </PopoverContent>
+        </Popover>
         <div className="flex-1" />
         <div className="flex items-center gap-1">
           {/* Insert menu */}
@@ -614,22 +659,93 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
             <PopoverContent className="w-48">
               <div className="flex flex-col gap-0.5">
                 {[
-                  { label: 'Texto', icon: Type },
-                  { label: 'Imagem', icon: Image },
-                  { label: 'Formas', icon: Square },
-                  { label: 'Tabela', icon: Table },
-                  { label: 'Nota adesiva', icon: StickyNote },
-                  { label: 'Link', icon: Link },
-                  { label: 'Áudio', icon: Music },
-                  { label: 'Vídeo', icon: Video },
-                ].map(({ label, icon: Icon }) => (
+                  { label: 'Nota adesiva', icon: StickyNote, action: () => {
+                    const newData = JSON.parse(JSON.stringify(data)) as CanvasData
+                    newData.stickyNotes = [...newData.stickyNotes, {
+                      id: uid(),
+                      x: 200,
+                      y: 200 + Math.random() * 200,
+                      text: '',
+                      color: '#f0b429',
+                    }]
+                    commit(newData)
+                    toast({ title: 'Nota adesiva adicionada' })
+                  } },
+                  { label: 'Retângulo', icon: Square, action: () => {
+                    const newData = JSON.parse(JSON.stringify(data)) as CanvasData
+                    newData.shapes = [...newData.shapes, {
+                      id: uid(),
+                      kind: 'rectangle',
+                      x: 200,
+                      y: 200,
+                      width: 120,
+                      height: 80,
+                      color: '#e05b6d',
+                    }]
+                    commit(newData)
+                    toast({ title: 'Forma adicionada' })
+                  } },
+                  { label: 'Círculo', icon: Minimize2, action: () => {
+                    const newData = JSON.parse(JSON.stringify(data)) as CanvasData
+                    newData.shapes = [...newData.shapes, {
+                      id: uid(),
+                      kind: 'ellipse',
+                      x: 200,
+                      y: 200,
+                      width: 100,
+                      height: 100,
+                      color: '#5b8dbf',
+                    }]
+                    commit(newData)
+                    toast({ title: 'Forma adicionada' })
+                  } },
+                  { label: 'Triângulo', icon: ALargeSmall, action: () => {
+                    const newData = JSON.parse(JSON.stringify(data)) as CanvasData
+                    newData.shapes = [...newData.shapes, {
+                      id: uid(),
+                      kind: 'triangle',
+                      x: 200,
+                      y: 200,
+                      width: 100,
+                      height: 100,
+                      color: '#7bb686',
+                    }]
+                    commit(newData)
+                    toast({ title: 'Forma adicionada' })
+                  } },
+                  { label: 'Seta', icon: ArrowLeft, action: () => {
+                    const newData = JSON.parse(JSON.stringify(data)) as CanvasData
+                    newData.shapes = [...newData.shapes, {
+                      id: uid(),
+                      kind: 'arrow',
+                      x: 200,
+                      y: 200,
+                      width: 120,
+                      height: 60,
+                      color: '#f0b429',
+                    }]
+                    commit(newData)
+                    toast({ title: 'Forma adicionada' })
+                  } },
+                  { label: 'Linha', icon: Minus, action: () => {
+                    const newData = JSON.parse(JSON.stringify(data)) as CanvasData
+                    newData.shapes = [...newData.shapes, {
+                      id: uid(),
+                      kind: 'line',
+                      x: 200,
+                      y: 200,
+                      width: 120,
+                      height: 2,
+                      color: '#1a1a1a',
+                    }]
+                    commit(newData)
+                    toast({ title: 'Forma adicionada' })
+                  } },
+                ].map(({ label, icon: Icon, action }) => (
                   <button
                     key={label}
-                    className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm hover:bg-muted transition-colors text-left"
-                    onClick={() => {
-                      setShowInsertMenu(false)
-                      toast({ title: `${label}: Em breve!` })
-                    }}
+                    className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm hover:bg-muted transition-colors text-left cursor-pointer"
+                    onClick={action}
                   >
                     <Icon size={16} className="text-muted-foreground" />
                     {label}
@@ -646,17 +762,51 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
             </PopoverTrigger>
             <PopoverContent className="w-44">
               <div className="flex flex-col gap-0.5">
-                {['PDF', 'Imagem', 'Word', 'PowerPoint', 'Excel'].map((f) => (
+                {[
+                  { label: 'PNG / JPEG', action: () => {
+                    const input = document.createElement('input')
+                    input.type = 'file'
+                    input.accept = 'image/*'
+                    input.onchange = (e) => {
+                      const file = (e.target as HTMLInputElement).files?.[0]
+                      if (!file) return
+                      const reader = new FileReader()
+                      reader.onload = () => {
+                        const newData = JSON.parse(JSON.stringify(data)) as CanvasData
+                        newData.stickers = [...newData.stickers, {
+                          id: uid(),
+                          stickerId: '__custom__',
+                          customSvg: reader.result as string,
+                          x: 200,
+                          y: 200,
+                          width: 120,
+                          height: 120,
+                          rotation: 0,
+                        }]
+                        commit(newData)
+                        toast({ title: 'Imagem importada!' })
+                      }
+                      reader.readAsDataURL(file)
+                    }
+                    input.click()
+                    setShowImportMenu(false)
+                  } },
+                  { label: 'SVG', action: () => {
+                    setShowImportMenu(false)
+                    toast({ title: 'SVG: Em breve!' })
+                  } },
+                  { label: 'PDF', action: () => {
+                    setShowImportMenu(false)
+                    toast({ title: 'PDF: Em breve!' })
+                  } },
+                ].map(({ label, action }) => (
                   <button
-                    key={f}
-                    className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm hover:bg-muted transition-colors text-left"
-                    onClick={() => {
-                      setShowImportMenu(false)
-                      toast({ title: `Importar ${f}: Em breve!` })
-                    }}
+                    key={label}
+                    className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm hover:bg-muted transition-colors text-left cursor-pointer"
+                    onClick={action}
                   >
                     <FileText size={16} className="text-muted-foreground" />
-                    {f}
+                    {label}
                   </button>
                 ))}
               </div>
@@ -670,17 +820,54 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
             </PopoverTrigger>
             <PopoverContent className="w-40">
               <div className="flex flex-col gap-0.5">
-                {['PDF', 'PNG', 'JPEG'].map((f) => (
+                {[
+                  { label: 'PNG', action: async () => {
+                    setShowExportMenu(false)
+                    try {
+                      const svgEl = canvasRef.current?.querySelector('svg') as SVGSVGElement
+                      const bgCanvas = bgCanvasRef.current
+                      if (!svgEl || !bgCanvas) return
+                      const exportCanvas = document.createElement('canvas')
+                      exportCanvas.width = PAGE_WIDTH
+                      exportCanvas.height = PAGE_HEIGHT
+                      const ctx = exportCanvas.getContext('2d')
+                      if (!ctx) return
+                      ctx.drawImage(bgCanvas, 0, 0)
+                      const svgData = new XMLSerializer().serializeToString(svgEl)
+                      const blob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' })
+                      const url = URL.createObjectURL(blob)
+                      const img = new window.Image()
+                      img.onload = () => {
+                        ctx.drawImage(img, 0, 0)
+                        URL.revokeObjectURL(url)
+                        exportCanvas.toBlob((pngBlob) => {
+                          if (!pngBlob) return
+                          const downloadUrl = URL.createObjectURL(pngBlob)
+                          const a = document.createElement('a')
+                          a.href = downloadUrl
+                          a.download = `${planner.name}-p${currentPageIdx + 1}.png`
+                          a.click()
+                          URL.revokeObjectURL(downloadUrl)
+                          toast({ title: 'Exportado como PNG!' })
+                        }, 'image/png')
+                      }
+                      img.src = url
+                    } catch {
+                      toast({ title: 'Erro ao exportar PNG', variant: 'error' })
+                    }
+                  } },
+                  { label: 'PDF', action: () => {
+                    setShowExportMenu(false)
+                    toast({ title: 'PDF: Em breve!' })
+                  } },
+                ].map(({ label, action }) => (
                   <button
-                    key={f}
-                    className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm hover:bg-muted transition-colors text-left"
-                    onClick={() => {
-                      setShowExportMenu(false)
-                      toast({ title: `Exportar ${f}: Em breve!` })
-                    }}
+                    key={label}
+                    className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm hover:bg-muted transition-colors text-left cursor-pointer"
+                    onClick={action}
                   >
                     <Download size={16} className="text-muted-foreground" />
-                    {f}
+                    {label}
                   </button>
                 ))}
               </div>
@@ -689,15 +876,19 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
 
           <Separator orientation="vertical" className="h-5 mx-1" />
 
-          {/* OCR */}
-          <Button
-            variant={showOcrPanel ? 'default' : 'ghost'}
-            size="icon-sm"
-            className="rounded-xl"
-            onClick={() => setShowOcrPanel(!showOcrPanel)}
-          >
-            <ScanText size={16} />
+          {/* Zoom controls */}
+          <Button variant="ghost" size="icon-sm" className="rounded-xl" onClick={() => editor.zoomOut()}>
+            <Minus size={14} />
           </Button>
+          <span className="text-[11px] text-muted-foreground w-8 text-center">{Math.round(editor.zoom * 100)}%</span>
+          <Button variant="ghost" size="icon-sm" className="rounded-xl" onClick={() => editor.zoomIn()}>
+            <Plus size={14} />
+          </Button>
+          <Button variant="ghost" size="icon-sm" className="rounded-xl" onClick={() => editor.fitToScreen()}>
+            <Maximize2 size={14} />
+          </Button>
+
+          <Separator orientation="vertical" className="h-5 mx-1" />
 
           {/* Page nav */}
           <Button variant="ghost" size="icon-sm" className="rounded-xl" onClick={() => goToPage(currentPageIdx - 1)}>
@@ -738,7 +929,12 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
                     ? 'bg-primary text-primary-foreground shadow-sm'
                     : 'hover:bg-muted text-muted-foreground hover:text-foreground',
                 )}
-                onClick={() => setTool(tool.id)}
+                onClick={() => {
+                  setTool(tool.id)
+                  if (tool.id === 'sticker') {
+                    setShowStickerPanel(true)
+                  }
+                }}
               >
                 <tool.icon size={16} />
               </TooltipTrigger>
@@ -751,7 +947,7 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
         </div>
 
         {/* Canvas area */}
-        <div className="flex-1 flex items-center justify-center overflow-hidden relative bg-[color:light-dark(#e0ddd6,#141412)]">
+        <div className="flex-1 relative overflow-hidden desk-bg" ref={canvasContainerRef}>
           {showPagesPanel && (
             <div className="absolute left-3 top-3 bottom-3 z-20 w-52 glass rounded-3xl border border-border/40 shadow-xl p-4">
               <div className="flex items-center justify-between mb-3">
@@ -771,8 +967,14 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
                         i === currentPageIdx ? 'bg-primary/15 ring-1 ring-primary/30' : 'hover:bg-muted/60',
                       )}
                     >
-                      <div className="w-14 h-20 rounded-lg bg-muted border border-border/30 flex items-center justify-center text-[10px] text-muted-foreground overflow-hidden">
-                        {page.template === 'blank' ? 'Em branco' : page.template}
+                      <div className="w-14 h-20 rounded-lg bg-muted border border-border/30 overflow-hidden flex-shrink-0">
+                        {page.template === 'blank' ? (
+                          <div className="w-full h-full flex items-center justify-center text-[10px] text-muted-foreground">
+                            Em branco
+                          </div>
+                        ) : (
+                          <TemplateThumbnail template={page.template} width={56} className="w-full h-full" />
+                        )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-medium truncate">{page.title}</p>
@@ -782,7 +984,7 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
                         variant="ghost"
                         size="icon-xs"
                         className="opacity-0 group-hover:opacity-100 rounded-lg"
-                        onClick={(e) => { e.stopPropagation(); deletePage(planner.id, page.id) }}
+                        onClick={(e) => { e.stopPropagation(); handleDeletePage() }}
                       >
                         <X size={12} />
                       </Button>
@@ -793,34 +995,54 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
             </div>
           )}
 
-          <div
-            ref={canvasRef}
-            className="relative overflow-hidden rounded-2xl shadow-2xl"
-            style={{
-              width: PAGE_WIDTH / (1.5 * (editor.zoom || 1)),
-              height: PAGE_HEIGHT / (1.5 * (editor.zoom || 1)),
-              minWidth: 300,
-              minHeight: 400,
-              maxWidth: '95vw',
-              maxHeight: '95vh',
-              touchAction: 'none',
-              cursor:
-                activeTool === 'eraser' ? 'crosshair' :
-                activeTool === 'text' ? 'text' :
-                activeTool === 'pan' ? 'grab' :
-                'crosshair',
-            }}
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={handlePointerUp}
-            onPointerLeave={handlePointerUp}
-          >
-            {/* Background template */}
+          <div className="absolute inset-0 overflow-auto scrollbar-thin">
+            <div className="min-w-full min-h-full flex items-center justify-center p-12">
+              <div
+                className="relative shrink-0"
+                style={{ width: displayWidth, height: displayHeight }}
+              >
+                <div
+                  aria-hidden
+                  className="absolute inset-0 rounded-[10px] rotate-[1.2deg] translate-x-2.5 translate-y-3 shadow-paper-sheet"
+                  style={{ backgroundColor: isDark ? '#222220' : '#efece5' }}
+                />
+                <div
+                  aria-hidden
+                  className="absolute inset-0 rounded-[10px] rotate-[-0.8deg] -translate-x-2 translate-y-1.5 shadow-paper-sheet"
+                  style={{ backgroundColor: isDark ? '#252523' : '#f7f5f0' }}
+                />
+
+                <div
+                  ref={canvasRef}
+                  className="relative overflow-hidden rounded-[6px] shadow-paper ring-1 ring-black/[0.07] dark:ring-white/[0.08] bg-[color:light-dark(#ffffff,#2a2a28)]"
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    touchAction: 'none',
+                    cursor:
+                      activeTool === 'eraser' ? 'crosshair' :
+                      activeTool === 'text' ? 'text' :
+                      activeTool === 'pan' ? 'grab' :
+                      'crosshair',
+                  }}
+                  onPointerDown={handlePointerDown}
+                  onPointerMove={handlePointerMove}
+                  onPointerUp={handlePointerUp}
+                  onPointerLeave={handlePointerUp}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault()
+                    const stickerId = e.dataTransfer.getData('stickerId')
+                    if (!stickerId) return
+                    const coords = getPageCoords(e as unknown as React.PointerEvent)
+                    placeSticker(stickerId, coords.x - 40, coords.y - 40)
+                    toast({ title: 'Sticker adicionado!' })
+                  }}
+                >
             <canvas
               ref={bgCanvasRef}
               className="absolute inset-0 w-full h-full"
             />
-            {/* SVG drawing layer */}
             <svg
               className="absolute inset-0 w-full h-full"
               viewBox={`0 0 ${PAGE_WIDTH} ${PAGE_HEIGHT}`}
@@ -828,24 +1050,27 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
             >
               {renderStrokes()}
               {renderRulerPreview()}
-              {/* Stickers */}
-              {data.stickers.map((s) => {
-                const def = STICKERS.find((st) => st.id === s.stickerId)
-                if (!def) return null
-                return (
-                  <image
-                    key={s.id}
-                    href={s.customSvg ?? stickerToDataUrl(def)}
-                    x={s.x}
-                    y={s.y}
-                    width={s.width}
-                    height={s.height}
-                    transform={`rotate(${s.rotation}, ${s.x + s.width / 2}, ${s.y + s.height / 2})`}
-                    opacity={s.locked ? 0.7 : 1}
-                  />
-                )
-              })}
-              {/* Texts */}
+              {data.stickers
+                .filter((s) => {
+                  const def = ALL_STICKERS.find((st) => st.id === s.stickerId)
+                  return def && !def.lottieUrl
+                })
+                .map((s) => {
+                  const def = ALL_STICKERS.find((st) => st.id === s.stickerId)
+                  if (!def) return null
+                  return (
+                    <image
+                      key={s.id}
+                      href={s.customSvg ?? stickerToDataUrl(def)}
+                      x={s.x}
+                      y={s.y}
+                      width={s.width}
+                      height={s.height}
+                      transform={`rotate(${s.rotation}, ${s.x + s.width / 2}, ${s.y + s.height / 2})`}
+                      opacity={s.locked ? 0.7 : 1}
+                    />
+                  )
+                })}
               {data.texts.map((t) => (
                 <text
                   key={t.id}
@@ -863,7 +1088,38 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
                 </text>
               ))}
             </svg>
-            {/* Text input overlay */}
+            {data.stickers
+              .filter((s) => {
+                const def = ALL_STICKERS.find((st) => st.id === s.stickerId)
+                return def && def.lottieUrl
+              })
+              .map((s) => {
+                const def = ALL_STICKERS.find((st) => st.id === s.stickerId)
+                if (!def?.lottieUrl) return null
+                return (
+                  <div
+                    key={s.id}
+                    className="absolute"
+                    style={{
+                      left: s.x * displayScale,
+                      top: s.y * displayScale,
+                      width: s.width * displayScale,
+                      height: s.height * displayScale,
+                      transform: `rotate(${s.rotation}deg)`,
+                      transformOrigin: 'center center',
+                      opacity: s.locked ? 0.7 : 1,
+                      pointerEvents: 'none',
+                    }}
+                  >
+                    <LottiePlayer
+                      src={def.lottieUrl}
+                      style={{ width: '100%', height: '100%' }}
+                      loop
+                      autoplay
+                    />
+                  </div>
+                )
+              })}
             {textInput?.show && (
               <input
                 autoFocus
@@ -889,19 +1145,23 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
                   }
                   if (e.key === 'Escape') setTextInput(null)
                 }}
-                className="absolute z-10 bg-transparent border-b-2 border-primary text-foreground text-xl outline-none"
+                className="absolute z-10 bg-transparent border-b-2 border-primary text-foreground outline-none min-w-20"
                 style={{
-                  left: textInput.x,
-                  top: textInput.y,
+                  left: textInput.x * displayScale,
+                  top: textInput.y * displayScale,
                   fontFamily:
                     editor.textFontFamily === 'hand' ? 'var(--font-hand)' :
                     editor.textFontFamily === 'serif' ? 'var(--font-serif)' :
                     'var(--font-sans)',
-                  fontSize: editor.textFontSize,
+                  fontSize: editor.textFontSize * displayScale,
                   color: editor.textColor,
                 }}
               />
             )}
+                  <div className="absolute inset-0 pointer-events-none paper-grain opacity-[0.05] mix-blend-overlay z-10" />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -917,7 +1177,14 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
               <div className="w-[300px] p-4 h-full flex flex-col">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-sm font-semibold">Stickers</h3>
-                  <Button variant="ghost" size="icon-xs" onClick={() => setShowStickerPanel(false)}>
+                  <Button
+                    variant="ghost"
+                    size="icon-xs"
+                    onClick={() => {
+                      setShowStickerPanel(false)
+                      if (activeTool === 'sticker') setTool('pan')
+                    }}
+                  >
                     <X size={14} />
                   </Button>
                 </div>
@@ -933,7 +1200,7 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
                         key={c.id}
                         onClick={() => setStickerCat(c.id)}
                         className={cn(
-                          'shrink-0 rounded-full px-3 py-1 text-[11px] font-medium transition-colors',
+                          'shrink-0 rounded-full px-3 py-1 text-[11px] font-medium transition-colors cursor-pointer',
                           stickerCat === c.id
                             ? 'bg-primary text-primary-foreground'
                             : 'bg-muted text-muted-foreground hover:bg-muted/80',
@@ -950,7 +1217,7 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
                       <button
                         key={st.id}
                         className={cn(
-                          'aspect-square rounded-xl border border-border/40 p-2 hover:border-primary/30 hover:bg-muted/40 transition-all flex items-center justify-center',
+                          'aspect-square rounded-xl border border-border/40 p-2 hover:border-primary/30 hover:bg-muted/40 transition-all flex items-center justify-center cursor-pointer',
                           favoriteStickers.has(st.id) && 'border-yellow-500/40',
                         )}
                         draggable
@@ -972,19 +1239,28 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
                           })
                         }}
                       >
-                        <img
-                          src={stickerToDataUrl(st)}
-                          alt={st.name}
-                          className="w-full h-full object-contain"
-                          draggable={false}
-                        />
+                        {st.lottieUrl && st.previewSvg ? (
+                          <img
+                            src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(st.previewSvg)}`}
+                            alt={st.name}
+                            className="w-full h-full object-contain"
+                            draggable={false}
+                          />
+                        ) : (
+                          <img
+                            src={stickerToDataUrl(st)}
+                            alt={st.name}
+                            className="w-full h-full object-contain"
+                            draggable={false}
+                          />
+                        )}
                       </button>
                     ))}
                   </div>
                 </ScrollArea>
                 <Separator className="my-3" />
                 <p className="text-[10px] text-muted-foreground text-center">
-                  Clique para adicionar &bull; Duplo clique para favoritar
+                  Clique para adicionar &bull; Duplo clique para favoritar &bull; Arraste para o canvas
                 </p>
               </div>
             </motion.div>
@@ -1016,7 +1292,7 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
                 <Input placeholder="Buscar no conteúdo..." className="mb-3" />
                 <div className="mb-3">
                   <label className="text-[11px] text-muted-foreground mb-1.5 block">Idioma</label>
-                  <select className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm">
+                  <select className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm transition-colors hover:border-primary/50 focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/20 outline-none">
                     <option>Português</option>
                     <option>Inglês</option>
                     <option>Espanhol</option>
@@ -1033,4 +1309,3 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
     </div>
   )
 }
-

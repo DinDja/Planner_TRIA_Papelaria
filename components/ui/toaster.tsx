@@ -73,7 +73,7 @@ export function Toaster({ children }: { children?: React.ReactNode }) {
               </div>
               <button
                 onClick={() => dismiss(t.id)}
-                className="shrink-0 rounded-lg p-1 hover:bg-muted transition-colors"
+                className="shrink-0 rounded-lg p-1 hover:bg-muted transition-colors cursor-pointer"
               >
                 <X size={14} />
               </button>

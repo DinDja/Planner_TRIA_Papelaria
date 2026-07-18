@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from 'next'
 import { Caveat, Geist, Instrument_Serif } from 'next/font/google'
 import { Tooltip } from '@base-ui/react/tooltip'
 import { ThemeProvider } from '@/components/providers/theme-provider'
+import { SettingsProvider } from '@/components/providers/settings-provider'
 import { Toaster } from '@/components/ui/toaster'
 import './globals.css'
 
@@ -59,8 +60,10 @@ export default function RootLayout({
       <body className="font-sans antialiased">
         <Tooltip.Provider closeDelay={200}>
           <ThemeProvider>
-            {children}
-            <Toaster />
+            <SettingsProvider>
+              {children}
+              <Toaster />
+            </SettingsProvider>
           </ThemeProvider>
         </Tooltip.Provider>
         {process.env.NODE_ENV === 'production' && <Analytics />}

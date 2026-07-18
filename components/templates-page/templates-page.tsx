@@ -1,15 +1,18 @@
 'use client'
 
 import { useAppStore } from '@/lib/store/use-app-store'
+import { useSettingsStore } from '@/lib/store/use-settings-store'
 import {
   PLANNER_TEMPLATES,
   PLANNER_TEMPLATE_CATEGORIES,
   type PlannerTemplate,
 } from '@/lib/planner-templates'
+import { cn } from '@/lib/utils'
 import {
   Calendar,
   GraduationCap,
   Heart,
+  Layers,
   Sparkles,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
@@ -47,9 +50,12 @@ const categoryColors: Record<string, string> = {
   'Life Planner': '#e05b6d',
 }
 
+const enter = 'animate-in fade-in slide-in-from-bottom-3 duration-500 fill-mode-both'
+
 export function TemplatesPage() {
   const [activeTab, setActiveTab] = useState<IdOrAll>('Todos')
   const addPlannerWithPages = useAppStore((s) => s.addPlannerWithPages)
+  const gradBadges = useSettingsStore((s) => s.gradients.badges)
   const router = useRouter()
 
   const filtered = useMemo(() => {
@@ -74,7 +80,7 @@ export function TemplatesPage() {
 
   return (
     <div className="p-6 lg:p-8 max-w-[1400px] mx-auto">
-      <div className="mb-8">
+      <div className={cn('mb-8', enter)}>
         <h1 className="text-3xl font-bold tracking-tight">Templates</h1>
         <p className="text-muted-foreground mt-1">
           Explore templates premium para começar seus planners rapidamente.
@@ -82,7 +88,7 @@ export function TemplatesPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <ScrollArea className="mb-6 -mx-2 px-2">
+        <ScrollArea className={cn('mb-6 -mx-2 px-2', enter)} style={{ animationDelay: '70ms' }}>
           <TabList className="no-scrollbar">
             <Tab value="Todos">Todos</Tab>
             {PLANNER_TEMPLATE_CATEGORIES.slice(1).map((c) => {
@@ -103,42 +109,94 @@ export function TemplatesPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-            {filtered.map((tpl) => {
+            {filtered.map((tpl, i) => {
               const firstPage = tpl.pages[0]
+              const accent = categoryColors[tpl.category] ?? tpl.color
               return (
                 <Card
                   key={tpl.id}
                   hover
-                  className="group cursor-pointer overflow-hidden flex flex-col"
+                  className={cn('group cursor-pointer flex flex-col', enter)}
+                  style={{ animationDelay: `${(i % 8) * 60 + 120}ms` }}
                   onClick={() => handleUseTemplate(tpl)}
                 >
-                  {/* thumbnail */}
-                  <div className="relative rounded-xl mb-3 border border-border/40 overflow-hidden bg-[color:light-dark(#fafafa,#1e1e1c)]">
-                    {firstPage && (
-                      <TemplateThumbnail
-                        template={firstPage.template}
-                        aspectRatio={1.0}
-                        className="w-full"
+                  {/* thumbnail em pilha de papel */}
+                  <div className="relative rounded-xl border border-border/40 bg-[color:light-dark(#f4f2ed,#1b1b19)] px-4 pt-4 pb-3 overflow-hidden">
+                    {/* brilho sutil da categoria */}
+                    <div
+                      className="absolute -top-10 -right-10 size-32 rounded-full blur-3xl opacity-15 pointer-events-none"
+                      style={{ backgroundColor: accent }}
+                    />
+                    <div className="relative mx-auto w-[74%] transition-transform duration-300 ease-out group-hover:-translate-y-1 group-hover:rotate-[-1.2deg]">
+                      {/* folhas atrás */}
+                      <div
+                        aria-hidden
+                        className="absolute inset-0 translate-x-1.5 translate-y-1.5 rotate-[2.5deg] rounded-[4px] bg-[color:light-dark(#e7e4dc,#242422)] shadow-sm"
                       />
-                    )}
-                    {tpl.premium && (
-                      <Badge className="absolute top-2 right-2 bg-yellow-400/90 text-yellow-900 text-[10px] font-bold px-2.5 py-0.5">
-                        PRO
-                      </Badge>
-                    )}
-                    {/* page count overlay */}
-                    <div className="absolute bottom-2 right-2 rounded-full bg-background/80 backdrop-blur-sm px-2 py-0.5">
-                      <span className="text-[10px] font-medium text-muted-foreground">
-                        {tpl.pages.length} pág
-                      </span>
+                      <div className="relative overflow-hidden rounded-[4px] ring-1 ring-black/[0.07] dark:ring-white/10 shadow-lift bg-[color:light-dark(#ffffff,#2a2a28)]">
+                        {firstPage && (
+                          <TemplateThumbnail
+                            template={firstPage.template}
+                            className="block w-full"
+                          />
+                        )}
+                      </div>
+                      {/* badge PRO */}
+                      {tpl.premium && (
+                        <span
+                          data-grad="badge"
+                          className="absolute -top-2 -right-3 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[9px] font-bold text-amber-950 shadow-md"
+                          style={{
+                            background: gradBadges
+                              ? 'linear-gradient(90deg, #fbbf24, #fde047)'
+                              : '#fbbf24',
+                          }}
+                        >
+                          <Sparkles size={9} />
+                          PRO
+                        </span>
+                      )}
                     </div>
+
+                    {/* mini strip das outras páginas */}
+                    {tpl.pages.length > 1 && (
+                      <div className="relative flex gap-1.5 mt-3">
+                        {tpl.pages.slice(1, 4).map((page, j) => (
+                          <div
+                            key={j}
+                            className="flex-1 overflow-hidden rounded-[3px] ring-1 ring-border/50 shadow-sm opacity-80 bg-[color:light-dark(#ffffff,#2a2a28)]"
+                          >
+                            <TemplateThumbnail
+                              template={page.template}
+                              width={60}
+                              className="block w-full"
+                            />
+                          </div>
+                        ))}
+                        {tpl.pages.length > 4 && (
+                          <div className="flex items-center justify-center flex-1 rounded-[3px] ring-1 ring-border/50 bg-muted/60 text-[10px] text-muted-foreground font-semibold">
+                            +{tpl.pages.length - 4}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
 
-                  <div className="space-y-1 flex-1">
-                    <h3 className="font-semibold text-sm">{tpl.name}</h3>
-                    <p className="text-xs text-muted-foreground">{tpl.description}</p>
-                    <div className="flex items-center gap-1.5 pt-1">
-                      <Badge variant="outline" className="text-[10px]">
+                  <div className="space-y-1 flex-1 pt-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <h3 className="font-semibold text-sm leading-tight">{tpl.name}</h3>
+                      <span className="inline-flex shrink-0 items-center gap-1 text-[10px] font-medium text-muted-foreground tabular-nums">
+                        <Layers size={10} />
+                        {tpl.pages.length}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground leading-relaxed">{tpl.description}</p>
+                    <div className="flex items-center gap-1.5 pt-1.5">
+                      <Badge
+                        variant="outline"
+                        className="text-[10px] border-transparent"
+                        style={{ backgroundColor: accent + '14', color: accent }}
+                      >
                         {tpl.category}
                       </Badge>
                     </div>
@@ -146,7 +204,7 @@ export function TemplatesPage() {
                   <Button
                     size="sm"
                     variant={tpl.premium ? 'outline' : 'default'}
-                    className="w-full mt-3 rounded-xl text-xs"
+                    className="w-full mt-3 rounded-xl text-xs shadow-sm"
                     onClick={(e) => {
                       e.stopPropagation()
                       handleUseTemplate(tpl)

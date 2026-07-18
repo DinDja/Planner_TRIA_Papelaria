@@ -49,6 +49,22 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+@theme {
+  /* Sombra em camadas para o papel do editor */
+  --shadow-paper:
+    0 1px 1px rgb(0 0 0 / 0.05),
+    0 4px 8px -2px rgb(0 0 0 / 0.07),
+    0 16px 40px -8px rgb(0 0 0 / 0.18),
+    0 48px 112px -32px rgb(0 0 0 / 0.3);
+  --shadow-paper-sheet:
+    0 1px 2px rgb(0 0 0 / 0.06),
+    0 8px 24px -8px rgb(0 0 0 / 0.14);
+  --shadow-lift:
+    0 1px 2px rgb(0 0 0 / 0.04),
+    0 8px 24px -8px rgb(0 0 0 / 0.12),
+    0 20px 48px -16px rgb(0 0 0 / 0.12);
+}
+
 :root {
   color-scheme: light;
   --background: oklch(0.972 0.008 84);
@@ -213,8 +229,99 @@
   background-size: 22px 22px;
 }
 
+/* Textura sutil de papel (ruído monocromático) — use com opacity baixa */
+@utility paper-grain {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 140px 140px;
+}
+
+/* Superfície da "mesa" ao redor do papel no editor */
+@utility desk-bg {
+  background-color: light-dark(#e4e1da, #121210);
+  background-image:
+    radial-gradient(
+      ellipse 90% 55% at 50% -5%,
+      light-dark(rgb(255 255 255 / 0.85), rgb(255 255 255 / 0.05)),
+      transparent
+    ),
+    radial-gradient(
+      ellipse 70% 50% at 50% 110%,
+      light-dark(rgb(0 0 0 / 0.05), rgb(0 0 0 / 0.35)),
+      transparent
+    ),
+    radial-gradient(
+      circle,
+      light-dark(rgb(0 0 0 / 0.055), rgb(255 255 255 / 0.045)) 1px,
+      transparent 1.4px
+    );
+  background-size:
+    100% 100%,
+    100% 100%,
+    26px 26px;
+}
+
 .canvas-touch {
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
+}
+
+/* ─── Honrar configurações do sistema (data attributes) ──────────────────── */
+
+/* Glass UI desligado: glass passa a ser sólido */
+html[data-glass="off"] .glass {
+  background: var(--card);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+html[data-glass="off"] .glass-strong {
+  background: var(--popover);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* Gradientes desligados por área — classes utilitárias */
+html[data-grad-dashboard="off"] [data-grad="dashboard"] {
+  background-image: none !important;
+}
+html[data-grad-covers="off"] [data-grad="cover"] {
+  background-image: none !important;
+}
+html[data-grad-charts="off"] [data-grad="chart"] {
+  background-image: none !important;
+  background: var(--primary) !important;
+}
+html[data-grad-badges="off"] [data-grad="badge"] {
+  background-image: none !important;
+}
+
+/* Textura de papel desligada no editor */
+html[data-paper-grain="off"] .paper-grain,
+html[data-paper-grain="off"] [data-paper-grain] {
+  background-image: none !important;
+}
+
+/* Fundo de "mesa" desligado no editor */
+html[data-desk-bg="off"] .desk-bg,
+html[data-desk-bg="off"] [data-desk-bg] {
+  background-image: none !important;
+}
+
+/* Reduzir movimento */
+html[data-reduce-motion="on"] *,
+html[data-reduce-motion="on"] *::before,
+html[data-reduce-motion="on"] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:not([data-reduce-motion="off"]) *,
+  html:not([data-reduce-motion="off"]) *::before,
+  html:not([data-reduce-motion="off"]) *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
 }

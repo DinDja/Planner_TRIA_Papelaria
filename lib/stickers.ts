@@ -15,6 +15,9 @@ export const STICKER_CATEGORIES = [
   'Viagem',
   'Fitness',
   'Datas comemorativas',
+  'Hand-drawn',
+  'Flat',
+  'Animados',
 ] as const
 
 const s = (body: string) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">${body}</svg>`
@@ -141,5 +144,5 @@ export function stickerToDataUrl(def: StickerDef): string {
 }
 
 export function getSticker(id: string): StickerDef | undefined {
-  return STICKERS.find((st) => st.id === id)
+  return ALL_STICKERS.find((st) => st.id === id)
 }

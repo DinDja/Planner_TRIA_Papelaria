@@ -53,6 +53,9 @@ interface EditorState {
   panY: number
   pageRotation: number
   setZoom: (z: number) => void
+  zoomIn: () => void
+  zoomOut: () => void
+  fitToScreen: () => void
   setPan: (x: number, y: number) => void
   setPageRotation: (deg: number) => void
   toggleRotation: () => void
@@ -166,6 +169,9 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
   panY: 0,
   pageRotation: 0,
   setZoom: (z) => set({ zoom: Math.min(4, Math.max(0.2, z)) }),
+  zoomIn: () => set((s) => ({ zoom: Math.min(4, s.zoom * 1.15) })),
+  zoomOut: () => set((s) => ({ zoom: Math.max(0.2, s.zoom / 1.15) })),
+  fitToScreen: () => set({ zoom: 1, panX: 0, panY: 0 }),
   setPan: (x, y) => set({ panX: x, panY: y }),
   setPageRotation: (deg) => set({ pageRotation: deg }),
   toggleRotation: () =>

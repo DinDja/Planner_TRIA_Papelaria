@@ -4,13 +4,13 @@ import { useAppStore } from '@/lib/store/use-app-store'
 import { cn } from '@/lib/utils'
 import { motion } from 'framer-motion'
 import {
+  ArrowDown,
+  ArrowUp,
   BookOpen,
   BriefcaseBusiness,
-  Calendar,
-  Command,
+  CornerDownLeft,
   FileText,
   LayoutDashboard,
-  Plus,
   Search,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
@@ -22,6 +22,8 @@ interface PaletteItem {
   icon: typeof FileText
   href: string
   color?: string
+  section: string
+  tag?: string
 }
 
 interface CommandPaletteProps {
@@ -45,9 +47,9 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
   }, [open])
 
   const baseActions: PaletteItem[] = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, href: '/' },
-    { id: 'templates', label: 'Galeria de templates', icon: BookOpen, href: '/templates' },
-    { id: 'plans', label: 'Planos', icon: BriefcaseBusiness, href: '/plans' },
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, href: '/', section: 'Navegação' },
+    { id: 'templates', label: 'Galeria de templates', icon: BookOpen, href: '/templates', section: 'Navegação' },
+    { id: 'plans', label: 'Planos', icon: BriefcaseBusiness, href: '/plans', section: 'Navegação' },
   ]
 
   const plannerActions: PaletteItem[] = planners.map((p) => ({
@@ -56,12 +58,26 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
     icon: FileText,
     href: `/planner/${p.id}`,
     color: p.color,
+    section: 'Seus planners',
+    tag: 'Planner',
   }))
 
   const allItems: PaletteItem[] = [...baseActions, ...plannerActions]
   const filtered = query
     ? allItems.filter((item) => item.label.toLowerCase().includes(query.toLowerCase()))
     : allItems
+
+  // Agrupa mantendo a ordem das seções
+  const sections = filtered.reduce<{ name: string; items: (PaletteItem & { idx: number })[] }[]>(
+    (acc, item) => {
+      const idx = filtered.indexOf(item)
+      const last = acc[acc.length - 1]
+      if (last && last.name === item.section) last.items.push({ ...item, idx })
+      else acc.push({ name: item.section, items: [{ ...item, idx }] })
+      return acc
+    },
+    [],
+  )
 
   const clampedIdx = Math.min(selectedIdx, Math.max(0, filtered.length - 1))
 
@@ -107,19 +123,19 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-start justify-center pt-[15vh]">
+    <div className="fixed inset-0 z-[100] flex items-start justify-center pt-[15vh] px-4">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/30 backdrop-blur-sm"
+        className="fixed inset-0 bg-black/45 backdrop-blur-md"
         onClick={onClose}
       />
       <motion.div
-        initial={{ opacity: 0, scale: 0.96, y: -10 }}
+        initial={{ opacity: 0, scale: 0.97, y: -12 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.96, y: -10 }}
-        transition={{ duration: 0.15 }}
+        exit={{ opacity: 0, scale: 0.97, y: -12 }}
+        transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
         className="relative z-[101] w-full max-w-xl glass-strong rounded-3xl border border-border/40 shadow-2xl overflow-hidden"
       >
         <div className="flex items-center gap-3 px-5 py-4 border-b border-border/30">
@@ -135,45 +151,86 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
             placeholder="Buscar planners, páginas, templates..."
             className="flex-1 bg-transparent text-[15px] outline-none placeholder:text-muted-foreground/60"
           />
-          <kbd className="inline-flex items-center gap-0.5 rounded-lg border border-border bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
+          <kbd className="inline-flex items-center gap-0.5 rounded-lg border border-border bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
             ESC
           </kbd>
         </div>
-        <div className="max-h-[360px] overflow-auto py-2">
+
+        <div className="max-h-[360px] overflow-auto scrollbar-thin py-2">
           {filtered.length === 0 ? (
-            <div className="px-5 py-8 text-center text-sm text-muted-foreground">
-              Nenhum resultado encontrado.
+            <div className="px-5 py-10 text-center">
+              <Search size={22} className="mx-auto text-muted-foreground/40 mb-2" />
+              <p className="text-sm text-muted-foreground">Nenhum resultado para “{query}”.</p>
             </div>
           ) : (
-            filtered.map((item, i) => (
-              <button
-                key={item.id}
-                onClick={() => navigate(item.href)}
-                onMouseEnter={() => setSelectedIdx(i)}
-                className={cn(
-                  'flex items-center gap-3 w-full px-5 py-2.5 text-sm transition-colors',
-                  i === clampedIdx && 'bg-muted',
-                  'hover:bg-muted/60',
-                )}
-              >
-                <div
-                  className="flex size-8 items-center justify-center rounded-xl shrink-0"
-                  style={{
-                    backgroundColor: item.color ? item.color + '18' : undefined,
-                  }}
-                >
-                  <item.icon
-                    size={16}
-                    style={{ color: item.color ?? undefined }}
-                  />
-                </div>
-                <span className="flex-1 text-left">{item.label}</span>
-                <span className="text-[11px] text-muted-foreground">
-                  {item.id.startsWith('pl-') ? 'Planner' : ''}
-                </span>
-              </button>
+            sections.map((section) => (
+              <div key={section.name} className="mb-1 last:mb-0">
+                <p className="px-5 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+                  {section.name}
+                </p>
+                {section.items.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => navigate(item.href)}
+                    onMouseEnter={() => setSelectedIdx(item.idx)}
+                    className={cn(
+                      'flex items-center gap-3 w-full px-5 py-2.5 text-sm transition-colors cursor-pointer',
+                      item.idx === clampedIdx && 'bg-muted',
+                      'hover:bg-muted/60',
+                    )}
+                  >
+                    <div
+                      className={cn(
+                        'flex size-8 items-center justify-center rounded-xl shrink-0 transition-colors',
+                        !item.color && 'bg-muted text-muted-foreground',
+                      )}
+                      style={
+                        item.color
+                          ? { backgroundColor: item.color + '18', color: item.color }
+                          : undefined
+                      }
+                    >
+                      <item.icon size={16} />
+                    </div>
+                    <span className="flex-1 text-left truncate">{item.label}</span>
+                    {item.tag && (
+                      <span className="text-[10px] font-medium text-muted-foreground/80 rounded-full border border-border/60 px-2 py-0.5">
+                        {item.tag}
+                      </span>
+                    )}
+                    {item.idx === clampedIdx && (
+                      <CornerDownLeft size={13} className="text-muted-foreground/60 shrink-0" />
+                    )}
+                  </button>
+                ))}
+              </div>
             ))
           )}
+        </div>
+
+        {/* Footer com dicas */}
+        <div className="flex items-center gap-4 border-t border-border/30 px-5 py-2.5 text-[10px] text-muted-foreground/80">
+          <span className="inline-flex items-center gap-1.5">
+            <kbd className="inline-flex items-center rounded-md border border-border/60 bg-muted/60 px-1.5 py-0.5">
+              <ArrowUp size={10} />
+            </kbd>
+            <kbd className="inline-flex items-center rounded-md border border-border/60 bg-muted/60 px-1.5 py-0.5">
+              <ArrowDown size={10} />
+            </kbd>
+            navegar
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <kbd className="inline-flex items-center rounded-md border border-border/60 bg-muted/60 px-1.5 py-0.5">
+              <CornerDownLeft size={10} />
+            </kbd>
+            abrir
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <kbd className="inline-flex items-center rounded-md border border-border/60 bg-muted/60 px-1.5 py-0.5 font-medium">
+              esc
+            </kbd>
+            fechar
+          </span>
         </div>
       </motion.div>
     </div>

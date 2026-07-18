@@ -62,13 +62,53 @@ export function Input({
 export function ScrollArea({
   className,
   children,
-}: {
-  className?: string
-  children: React.ReactNode
-}) {
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={cn('overflow-auto scrollbar-thin', className)}>
+    <div className={cn('overflow-auto scrollbar-thin', className)} {...props}>
       {children}
     </div>
+  )
+}
+
+// ─── Switch / Toggle ──────────────────────────────────────────────────────────
+
+export function Switch({
+  checked,
+  onCheckedChange,
+  disabled,
+  className,
+  'aria-label': ariaLabel,
+}: {
+  checked: boolean
+  onCheckedChange: (v: boolean) => void
+  disabled?: boolean
+  className?: string
+  'aria-label'?: string
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={ariaLabel}
+      disabled={disabled}
+      onClick={() => onCheckedChange(!checked)}
+      className={cn(
+        'relative inline-flex h-5.5 w-10 shrink-0 items-center rounded-full transition-colors outline-none cursor-pointer',
+        'focus-visible:ring-2 focus-visible:ring-primary/40',
+        checked ? 'bg-primary' : 'bg-muted-foreground/25',
+        disabled && 'opacity-50 cursor-not-allowed',
+        className,
+      )}
+      style={{ height: '1.375rem' }}
+    >
+      <span
+        className={cn(
+          'pointer-events-none block size-4 rounded-full bg-white shadow-sm transition-transform',
+          checked ? 'translate-x-[1.25rem]' : 'translate-x-0.5',
+        )}
+      />
+    </button>
   )
 }

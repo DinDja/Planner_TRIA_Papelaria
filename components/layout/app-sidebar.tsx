@@ -15,6 +15,7 @@ import {
   PanelLeftOpen,
   Plus,
   Search,
+  Settings,
   Sun,
   Tag,
   X,
@@ -34,6 +35,7 @@ interface SidebarProps {
   mobileOpen: boolean
   setMobileOpen: (v: boolean) => void
   onOpenCreate: () => void
+  onOpenSettings: () => void
 }
 
 const NAV_ITEMS = [
@@ -48,6 +50,7 @@ export function AppSidebar({
   mobileOpen,
   setMobileOpen,
   onOpenCreate,
+  onOpenSettings,
 }: SidebarProps) {
   const { theme, toggle } = useTheme()
   const pathname = usePathname()
@@ -66,7 +69,7 @@ export function AppSidebar({
         )}
         <button
           onClick={() => setMobileOpen(false)}
-          className="ml-auto rounded-lg p-1 hover:bg-muted md:hidden"
+          className="ml-auto rounded-lg p-1 hover:bg-muted md:hidden cursor-pointer"
         >
           <X size={16} />
         </button>
@@ -164,7 +167,7 @@ export function AppSidebar({
                   return (
                     <span
                       key={tag}
-                      className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs transition-colors cursor-pointer"
+                      className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs transition-colors cursor-pointer hover:brightness-110 hover:opacity-90"
                       style={{
                         backgroundColor: colors[i] + '20',
                         color: colors[i],
@@ -214,6 +217,15 @@ export function AppSidebar({
         >
           {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
           {!collapsed && (theme === 'dark' ? 'Modo claro' : 'Modo escuro')}
+        </Button>
+        <Button
+          variant="ghost"
+          size={collapsed ? 'icon' : 'icon-sm'}
+          onClick={onOpenSettings}
+          className="rounded-xl"
+          aria-label="Configurações"
+        >
+          <Settings size={15} />
         </Button>
         <Button
           variant="ghost"

@@ -8,9 +8,10 @@ interface ThemeCtx {
   theme: Theme
   toggle: () => void
   setTheme: (t: Theme) => void
+  mounted: boolean
 }
 
-const ThemeContext = createContext<ThemeCtx>({ theme: 'light', toggle: () => {}, setTheme: () => {} })
+const ThemeContext = createContext<ThemeCtx>({ theme: 'light', toggle: () => {}, setTheme: () => {}, mounted: false })
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>('light')
@@ -58,7 +59,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     return <>{children}</>
   }
 
-  return <ThemeContext value={{ theme, toggle, setTheme }}>{children}</ThemeContext>
+  return <ThemeContext value={{ theme, toggle, setTheme, mounted }}>{children}</ThemeContext>
 }
 
 export function useTheme() {

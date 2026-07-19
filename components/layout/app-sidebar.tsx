@@ -39,7 +39,7 @@ interface SidebarProps {
 }
 
 const NAV_ITEMS = [
-  { href: '/', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/templates', label: 'Templates', icon: BookOpen },
   { href: '/plans', label: 'Planos', icon: BriefcaseBusiness },
 ]
@@ -60,13 +60,8 @@ export function AppSidebar({
   const sidebarContent = (
     <div className="flex h-full flex-col">
       {/* Logo */}
-      <div className={cn('flex items-center gap-3 px-4 h-14 shrink-0', collapsed && 'justify-center px-2')}>
-        <div className="flex size-8 items-center justify-center rounded-xl bg-primary/15">
-          <span className="text-primary font-bold text-sm">P</span>
-        </div>
-        {!collapsed && (
-          <span className="font-semibold text-base tracking-tight">PlannerHub</span>
-        )}
+      <div className={cn('flex items-center px-4 h-14 shrink-0', collapsed && 'justify-center px-2')}>
+        <img src="/logo.svg" alt="PlannerHub" className="h-12 w-auto" />
         <button
           onClick={() => setMobileOpen(false)}
           className="ml-auto rounded-lg p-1 hover:bg-muted md:hidden cursor-pointer"

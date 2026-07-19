@@ -21,22 +21,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const stored = localStorage.getItem('plannerhub-theme') as Theme | null
     if (stored === 'light' || stored === 'dark') {
       setThemeState(stored)
-    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      setThemeState('dark')
     }
     setMounted(true)
-  }, [])
-
-  // Listen for system changes when no stored pref
-  useEffect(() => {
-    const mq = window.matchMedia('(prefers-color-scheme: dark)')
-    const handler = (e: MediaQueryListEvent) => {
-      if (!localStorage.getItem('plannerhub-theme')) {
-        setThemeState(e.matches ? 'dark' : 'light')
-      }
-    }
-    mq.addEventListener('change', handler)
-    return () => mq.removeEventListener('change', handler)
   }, [])
 
   useEffect(() => {

@@ -10,28 +10,25 @@ import type {
   Stroke,
   StrokePoint,
   StickerInstance,
+  TextItem,
+  ShapeItem,
+  StickyNote,
 } from '@/lib/types'
 import { EMPTY_CANVAS, PAGE_HEIGHT, PAGE_WIDTH } from '@/lib/types'
 import { PAGE_TEMPLATES, drawTemplate, getTemplateColors, type TemplateColors } from '@/lib/templates'
 import { cn } from '@/lib/utils'
 import { motion, AnimatePresence } from 'framer-motion'
 import { getStroke } from 'perfect-freehand'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, memo } from 'react'
+import { useHandwritingOcr } from './hooks/use-handwriting-ocr'
 import { TemplateThumbnail } from '../templates-page/template-thumbnail'
 import { Button } from '../ui/button'
-import { Card } from '../ui/card'
 import { Input, ScrollArea } from '../ui/primitives'
 import { Separator } from '../ui/primitives'
 import {
-  Dialog,
-  DialogContent,
-  DialogTrigger,
   Popover,
   PopoverContent,
   PopoverTrigger,
-  Tab,
-  TabList,
-  Tabs,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -47,17 +44,14 @@ import {
   Eraser,
   Grid3X3,
   Highlighter,
-  Image,
   Lasso,
   Layers,
-  Link,
   Lock,
   Maximize2,
   Minimize2,
   Minus,
   MousePointer2,
   Pencil,
-  PencilRuler,
   Pen,
   Plus,
   Redo2,
@@ -65,34 +59,30 @@ import {
   RotateCcw,
   Ruler,
   ScanText,
-  Search,
   Square,
   Star,
   StickyNote,
-  Table,
   Trash2,
   Type,
   Undo2,
   Upload,
-  Video,
+  Unlock,
   X,
   FileText,
-  FileImage,
-  FileSpreadsheet,
-  FileType2,
-  Music,
   Download,
-  Heart,
   PlusCircle,
   GripHorizontal,
   Check,
+  BringToFront,
+  SendToBack,
 } from 'lucide-react'
 
 import { ALL_STICKERS, STICKER_CATEGORIES, stickerToDataUrl } from '@/lib/stickers'
-import { Player as LottiePlayer } from '@lottiefiles/react-lottie-player'
+import dynamic from 'next/dynamic'
 import { useCanvasPointer } from './hooks/use-canvas-pointer'
+import { ContextMenu, type ContextMenuAction } from './context-menu'
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Helpers ────────────────────────────────────────────────────────────────
 
 const uid = () => Math.random().toString(36).slice(2, 10)
 
@@ -106,21 +96,100 @@ function vecToSvgPath(points: [number, number][]): string {
 
 import type { ToolType } from '@/lib/types'
 
-const toolbarItems = (): { id: ToolType; icon: typeof Pen; label: string }[] => {
-  return [
-    { id: 'pen', icon: Pen, label: 'Caneta' },
-    { id: 'pencil', icon: Pencil, label: 'Lápis' },
-    { id: 'highlighter', icon: Highlighter, label: 'Marca-texto' },
-    { id: 'eraser', icon: Eraser, label: 'Borracha' },
-    { id: 'lasso', icon: Lasso, label: 'Seleção' },
-    { id: 'ruler', icon: Ruler, label: 'Régua' },
-    { id: 'text', icon: Type, label: 'Texto' },
-    { id: 'sticker', icon: Star, label: 'Sticker' },
-    { id: 'pan', icon: MousePointer2, label: 'Mover' },
-  ]
-}
+const toolbarItems = (): { id: ToolType; icon: typeof Pen; label: string; shortcut: string }[] => [
+  { id: 'pen', icon: Pen, label: 'Caneta', shortcut: '1' },
+  { id: 'pencil', icon: Pencil, label: 'Lápis', shortcut: '2' },
+  { id: 'highlighter', icon: Highlighter, label: 'Marca-texto', shortcut: '3' },
+  { id: 'eraser', icon: Eraser, label: 'Borracha', shortcut: '4' },
+  { id: 'lasso', icon: Lasso, label: 'Seleção', shortcut: '5' },
+  { id: 'ruler', icon: Ruler, label: 'Régua', shortcut: '6' },
+  { id: 'text', icon: Type, label: 'Texto', shortcut: '7' },
+  { id: 'sticker', icon: Star, label: 'Sticker', shortcut: '8' },
+  { id: 'pan', icon: MousePointer2, label: 'Mover', shortcut: '9' },
+]
 
-// ─── Main Editor ──────────────────────────────────────────────────────────────
+// ─── Memoized SVG components ────────────────────────────────────────────────
+
+const StrokePath = memo(function StrokePath({ s }: { s: Stroke }) {
+  try {
+    const pathD = vecToSvgPath(getStroke(s.points, {
+      size: s.tool === 'highlighter' ? s.size * 1.5 : s.size,
+      thinning: s.tool === 'pencil' ? 0.8 : s.tool === 'highlighter' ? 0.2 : 0.5,
+      smoothing: 0.6,
+      streamline: 0.4,
+    }))
+    return (
+      <g>
+        {s.tool === 'highlighter' ? (
+          <path
+            d={pathD}
+            fill={s.color}
+            opacity={s.opacity * 0.7}
+            style={{ mixBlendMode: 'multiply' }}
+          />
+        ) : (
+          <path d={pathD} fill={s.color} opacity={s.opacity} />
+        )}
+      </g>
+    )
+  } catch {
+    return null
+  }
+})
+
+const ShapeRenderer = memo(function ShapeRenderer({ shape }: { shape: ShapeItem }) {
+  const common = { opacity: 0.92 }
+  const x = shape.x
+  const y = shape.y
+  const w = shape.width
+  const h = shape.height
+  const cx = x + w / 2
+  const cy = y + h / 2
+  const c = shape.color
+
+  switch (shape.kind) {
+    case 'rectangle':
+      return <rect x={x} y={y} width={w} height={h} rx={8} fill={c} {...common} />
+    case 'ellipse':
+      return <ellipse cx={cx} cy={cy} rx={w / 2} ry={h / 2} fill={c} {...common} />
+    case 'triangle':
+      return (
+        <polygon
+          points={`${cx},${y} ${x + w},${y + h} ${x},${y + h}`}
+          fill={c}
+          {...common}
+        />
+      )
+    case 'line': {
+      const yc = cy
+      const sw = Math.max(2, Math.min(6, h / 8))
+      return <line x1={x} y1={yc} x2={x + w} y2={yc} stroke={c} strokeWidth={sw} strokeLinecap="round" {...common} />
+    }
+    case 'arrow': {
+      const yc = cy
+      const x1 = x
+      const x2 = x + w
+      const headLen = Math.min(24, w * 0.35)
+      const headW = Math.max(6, Math.min(12, h * 0.3))
+      const angle = Math.atan2(0, 1) // horizontal
+      const hx1 = x2 - headLen * Math.cos(angle) + headW * Math.sin(angle)
+      const hy1 = yc - headLen * Math.sin(angle) - headW * Math.cos(angle)
+      const hx2 = x2
+      const hy2 = yc
+      const hx3 = x2 - headLen * Math.cos(angle) - headW * Math.sin(angle)
+      const hy3 = yc - headLen * Math.sin(angle) + headW * Math.cos(angle)
+      const sw = Math.max(2.5, Math.min(5, h * 0.12))
+      return (
+        <g>
+          <line x1={x1} y1={yc} x2={x2 - headLen} y2={yc} stroke={c} strokeWidth={sw} strokeLinecap="round" {...common} />
+          <polygon points={`${hx1},${hy1} ${hx2},${hy2} ${hx3},${hy3}`} fill={c} {...common} />
+        </g>
+      )
+    }
+  }
+})
+
+// ─── Main Editor ─────────────────────────────────────────────────────────────
 
 export function PlannerEditor({ planner }: { planner: Planner }) {
   const { theme } = useTheme()
@@ -145,13 +214,28 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
   const [showPagesPanel, setShowPagesPanel] = useState(false)
   const [showStickerPanel, setShowStickerPanel] = useState(false)
   const [stickerSearch, setStickerSearch] = useState('')
-  const [stickerCat, setStickerCat] = useState('all')
+  const [stickerCat, setStickerCat] = useState<'all' | 'favorites' | string>('all')
   const [favoriteStickers, setFavoriteStickers] = useState<Set<string>>(new Set())
   const [showOcrPanel, setShowOcrPanel] = useState(false)
   const [showInsertMenu, setShowInsertMenu] = useState(false)
   const [showExportMenu, setShowExportMenu] = useState(false)
   const [showImportMenu, setShowImportMenu] = useState(false)
   const [autoSaveStatus, setAutoSaveStatus] = useState<'saved' | 'saving'>('saved')
+  const [ctxMenu, setCtxMenu] = useState<{
+    x: number
+    y: number
+    target: { type: 'sticker' | 'shape' | 'note' | 'text'; id: string; locked?: boolean } | null
+  } | null>(null)
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
+  const noteEditCancelRef = useRef(false)
+
+  // Client-only dynamic import for LottiePlayer (uses `document` at module eval)
+  const LottiePlayer = dynamic(() => import('@lottiefiles/react-lottie-player').then((m) => m.Player), {
+    ssr: false,
+  })
+
+  // Eraser cursor ref
+  const eraserCursorRef = useRef<HTMLDivElement>(null)
 
   const pages = planner.pages.length > 0 ? planner.pages : []
   const currentPage = pages[currentPageIdx] ?? null
@@ -166,14 +250,15 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
     setCurrentPageIdx(pages.length)
   }
 
-  const handleDeletePage = () => {
-    if (!currentPage) return
+  const handleDeletePageAt = (idx: number) => {
+    const page = pages[idx]
+    if (!page) return
     if (pages.length <= 1) {
       toast({ title: 'Precisa ter ao menos uma página', variant: 'error' })
       return
     }
-    deletePage(planner.id, currentPage.id)
-    setCurrentPageIdx(Math.max(0, currentPageIdx - 1))
+    deletePage(planner.id, page.id)
+    if (idx <= currentPageIdx) setCurrentPageIdx(Math.max(0, currentPageIdx - 1))
   }
 
   const handleChangeTemplate = (tpl: PageTemplateId) => {
@@ -181,19 +266,20 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
     updatePageTemplate(planner.id, currentPage.id, tpl)
   }
 
+  // Undo/Redo with current data
   const handleUndo = () => {
     if (!currentPage) return
-    const prev = editor.undo(currentPage.id)
+    const prev = editor.undo(currentPage.id, data)
     if (prev) updatePageData(planner.id, currentPage.id, prev)
   }
 
   const handleRedo = () => {
     if (!currentPage) return
-    const next = editor.redo(currentPage.id)
+    const next = editor.redo(currentPage.id, data)
     if (next) updatePageData(planner.id, currentPage.id, next)
   }
 
-  // ─── Canvas refs & pointer hook ─────────────────────────────────────────────
+  // ─── Canvas refs & pointer hook ────────────────────────────────────────────
 
   const canvasRef = useRef<HTMLDivElement>(null)
   const bgCanvasRef = useRef<HTMLCanvasElement>(null)
@@ -211,21 +297,51 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
     selectedStickerId,
     selectedShapeId,
     selectedNoteId,
+    selectedTextId,
     resizingHandle,
+    isPanning,
     clearSelection,
     getPageCoords,
     handlePointerDown,
     handlePointerMove,
     handlePointerUp,
+    handleDoubleClick,
     setResizingHandle,
     setTextInput,
     commit,
+    beginResize,
   } = useCanvasPointer({
     plannerId: planner.id,
     currentPageId: currentPage?.id ?? null,
     data,
     canvasRef,
   })
+
+  // ─── OCR ────────────────────────────────────────────────────────────────────
+
+  const insertOcrText = useCallback(
+    (text: string) => {
+      if (!currentPage || !text.trim()) return
+      const newData = JSON.parse(JSON.stringify(data)) as CanvasData
+      newData.texts = [
+        ...newData.texts,
+        {
+          id: uid(),
+          x: PAGE_WIDTH / 2 - 120,
+          y: PAGE_HEIGHT / 2 - 20,
+          text: text.trim(),
+          color: editor.textColor,
+          fontSize: editor.textFontSize,
+          fontFamily: editor.textFontFamily,
+        },
+      ]
+      commit(newData)
+      toast({ title: 'Texto inserido', description: 'Toque para editar ou arrastar' })
+    },
+    [currentPage, data, editor.textColor, editor.textFontSize, editor.textFontFamily, commit],
+  )
+
+  const ocr = useHandwritingOcr({ lang: 'por' })
 
   useEffect(() => {
     const canvas = bgCanvasRef.current
@@ -252,6 +368,7 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
     return () => el.removeEventListener('wheel', onWheel)
   }, [editor])
 
+  // Autosave indicator
   useEffect(() => {
     setAutoSaveStatus('saving')
     const timer = setTimeout(() => setAutoSaveStatus('saved'), 300)
@@ -262,16 +379,30 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
 
   const stickers = useMemo(() => {
     let filtered = ALL_STICKERS
-    if (stickerCat !== 'all') filtered = filtered.filter((s) => s.category === stickerCat)
-    if (stickerSearch)
+    if (stickerCat === 'favorites') {
+      filtered = filtered.filter((s) => favoriteStickers.has(s.id))
+    } else if (stickerCat !== 'all') {
+      filtered = filtered.filter((s) => s.category === stickerCat)
+    }
+    if (stickerSearch) {
       filtered = filtered.filter((s) => s.name.toLowerCase().includes(stickerSearch.toLowerCase()))
+    }
     return filtered
-  }, [stickerCat, stickerSearch])
+  }, [stickerCat, stickerSearch, favoriteStickers])
 
-  // ─── Keyboard shortcuts ─────────────────────────────────────────────────────
+  // ─── Keyboard shortcuts ────────────────────────────────────────────────────
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement
+      const typing = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable
+
+      if (typing) {
+        if (e.key === 'Escape') (target as HTMLInputElement).blur?.()
+        return
+      }
+
+      // Undo / Redo
       if ((e.metaKey || e.ctrlKey) && e.key === 'z' && !e.shiftKey) {
         e.preventDefault()
         handleUndo()
@@ -280,38 +411,159 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
         e.preventDefault()
         handleRedo()
       }
+
+      // Page navigation (Alt+arrows)
       if (e.key === 'ArrowLeft' && e.altKey) {
         goToPage(currentPageIdx - 1)
       }
       if (e.key === 'ArrowRight' && e.altKey) {
         goToPage(currentPageIdx + 1)
       }
+
+      // Tool shortcuts 1-9
+      if (!e.metaKey && !e.ctrlKey && !e.altKey) {
+        const num = ['1', '2', '3', '4', '5', '6', '7', '8', '9'].indexOf(e.key)
+        if (num >= 0) {
+          e.preventDefault()
+          const tool = toolbarItems()[num]?.id
+          if (tool) {
+            setTool(tool)
+            if (tool === 'sticker') setShowStickerPanel(true)
+          }
+        }
+      }
+
+      // Zoom shortcuts
+      if ((e.metaKey || e.ctrlKey) && (e.key === '=' || e.key === '+')) {
+        e.preventDefault()
+        editor.zoomIn()
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === '-') {
+        e.preventDefault()
+        editor.zoomOut()
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === '0') {
+        e.preventDefault()
+        editor.fitToScreen()
+      }
+
+      // Delete / Backspace
       if (e.key === 'Delete' || e.key === 'Backspace') {
         if (selectedStickerId) {
+          e.preventDefault()
           const newData = JSON.parse(JSON.stringify(data)) as CanvasData
           newData.stickers = newData.stickers.filter((s) => s.id !== selectedStickerId)
           commit(newData)
           clearSelection()
         } else if (selectedShapeId) {
+          e.preventDefault()
           const newData = JSON.parse(JSON.stringify(data)) as CanvasData
           newData.shapes = newData.shapes.filter((s) => s.id !== selectedShapeId)
           commit(newData)
           clearSelection()
         } else if (selectedNoteId) {
+          e.preventDefault()
           const newData = JSON.parse(JSON.stringify(data)) as CanvasData
           newData.stickyNotes = newData.stickyNotes.filter((n) => n.id !== selectedNoteId)
           commit(newData)
           clearSelection()
+        } else if (selectedTextId) {
+          e.preventDefault()
+          const newData = JSON.parse(JSON.stringify(data)) as CanvasData
+          newData.texts = newData.texts.filter((t) => t.id !== selectedTextId)
+          commit(newData)
+          clearSelection()
+        }
+      }
+
+      // Escape - clear selection / close panels
+      if (e.key === 'Escape') {
+        clearSelection()
+        setTextInput(null)
+        setEditingNoteId(null)
+      }
+
+      // Ctrl+D duplicate
+      if ((e.metaKey || e.ctrlKey) && e.key === 'd') {
+        e.preventDefault()
+        if (selectedStickerId) {
+          const orig = data.stickers.find((s) => s.id === selectedStickerId)
+          if (orig) {
+            const newData = JSON.parse(JSON.stringify(data)) as CanvasData
+            newData.stickers = [...newData.stickers, { ...orig, id: uid(), x: orig.x + 20, y: orig.y + 20 }]
+            commit(newData)
+            toast({ title: 'Duplicado' })
+          }
+        } else if (selectedShapeId) {
+          const orig = data.shapes.find((s) => s.id === selectedShapeId)
+          if (orig) {
+            const newData = JSON.parse(JSON.stringify(data)) as CanvasData
+            newData.shapes = [...newData.shapes, { ...orig, id: uid(), x: orig.x + 20, y: orig.y + 20 }]
+            commit(newData)
+            toast({ title: 'Duplicado' })
+          }
+        } else if (selectedNoteId) {
+          const orig = data.stickyNotes.find((n) => n.id === selectedNoteId)
+          if (orig) {
+            const newData = JSON.parse(JSON.stringify(data)) as CanvasData
+            newData.stickyNotes = [...newData.stickyNotes, { ...orig, id: uid(), x: orig.x + 20, y: orig.y + 20 }]
+            commit(newData)
+            toast({ title: 'Duplicado' })
+          }
+        } else if (selectedTextId) {
+          const orig = data.texts.find((t) => t.id === selectedTextId)
+          if (orig) {
+            const newData = JSON.parse(JSON.stringify(data)) as CanvasData
+            newData.texts = [...newData.texts, { ...orig, id: uid(), x: orig.x + 20, y: orig.y + 20 }]
+            commit(newData)
+            toast({ title: 'Duplicado' })
+          }
+        }
+      }
+
+      // Nudge with arrows (when selection exists)
+      if (!e.altKey && !e.metaKey && !e.ctrlKey && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+        const hasSelection = selectedStickerId || selectedShapeId || selectedNoteId || selectedTextId
+        if (hasSelection) {
+          e.preventDefault()
+          const step = e.shiftKey ? 10 : 1
+          let dx = 0, dy = 0
+          if (e.key === 'ArrowUp') dy = -step
+          if (e.key === 'ArrowDown') dy = step
+          if (e.key === 'ArrowLeft') dx = -step
+          if (e.key === 'ArrowRight') dx = step
+
+          const newData = JSON.parse(JSON.stringify(data)) as CanvasData
+          if (selectedStickerId) {
+            newData.stickers = newData.stickers.map((s) =>
+              s.id === selectedStickerId ? { ...s, x: s.x + dx, y: s.y + dy } : s,
+            )
+          } else if (selectedShapeId) {
+            newData.shapes = newData.shapes.map((s) =>
+              s.id === selectedShapeId ? { ...s, x: s.x + dx, y: s.y + dy } : s,
+            )
+          } else if (selectedNoteId) {
+            newData.stickyNotes = newData.stickyNotes.map((n) =>
+              n.id === selectedNoteId ? { ...n, x: n.x + dx, y: n.y + dy } : n,
+            )
+          } else if (selectedTextId) {
+            newData.texts = newData.texts.map((t) =>
+              t.id === selectedTextId ? { ...t, x: t.x + dx, y: t.y + dy } : t,
+            )
+          }
+          commit(newData)
         }
       }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [currentPageIdx, handleUndo, handleRedo, selectedStickerId, selectedShapeId, selectedNoteId, data, commit, clearSelection])
+  }, [
+    currentPageIdx, data, handleUndo, handleRedo,
+    selectedStickerId, selectedShapeId, selectedNoteId, selectedTextId,
+    commit, clearSelection, setTextInput, editor, setTool,
+  ])
 
-  // ─── Sticker drop onto canvas ───────────────────────────────────────────────
-
-  const [droppingStickerId, setDroppingStickerId] = useState<string | null>(null)
+  // ─── Sticker drop onto canvas ──────────────────────────────────────────────
 
   const placeSticker = useCallback((stickerId: string, x: number, y: number) => {
     const newData = JSON.parse(JSON.stringify(data)) as CanvasData
@@ -328,7 +580,210 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
     commit(newData)
   }, [commit, data])
 
-  // ─── Render strokes as SVG ──────────────────────────────────────────────────
+  // ─── Context menu ──────────────────────────────────────────────────────────
+
+  const handleContextMenu = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    const pt = getPageCoords(e as unknown as React.PointerEvent)
+    // Hit test order: notes (top), texts, stickers, shapes (bottom)
+    for (const n of [...data.stickyNotes].reverse()) {
+      if (pt.x >= n.x && pt.x <= n.x + 120 && pt.y >= n.y && pt.y <= n.y + 120) {
+        setCtxMenu({ x: e.clientX, y: e.clientY, target: { type: 'note', id: n.id } })
+        return
+      }
+    }
+    for (const t of [...data.texts].reverse()) {
+      const w = Math.max(20, t.text.length * t.fontSize * 0.58)
+      const h = t.fontSize * 1.3
+      if (pt.x >= t.x && pt.x <= t.x + w && pt.y >= t.y && pt.y <= t.y + h) {
+        setCtxMenu({ x: e.clientX, y: e.clientY, target: { type: 'text', id: t.id } })
+        return
+      }
+    }
+    for (const s of [...data.stickers].reverse()) {
+      if (pt.x >= s.x && pt.x <= s.x + s.width && pt.y >= s.y && pt.y <= s.y + s.height) {
+        setCtxMenu({ x: e.clientX, y: e.clientY, target: { type: 'sticker', id: s.id, locked: s.locked } })
+        return
+      }
+    }
+    for (const s of [...data.shapes].reverse()) {
+      if (pt.x >= s.x && pt.x <= s.x + s.width && pt.y >= s.y && pt.y <= s.y + s.height) {
+        setCtxMenu({ x: e.clientX, y: e.clientY, target: { type: 'shape', id: s.id } })
+        return
+      }
+    }
+    setCtxMenu({ x: e.clientX, y: e.clientY, target: null })
+  }, [data, getPageCoords])
+
+  const buildCtxMenuActions = useCallback((): ContextMenuAction[] => {
+    const actions: ContextMenuAction[] = []
+
+    if (!ctxMenu?.target) {
+      actions.push(
+        { id: 'add-sticky-note', label: 'Nova nota adesiva', icon: StickyNote, onClick: () => {
+          const newData = JSON.parse(JSON.stringify(data)) as CanvasData
+          newData.stickyNotes = [...newData.stickyNotes, {
+            id: uid(), x: 200, y: 200 + Math.random() * 200, text: '', color: '#f0b429',
+          }]
+          commit(newData)
+          toast({ title: 'Nota adesiva adicionada' })
+        }},
+        { id: 'add-shape', label: 'Novo retângulo', icon: Square, onClick: () => {
+          const newData = JSON.parse(JSON.stringify(data)) as CanvasData
+          newData.shapes = [...newData.shapes, {
+            id: uid(), kind: 'rectangle', x: 200, y: 200, width: 120, height: 80, color: '#e05b6d',
+          }]
+          commit(newData)
+          toast({ title: 'Forma adicionada' })
+        }},
+      )
+      return actions
+    }
+
+    const { target } = ctxMenu
+
+    const duplicate = () => {
+      const newData = JSON.parse(JSON.stringify(data)) as CanvasData
+      if (target.type === 'sticker') {
+        const orig = newData.stickers.find((s) => s.id === target.id)
+        if (!orig) return
+        newData.stickers = [...newData.stickers, { ...orig, id: uid(), x: orig.x + 20, y: orig.y + 20 }]
+      } else if (target.type === 'shape') {
+        const orig = newData.shapes.find((s) => s.id === target.id)
+        if (!orig) return
+        newData.shapes = [...newData.shapes, { ...orig, id: uid(), x: orig.x + 20, y: orig.y + 20 }]
+      } else if (target.type === 'note') {
+        const orig = newData.stickyNotes.find((n) => n.id === target.id)
+        if (!orig) return
+        newData.stickyNotes = [...newData.stickyNotes, { ...orig, id: uid(), x: orig.x + 20, y: orig.y + 20 }]
+      } else if (target.type === 'text') {
+        const orig = newData.texts.find((t) => t.id === target.id)
+        if (!orig) return
+        newData.texts = [...newData.texts, { ...orig, id: uid(), x: orig.x + 20, y: orig.y + 20 }]
+      }
+      commit(newData)
+    }
+
+    const remove = () => {
+      const newData = JSON.parse(JSON.stringify(data)) as CanvasData
+      if (target.type === 'sticker') newData.stickers = newData.stickers.filter((s) => s.id !== target.id)
+      else if (target.type === 'shape') newData.shapes = newData.shapes.filter((s) => s.id !== target.id)
+      else if (target.type === 'note') newData.stickyNotes = newData.stickyNotes.filter((n) => n.id !== target.id)
+      else if (target.type === 'text') newData.texts = newData.texts.filter((t) => t.id !== target.id)
+      commit(newData)
+      clearSelection()
+    }
+
+    const editNote = () => {
+      if (target.type === 'note') setEditingNoteId(target.id)
+    }
+
+    const editText = () => {
+      if (target.type === 'text') {
+        const t = data.texts.find((x) => x.id === target.id)
+        if (t) {
+          setTextInput({ x: t.x, y: t.y, show: true, editingId: t.id })
+          setTextValue(t.text)
+        }
+      }
+    }
+
+    actions.push(
+      { id: 'duplicate', label: 'Duplicar', icon: Copy, shortcut: 'Ctrl+D', onClick: duplicate },
+      { id: 'delete', label: 'Excluir', icon: Trash2, shortcut: 'Del', onClick: remove },
+    )
+
+    if (target.type === 'sticker') {
+      const toggleLock = () => {
+        const newData = JSON.parse(JSON.stringify(data)) as CanvasData
+        newData.stickers = newData.stickers.map((s) =>
+          s.id === target.id ? { ...s, locked: !s.locked } : s,
+        )
+        commit(newData)
+      }
+      const rotate = (deg: number) => () => {
+        const newData = JSON.parse(JSON.stringify(data)) as CanvasData
+        newData.stickers = newData.stickers.map((s) =>
+          s.id === target.id ? { ...s, rotation: ((s.rotation + deg) % 360 + 360) % 360 } : s,
+        )
+        commit(newData)
+      }
+      actions.push(
+        { id: 'toggle-lock', label: target.locked ? 'Desbloquear' : 'Bloquear', icon: target.locked ? Unlock : Lock, onClick: toggleLock },
+        { id: '__separator1__', label: '', icon: Copy, onClick: () => {} },
+        { id: 'rotate-cw', label: 'Girar 90°', icon: RotateCw, onClick: rotate(90) },
+        { id: 'rotate-ccw', label: 'Girar -90°', icon: RotateCcw, onClick: rotate(-90) },
+      )
+    } else if (target.type === 'note') {
+      actions.push(
+        { id: 'edit-note', label: 'Editar nota', icon: Pencil, onClick: editNote },
+        { id: '__separator1__', label: '', icon: Copy, onClick: () => {} },
+      )
+    } else if (target.type === 'text') {
+      actions.push(
+        { id: 'edit-text', label: 'Editar texto', icon: Pencil, onClick: editText },
+        { id: '__separator1__', label: '', icon: Copy, onClick: () => {} },
+      )
+    }
+
+    const bringFront = () => {
+      const newData = JSON.parse(JSON.stringify(data)) as CanvasData
+      if (target.type === 'sticker') {
+        const idx = newData.stickers.findIndex((s) => s.id === target.id)
+        if (idx < 0) return
+        const [item] = newData.stickers.splice(idx, 1)
+        newData.stickers.push(item)
+      } else if (target.type === 'shape') {
+        const idx = newData.shapes.findIndex((s) => s.id === target.id)
+        if (idx < 0) return
+        const [item] = newData.shapes.splice(idx, 1)
+        newData.shapes.push(item)
+      } else if (target.type === 'note') {
+        const idx = newData.stickyNotes.findIndex((n) => n.id === target.id)
+        if (idx < 0) return
+        const [item] = newData.stickyNotes.splice(idx, 1)
+        newData.stickyNotes.push(item)
+      }
+      commit(newData)
+    }
+
+    const sendBack = () => {
+      const newData = JSON.parse(JSON.stringify(data)) as CanvasData
+      if (target.type === 'sticker') {
+        const idx = newData.stickers.findIndex((s) => s.id === target.id)
+        if (idx < 0) return
+        const [item] = newData.stickers.splice(idx, 1)
+        newData.stickers.unshift(item)
+      } else if (target.type === 'shape') {
+        const idx = newData.shapes.findIndex((s) => s.id === target.id)
+        if (idx < 0) return
+        const [item] = newData.shapes.splice(idx, 1)
+        newData.shapes.unshift(item)
+      } else if (target.type === 'note') {
+        const idx = newData.stickyNotes.findIndex((n) => n.id === target.id)
+        if (idx < 0) return
+        const [item] = newData.stickyNotes.splice(idx, 1)
+        newData.stickyNotes.unshift(item)
+      }
+      commit(newData)
+    }
+
+    actions.push(
+      { id: '__separator2__', label: '', icon: Copy, onClick: () => {} },
+      { id: 'bring-front', label: 'Trazer p/ frente', icon: BringToFront, onClick: bringFront },
+      { id: 'send-back', label: 'Enviar p/ trás', icon: SendToBack, onClick: sendBack },
+    )
+
+    return actions
+  }, [ctxMenu, data, commit, clearSelection, setTextInput, setTextValue])
+
+  const ctxLabel = ctxMenu?.target
+    ? (ctxMenu.target.type === 'sticker' ? 'Sticker' :
+       ctxMenu.target.type === 'shape' ? 'Forma' :
+       ctxMenu.target.type === 'note' ? 'Nota adesiva' : 'Texto')
+    : undefined
+
+  // ─── Render helpers ─────────────────────────────────────────────────────────
 
   const renderStrokes = () => {
     const allStrokes = [...data.strokes]
@@ -342,32 +797,7 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
         points: currentPoints,
       })
     }
-    return allStrokes.map((s) => {
-      try {
-        const pathD = vecToSvgPath(getStroke(s.points, {
-          size: s.tool === 'highlighter' ? s.size * 1.5 : s.size,
-          thinning: s.tool === 'pencil' ? 0.8 : s.tool === 'highlighter' ? 0.2 : 0.5,
-          smoothing: 0.6,
-          streamline: 0.4,
-        }))
-        return (
-          <g key={s.id}>
-            {s.tool === 'highlighter' ? (
-              <path
-                d={pathD}
-                fill={s.color}
-                opacity={s.opacity * 0.7}
-                style={{ mixBlendMode: 'multiply' }}
-              />
-            ) : (
-              <path d={pathD} fill={s.color} opacity={s.opacity} />
-            )}
-          </g>
-        )
-      } catch {
-        return null
-      }
-    })
+    return allStrokes.map((s) => <StrokePath key={s.id} s={s} />)
   }
 
   const renderRulerPreview = () => {
@@ -386,6 +816,23 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
       } catch {
         return null
       }
+    }
+    return null
+  }
+
+  const renderLassoPreview = () => {
+    if (activeTool === 'lasso' && isDrawing && currentPoints.length > 1) {
+      return (
+        <path
+          d={`M ${currentPoints.map(p => `${p.x} ${p.y}`).join(' L ')}`}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.5}
+          strokeDasharray="6 4"
+          opacity={0.8}
+          className="text-primary"
+        />
+      )
     }
     return null
   }
@@ -515,6 +962,40 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
     )
   }
 
+  // ─── Text input commit handler ──────────────────────────────────────────────
+
+  const commitTextInput = useCallback(() => {
+    if (!textInput?.show || !textValue.trim()) {
+      setTextInput(null)
+      setTextValue('')
+      return
+    }
+    const newData = JSON.parse(JSON.stringify(data)) as CanvasData
+    if (textInput.editingId) {
+      newData.texts = newData.texts.map((t) =>
+        t.id === textInput.editingId
+          ? { ...t, text: textValue, color: editor.textColor, fontSize: editor.textFontSize, fontFamily: editor.textFontFamily }
+          : t,
+      )
+    } else {
+      newData.texts = [
+        ...newData.texts,
+        {
+          id: uid(),
+          x: textInput.x,
+          y: textInput.y,
+          text: textValue,
+          color: editor.textColor,
+          fontSize: editor.textFontSize,
+          fontFamily: editor.textFontFamily,
+        },
+      ]
+    }
+    commit(newData)
+    setTextInput(null)
+    setTextValue('')
+  }, [textInput, textValue, data, editor.textColor, editor.textFontSize, editor.textFontFamily, commit, setTextInput, setTextValue])
+
   // ─── Render ─────────────────────────────────────────────────────────────────
 
   return (
@@ -562,7 +1043,7 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
                 {pages.map((page, i) => (
                   <button
                     key={page.id}
-                    onClick={() => goToPage(i)}
+                    onClick={() => { goToPage(i); setShowPagesPanel(false) }}
                     className={cn(
                       'flex items-center gap-2.5 w-full rounded-lg px-2.5 py-1.5 text-left transition-colors',
                       i === currentPageIdx
@@ -662,11 +1143,7 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
                   { label: 'Nota adesiva', icon: StickyNote, action: () => {
                     const newData = JSON.parse(JSON.stringify(data)) as CanvasData
                     newData.stickyNotes = [...newData.stickyNotes, {
-                      id: uid(),
-                      x: 200,
-                      y: 200 + Math.random() * 200,
-                      text: '',
-                      color: '#f0b429',
+                      id: uid(), x: 200, y: 200 + Math.random() * 200, text: '', color: '#f0b429',
                     }]
                     commit(newData)
                     toast({ title: 'Nota adesiva adicionada' })
@@ -674,13 +1151,7 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
                   { label: 'Retângulo', icon: Square, action: () => {
                     const newData = JSON.parse(JSON.stringify(data)) as CanvasData
                     newData.shapes = [...newData.shapes, {
-                      id: uid(),
-                      kind: 'rectangle',
-                      x: 200,
-                      y: 200,
-                      width: 120,
-                      height: 80,
-                      color: '#e05b6d',
+                      id: uid(), kind: 'rectangle', x: 200, y: 200, width: 120, height: 80, color: '#e05b6d',
                     }]
                     commit(newData)
                     toast({ title: 'Forma adicionada' })
@@ -688,13 +1159,7 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
                   { label: 'Círculo', icon: Minimize2, action: () => {
                     const newData = JSON.parse(JSON.stringify(data)) as CanvasData
                     newData.shapes = [...newData.shapes, {
-                      id: uid(),
-                      kind: 'ellipse',
-                      x: 200,
-                      y: 200,
-                      width: 100,
-                      height: 100,
-                      color: '#5b8dbf',
+                      id: uid(), kind: 'ellipse', x: 200, y: 200, width: 100, height: 100, color: '#5b8dbf',
                     }]
                     commit(newData)
                     toast({ title: 'Forma adicionada' })
@@ -702,13 +1167,7 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
                   { label: 'Triângulo', icon: ALargeSmall, action: () => {
                     const newData = JSON.parse(JSON.stringify(data)) as CanvasData
                     newData.shapes = [...newData.shapes, {
-                      id: uid(),
-                      kind: 'triangle',
-                      x: 200,
-                      y: 200,
-                      width: 100,
-                      height: 100,
-                      color: '#7bb686',
+                      id: uid(), kind: 'triangle', x: 200, y: 200, width: 100, height: 100, color: '#7bb686',
                     }]
                     commit(newData)
                     toast({ title: 'Forma adicionada' })
@@ -716,13 +1175,7 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
                   { label: 'Seta', icon: ArrowLeft, action: () => {
                     const newData = JSON.parse(JSON.stringify(data)) as CanvasData
                     newData.shapes = [...newData.shapes, {
-                      id: uid(),
-                      kind: 'arrow',
-                      x: 200,
-                      y: 200,
-                      width: 120,
-                      height: 60,
-                      color: '#f0b429',
+                      id: uid(), kind: 'arrow', x: 200, y: 200, width: 120, height: 60, color: '#f0b429',
                     }]
                     commit(newData)
                     toast({ title: 'Forma adicionada' })
@@ -730,13 +1183,7 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
                   { label: 'Linha', icon: Minus, action: () => {
                     const newData = JSON.parse(JSON.stringify(data)) as CanvasData
                     newData.shapes = [...newData.shapes, {
-                      id: uid(),
-                      kind: 'line',
-                      x: 200,
-                      y: 200,
-                      width: 120,
-                      height: 2,
-                      color: '#1a1a1a',
+                      id: uid(), kind: 'line', x: 200, y: 200, width: 120, height: 2, color: '#1a1a1a',
                     }]
                     commit(newData)
                     toast({ title: 'Forma adicionada' })
@@ -774,14 +1221,8 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
                       reader.onload = () => {
                         const newData = JSON.parse(JSON.stringify(data)) as CanvasData
                         newData.stickers = [...newData.stickers, {
-                          id: uid(),
-                          stickerId: '__custom__',
-                          customSvg: reader.result as string,
-                          x: 200,
-                          y: 200,
-                          width: 120,
-                          height: 120,
-                          rotation: 0,
+                          id: uid(), stickerId: '__custom__', customSvg: reader.result as string,
+                          x: 200, y: 200, width: 120, height: 120, rotation: 0,
                         }]
                         commit(newData)
                         toast({ title: 'Imagem importada!' })
@@ -791,14 +1232,8 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
                     input.click()
                     setShowImportMenu(false)
                   } },
-                  { label: 'SVG', action: () => {
-                    setShowImportMenu(false)
-                    toast({ title: 'SVG: Em breve!' })
-                  } },
-                  { label: 'PDF', action: () => {
-                    setShowImportMenu(false)
-                    toast({ title: 'PDF: Em breve!' })
-                  } },
+                  { label: 'SVG', action: () => { setShowImportMenu(false); toast({ title: 'SVG: Em breve!' }) } },
+                  { label: 'PDF', action: () => { setShowImportMenu(false); toast({ title: 'PDF: Em breve!' }) } },
                 ].map(({ label, action }) => (
                   <button
                     key={label}
@@ -856,10 +1291,7 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
                       toast({ title: 'Erro ao exportar PNG', variant: 'error' })
                     }
                   } },
-                  { label: 'PDF', action: () => {
-                    setShowExportMenu(false)
-                    toast({ title: 'PDF: Em breve!' })
-                  } },
+                  { label: 'PDF', action: () => { setShowExportMenu(false); toast({ title: 'PDF: Em breve!' }) } },
                 ].map(({ label, action }) => (
                   <button
                     key={label}
@@ -899,10 +1331,22 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
           </Button>
 
           {/* Undo / Redo */}
-          <Button variant="ghost" size="icon-sm" className="rounded-xl" onClick={handleUndo}>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="rounded-xl"
+            onClick={handleUndo}
+            disabled={!(currentPage && (editor.undoStack[currentPage.id]?.length ?? 0) > 0)}
+          >
             <Undo2 size={16} />
           </Button>
-          <Button variant="ghost" size="icon-sm" className="rounded-xl" onClick={handleRedo}>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="rounded-xl"
+            onClick={handleRedo}
+            disabled={!(currentPage && (editor.redoStack[currentPage.id]?.length ?? 0) > 0)}
+          >
             <Redo2 size={16} />
           </Button>
 
@@ -931,16 +1375,27 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
                 )}
                 onClick={() => {
                   setTool(tool.id)
-                  if (tool.id === 'sticker') {
-                    setShowStickerPanel(true)
-                  }
+                  if (tool.id === 'sticker') setShowStickerPanel(true)
                 }}
               >
                 <tool.icon size={16} />
               </TooltipTrigger>
-              <TooltipContent>{tool.label}</TooltipContent>
+              <TooltipContent>{tool.label} ({tool.shortcut})</TooltipContent>
             </Tooltip>
           ))}
+          {/* OCR button */}
+          <Tooltip>
+            <TooltipTrigger
+              className={cn(
+                'size-9 rounded-xl transition-all inline-flex items-center justify-center',
+                'hover:bg-muted text-muted-foreground hover:text-foreground',
+              )}
+              onClick={() => setShowOcrPanel(true)}
+            >
+              <ScanText size={16} />
+            </TooltipTrigger>
+            <TooltipContent>OCR — Reconhecer escrita</TooltipContent>
+          </Tooltip>
           <div className="mt-auto">
             <ToolSettings />
           </div>
@@ -948,6 +1403,19 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
 
         {/* Canvas area */}
         <div className="flex-1 relative overflow-hidden desk-bg" ref={canvasContainerRef}>
+          {/* Eraser cursor (fixed position, updated imperatively) */}
+          {activeTool === 'eraser' && (
+            <div
+              ref={eraserCursorRef}
+              className="fixed z-50 pointer-events-none rounded-full border-2 border-dashed border-foreground/60 bg-foreground/5 opacity-0 transition-opacity"
+              style={{
+                width: editor.eraserSize * 2 * displayScale,
+                height: editor.eraserSize * 2 * displayScale,
+                display: 'none', // shown via pointermove
+              }}
+            />
+          )}
+
           {showPagesPanel && (
             <div className="absolute left-3 top-3 bottom-3 z-20 w-52 glass rounded-3xl border border-border/40 shadow-xl p-4">
               <div className="flex items-center justify-between mb-3">
@@ -967,14 +1435,42 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
                         i === currentPageIdx ? 'bg-primary/15 ring-1 ring-primary/30' : 'hover:bg-muted/60',
                       )}
                     >
-                      <div className="w-14 h-20 rounded-lg bg-muted border border-border/30 overflow-hidden flex-shrink-0">
+                      <div className="w-14 h-20 relative rounded-lg bg-muted border border-border/30 overflow-hidden flex-shrink-0">
                         {page.template === 'blank' ? (
-                          <div className="w-full h-full flex items-center justify-center text-[10px] text-muted-foreground">
-                            Em branco
-                          </div>
+                          <div className="absolute inset-0 bg-[color:light-dark(#ffffff,#2a2a28)]" />
                         ) : (
-                          <TemplateThumbnail template={page.template} width={56} className="w-full h-full" />
+                          <TemplateThumbnail template={page.template} width={56} className="absolute inset-0 w-full h-full" />
                         )}
+                        {/* Stroke preview */}
+                        <svg
+                          viewBox={`0 0 ${PAGE_WIDTH} ${PAGE_HEIGHT}`}
+                          className="absolute inset-0 size-full"
+                          preserveAspectRatio="xMidYMid meet"
+                        >
+                          {page.data.strokes.map((s) => (
+                            <polyline
+                              key={s.id}
+                              points={s.points.map((p) => `${p.x},${p.y}`).join(' ')}
+                              fill="none"
+                              stroke={s.color}
+                              strokeWidth={Math.max(2, s.size)}
+                              opacity={s.opacity}
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          ))}
+                          {page.data.shapes.map((s) => (
+                            <rect
+                              key={s.id}
+                              x={s.x}
+                              y={s.y}
+                              width={s.width}
+                              height={s.height}
+                              fill={s.color}
+                              opacity={0.8}
+                            />
+                          ))}
+                        </svg>
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-medium truncate">{page.title}</p>
@@ -984,7 +1480,7 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
                         variant="ghost"
                         size="icon-xs"
                         className="opacity-0 group-hover:opacity-100 rounded-lg"
-                        onClick={(e) => { e.stopPropagation(); handleDeletePage() }}
+                        onClick={(e) => { e.stopPropagation(); handleDeletePageAt(i) }}
                       >
                         <X size={12} />
                       </Button>
@@ -996,10 +1492,14 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
           )}
 
           <div className="absolute inset-0 overflow-auto scrollbar-thin">
-            <div className="min-w-full min-h-full flex items-center justify-center p-12">
+            <div className="min-w-full min-h-full flex items-center justify-center p-4 md:p-12">
               <div
                 className="relative shrink-0"
-                style={{ width: displayWidth, height: displayHeight }}
+                style={{
+                  width: displayWidth,
+                  height: displayHeight,
+                  transform: `translate(${editor.panX}px, ${editor.panY}px)`,
+                }}
               >
                 <div
                   aria-hidden
@@ -1022,13 +1522,27 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
                     cursor:
                       activeTool === 'eraser' ? 'crosshair' :
                       activeTool === 'text' ? 'text' :
-                      activeTool === 'pan' ? 'grab' :
+                      activeTool === 'pan' ? (isPanning ? 'grabbing' : 'grab') :
                       'crosshair',
                   }}
+                  onContextMenu={handleContextMenu}
                   onPointerDown={handlePointerDown}
-                  onPointerMove={handlePointerMove}
+                  onPointerMove={(e) => {
+                    handlePointerMove(e)
+                    // Update eraser cursor position
+                    if (activeTool === 'eraser' && eraserCursorRef.current) {
+                      const el = eraserCursorRef.current
+                      el.style.opacity = '1'
+                      el.style.display = 'block'
+                      el.style.left = `${e.clientX - el.offsetWidth / 2}px`
+                      el.style.top = `${e.clientY - el.offsetHeight / 2}px`
+                    }
+                  }}
                   onPointerUp={handlePointerUp}
-                  onPointerLeave={handlePointerUp}
+                  onPointerLeave={(e) => {
+                    handlePointerUp(e)
+                    if (eraserCursorRef.current) eraserCursorRef.current.style.opacity = '0'
+                  }}
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={(e) => {
                     e.preventDefault()
@@ -1038,126 +1552,262 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
                     placeSticker(stickerId, coords.x - 40, coords.y - 40)
                     toast({ title: 'Sticker adicionado!' })
                   }}
+                  onDoubleClick={handleDoubleClick}
                 >
-            <canvas
-              ref={bgCanvasRef}
-              className="absolute inset-0 w-full h-full"
-            />
-            <svg
-              className="absolute inset-0 w-full h-full"
-              viewBox={`0 0 ${PAGE_WIDTH} ${PAGE_HEIGHT}`}
-              preserveAspectRatio="xMidYMid meet"
-            >
-              {renderStrokes()}
-              {renderRulerPreview()}
-              {data.stickers
-                .filter((s) => {
-                  const def = ALL_STICKERS.find((st) => st.id === s.stickerId)
-                  return def && !def.lottieUrl
-                })
-                .map((s) => {
-                  const def = ALL_STICKERS.find((st) => st.id === s.stickerId)
-                  if (!def) return null
-                  return (
-                    <image
-                      key={s.id}
-                      href={s.customSvg ?? stickerToDataUrl(def)}
-                      x={s.x}
-                      y={s.y}
-                      width={s.width}
-                      height={s.height}
-                      transform={`rotate(${s.rotation}, ${s.x + s.width / 2}, ${s.y + s.height / 2})`}
-                      opacity={s.locked ? 0.7 : 1}
-                    />
-                  )
-                })}
-              {data.texts.map((t) => (
-                <text
-                  key={t.id}
-                  x={t.x}
-                  y={t.y + t.fontSize}
-                  fill={t.color}
-                  fontSize={t.fontSize}
-                  fontFamily={
-                    t.fontFamily === 'hand' ? 'var(--font-hand)' :
-                    t.fontFamily === 'serif' ? 'var(--font-serif)' :
-                    'var(--font-sans)'
-                  }
-                >
-                  {t.text}
-                </text>
-              ))}
-            </svg>
-            {data.stickers
-              .filter((s) => {
-                const def = ALL_STICKERS.find((st) => st.id === s.stickerId)
-                return def && def.lottieUrl
-              })
-              .map((s) => {
-                const def = ALL_STICKERS.find((st) => st.id === s.stickerId)
-                if (!def?.lottieUrl) return null
-                return (
-                  <div
-                    key={s.id}
-                    className="absolute"
-                    style={{
-                      left: s.x * displayScale,
-                      top: s.y * displayScale,
-                      width: s.width * displayScale,
-                      height: s.height * displayScale,
-                      transform: `rotate(${s.rotation}deg)`,
-                      transformOrigin: 'center center',
-                      opacity: s.locked ? 0.7 : 1,
-                      pointerEvents: 'none',
-                    }}
+                  <canvas
+                    ref={bgCanvasRef}
+                    className="absolute inset-0 w-full h-full"
+                  />
+                  <svg
+                    className="absolute inset-0 w-full h-full"
+                    viewBox={`0 0 ${PAGE_WIDTH} ${PAGE_HEIGHT}`}
+                    preserveAspectRatio="xMidYMid meet"
                   >
-                    <LottiePlayer
-                      src={def.lottieUrl}
-                      style={{ width: '100%', height: '100%' }}
-                      loop
-                      autoplay
-                    />
-                  </div>
-                )
-              })}
-            {textInput?.show && (
-              <input
-                autoFocus
-                value={textValue}
-                onChange={(e) => setTextValue(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && textValue.trim()) {
-                    const newData = JSON.parse(JSON.stringify(data)) as CanvasData
-                    newData.texts = [
-                      ...newData.texts,
-                      {
-                        id: uid(),
-                        x: textInput.x,
-                        y: textInput.y,
-                        text: textValue,
+                    {/* Strokes + preview */}
+                    {renderStrokes()}
+                    {renderRulerPreview()}
+                    {renderLassoPreview()}
+
+                    {/* Shapes */}
+                    {data.shapes.map((shape) => <ShapeRenderer key={shape.id} shape={shape} />)}
+
+                    {/* Stickers (non-lottie) */}
+                    {data.stickers
+                      .filter((s) => {
+                        const def = ALL_STICKERS.find((st) => st.id === s.stickerId)
+                        return def && !def.lottieUrl
+                      })
+                      .map((s) => {
+                        const def = ALL_STICKERS.find((st) => st.id === s.stickerId)
+                        if (!def) return null
+                        return (
+                          <image
+                            key={s.id}
+                            href={s.customSvg ?? stickerToDataUrl(def)}
+                            x={s.x}
+                            y={s.y}
+                            width={s.width}
+                            height={s.height}
+                            transform={`rotate(${s.rotation}, ${s.x + s.width / 2}, ${s.y + s.height / 2})`}
+                            opacity={s.locked ? 0.7 : 1}
+                          />
+                        )
+                      })}
+
+                    {/* Texts */}
+                    {data.texts.map((t) => (
+                      <text
+                        key={t.id}
+                        x={t.x}
+                        y={t.y + t.fontSize}
+                        fill={t.color}
+                        fontSize={t.fontSize}
+                        fontFamily={
+                          t.fontFamily === 'hand' ? 'var(--font-hand)' :
+                          t.fontFamily === 'serif' ? 'var(--font-serif)' :
+                          'var(--font-sans)'
+                        }
+                        style={{ pointerEvents: 'auto' }}
+                        onDoubleClick={() => {
+                          if (activeTool === 'sticker') {
+                            setTextInput({ x: t.x, y: t.y, show: true, editingId: t.id })
+                            setTextValue(t.text)
+                          }
+                        }}
+                      >
+                        {t.text}
+                      </text>
+                    ))}
+                  </svg>
+
+                  {/* Lottie stickers (HTML overlay) */}
+                  {data.stickers
+                    .filter((s) => {
+                      const def = ALL_STICKERS.find((st) => st.id === s.stickerId)
+                      return def && def.lottieUrl
+                    })
+                    .map((s) => {
+                      const def = ALL_STICKERS.find((st) => st.id === s.stickerId)
+                      if (!def?.lottieUrl) return null
+                      return (
+                        <div
+                          key={s.id}
+                          className="absolute"
+                          style={{
+                            left: s.x * displayScale,
+                            top: s.y * displayScale,
+                            width: s.width * displayScale,
+                            height: s.height * displayScale,
+                            transform: `rotate(${s.rotation}deg)`,
+                            transformOrigin: 'center center',
+                            opacity: s.locked ? 0.7 : 1,
+                            pointerEvents: 'none',
+                          }}
+                        >
+                          <LottiePlayer src={def.lottieUrl} style={{ width: '100%', height: '100%' }} loop autoplay />
+                        </div>
+                      )
+                    })}
+
+                  {/* Sticky notes (HTML overlay) */}
+                  {data.stickyNotes.map((n) => (
+                    <div
+                      key={n.id}
+                      className="absolute pointer-events-none select-none"
+                      style={{
+                        left: n.x * displayScale,
+                        top: n.y * displayScale,
+                        width: 120 * displayScale,
+                        height: 120 * displayScale,
+                      }}
+                      onDoubleClick={() => setEditingNoteId(n.id)}
+                    >
+                      <div
+                        className="relative size-full rounded-[3px] shadow-[0_6px_16px_rgba(0,0,0,0.18)] p-[8%] overflow-hidden"
+                        style={{ background: `linear-gradient(160deg, ${n.color}, ${n.color}dd)` }}
+                      >
+                        {!editingNoteId && !n.text && (
+                          <p className="text-[13px] leading-snug italic opacity-40" style={{ fontFamily: 'var(--font-hand)', fontSize: 15 * displayScale }}>
+                            Duplo clique para editar
+                          </p>
+                        )}
+                        <p
+                          className="whitespace-pre-wrap break-words leading-snug"
+                          style={{ fontFamily: 'var(--font-hand)', fontSize: 15 * displayScale, color: 'rgba(0,0,0,0.72)' }}
+                        >
+                          {n.text}
+                        </p>
+                        {/* Folded corner */}
+                        <div className="absolute bottom-0 right-0 size-[18%] bg-black/10" style={{ clipPath: 'polygon(100% 0, 0 100%, 100% 100%)' }} />
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Text input overlay */}
+                  {textInput?.show && (
+                    <input
+                      ref={(el) => { el?.focus() }}
+                      autoFocus
+                      value={textValue}
+                      onChange={(e) => setTextValue(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !(e.metaKey || e.ctrlKey) && textValue.trim()) {
+                          commitTextInput()
+                        }
+                        if (e.key === 'Escape') {
+                          setTextValue('')
+                          setTextInput(null)
+                        }
+                      }}
+                      onBlur={commitTextInput}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      className="absolute z-10 bg-transparent border-b-2 border-primary text-foreground outline-none min-w-20"
+                      style={{
+                        left: textInput.x * displayScale,
+                        top: textInput.y * displayScale,
+                        fontFamily:
+                          editor.textFontFamily === 'hand' ? 'var(--font-hand)' :
+                          editor.textFontFamily === 'serif' ? 'var(--font-serif)' :
+                          'var(--font-sans)',
+                        fontSize: editor.textFontSize * displayScale,
                         color: editor.textColor,
-                        fontSize: editor.textFontSize,
-                        fontFamily: editor.textFontFamily,
-                      },
-                    ]
-                    commit(newData)
-                    setTextInput(null)
-                  }
-                  if (e.key === 'Escape') setTextInput(null)
-                }}
-                className="absolute z-10 bg-transparent border-b-2 border-primary text-foreground outline-none min-w-20"
-                style={{
-                  left: textInput.x * displayScale,
-                  top: textInput.y * displayScale,
-                  fontFamily:
-                    editor.textFontFamily === 'hand' ? 'var(--font-hand)' :
-                    editor.textFontFamily === 'serif' ? 'var(--font-serif)' :
-                    'var(--font-sans)',
-                  fontSize: editor.textFontSize * displayScale,
-                  color: editor.textColor,
-                }}
-              />
-            )}
+                      }}
+                    />
+                  )}
+
+                  {/* Note editing overlay */}
+                  {editingNoteId && (
+                    <div
+                      className="absolute z-20 pointer-events-auto"
+                      style={{
+                        left: data.stickyNotes.find(n => n.id === editingNoteId)?.x * displayScale ?? 0,
+                        top: data.stickyNotes.find(n => n.id === editingNoteId)?.y * displayScale ?? 0,
+                        width: 120 * displayScale,
+                        height: 120 * displayScale,
+                      }}
+                    >
+                      <textarea
+                        autoFocus
+                        defaultValue={data.stickyNotes.find(n => n.id === editingNoteId)?.text ?? ''}
+                        onBlur={(e) => {
+                          if (!noteEditCancelRef.current) {
+                            const newData = JSON.parse(JSON.stringify(data)) as CanvasData
+                            newData.stickyNotes = newData.stickyNotes.map((n) =>
+                              n.id === editingNoteId ? { ...n, text: e.target.value } : n,
+                            )
+                            commit(newData)
+                          }
+                          noteEditCancelRef.current = false
+                          setEditingNoteId(null)
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Escape') {
+                            noteEditCancelRef.current = true
+                            ;(e.target as HTMLTextAreaElement).blur()
+                          }
+                          if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                            ;(e.target as HTMLTextAreaElement).blur()
+                          }
+                        }}
+                        onPointerDown={(e) => e.stopPropagation()}
+                        className="w-full h-full bg-transparent border-none outline-none resize-none p-2"
+                        style={{
+                          fontFamily: 'var(--font-hand)',
+                          fontSize: 15 * displayScale,
+                          color: 'rgba(0,0,0,0.72)',
+                          lineHeight: 1.4,
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  {/* Selection outlines + resize handle */}
+                  {(selectedStickerId || selectedShapeId || selectedNoteId || selectedTextId) && (() => {
+                    const sel = selectedStickerId
+                      ? data.stickers.find(s => s.id === selectedStickerId)
+                      : selectedShapeId
+                        ? data.shapes.find(s => s.id === selectedShapeId)
+                        : selectedNoteId
+                          ? data.stickyNotes.find(n => n.id === selectedNoteId)
+                          : selectedTextId
+                            ? data.texts.find(t => t.id === selectedTextId)
+                            : null
+                    if (!sel) return null
+                    const isSticker = !!selectedStickerId
+                    const isShape = !!selectedShapeId
+                    const isNote = !!selectedNoteId
+                    const isText = !!selectedTextId
+                    let x = isNote ? sel.x : isText ? sel.x : sel.x
+                    let y = isNote ? sel.y : isText ? sel.y : sel.y
+                    let w = isNote ? 120 : isText ? Math.max(20, sel.text.length * sel.fontSize * 0.58) : sel.width
+                    let h = isNote ? 120 : isText ? sel.fontSize * 1.3 : sel.height
+                    return (
+                      <>
+                        <div
+                          className="absolute pointer-events-none border-2 border-dashed border-primary rounded-sm"
+                          style={{
+                            left: x * displayScale,
+                            top: y * displayScale,
+                            width: w * displayScale,
+                            height: h * displayScale,
+                          }}
+                        />
+                        {(isSticker || isShape) && (
+                          <div
+                            className="absolute size-3 bg-primary rounded-full border-2 border-white cursor-nwse-resize"
+                            style={{
+                              left: (x + w) * displayScale - 6,
+                              top: (y + h) * displayScale - 6,
+                            }}
+                            onPointerDown={(e) => {
+                              e.stopPropagation()
+                              beginResize({ id: sel.id, type: isSticker ? 'sticker' : 'shape', width: sel.width, height: sel.height }, getPageCoords(e as unknown as React.PointerEvent))
+                            }}
+                          />
+                        )}
+                      </>
+                    )
+                  })()}
                   <div className="absolute inset-0 pointer-events-none paper-grain opacity-[0.05] mix-blend-overlay z-10" />
                 </div>
               </div>
@@ -1172,7 +1822,7 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
               initial={{ width: 0, opacity: 0 }}
               animate={{ width: 300, opacity: 1 }}
               exit={{ width: 0, opacity: 0 }}
-              className="shrink-0 border-l border-border/40 bg-background overflow-hidden"
+              className="shrink-0 border-l border-border/40 bg-background overflow-hidden fixed md:relative inset-0 z-50 md:z-auto"
             >
               <div className="w-[300px] p-4 h-full flex flex-col">
                 <div className="flex items-center justify-between mb-3">
@@ -1194,7 +1844,7 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
                   onChange={(e) => setStickerSearch(e.target.value)}
                 />
                 <div className="flex gap-1.5 my-3 overflow-auto no-scrollbar">
-                  {[{ id: 'all', label: 'Todos' }, ...STICKER_CATEGORIES.map((c) => ({ id: c, label: c }))].map(
+                  {[{ id: 'all', label: 'Todos' }, { id: 'favorites', label: '★ Favoritos' }, ...STICKER_CATEGORIES.map((c) => ({ id: c, label: c }))].map(
                     (c) => (
                       <button
                         key={c.id}
@@ -1223,9 +1873,7 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
                         draggable
                         onDragStart={(e) => {
                           e.dataTransfer.setData('stickerId', st.id)
-                          setDroppingStickerId(st.id)
                         }}
-                        onDragEnd={() => setDroppingStickerId(null)}
                         onClick={() => {
                           placeSticker(st.id, 200, 200)
                           toast({ title: 'Sticker adicionado!' })
@@ -1267,6 +1915,16 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
           )}
         </AnimatePresence>
 
+        {/* Context Menu */}
+        <ContextMenu
+          x={ctxMenu?.x ?? 0}
+          y={ctxMenu?.y ?? 0}
+          open={!!ctxMenu}
+          label={ctxLabel}
+          actions={buildCtxMenuActions()}
+          onClose={() => setCtxMenu(null)}
+        />
+
         {/* OCR Panel */}
         <AnimatePresence>
           {showOcrPanel && (
@@ -1274,7 +1932,7 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
               initial={{ width: 0, opacity: 0 }}
               animate={{ width: 300, opacity: 1 }}
               exit={{ width: 0, opacity: 0 }}
-              className="shrink-0 border-l border-border/40 bg-background overflow-hidden"
+              className="shrink-0 border-l border-border/40 bg-background overflow-hidden fixed md:relative inset-0 z-50 md:z-auto"
             >
               <div className="w-[300px] p-4">
                 <div className="flex items-center justify-between mb-3">
@@ -1285,26 +1943,130 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
                     <X size={14} />
                   </Button>
                 </div>
-                <p className="text-xs text-muted-foreground mb-4">Converter escrita em texto</p>
-                <Button className="w-full rounded-xl mb-3" variant="outline" disabled>
-                  Converter página atual
-                </Button>
-                <Input placeholder="Buscar no conteúdo..." className="mb-3" />
-                <div className="mb-3">
-                  <label className="text-[11px] text-muted-foreground mb-1.5 block">Idioma</label>
-                  <select className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm transition-colors hover:border-primary/50 focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/20 outline-none">
-                    <option>Português</option>
-                    <option>Inglês</option>
-                    <option>Espanhol</option>
-                  </select>
-                </div>
-                <p className="text-[10px] text-muted-foreground">
-                  *Interface ilustrativa. OCR não implementado.
-                </p>
+                <p className="text-xs text-muted-foreground mb-4">Converter escrita manual em texto</p>
+
+                {/* Status / progress */}
+                {ocr.status === 'idle' && !ocr.lastResult && (
+                  <div className="space-y-3">
+                    <Button className="w-full rounded-xl" variant="default" onClick={() => ocr.recognize(data)}>
+                      <ScanText size={14} className="mr-2" /> Reconhecer página
+                    </Button>
+                    <p className="text-[10px] text-muted-foreground text-center">
+                      Reconhece traços (pen/pencil/highlighter) da página atual
+                    </p>
+                  </div>
+                )}
+
+                {ocr.status === 'loading' && (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <span className="animate-spin rounded-full h-5 w-5 border-2 border-primary border-t-transparent" />
+                      <span className="text-sm font-medium">{ocr.progressText || 'Processando…'}</span>
+                    </div>
+                    <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-primary transition-all duration-300"
+                        style={{ width: `${ocr.progress}%` }}
+                      />
+                    </div>
+                    <p className="text-[10px] text-muted-foreground text-center">
+                      {ocr.progressText || `Carregando modelo (${ocr.progress}%)…`}
+                    </p>
+                  </div>
+                )}
+
+                {ocr.status === 'error' && (
+                  <div className="space-y-2 text-red-600 dark:text-red-400">
+                    <p className="text-sm">Erro: {ocr.errorMessage}</p>
+                    <Button variant="outline" className="w-full" size="sm" onClick={() => ocr.recognize(data)}>
+                      Tentar novamente
+                    </Button>
+                  </div>
+                )}
+
+                {ocr.lastResult && (
+                  <div className="space-y-3 border-t border-border/40 pt-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">Resultado</span>
+                      <span className="text-[10px] text-muted-foreground">
+                        {ocr.lastResult.confidence}% confiança
+                      </span>
+                    </div>
+                    <div className="max-h-40 overflow-auto bg-muted/30 rounded p-2 font-mono text-sm">
+                      <pre className="whitespace-pre-wrap break-words">{ocr.lastResult.text}</pre>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        className="flex-1"
+                        size="sm"
+                        onClick={() => {
+                          const result = ocr.lastResult
+                          if (result) insertOcrText(result.text)
+                        }}
+                      >
+                        Inserir como texto
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          const result = ocr.lastResult
+                          if (result) navigator.clipboard.writeText(result.text)
+                        }}
+                      >
+                        <Copy size={14} />
+                      </Button>
+                    </div>
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      size="sm"
+                      onClick={() => ocr.recognize(data)}
+                    >
+                      <RotateCw size={14} className="mr-1" /> Reconhecer novamente
+                    </Button>
+                  </div>
+                )}
               </div>
             </motion.div>
           )}
         </AnimatePresence>
+      </div>
+
+      {/* Mobile toolbar (bottom dock) */}
+      <div className="md:hidden flex items-center justify-around px-1 h-14 shrink-0 border-t border-border/40 bg-background/80 backdrop-blur-lg z-30 safe-area-bottom">
+        {toolbarItems().map((tool) => (
+          <Tooltip key={tool.id}>
+            <TooltipTrigger
+              className={cn(
+                'size-10 rounded-xl transition-all inline-flex items-center justify-center',
+                activeTool === tool.id
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : 'hover:bg-muted text-muted-foreground hover:text-foreground',
+              )}
+              onClick={() => {
+                setTool(tool.id)
+                if (tool.id === 'sticker') {
+                  setShowStickerPanel(true)
+                }
+              }}
+            >
+              <tool.icon size={18} />
+            </TooltipTrigger>
+            <TooltipContent>{tool.label}</TooltipContent>
+          </Tooltip>
+        ))}
+        <div className="w-px h-5 bg-border/40 mx-0.5" />
+        <button
+          className={cn(
+            'size-10 rounded-xl transition-all inline-flex items-center justify-center',
+            'hover:bg-muted text-muted-foreground hover:text-foreground',
+          )}
+          onClick={() => setShowOcrPanel(true)}
+        >
+          <ScanText size={18} />
+        </button>
+        <ToolSettings />
       </div>
     </div>
   )

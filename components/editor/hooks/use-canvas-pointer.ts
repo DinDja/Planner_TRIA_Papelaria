@@ -3,7 +3,7 @@
 import { useCallback, useRef, useState } from 'react'
 import { useEditorStore } from '@/lib/store/use-editor-store'
 import { useAppStore } from '@/lib/store/use-app-store'
-import type { CanvasData, Stroke, StrokePoint } from '@/lib/types'
+import type { CanvasData, Stroke, StrokePoint, ShapeItem, TextItem, StickyNote, StickerInstance } from '@/lib/types'
 import { PAGE_HEIGHT, PAGE_WIDTH } from '@/lib/types'
 import { toast } from '@/components/ui/toaster'
 
@@ -44,6 +44,20 @@ interface UseCanvasPointerOptions {
   canvasRef: React.RefObject<HTMLDivElement | null>
 }
 
+interface HitResult {
+  type: 'sticker' | 'shape' | 'note' | 'text' | null
+  id: string
+}
+
+interface DraggingItem {
+  id: string
+  type: 'sticker' | 'shape' | 'note' | 'text'
+  startX: number
+  startY: number
+  pageX: number
+  pageY: number
+}
+
 export function useCanvasPointer({
   plannerId,
   currentPageId,
@@ -55,6 +69,7 @@ export function useCanvasPointer({
   dataRef.current = data
   const pageIdRef = useRef(currentPageId)
   pageIdRef.current = currentPageId
+  const dragStartDataRef = useRef<CanvasData | null>(null)
 
   // ─── Drawing state ───────────────────────────────────────────────────────────
   const [isDrawing, setIsDrawing] = useState(false)
@@ -63,43 +78,55 @@ export function useCanvasPointer({
   const [currentPoints, setCurrentPoints] = useState<StrokePoint[]>([])
   const [rulerStart, setRulerStart] = useState<StrokePoint | null>(null)
   const [rulerEnd, setRulerEnd] = useState<StrokePoint | null>(null)
-  const [textInput, setTextInput] = useState<{ x: number; y: number; show: boolean } | null>(null)
+  const [textInput, setTextInput] = useState<{ x: number; y: number; show: boolean; editingId?: string } | null>(null)
   const [textValue, setTextValue] = useState('')
-  const [draggingItem, setDraggingItem] = useState<{
-    id: string
-    type: 'sticker' | 'shape' | 'note'
-    startX: number; startY: number
-    pageX: number; pageY: number
-  } | null>(null)
+  const [draggingItem, setDraggingItem] = useState<DraggingItem | null>(null)
 
   // ─── Selection state ─────────────────────────────────────────────────────────
   const [selectedStickerId, setSelectedStickerId] = useState<string | null>(null)
   const [selectedShapeId, setSelectedShapeId] = useState<string | null>(null)
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null)
+  const [selectedTextId, setSelectedTextId] = useState<string | null>(null)
   const [resizingHandle, setResizingHandle] = useState<'br' | null>(null)
 
   const clearSelection = useCallback(() => {
     setSelectedStickerId(null)
     setSelectedShapeId(null)
     setSelectedNoteId(null)
+    setSelectedTextId(null)
     setResizingHandle(null)
   }, [])
 
   // ─── Hit test ────────────────────────────────────────────────────────────────
-  const hitTest = useCallback((pageX: number, pageY: number) => {
+  const hitTestAll = useCallback((pageX: number, pageY: number): HitResult => {
     const d = dataRef.current
+    // Stickers (topmost first)
     for (const s of [...d.stickers].reverse()) {
-      if (pageX >= s.x && pageX <= s.x + s.width && pageY >= s.y && pageY <= s.y + s.height) return s
+      if (pageX >= s.x && pageX <= s.x + s.width && pageY >= s.y && pageY <= s.y + s.height) return { type: 'sticker', id: s.id }
     }
-    return null
+    // Shapes
+    for (const s of [...d.shapes].reverse()) {
+      if (pageX >= s.x && pageX <= s.x + s.width && pageY >= s.y && pageY <= s.y + s.height) return { type: 'shape', id: s.id }
+    }
+    // Sticky notes (fixed 120x120)
+    for (const n of [...d.stickyNotes].reverse()) {
+      if (pageX >= n.x && pageX <= n.x + 120 && pageY >= n.y && pageY <= n.y + 120) return { type: 'note', id: n.id }
+    }
+    // Text items (approx bbox)
+    for (const t of [...d.texts].reverse()) {
+      const w = Math.max(20, t.text.length * t.fontSize * 0.58)
+      const h = t.fontSize * 1.3
+      if (pageX >= t.x && pageX <= t.x + w && pageY >= t.y && pageY <= t.y + h) return { type: 'text', id: t.id }
+    }
+    return { type: null, id: '' }
   }, [])
 
   // ─── Commit (push undo + save) ──────────────────────────────────────────────
-  const commit = useCallback((newData: CanvasData) => {
+  const commit = useCallback((newData: CanvasData, prevOverride?: CanvasData) => {
     const pageId = pageIdRef.current
     if (!pageId) return
     const { pushHistory } = useEditorStore.getState()
-    pushHistory(pageId, dataRef.current)
+    pushHistory(pageId, prevOverride ?? dataRef.current)
     useAppStore.getState().updatePageData(plannerId, pageId, newData)
   }, [plannerId])
 
@@ -116,6 +143,13 @@ export function useCanvasPointer({
     }
   }, [canvasRef])
 
+  // ─── Begin resize helper (for resize handle) ────────────────────────────────
+  const beginResize = useCallback((item: { id: string; type: 'sticker' | 'shape'; width: number; height: number }, pt: { x: number; y: number }) => {
+    dragStartDataRef.current = JSON.parse(JSON.stringify(dataRef.current))
+    setResizingHandle('br')
+    setDraggingItem({ id: item.id, type: item.type, startX: item.width, startY: item.height, pageX: pt.x, pageY: pt.y })
+  }, [])
+
   // ─── Pointer handlers ────────────────────────────────────────────────────────
 
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
@@ -130,35 +164,34 @@ export function useCanvasPointer({
     }
 
     if (activeTool === 'sticker') {
-      if (resizingHandle) {
-        const d = dataRef.current
-        const sticker = d.stickers.find((s) => s.id === selectedStickerId)
-        if (sticker) {
-          setDraggingItem({ id: sticker.id, type: 'sticker', startX: sticker.width, startY: sticker.height, pageX: pt.x, pageY: pt.y })
-        }
-        return
-      }
-      const hit = hitTest(pt.x, pt.y)
-      if (hit) {
+      // Hit test all selectable items
+      const hit = hitTestAll(pt.x, pt.y)
+      if (hit.type) {
         clearSelection()
-        setSelectedStickerId(hit.id)
-        setDraggingItem({ id: hit.id, type: 'sticker', startX: hit.x, startY: hit.y, pageX: pt.x, pageY: pt.y })
+        if (hit.type === 'sticker') setSelectedStickerId(hit.id)
+        else if (hit.type === 'shape') setSelectedShapeId(hit.id)
+        else if (hit.type === 'note') setSelectedNoteId(hit.id)
+        else if (hit.type === 'text') setSelectedTextId(hit.id)
+
+        const d = dataRef.current
+        let item: StickerInstance | ShapeItem | StickyNote | TextItem | undefined
+        if (hit.type === 'sticker') item = d.stickers.find(s => s.id === hit.id)
+        else if (hit.type === 'shape') item = d.shapes.find(s => s.id === hit.id)
+        else if (hit.type === 'note') item = d.stickyNotes.find(n => n.id === hit.id)
+        else if (hit.type === 'text') item = d.texts.find(t => t.id === hit.id)
+
+        if (item) {
+          dragStartDataRef.current = JSON.parse(JSON.stringify(d))
+          setDraggingItem({
+            id: item.id,
+            type: hit.type,
+            startX: hit.type === 'text' ? item.x : (hit.type === 'note' ? item.x : (hit.type === 'shape' ? item.x : item.x)),
+            startY: hit.type === 'text' ? item.y : (hit.type === 'note' ? item.y : (hit.type === 'shape' ? item.y : item.y)),
+            pageX: pt.x,
+            pageY: pt.y,
+          })
+        }
         return
-      }
-      const d = dataRef.current
-      for (const s of [...d.shapes].reverse()) {
-        if (pt.x >= s.x && pt.x <= s.x + s.width && pt.y >= s.y && pt.y <= s.y + s.height) {
-          setSelectedShapeId(s.id)
-          setDraggingItem({ id: s.id, type: 'shape', startX: s.x, startY: s.y, pageX: pt.x, pageY: pt.y })
-          return
-        }
-      }
-      for (const n of [...d.stickyNotes].reverse()) {
-        if (pt.x >= n.x && pt.x <= n.x + 120 && pt.y >= n.y && pt.y <= n.y + 120) {
-          setSelectedNoteId(n.id)
-          setDraggingItem({ id: n.id, type: 'note', startX: n.x, startY: n.y, pageX: pt.x, pageY: pt.y })
-          return
-        }
       }
       clearSelection()
       return
@@ -188,7 +221,7 @@ export function useCanvasPointer({
     clearSelection()
     setIsDrawing(true)
     setCurrentPoints([pt])
-  }, [getPageCoords, hitTest, clearSelection, selectedStickerId, resizingHandle])
+  }, [getPageCoords, hitTestAll, clearSelection])
 
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
     if (isPanning && panStart) {
@@ -207,11 +240,19 @@ export function useCanvasPointer({
 
       if (resizingHandle === 'br') {
         const newData = JSON.parse(JSON.stringify(d)) as CanvasData
-        newData.stickers = newData.stickers.map((s) =>
-          s.id === draggingItem.id
-            ? { ...s, width: Math.max(20, draggingItem.startX + dx), height: Math.max(20, draggingItem.startY + dy) }
-            : s,
-        )
+        if (draggingItem.type === 'sticker') {
+          newData.stickers = newData.stickers.map((s) =>
+            s.id === draggingItem.id
+              ? { ...s, width: Math.max(20, draggingItem.startX + dx), height: Math.max(20, draggingItem.startY + dy) }
+              : s,
+          )
+        } else if (draggingItem.type === 'shape') {
+          newData.shapes = newData.shapes.map((s) =>
+            s.id === draggingItem.id
+              ? { ...s, width: Math.max(10, draggingItem.startX + dx), height: Math.max(10, draggingItem.startY + dy) }
+              : s,
+          )
+        }
         useAppStore.getState().updatePageData(plannerId, pageId, newData)
       } else {
         const newData = JSON.parse(JSON.stringify(d)) as CanvasData
@@ -232,6 +273,12 @@ export function useCanvasPointer({
             n.id === draggingItem.id
               ? { ...n, x: draggingItem.startX + dx, y: draggingItem.startY + dy }
               : n,
+          )
+        } else if (draggingItem.type === 'text') {
+          newData.texts = newData.texts.map((t) =>
+            t.id === draggingItem.id
+              ? { ...t, x: draggingItem.startX + dx, y: draggingItem.startY + dy }
+              : t,
           )
         }
         useAppStore.getState().updatePageData(plannerId, pageId, newData)
@@ -265,7 +312,7 @@ export function useCanvasPointer({
       return
     }
     setCurrentPoints((prev) => [...prev, pt])
-  }, [isDrawing, isPanning, panStart, draggingItem, getPageCoords, plannerId, resizingHandle])
+  }, [isDrawing, isPanning, panStart, draggingItem, getPageCoords, plannerId, resizingHandle, rulerStart])
 
   const handlePointerUp = useCallback(() => {
     const store = useEditorStore.getState()
@@ -280,8 +327,10 @@ export function useCanvasPointer({
 
     if (draggingItem) {
       const newData = JSON.parse(JSON.stringify(d)) as CanvasData
-      commit(newData)
+      commit(newData, dragStartDataRef.current ?? undefined)
       setDraggingItem(null)
+      setResizingHandle(null)
+      dragStartDataRef.current = null
       return
     }
 
@@ -307,12 +356,31 @@ export function useCanvasPointer({
         const cy = s.y + s.height / 2
         return cx >= bbox.minX && cx <= bbox.maxX && cy >= bbox.minY && cy <= bbox.maxY
       })
+      const insideNotes = newData.stickyNotes.filter((n) => {
+        const cx = n.x + 60
+        const cy = n.y + 60
+        return cx >= bbox.minX && cx <= bbox.maxX && cy >= bbox.minY && cy <= bbox.maxY
+      })
+      const insideTexts = newData.texts.filter((t) => {
+        const w = Math.max(20, t.text.length * t.fontSize * 0.58)
+        const h = t.fontSize * 1.3
+        const cx = t.x + w / 2
+        const cy = t.y + h / 2
+        return cx >= bbox.minX && cx <= bbox.maxX && cy >= bbox.minY && cy <= bbox.maxY
+      })
+
       if (insideStickers.length > 0) {
         setSelectedStickerId(insideStickers[0].id)
         toast({ title: `${insideStickers.length} sticker(s) selecionados` })
       } else if (insideShapes.length > 0) {
         setSelectedShapeId(insideShapes[0].id)
         toast({ title: `${insideShapes.length} forma(s) selecionadas` })
+      } else if (insideNotes.length > 0) {
+        setSelectedNoteId(insideNotes[0].id)
+        toast({ title: `${insideNotes.length} nota(s) selecionadas` })
+      } else if (insideTexts.length > 0) {
+        setSelectedTextId(insideTexts[0].id)
+        toast({ title: `${insideTexts.length} texto(s) selecionados` })
       } else {
         newData.strokes = newData.strokes.filter((s) => {
           const cx = s.points.reduce((sum, p) => sum + p.x, 0) / s.points.length
@@ -320,7 +388,7 @@ export function useCanvasPointer({
           return !(cx >= bbox.minX && cx <= bbox.maxX && cy >= bbox.minY && cy <= bbox.maxY)
         })
         commit(newData)
-        toast({ title: 'Strokes removidos na área' })
+        toast({ title: 'Traços removidos na área' })
       }
       setIsDrawing(false)
       setCurrentPoints([])
@@ -418,6 +486,23 @@ export function useCanvasPointer({
     currentPoints, rulerStart, rulerEnd, commit,
   ])
 
+  const handleDoubleClick = useCallback((e: React.MouseEvent) => {
+    const { activeTool } = useEditorStore.getState()
+    if (activeTool !== 'sticker') return
+    const pt = getPageCoords(e as unknown as React.PointerEvent)
+    const hit = hitTestAll(pt.x, pt.y)
+    if (hit.type === 'text') {
+      const d = dataRef.current
+      const textItem = d.texts.find(t => t.id === hit.id)
+      if (textItem) {
+        setTextInput({ x: textItem.x, y: textItem.y, show: true, editingId: textItem.id })
+        setTextValue(textItem.text)
+      }
+    } else if (hit.type === 'note') {
+      // handled in editor component via onDoubleClick on note overlay
+    }
+  }, [getPageCoords, hitTestAll])
+
   return {
     isDrawing,
     currentPoints,
@@ -430,14 +515,18 @@ export function useCanvasPointer({
     selectedStickerId,
     selectedShapeId,
     selectedNoteId,
+    selectedTextId,
     resizingHandle,
+    isPanning,
     clearSelection,
     getPageCoords,
     handlePointerDown,
     handlePointerMove,
     handlePointerUp,
+    handleDoubleClick,
     setResizingHandle,
     setTextInput,
     commit,
+    beginResize,
   } as const
 }

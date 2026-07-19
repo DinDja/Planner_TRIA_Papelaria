@@ -1,5 +1,6 @@
 import type { StickerDef } from './types'
 import { EXTRA_STICKERS } from './stickers-extra'
+import { KAWAII_RETRO_STICKERS } from './stickers-kawaii-retro'
 
 export const STICKER_CATEGORIES = [
   'Estudos',
@@ -18,6 +19,10 @@ export const STICKER_CATEGORIES = [
   'Hand-drawn',
   'Flat',
   'Animados',
+  'Retrô 90s',
+  'Kawaii Pop',
+  'Y2K',
+  'Cultura Pop',
 ] as const
 
 const s = (body: string) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">${body}</svg>`
@@ -137,7 +142,7 @@ export const STICKERS: StickerDef[] = [
   },
 ]
 
-export const ALL_STICKERS: StickerDef[] = [...STICKERS, ...EXTRA_STICKERS]
+export const ALL_STICKERS: StickerDef[] = [...STICKERS, ...EXTRA_STICKERS, ...KAWAII_RETRO_STICKERS]
 
 export function stickerToDataUrl(def: StickerDef): string {
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(def.svg)}`

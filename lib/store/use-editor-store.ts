@@ -1,6 +1,5 @@
 import { create } from 'zustand'
 import type { CanvasData, ToolType } from '../types'
-import { EMPTY_CANVAS, PAGE_HEIGHT, PAGE_WIDTH } from '../types'
 
 interface EditorState {
   // Tool
@@ -69,8 +68,8 @@ interface EditorState {
   undoStack: Record<string, CanvasData[]>
   redoStack: Record<string, CanvasData[]>
   pushHistory: (pageId: string, data: CanvasData) => void
-  undo: (pageId: string) => CanvasData | null
-  redo: (pageId: string) => CanvasData | null
+  undo: (pageId: string, current: CanvasData) => CanvasData | null
+  redo: (pageId: string, current: CanvasData) => CanvasData | null
 }
 
 export const useEditorStore = create<EditorState>()((set, get) => ({
@@ -194,11 +193,11 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
       }
     }),
 
-  undo: (pageId) => {
+  undo: (pageId, current) => {
     const s = get()
     const stack = s.undoStack[pageId] ?? []
     if (stack.length === 0) return null
-    const current = stack[stack.length - 1]
+    const prev = stack[stack.length - 1]
     const redo = s.redoStack[pageId] ?? []
     set({
       undoStack: {
@@ -207,10 +206,10 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
       },
       redoStack: { ...s.redoStack, [pageId]: [...redo, current] },
     })
-    return stack.length > 1 ? stack[stack.length - 2] : EMPTY_CANVAS
+    return prev
   },
 
-  redo: (pageId) => {
+  redo: (pageId, current) => {
     const s = get()
     const stack = s.redoStack[pageId] ?? []
     if (stack.length === 0) return null
@@ -221,7 +220,7 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
         ...s.redoStack,
         [pageId]: stack.slice(0, -1),
       },
-      undoStack: { ...s.undoStack, [pageId]: [...undo, next] },
+      undoStack: { ...s.undoStack, [pageId]: [...undo, current] },
     })
     return next
   },

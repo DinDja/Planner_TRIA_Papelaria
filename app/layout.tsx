@@ -1,6 +1,6 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
-import { Caveat, Geist, Instrument_Serif } from 'next/font/google'
+import { Caveat, Geist, Instrument_Serif, IBM_Plex_Sans } from 'next/font/google'
 import { Tooltip } from '@base-ui/react/tooltip'
 import { ThemeProvider } from '@/components/providers/theme-provider'
 import { SettingsProvider } from '@/components/providers/settings-provider'
@@ -14,6 +14,11 @@ const instrument = Instrument_Serif({
   variable: '--font-instrument',
 })
 const caveat = Caveat({ subsets: ['latin'], variable: '--font-caveat' })
+const plex = IBM_Plex_Sans({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600'],
+  variable: '--font-plex',
+})
 
 export const metadata: Metadata = {
   title: 'PlannerHub — Seu planner digital',
@@ -55,7 +60,7 @@ export default function RootLayout({
     <html
       lang="pt-BR"
       suppressHydrationWarning
-      className={`bg-background ${geist.variable} ${instrument.variable} ${caveat.variable}`}
+      className={`bg-background ${geist.variable} ${instrument.variable} ${caveat.variable} ${plex.variable}`}
     >
       <body className="font-sans antialiased">
         <Tooltip.Provider closeDelay={200}>

@@ -1,29 +1,14 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { getStroke } from 'perfect-freehand'
-import type { CanvasData, Stroke } from '@/lib/types'
-import { PAGE_HEIGHT, PAGE_WIDTH } from '@/lib/types'
-
-// ─── Helpers de path ─────────────────────────────────────────────────────────
-// Mesma lógica do planner-editor (mantém paridade com o que o usuário vê).
-
-function vecToSvgPath(points: number[][]): string {
-  if (!points || points.length < 2) return ''
-  return `M ${points[0][0]} ${points[0][1]} L ${points
-    .slice(1)
-    .map((p) => `${p[0]} ${p[1]}`)
-    .join(' ')} Z`
-}
-
-function strokeOutlinePoints(s: Stroke): number[][] {
-  return getStroke(s.points, {
-    size: s.tool === 'highlighter' ? s.size * 1.5 : s.size,
-    thinning: s.tool === 'pencil' ? 0.8 : s.tool === 'highlighter' ? 0.2 : 0.5,
-    smoothing: 0.6,
-    streamline: 0.4,
-  })
-}
+import type { CanvasData } from '@/lib/types'
+import {
+  recognizeCanvasData,
+  type RecognitionOutput,
+  type RecognizedWord,
+} from '@/lib/recognition/engine'
+import { lexiconScore, type LexLang } from '@/lib/recognition/lexicon'
+import { rasterizeWord } from '@/lib/recognition/rasterize'
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
 
@@ -43,120 +28,60 @@ export interface OcrResult {
 
 export interface UseHandwritingOcrOptions {
   lang: OcrLang
+  /**
+   * Fallback híbrido: palavras com baixa confiança no motor vetorial são
+   * re-avaliadas pelo Tesseract (recorte da palavra, PSM palavra-única) e a
+   * melhor hipótese vence por score lexical. Default: true.
+   */
+  hybridFallback?: boolean
 }
 
+/** Palavras abaixo desta confiança vão para a segunda opinião (Tesseract). */
+const FALLBACK_CONF = 0.55
+/** Teto de palavras re-avaliadas por execução (custo ~150ms cada). */
+const FALLBACK_MAX_WORDS = 14
+
 /**
- * Reconhecimento offline de escrita manual usando Tesseract.js (WASM, 100%
- * client-side, sem LLM, sem APIs externas). Renderiza apenas os strokes da
- * página em um canvas offscreen com contraste máximo (fundo branco, traços em
- * preto saturado) — esse é o setup que melhor funciona para OCR de handwriting.
+ * Motor profissional de reconhecimento de escrita à mão.
  *
- * Workflow:
- * 1. rasterizeStrokes(data) -> HTMLCanvasElement
- * 2. recognize(canvas) -> OcrResult
+ * Estágio 1 — HTR vetorial (lib/recognition): análise online dos traços
+ * (ordem, direção, curvatura), segmentação linha→palavra→caractere,
+ * classificação por DTW contra protótipos, busca DP no lattice de hipóteses
+ * e pós-processamento lexical pt-BR. 100% offline, sem download de modelo.
  *
- * O worker é lazy e reutilizado entre chamadas (custoso de criar).
+ * Estágio 2 — Fallback híbrido opcional: segunda opinião do Tesseract.js
+ * sobre recortes binarizados (Otsu) de palavras duvidosas, com fusão por
+ * score de léxico.
+ *
+ * API compatível com o PlannerEditor:
+ *   status 'idle'|'loading'|'done'|'error', progress 0..100, progressText,
+ *   errorMessage, lastResult {text, confidence}, recognize(data), reset().
  */
-export function useHandwritingOcr({ lang }: UseHandwritingOcrOptions) {
+export function useHandwritingOcr({ lang, hybridFallback = true }: UseHandwritingOcrOptions) {
   const [progress, setProgress] = useState<OcrProgress>({ status: 'idle', progress: 0 })
   const [result, setResult] = useState<OcrResult | null>(null)
 
-  // Worker Tesseract persistente — criar é caro (~download do modelo ~1-4 MB).
-  // Tesseract Worker não é um Worker DOM padrão — tipamos como unknown e fazemos cast.
+  // Worker Tesseract — criado sob demanda, apenas se o fallback for acionado.
   const workerRef = useRef<unknown>(null)
-  const workerLangRef = useRef<string | null>(null)
   const creatingRef = useRef<Promise<unknown> | null>(null)
 
-  // Canvas offscreen reutilizado (evita allocar a cada chamada).
-  const scratchCanvasRef = useRef<HTMLCanvasElement | null>(null)
-
-  const getScratchCanvas = useCallback(() => {
-    let c = scratchCanvasRef.current
-    if (!c) {
-      c = document.createElement('canvas')
-      c.width = PAGE_WIDTH
-      c.height = PAGE_HEIGHT
-      scratchCanvasRef.current = c
-    }
-    return c
-  }, [])
-
-  /**
-   * Rasteriza os strokes em um canvas com fundo branco e traços pretos.
-   * Ignora template de fundo (linhas/grid podem confundir o OCR) e ignora
-   * cor/opacity reais (preto saturado maximiza precisão do Tesseract).
-   * Retorna apenas se houver strokes — caso contrário devolve null.
-   */
-  const rasterizeStrokes = useCallback(
-    (data: CanvasData): HTMLCanvasElement | null => {
-      if (data.strokes.length === 0) return null
-      const canvas = getScratchCanvas()
-      const ctx = canvas.getContext('2d')
-      if (!ctx) return null
-
-      // Fundo branco
-      ctx.fillStyle = '#ffffff'
-      ctx.fillRect(0, 0, canvas.width, canvas.height)
-
-      ctx.fillStyle = '#000000'
-      for (const s of data.strokes) {
-        try {
-          const pathD = vecToSvgPath(strokeOutlinePoints(s))
-          if (!pathD) continue
-          const path = new Path2D(pathD)
-          ctx.fill(path)
-        } catch {
-          // ignore stroke com geometria inválida
-        }
-      }
-
-      return canvas
-    },
-    [getScratchCanvas],
-  )
-
-  /**
-   * Cria (ou reaproveita) o worker Tesseract para o idioma dado.
-   * Recria se o idioma mudou.
-   */
   const ensureWorker = useCallback(async (): Promise<unknown> => {
-    const wanted = lang
-    if (workerRef.current && workerLangRef.current === wanted) {
-      return workerRef.current
-    }
-    // Encerra worker anterior com idioma diferente
-    if (workerRef.current) {
-      try {
-        await terminateWorker(workerRef.current)
-      } catch {
-        /* noop */
-      }
-      workerRef.current = null
-      workerLangRef.current = null
-    }
-
-    // Reaproveita criação em andamento
+    if (workerRef.current) return workerRef.current
     if (creatingRef.current) return creatingRef.current
 
     creatingRef.current = (async () => {
-      setProgress({ status: 'preparing', progress: 0, message: 'Carregando modelo de reconhecimento…' })
-      const { createWorker } = await import('tesseract.js')
-      const worker = await createWorker(wanted, 1, {
-        logger: (m: { status: string; progress: number }) => {
-          if (m.status === 'recognizing') {
-            setProgress({ status: 'recognizing', progress: m.progress, message: 'Reconhecendo escrita…' })
-          } else if (
-            m.status === 'loading tesseract core' ||
-            m.status === 'initializing tesseract' ||
-            m.status === 'loading language traineddata' ||
-            m.status === 'initializing api'
-          ) {
-            setProgress({ status: 'preparing', progress: m.progress ?? 0, message: 'Preparando motor OCR…' })
-          }
-        },
+      setProgress((p) => ({
+        ...p,
+        message: 'Carregando modelo auxiliar…',
+      }))
+      const { createWorker, PSM } = await import('tesseract.js')
+      const tessLang = lang === 'eng' ? 'eng' : 'por'
+      const worker = await createWorker(tessLang)
+      // Palavra única por recorte
+      await (worker as { setParameters: (p: Record<string, unknown>) => Promise<unknown> }).setParameters({
+        tessedit_pageseg_mode: PSM.SINGLE_WORD,
       })
       workerRef.current = worker
-      workerLangRef.current = wanted
       creatingRef.current = null
       return worker
     })()
@@ -164,28 +89,97 @@ export function useHandwritingOcr({ lang }: UseHandwritingOcrOptions) {
     return creatingRef.current
   }, [lang])
 
+  /**
+   * Segunda opinião: re-avalia palavras de baixa confiança com Tesseract
+   * sobre recortes justos/binarizados e funde por score lexical.
+   */
+  const applyHybridFallback = useCallback(
+    async (out: RecognitionOutput): Promise<void> => {
+      const low: RecognizedWord[] = []
+      for (const line of out.lineDetails) {
+        for (const w of line.words) {
+          if (w.confidence < FALLBACK_CONF && /[a-zA-Zà-ÿ]{2,}/.test(w.text)) {
+            low.push(w)
+          }
+        }
+      }
+      if (low.length === 0) return
+
+      let worker: unknown
+      try {
+        worker = await ensureWorker()
+      } catch {
+        return // sem fallback — mantém resultado vetorial
+      }
+
+      const targets = low.slice(0, FALLBACK_MAX_WORDS)
+      for (let i = 0; i < targets.length; i++) {
+        const w = targets[i]
+        setProgress({
+          status: 'recognizing',
+          progress: 0.7 + (0.3 * i) / targets.length,
+          message: `Segunda opinião (${i + 1}/${targets.length})…`,
+        })
+        try {
+          const canvas = rasterizeWord(w.strokes, w.xHeight)
+          if (!canvas) continue
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const { data: res } = await (worker as any).recognize(canvas)
+          const cand = String(res?.text ?? '').trim().split(/\s+/)[0] ?? ''
+          if (!cand) continue
+          // Fusão: a segunda opinião só vence se tiver score lexical claramente melhor
+          const tessLang: LexLang = lang
+          if (lexiconScore(cand, tessLang) > lexiconScore(w.text, tessLang) + 0.15) {
+            w.raw = w.text
+            w.text = cand
+            w.confidence = Math.max(w.confidence, 0.62)
+          }
+        } catch {
+          // palavra individual falhou — segue com a hipótese vetorial
+        }
+      }
+
+      // Reconstrói texto das linhas após fusões
+      for (const line of out.lineDetails) {
+        line.text = line.words.map((w) => w.text).join(' ')
+      }
+      out.lines = out.lineDetails.map((l) => l.text)
+      out.text = out.lines.join('\n')
+    },
+    [ensureWorker, lang],
+  )
+
   const recognize = useCallback(
     async (data: CanvasData): Promise<OcrResult | null> => {
-      const canvas = rasterizeStrokes(data)
-      if (!canvas) {
+      if (data.strokes.length === 0) {
         setResult(null)
-        setProgress({ status: 'idle', progress: 0, message: 'Nenum traço na página para reconhecer.' })
+        setProgress({ status: 'idle', progress: 0, message: 'Nenhum traço na página para reconhecer.' })
         return null
       }
 
       try {
-        const worker = await ensureWorker()
-        setProgress({ status: 'recognizing', progress: 0, message: 'Reconhecendo escrita…' })
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data: out } = await (worker as any).recognize(canvas)
-        const text = (out?.text ?? '').trim()
-        const confidence = typeof out?.confidence === 'number' ? out.confidence : 0
-        const lines = text
-          .split(/\r?\n/)
-          .map((l: string) => l.trim())
-          .filter(Boolean)
+        setProgress({ status: 'preparing', progress: 0.02, message: 'Analisando traços…' })
 
-        const r: OcrResult = { text, confidence, lines }
+        const out = await recognizeCanvasData(data, {
+          lang,
+          onProgress: (_stage, done, total) => {
+            setProgress({
+              status: 'recognizing',
+              progress: 0.05 + 0.65 * (done / Math.max(total, 1)),
+              message: `Reconhecendo escrita… linha ${done}/${total}`,
+            })
+          },
+        })
+
+        if (hybridFallback) {
+          await applyHybridFallback(out)
+        }
+
+        const r: OcrResult = {
+          text: out.text.trim(),
+          confidence: Math.round(out.confidence * 100),
+          lines: out.lines,
+        }
         setResult(r)
         setProgress({ status: 'done', progress: 1, message: 'Reconhecimento concluído.' })
         return r
@@ -195,7 +189,7 @@ export function useHandwritingOcr({ lang }: UseHandwritingOcrOptions) {
         return null
       }
     },
-    [ensureWorker, rasterizeStrokes],
+    [applyHybridFallback, hybridFallback, lang],
   )
 
   const reset = useCallback(() => {
@@ -214,13 +208,6 @@ export function useHandwritingOcr({ lang }: UseHandwritingOcrOptions) {
   }, [])
 
   // API compatível com o componente PlannerEditor
-  // status: 'idle' | 'loading' | 'done' | 'error'
-  // progress: 0..100
-  // progressText: string
-  // errorMessage: string
-  // lastResult: { text: string; confidence: number } | null
-  // recognize(data: CanvasData): Promise<void>
-  // reset(): void
   const api = {
     get status() {
       const s = progress.status
@@ -237,7 +224,7 @@ export function useHandwritingOcr({ lang }: UseHandwritingOcrOptions) {
       return progress.status === 'error' ? progress.message : undefined
     },
     get lastResult() {
-      return result ? { text: result.text, confidence: Math.round(result.confidence) } : null
+      return result ? { text: result.text, confidence: result.confidence } : null
     },
     recognize: async (data: CanvasData) => {
       await recognize(data)
@@ -249,7 +236,6 @@ export function useHandwritingOcr({ lang }: UseHandwritingOcrOptions) {
 }
 
 async function terminateWorker(worker: unknown): Promise<void> {
-  // tesseract.js v6+: worker.terminate() retorna Promise
   const w = worker as { terminate?: () => Promise<unknown> }
   if (typeof w.terminate === 'function') {
     await w.terminate()

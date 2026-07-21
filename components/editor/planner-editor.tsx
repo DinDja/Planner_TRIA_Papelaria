@@ -4,6 +4,7 @@ import { useAppStore } from '@/lib/store/use-app-store'
 import { useEditorStore } from '@/lib/store/use-editor-store'
 import type {
   CanvasData,
+  CanvasItemRef,
   PageTemplateId,
   Planner,
   PlannerPage,
@@ -12,7 +13,6 @@ import type {
   StickerInstance,
   TextItem,
   ShapeItem,
-  StickyNote,
 } from '@/lib/types'
 import { EMPTY_CANVAS, PAGE_HEIGHT, PAGE_WIDTH } from '@/lib/types'
 import { PAGE_TEMPLATES, drawTemplate, getTemplateColors, type TemplateColors } from '@/lib/templates'
@@ -51,6 +51,9 @@ import {
   Minimize2,
   Minus,
   MousePointer2,
+  Paintbrush,
+  PaintBucket,
+  Pipette,
   Pencil,
   Pen,
   Plus,
@@ -60,6 +63,8 @@ import {
   Ruler,
   ScanText,
   Square,
+  Circle,
+  ArrowRight,
   Star,
   StickyNote,
   Trash2,
@@ -75,12 +80,22 @@ import {
   Check,
   BringToFront,
   SendToBack,
+  Hand,
+  Magnet,
+  Settings,
+  CircleDot,
 } from 'lucide-react'
 
 import { ALL_STICKERS, STICKER_CATEGORIES, stickerToDataUrl } from '@/lib/stickers'
 import dynamic from 'next/dynamic'
+import { useRouter } from 'next/navigation'
 import { useCanvasPointer } from './hooks/use-canvas-pointer'
 import { ContextMenu, type ContextMenuAction } from './context-menu'
+import { BottomSheet } from './bottom-sheet'
+import { RadialMenu, type RadialItem } from './radial-menu'
+import { ColorPalette } from './color-palette'
+import { SelectionOverlay } from './selection-overlay'
+import { useIsMobile } from '@/lib/hooks/use-media-query'
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -99,28 +114,55 @@ import type { ToolType } from '@/lib/types'
 const toolbarItems = (): { id: ToolType; icon: typeof Pen; label: string; shortcut: string }[] => [
   { id: 'pen', icon: Pen, label: 'Caneta', shortcut: '1' },
   { id: 'pencil', icon: Pencil, label: 'Lápis', shortcut: '2' },
-  { id: 'highlighter', icon: Highlighter, label: 'Marca-texto', shortcut: '3' },
-  { id: 'eraser', icon: Eraser, label: 'Borracha', shortcut: '4' },
-  { id: 'lasso', icon: Lasso, label: 'Seleção', shortcut: '5' },
-  { id: 'ruler', icon: Ruler, label: 'Régua', shortcut: '6' },
-  { id: 'text', icon: Type, label: 'Texto', shortcut: '7' },
-  { id: 'sticker', icon: Star, label: 'Sticker', shortcut: '8' },
-  { id: 'pan', icon: MousePointer2, label: 'Mover', shortcut: '9' },
+  { id: 'brush', icon: Paintbrush, label: 'Pincel', shortcut: '3' },
+  { id: 'marker', icon: PaintBucket, label: 'Marcador', shortcut: '4' },
+  { id: 'highlighter', icon: Highlighter, label: 'Marca-texto', shortcut: '5' },
+  { id: 'eraser', icon: Eraser, label: 'Borracha', shortcut: '6' },
+  { id: 'fill', icon: PaintBucket, label: 'Balde', shortcut: '7' },
+  { id: 'lasso', icon: Lasso, label: 'Seleção', shortcut: '8' },
+  { id: 'ruler', icon: Ruler, label: 'Régua', shortcut: '9' },
+  { id: 'text', icon: Type, label: 'Texto', shortcut: '0' },
+  { id: 'sticker', icon: Star, label: 'Sticker', shortcut: 'S' },
+  { id: 'rectangle', icon: Square, label: 'Retângulo', shortcut: 'R' },
+  { id: 'ellipse', icon: Circle, label: 'Círculo', shortcut: 'C' },
+  { id: 'line', icon: Minus, label: 'Linha', shortcut: 'L' },
+  { id: 'arrow', icon: ArrowRight, label: 'Seta', shortcut: 'A' },
+  { id: 'hand', icon: Hand, label: 'Mover', shortcut: 'H' },
+  { id: 'eyedropper', icon: Pipette, label: 'Conta-gotas', shortcut: 'I' },
 ]
+
+/** Itens primários exibidos na dock mobile (máximo 6 por largura). */
+const MOBILE_PRIMARY_TOOLS: ToolType[] = ['pen', 'pencil', 'highlighter', 'eraser', 'lasso', 'text']
 
 // ─── Memoized SVG components ────────────────────────────────────────────────
 
 const StrokePath = memo(function StrokePath({ s }: { s: Stroke }) {
   try {
-    const pathD = vecToSvgPath(getStroke(s.points, {
-      size: s.tool === 'highlighter' ? s.size * 1.5 : s.size,
-      thinning: s.tool === 'pencil' ? 0.8 : s.tool === 'highlighter' ? 0.2 : 0.5,
+    const tool = s.tool as 'pen' | 'pencil' | 'brush' | 'marker' | 'highlighter' | 'ruler'
+    const usePressure = s.pressureSensitive && (tool === 'pen' || tool === 'brush' || tool === 'pencil')
+    const strokeInput = usePressure
+      ? s.points
+      : s.points.map((p) => ({ x: p.x, y: p.y })) // strip pressure -> constante
+
+    const baseSize = tool === 'highlighter' ? s.size * 1.5 : tool === 'brush' ? s.size * 1.8 : s.size
+    const thinning =
+      tool === 'pencil' ? 0.8 :
+      tool === 'brush' ? 1.2 :
+      tool === 'highlighter' ? 0.2 :
+      tool === 'marker' ? 0.1 :
+      0.5
+    const simulatePressure = !usePressure && tool !== 'marker' && tool !== 'highlighter'
+
+    const pathD = vecToSvgPath(getStroke(strokeInput, {
+      size: baseSize,
+      thinning,
       smoothing: 0.6,
       streamline: 0.4,
+      simulatePressure,
     }))
     return (
       <g>
-        {s.tool === 'highlighter' ? (
+        {tool === 'highlighter' ? (
           <path
             d={pathD}
             fill={s.color}
@@ -146,24 +188,38 @@ const ShapeRenderer = memo(function ShapeRenderer({ shape }: { shape: ShapeItem 
   const cx = x + w / 2
   const cy = y + h / 2
   const c = shape.color
+  const outline = shape.outline ?? false
+  const sw = shape.strokeWidth ?? 3
+
+  const rect = outline ? (
+    <rect x={x} y={y} width={w} height={h} rx={8} fill="none" stroke={c} strokeWidth={sw} {...common} />
+  ) : (
+    <rect x={x} y={y} width={w} height={h} rx={8} fill={c} {...common} />
+  )
+
+  const ellipse = outline ? (
+    <ellipse cx={cx} cy={cy} rx={w / 2} ry={h / 2} fill="none" stroke={c} strokeWidth={sw} {...common} />
+  ) : (
+    <ellipse cx={cx} cy={cy} rx={w / 2} ry={h / 2} fill={c} {...common} />
+  )
+
+  const triangle = outline ? (
+    <polygon points={`${cx},${y} ${x + w},${y + h} ${x},${y + h}`} fill="none" stroke={c} strokeWidth={sw} {...common} />
+  ) : (
+    <polygon points={`${cx},${y} ${x + w},${y + h} ${x},${y + h}`} fill={c} {...common} />
+  )
 
   switch (shape.kind) {
     case 'rectangle':
-      return <rect x={x} y={y} width={w} height={h} rx={8} fill={c} {...common} />
+      return rect
     case 'ellipse':
-      return <ellipse cx={cx} cy={cy} rx={w / 2} ry={h / 2} fill={c} {...common} />
+      return ellipse
     case 'triangle':
-      return (
-        <polygon
-          points={`${cx},${y} ${x + w},${y + h} ${x},${y + h}`}
-          fill={c}
-          {...common}
-        />
-      )
+      return triangle
     case 'line': {
       const yc = cy
-      const sw = Math.max(2, Math.min(6, h / 8))
-      return <line x1={x} y1={yc} x2={x + w} y2={yc} stroke={c} strokeWidth={sw} strokeLinecap="round" {...common} />
+      const lineW = outline ? sw : Math.max(2, Math.min(6, h / 8))
+      return <line x1={x} y1={yc} x2={x + w} y2={yc} stroke={c} strokeWidth={lineW} strokeLinecap="round" {...common} />
     }
     case 'arrow': {
       const yc = cy
@@ -178,10 +234,10 @@ const ShapeRenderer = memo(function ShapeRenderer({ shape }: { shape: ShapeItem 
       const hy2 = yc
       const hx3 = x2 - headLen * Math.cos(angle) - headW * Math.sin(angle)
       const hy3 = yc - headLen * Math.sin(angle) + headW * Math.cos(angle)
-      const sw = Math.max(2.5, Math.min(5, h * 0.12))
+      const arrowSw = outline ? sw : Math.max(2.5, Math.min(5, h * 0.12))
       return (
         <g>
-          <line x1={x1} y1={yc} x2={x2 - headLen} y2={yc} stroke={c} strokeWidth={sw} strokeLinecap="round" {...common} />
+          <line x1={x1} y1={yc} x2={x2 - headLen} y2={yc} stroke={c} strokeWidth={arrowSw} strokeLinecap="round" {...common} />
           <polygon points={`${hx1},${hy1} ${hx2},${hy2} ${hx3},${hy3}`} fill={c} {...common} />
         </g>
       )
@@ -195,6 +251,8 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
   const tc = useMemo(() => getTemplateColors(isDark), [isDark])
+  const router = useRouter()
+  const isMobile = useIsMobile()
 
   const updatePageData = useAppStore((s) => s.updatePageData)
   const updatePageTemplate = useAppStore((s) => s.updatePageTemplate)
@@ -220,7 +278,11 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
   const [showInsertMenu, setShowInsertMenu] = useState(false)
   const [showExportMenu, setShowExportMenu] = useState(false)
   const [showImportMenu, setShowImportMenu] = useState(false)
+  const [showMoreMenu, setShowMoreMenu] = useState(false)
   const [autoSaveStatus, setAutoSaveStatus] = useState<'saved' | 'saving'>('saved')
+  const [radialMenuOpen, setRadialMenuOpen] = useState(false)
+  const [radialMenu, setRadialMenu] = useState<{ x: number; y: number } | null>(null)
+  const [showToolSettingsFromRadial, setShowToolSettingsFromRadial] = useState(false)
   const [ctxMenu, setCtxMenu] = useState<{
     x: number
     y: number
@@ -282,6 +344,7 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
   // ─── Canvas refs & pointer hook ────────────────────────────────────────────
 
   const canvasRef = useRef<HTMLDivElement>(null)
+  const radialTriggerRef = useRef<HTMLButtonElement>(null)
   const bgCanvasRef = useRef<HTMLCanvasElement>(null)
   const canvasContainerRef = useRef<HTMLDivElement>(null)
 
@@ -290,26 +353,36 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
     currentPoints,
     rulerStart,
     rulerEnd,
+    shapeDraft,
     textInput,
     textValue,
     setTextValue,
-    draggingItem,
+    selectedItems,
+    setSelectedItems,
+    selectItem,
+    getSelectionBounds,
+    getItemBounds,
+    transformSession,
     selectedStickerId,
     selectedShapeId,
     selectedNoteId,
     selectedTextId,
-    resizingHandle,
     isPanning,
+    guides,
     clearSelection,
     getPageCoords,
     handlePointerDown,
     handlePointerMove,
     handlePointerUp,
+    handlePointerCancel,
     handleDoubleClick,
-    setResizingHandle,
     setTextInput,
     commit,
+    beginMove,
     beginResize,
+    beginRotate,
+    pickColorAt,
+    floodFill,
   } = useCanvasPointer({
     plannerId: planner.id,
     currentPageId: currentPage?.id ?? null,
@@ -449,31 +522,29 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
 
       // Delete / Backspace
       if (e.key === 'Delete' || e.key === 'Backspace') {
-        if (selectedStickerId) {
+        if (selectedItems.length > 0) {
           e.preventDefault()
           const newData = JSON.parse(JSON.stringify(data)) as CanvasData
-          newData.stickers = newData.stickers.filter((s) => s.id !== selectedStickerId)
-          commit(newData)
-          clearSelection()
-        } else if (selectedShapeId) {
-          e.preventDefault()
-          const newData = JSON.parse(JSON.stringify(data)) as CanvasData
-          newData.shapes = newData.shapes.filter((s) => s.id !== selectedShapeId)
-          commit(newData)
-          clearSelection()
-        } else if (selectedNoteId) {
-          e.preventDefault()
-          const newData = JSON.parse(JSON.stringify(data)) as CanvasData
-          newData.stickyNotes = newData.stickyNotes.filter((n) => n.id !== selectedNoteId)
-          commit(newData)
-          clearSelection()
-        } else if (selectedTextId) {
-          e.preventDefault()
-          const newData = JSON.parse(JSON.stringify(data)) as CanvasData
-          newData.texts = newData.texts.filter((t) => t.id !== selectedTextId)
+          const ids = selectedItems
+          newData.stickers = newData.stickers.filter(s => !ids.some(i => i.kind === 'sticker' && i.id === s.id))
+          newData.shapes = newData.shapes.filter(s => !ids.some(i => i.kind === 'shape' && i.id === s.id))
+          newData.stickyNotes = newData.stickyNotes.filter(n => !ids.some(i => i.kind === 'note' && i.id === n.id))
+          newData.texts = newData.texts.filter(t => !ids.some(i => i.kind === 'text' && i.id === t.id))
           commit(newData)
           clearSelection()
         }
+      }
+
+      // Ctrl+A select all
+      if ((e.metaKey || e.ctrlKey) && e.key === 'a') {
+        e.preventDefault()
+        const all: CanvasItemRef[] = [
+          ...data.stickers.map(s => ({ kind: 'sticker' as const, id: s.id })),
+          ...data.shapes.map(s => ({ kind: 'shape' as const, id: s.id })),
+          ...data.stickyNotes.map(n => ({ kind: 'note' as const, id: n.id })),
+          ...data.texts.map(t => ({ kind: 'text' as const, id: t.id })),
+        ]
+        setSelectedItems(all)
       }
 
       // Escape - clear selection / close panels
@@ -486,45 +557,96 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
       // Ctrl+D duplicate
       if ((e.metaKey || e.ctrlKey) && e.key === 'd') {
         e.preventDefault()
-        if (selectedStickerId) {
-          const orig = data.stickers.find((s) => s.id === selectedStickerId)
-          if (orig) {
-            const newData = JSON.parse(JSON.stringify(data)) as CanvasData
-            newData.stickers = [...newData.stickers, { ...orig, id: uid(), x: orig.x + 20, y: orig.y + 20 }]
-            commit(newData)
-            toast({ title: 'Duplicado' })
-          }
-        } else if (selectedShapeId) {
-          const orig = data.shapes.find((s) => s.id === selectedShapeId)
-          if (orig) {
-            const newData = JSON.parse(JSON.stringify(data)) as CanvasData
-            newData.shapes = [...newData.shapes, { ...orig, id: uid(), x: orig.x + 20, y: orig.y + 20 }]
-            commit(newData)
-            toast({ title: 'Duplicado' })
-          }
-        } else if (selectedNoteId) {
-          const orig = data.stickyNotes.find((n) => n.id === selectedNoteId)
-          if (orig) {
-            const newData = JSON.parse(JSON.stringify(data)) as CanvasData
-            newData.stickyNotes = [...newData.stickyNotes, { ...orig, id: uid(), x: orig.x + 20, y: orig.y + 20 }]
-            commit(newData)
-            toast({ title: 'Duplicado' })
-          }
-        } else if (selectedTextId) {
-          const orig = data.texts.find((t) => t.id === selectedTextId)
-          if (orig) {
-            const newData = JSON.parse(JSON.stringify(data)) as CanvasData
-            newData.texts = [...newData.texts, { ...orig, id: uid(), x: orig.x + 20, y: orig.y + 20 }]
-            commit(newData)
-            toast({ title: 'Duplicado' })
+        if (selectedItems.length === 0) return
+        const newData = JSON.parse(JSON.stringify(data)) as CanvasData
+        for (const ref of selectedItems) {
+          if (ref.kind === 'sticker') {
+            const orig = newData.stickers.find(s => s.id === ref.id)
+            if (orig) newData.stickers.push({ ...orig, id: uid(), x: orig.x + 20, y: orig.y + 20 })
+          } else if (ref.kind === 'shape') {
+            const orig = newData.shapes.find(s => s.id === ref.id)
+            if (orig) newData.shapes.push({ ...orig, id: uid(), x: orig.x + 20, y: orig.y + 20 })
+          } else if (ref.kind === 'note') {
+            const orig = newData.stickyNotes.find(n => n.id === ref.id)
+            if (orig) newData.stickyNotes.push({ ...orig, id: uid(), x: orig.x + 20, y: orig.y + 20 })
+          } else if (ref.kind === 'text') {
+            const orig = newData.texts.find(t => t.id === ref.id)
+            if (orig) newData.texts.push({ ...orig, id: uid(), x: orig.x + 20, y: orig.y + 20 })
           }
         }
+        commit(newData)
+        toast({ title: 'Duplicado' })
+      }
+
+      // Ctrl+C copy
+      if ((e.metaKey || e.ctrlKey) && e.key === 'c' && selectedItems.length > 0) {
+        e.preventDefault()
+        const clip = {
+          stickers: data.stickers.filter(s => selectedItems.some(i => i.kind === 'sticker' && i.id === s.id)),
+          shapes: data.shapes.filter(s => selectedItems.some(i => i.kind === 'shape' && i.id === s.id)),
+          stickyNotes: data.stickyNotes.filter(n => selectedItems.some(i => i.kind === 'note' && i.id === n.id)),
+          texts: data.texts.filter(t => selectedItems.some(i => i.kind === 'text' && i.id === t.id)),
+        }
+        editor.setClipboard(JSON.parse(JSON.stringify(clip)))
+        toast({ title: `${selectedItems.length} item(s) copiados` })
+      }
+
+      // Ctrl+X cut
+      if ((e.metaKey || e.ctrlKey) && e.key === 'x' && selectedItems.length > 0) {
+        e.preventDefault()
+        const clip = {
+          stickers: data.stickers.filter(s => selectedItems.some(i => i.kind === 'sticker' && i.id === s.id)),
+          shapes: data.shapes.filter(s => selectedItems.some(i => i.kind === 'shape' && i.id === s.id)),
+          stickyNotes: data.stickyNotes.filter(n => selectedItems.some(i => i.kind === 'note' && i.id === n.id)),
+          texts: data.texts.filter(t => selectedItems.some(i => i.kind === 'text' && i.id === t.id)),
+        }
+        editor.setClipboard(JSON.parse(JSON.stringify(clip)))
+        const newData = JSON.parse(JSON.stringify(data)) as CanvasData
+        const ids = selectedItems
+        newData.stickers = newData.stickers.filter(s => !ids.some(i => i.kind === 'sticker' && i.id === s.id))
+        newData.shapes = newData.shapes.filter(s => !ids.some(i => i.kind === 'shape' && i.id === s.id))
+        newData.stickyNotes = newData.stickyNotes.filter(n => !ids.some(i => i.kind === 'note' && i.id === n.id))
+        newData.texts = newData.texts.filter(t => !ids.some(i => i.kind === 'text' && i.id === t.id))
+        commit(newData)
+        clearSelection()
+        toast({ title: 'Recortado' })
+      }
+
+      // Ctrl+V paste
+      if ((e.metaKey || e.ctrlKey) && e.key === 'v' && editor.clipboard) {
+        e.preventDefault()
+        const clip = editor.clipboard
+        const newData = JSON.parse(JSON.stringify(data)) as CanvasData
+        const OFFSET = 24
+        const newRefs: CanvasItemRef[] = []
+        for (const s of clip.stickers) {
+          const newId = uid()
+          newData.stickers.push({ ...s, id: newId, x: s.x + OFFSET, y: s.y + OFFSET })
+          newRefs.push({ kind: 'sticker', id: newId })
+        }
+        for (const s of clip.shapes) {
+          const newId = uid()
+          newData.shapes.push({ ...s, id: newId, x: s.x + OFFSET, y: s.y + OFFSET })
+          newRefs.push({ kind: 'shape', id: newId })
+        }
+        for (const n of clip.stickyNotes) {
+          const newId = uid()
+          newData.stickyNotes.push({ ...n, id: newId, x: n.x + OFFSET, y: n.y + OFFSET })
+          newRefs.push({ kind: 'note', id: newId })
+        }
+        for (const t of clip.texts) {
+          const newId = uid()
+          newData.texts.push({ ...t, id: newId, x: t.x + OFFSET, y: t.y + OFFSET })
+          newRefs.push({ kind: 'text', id: newId })
+        }
+        commit(newData)
+        setSelectedItems(newRefs)
+        toast({ title: 'Colado' })
       }
 
       // Nudge with arrows (when selection exists)
       if (!e.altKey && !e.metaKey && !e.ctrlKey && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
-        const hasSelection = selectedStickerId || selectedShapeId || selectedNoteId || selectedTextId
-        if (hasSelection) {
+        if (selectedItems.length > 0) {
           e.preventDefault()
           const step = e.shiftKey ? 10 : 1
           let dx = 0, dy = 0
@@ -534,22 +656,11 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
           if (e.key === 'ArrowRight') dx = step
 
           const newData = JSON.parse(JSON.stringify(data)) as CanvasData
-          if (selectedStickerId) {
-            newData.stickers = newData.stickers.map((s) =>
-              s.id === selectedStickerId ? { ...s, x: s.x + dx, y: s.y + dy } : s,
-            )
-          } else if (selectedShapeId) {
-            newData.shapes = newData.shapes.map((s) =>
-              s.id === selectedShapeId ? { ...s, x: s.x + dx, y: s.y + dy } : s,
-            )
-          } else if (selectedNoteId) {
-            newData.stickyNotes = newData.stickyNotes.map((n) =>
-              n.id === selectedNoteId ? { ...n, x: n.x + dx, y: n.y + dy } : n,
-            )
-          } else if (selectedTextId) {
-            newData.texts = newData.texts.map((t) =>
-              t.id === selectedTextId ? { ...t, x: t.x + dx, y: t.y + dy } : t,
-            )
+          for (const ref of selectedItems) {
+            if (ref.kind === 'sticker') newData.stickers = newData.stickers.map(s => s.id === ref.id ? { ...s, x: s.x + dx, y: s.y + dy } : s)
+            else if (ref.kind === 'shape') newData.shapes = newData.shapes.map(s => s.id === ref.id ? { ...s, x: s.x + dx, y: s.y + dy } : s)
+            else if (ref.kind === 'note') newData.stickyNotes = newData.stickyNotes.map(n => n.id === ref.id ? { ...n, x: n.x + dx, y: n.y + dy } : n)
+            else if (ref.kind === 'text') newData.texts = newData.texts.map(t => t.id === ref.id ? { ...t, x: t.x + dx, y: t.y + dy } : t)
           }
           commit(newData)
         }
@@ -559,7 +670,7 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
     return () => window.removeEventListener('keydown', handler)
   }, [
     currentPageIdx, data, handleUndo, handleRedo,
-    selectedStickerId, selectedShapeId, selectedNoteId, selectedTextId,
+    selectedItems, setSelectedItems,
     commit, clearSelection, setTextInput, editor, setTool,
   ])
 
@@ -787,17 +898,39 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
 
   const renderStrokes = () => {
     const allStrokes = [...data.strokes]
-    if (isDrawing && currentPoints.length > 0 && activeTool !== 'eraser' && activeTool !== 'ruler' && activeTool !== 'lasso') {
+    if (isDrawing && currentPoints.length > 0 && activeTool !== 'eraser' && activeTool !== 'ruler' && activeTool !== 'lasso' && !shapeDraft) {
+      const tool = activeTool as 'pen' | 'pencil' | 'brush' | 'marker' | 'highlighter'
       allStrokes.push({
         id: 'preview',
-        tool: activeTool as 'pen' | 'pencil' | 'highlighter',
+        tool,
         color: editor.getToolColor(),
         size: editor.getToolSize(),
         opacity: editor.getToolOpacity(),
+        pressureSensitive: editor.pressureSensitive && (tool === 'pen' || tool === 'brush' || tool === 'pencil'),
         points: currentPoints,
       })
     }
     return allStrokes.map((s) => <StrokePath key={s.id} s={s} />)
+  }
+
+  const renderShapeDraft = () => {
+    if (!shapeDraft) return null
+    const x = Math.min(shapeDraft.startX, shapeDraft.endX)
+    const y = Math.min(shapeDraft.startY, shapeDraft.endY)
+    const w = Math.abs(shapeDraft.endX - shapeDraft.startX)
+    const h = Math.abs(shapeDraft.endY - shapeDraft.startY)
+    const preview: ShapeItem = {
+      id: 'draft',
+      kind: shapeDraft.kind,
+      x,
+      y,
+      width: Math.max(2, w),
+      height: shapeDraft.kind === 'line' ? Math.max(2, h) : Math.max(2, h),
+      color: editor.shapeColor,
+      outline: editor.shapeOutline,
+      strokeWidth: editor.shapeStrokeWidth,
+    }
+    return <ShapeRenderer shape={preview} />
   }
 
   const renderRulerPreview = () => {
@@ -820,6 +953,20 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
     return null
   }
 
+  const renderGuides = () => {
+    if (!editor.alignmentGuides) return null
+    return (
+      <g stroke="var(--primary)" strokeWidth={1} strokeDasharray="4 4" opacity={0.6} pointerEvents="none">
+        {guides.x.map((x) => (
+          <line key={`gx-${x}`} x1={x} y1={0} x2={x} y2={PAGE_HEIGHT} />
+        ))}
+        {guides.y.map((y) => (
+          <line key={`gy-${y}`} x1={0} y1={y} x2={PAGE_WIDTH} y2={y} />
+        ))}
+      </g>
+    )
+  }
+
   const renderLassoPreview = () => {
     if (activeTool === 'lasso' && isDrawing && currentPoints.length > 1) {
       return (
@@ -839,22 +986,28 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
 
   // ─── Tool settings ──────────────────────────────────────────────────────────
 
-  const ToolSettings = () => {
+  const ToolSettings = ({ triggerFromRadial, radialPosition }: { triggerFromRadial?: boolean; radialPosition?: { x: number; y: number } }) => {
     const color = editor.getToolColor()
     const size = editor.getToolSize()
     const opacity = editor.getToolOpacity()
-    const colors = ['#1a1a1a', '#e05b6d', '#f0b429', '#7bb686', '#5b8dbf', '#c9b6e4', '#e8a0a0', '#d4b070', '#4a4a4a', '#6b5b8a']
 
     const setterColor =
       activeTool === 'pen' ? editor.setPenColor :
       activeTool === 'pencil' ? editor.setPencilColor :
+      activeTool === 'brush' ? editor.setBrushColor :
+      activeTool === 'marker' ? editor.setMarkerColor :
       activeTool === 'highlighter' ? editor.setHighlighterColor :
       activeTool === 'ruler' ? editor.setRulerColor :
-      activeTool === 'text' ? editor.setTextColor : null
+      activeTool === 'text' ? editor.setTextColor :
+      (activeTool === 'rectangle' || activeTool === 'ellipse' || activeTool === 'line' || activeTool === 'arrow') ? editor.setShapeColor :
+      activeTool === 'fill' ? editor.setFillColor :
+      null
 
     const setterSize =
       activeTool === 'pen' ? editor.setPenSize :
       activeTool === 'pencil' ? editor.setPencilSize :
+      activeTool === 'brush' ? editor.setBrushSize :
+      activeTool === 'marker' ? editor.setMarkerSize :
       activeTool === 'highlighter' ? editor.setHighlighterSize :
       activeTool === 'ruler' ? editor.setRulerSize :
       activeTool === 'eraser' ? editor.setEraserSize : null
@@ -862,39 +1015,40 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
     const setterOpacity =
       activeTool === 'pen' ? editor.setPenOpacity :
       activeTool === 'pencil' ? editor.setPencilOpacity :
+      activeTool === 'brush' ? editor.setBrushOpacity :
+      activeTool === 'marker' ? editor.setMarkerOpacity :
       activeTool === 'highlighter' ? editor.setHighlighterOpacity :
       activeTool === 'ruler' ? editor.setRulerOpacity : null
 
+    const isShapeTool = activeTool === 'rectangle' || activeTool === 'ellipse' || activeTool === 'line' || activeTool === 'arrow'
+
     return (
-      <Popover>
+      <Popover open={triggerFromRadial ? true : undefined} onOpenChange={(open) => {
+        if (!open) setShowToolSettingsFromRadial(false)
+      }}>
         <PopoverTrigger className="rounded-xl p-1.5 hover:bg-muted transition-colors">
           <div className="size-4 rounded-full border border-border" style={{ backgroundColor: color }} />
         </PopoverTrigger>
-        <PopoverContent className="w-56 p-4">
+        <PopoverContent 
+          className="w-64 p-4 max-h-[80vh] overflow-auto"
+          style={radialPosition ? { 
+            position: 'fixed',
+            left: radialPosition.x + 20, 
+            top: radialPosition.y + 20,
+            transform: 'none' 
+          } : {}}
+        >
           <p className="text-xs font-semibold mb-3">Configurações</p>
           {setterColor && (
-            <>
-              <p className="text-[11px] text-muted-foreground mb-1.5">Cor</p>
-              <div className="flex flex-wrap gap-1.5 mb-3">
-                <input
-                  type="color"
-                  value={color}
-                  onChange={(e) => setterColor?.(e.target.value)}
-                  className="size-6 rounded cursor-pointer border-0 p-0"
-                />
-                {colors.map((c) => (
-                  <button
-                    key={c}
-                    onClick={() => setterColor?.(c)}
-                    className="size-6 rounded-full border-2 transition-all hover:scale-110 cursor-pointer"
-                    style={{
-                      backgroundColor: c,
-                      borderColor: c === color ? (isDark ? '#fff' : '#333') : 'transparent',
-                    }}
-                  />
-                ))}
-              </div>
-            </>
+            <div className="mb-3">
+              <ColorPalette
+                color={color}
+                recent={editor.lastColors}
+                onPick={(c) => { setterColor(c); editor.pushLastColor(c) }}
+                onEyedropper={() => setTool('eyedropper')}
+                onClearRecent={() => editor.clearLastColors()}
+              />
+            </div>
           )}
           {setterSize && (
             <>
@@ -904,7 +1058,7 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
               <input
                 type="range"
                 min={0.5}
-                max={activeTool === 'highlighter' ? 30 : 10}
+                max={activeTool === 'highlighter' ? 30 : activeTool === 'brush' ? 24 : 12}
                 step={0.5}
                 value={size}
                 onChange={(e) => setterSize?.(Number(e.target.value))}
@@ -928,6 +1082,68 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
               />
             </>
           )}
+          {(activeTool === 'pen' || activeTool === 'pencil' || activeTool === 'brush') && (
+            <label className="flex items-center gap-2 mt-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={editor.pressureSensitive}
+                onChange={(e) => editor.setPressureSensitive(e.target.checked)}
+                className="size-4 accent-primary"
+              />
+              <span className="text-[11px]">Sensível à pressão</span>
+            </label>
+          )}
+          {isShapeTool && (
+            <div className="mt-3 space-y-2 border-t border-border/40 pt-3">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={editor.shapeOutline}
+                  onChange={(e) => editor.setShapeOutline(e.target.checked)}
+                  className="size-4 accent-primary"
+                />
+                <span className="text-[11px]">Apenas contorno</span>
+              </label>
+              {editor.shapeOutline && (
+                <>
+                  <p className="text-[11px] text-muted-foreground">
+                    Espessura do contorno: <span className="font-bold text-foreground">{editor.shapeStrokeWidth}px</span>
+                  </p>
+                  <input
+                    type="range"
+                    min={1}
+                    max={10}
+                    step={0.5}
+                    value={editor.shapeStrokeWidth}
+                    onChange={(e) => editor.setShapeStrokeWidth(Number(e.target.value))}
+                    className="w-full"
+                  />
+                </>
+              )}
+            </div>
+          )}
+          <div className="mt-3 space-y-2 border-t border-border/40 pt-3">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={editor.snappingEnabled}
+                onChange={(e) => editor.setSnappingEnabled(e.target.checked)}
+                className="size-4 accent-primary"
+              />
+              <span className="text-[11px] flex items-center gap-1">
+                <Magnet size={11} /> Snap ao grid
+              </span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={editor.alignmentGuides}
+                onChange={(e) => editor.setAlignmentGuides(e.target.checked)}
+                className="size-4 accent-primary"
+              />
+              <span className="text-[11px]">Guias de alinhamento</span>
+            </label>
+          </div>
           {activeTool === 'text' && (
             <>
               <p className="text-[11px] text-muted-foreground mb-1.5">Tamanho da fonte</p>
@@ -1002,7 +1218,7 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
     <div className="flex h-screen flex-col bg-[color:light-dark(#e8e5df,#1a1a18)]">
       {/* Top bar */}
       <div className="flex items-center gap-2 h-12 px-3 border-b border-border/40 bg-background/80 backdrop-blur-lg shrink-0">
-        <Button variant="ghost" size="icon-sm" className="rounded-xl" onClick={() => window.history.back()}>
+        <Button variant="ghost" size="icon-sm" className="rounded-xl" onClick={() => router.back()}>
           <ArrowLeft size={18} />
         </Button>
         <span className="text-sm font-semibold truncate max-w-[200px]">{planner.name}</span>
@@ -1362,8 +1578,8 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
       </div>
 
       <div className="flex flex-1 min-h-0">
-        {/* Toolbar dock */}
-        <div className="w-12 shrink-0 flex flex-col items-center gap-1 py-3 border-r border-border/40 bg-background/60">
+        {/* Toolbar dock (desktop only) */}
+        <div className="hidden md:flex w-12 shrink-0 flex-col items-center gap-1 py-3 border-r border-border/40 bg-background/60">
           {toolbarItems().map((tool) => (
             <Tooltip key={tool.id}>
               <TooltipTrigger
@@ -1397,7 +1613,7 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
             <TooltipContent>OCR — Reconhecer escrita</TooltipContent>
           </Tooltip>
           <div className="mt-auto">
-            <ToolSettings />
+            {!isMobile && <ToolSettings triggerFromRadial={showToolSettingsFromRadial} />}
           </div>
         </div>
 
@@ -1411,7 +1627,6 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
               style={{
                 width: editor.eraserSize * 2 * displayScale,
                 height: editor.eraserSize * 2 * displayScale,
-                display: 'none', // shown via pointermove
               }}
             />
           )}
@@ -1520,9 +1735,14 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
                     height: '100%',
                     touchAction: 'none',
                     cursor:
-                      activeTool === 'eraser' ? 'crosshair' :
+                      activeTool === 'eraser' ? 'none' :
                       activeTool === 'text' ? 'text' :
-                      activeTool === 'pan' ? (isPanning ? 'grabbing' : 'grab') :
+                      activeTool === 'pan' || activeTool === 'hand' ? (isPanning ? 'grabbing' : 'grab') :
+                      activeTool === 'eyedropper' ? 'crosshair' :
+                      activeTool === 'fill' ? 'cell' :
+                      activeTool === 'sticker' ? 'move' :
+                      activeTool === 'lasso' ? 'crosshair' :
+                      (activeTool === 'rectangle' || activeTool === 'ellipse' || activeTool === 'line' || activeTool === 'arrow') ? 'crosshair' :
                       'crosshair',
                   }}
                   onContextMenu={handleContextMenu}
@@ -1539,8 +1759,9 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
                     }
                   }}
                   onPointerUp={handlePointerUp}
+                  onPointerCancel={handlePointerCancel}
                   onPointerLeave={(e) => {
-                    handlePointerUp(e)
+                    handlePointerCancel(e)
                     if (eraserCursorRef.current) eraserCursorRef.current.style.opacity = '0'
                   }}
                   onDragOver={(e) => e.preventDefault()}
@@ -1567,6 +1788,8 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
                     {renderStrokes()}
                     {renderRulerPreview()}
                     {renderLassoPreview()}
+                    {renderShapeDraft()}
+                    {renderGuides()}
 
                     {/* Shapes */}
                     {data.shapes.map((shape) => <ShapeRenderer key={shape.id} shape={shape} />)}
@@ -1589,7 +1812,7 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
                             width={s.width}
                             height={s.height}
                             transform={`rotate(${s.rotation}, ${s.x + s.width / 2}, ${s.y + s.height / 2})`}
-                            opacity={s.locked ? 0.7 : 1}
+                            opacity={(s.opacity ?? 1) * (s.locked ? 0.7 : 1)}
                           />
                         )
                       })}
@@ -1607,12 +1830,12 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
                           t.fontFamily === 'serif' ? 'var(--font-serif)' :
                           'var(--font-sans)'
                         }
+                        opacity={(t.opacity ?? 1) * (t.locked ? 0.7 : 1)}
+                        transform={t.rotation ? `rotate(${t.rotation}, ${t.x}, ${t.y})` : undefined}
                         style={{ pointerEvents: 'auto' }}
                         onDoubleClick={() => {
-                          if (activeTool === 'sticker') {
-                            setTextInput({ x: t.x, y: t.y, show: true, editingId: t.id })
-                            setTextValue(t.text)
-                          }
+                          setTextInput({ x: t.x, y: t.y, show: true, editingId: t.id })
+                          setTextValue(t.text)
                         }}
                       >
                         {t.text}
@@ -1650,41 +1873,48 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
                     })}
 
                   {/* Sticky notes (HTML overlay) */}
-                  {data.stickyNotes.map((n) => (
-                    <div
-                      key={n.id}
-                      className="absolute pointer-events-none select-none"
-                      style={{
-                        left: n.x * displayScale,
-                        top: n.y * displayScale,
-                        width: 120 * displayScale,
-                        height: 120 * displayScale,
-                      }}
-                      onDoubleClick={() => setEditingNoteId(n.id)}
-                    >
+                  {data.stickyNotes.map((n) => {
+                    const noteW = (n.width ?? 120) * displayScale
+                    const noteH = (n.height ?? 120) * displayScale
+                    return (
                       <div
-                        className="relative size-full rounded-[3px] shadow-[0_6px_16px_rgba(0,0,0,0.18)] p-[8%] overflow-hidden"
-                        style={{ background: `linear-gradient(160deg, ${n.color}, ${n.color}dd)` }}
+                        key={n.id}
+                        className="absolute pointer-events-none select-none"
+                        style={{
+                          left: n.x * displayScale,
+                          top: n.y * displayScale,
+                          width: noteW,
+                          height: noteH,
+                          transform: n.rotation ? `rotate(${n.rotation}deg)` : undefined,
+                          transformOrigin: 'center center',
+                          opacity: (n.opacity ?? 1) * (n.locked ? 0.7 : 1),
+                        }}
+                        onDoubleClick={() => setEditingNoteId(n.id)}
                       >
-                        {!editingNoteId && !n.text && (
-                          <p className="text-[13px] leading-snug italic opacity-40" style={{ fontFamily: 'var(--font-hand)', fontSize: 15 * displayScale }}>
-                            Duplo clique para editar
-                          </p>
-                        )}
-                        <p
-                          className="whitespace-pre-wrap break-words leading-snug"
-                          style={{ fontFamily: 'var(--font-hand)', fontSize: 15 * displayScale, color: 'rgba(0,0,0,0.72)' }}
+                        <div
+                          className="relative size-full rounded-[3px] shadow-[0_6px_16px_rgba(0,0,0,0.18)] p-[8%] overflow-hidden"
+                          style={{ background: `linear-gradient(160deg, ${n.color}, ${n.color}dd)` }}
                         >
-                          {n.text}
-                        </p>
-                        {/* Folded corner */}
-                        <div className="absolute bottom-0 right-0 size-[18%] bg-black/10" style={{ clipPath: 'polygon(100% 0, 0 100%, 100% 100%)' }} />
+                          {!editingNoteId && !n.text && (
+                            <p className="text-[13px] leading-snug italic opacity-40" style={{ fontFamily: 'var(--font-hand)', fontSize: 15 * displayScale }}>
+                              Duplo clique para editar
+                            </p>
+                          )}
+                          <p
+                            className="whitespace-pre-wrap break-words leading-snug"
+                            style={{ fontFamily: 'var(--font-hand)', fontSize: 15 * displayScale, color: 'rgba(0,0,0,0.72)' }}
+                          >
+                            {n.text}
+                          </p>
+                          {/* Folded corner */}
+                          <div className="absolute bottom-0 right-0 size-[18%] bg-black/10" style={{ clipPath: 'polygon(100% 0, 0 100%, 100% 100%)' }} />
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
 
-                  {/* Text input overlay */}
-                  {textInput?.show && (
+                  {/* Text input overlay (desktop inline) */}
+                  {textInput?.show && !isMobile && (
                     <input
                       ref={(el) => { el?.focus() }}
                       autoFocus
@@ -1716,96 +1946,275 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
                   )}
 
                   {/* Note editing overlay */}
-                  {editingNoteId && (
-                    <div
-                      className="absolute z-20 pointer-events-auto"
-                      style={{
-                        left: data.stickyNotes.find(n => n.id === editingNoteId)?.x * displayScale ?? 0,
-                        top: data.stickyNotes.find(n => n.id === editingNoteId)?.y * displayScale ?? 0,
-                        width: 120 * displayScale,
-                        height: 120 * displayScale,
-                      }}
-                    >
-                      <textarea
-                        autoFocus
-                        defaultValue={data.stickyNotes.find(n => n.id === editingNoteId)?.text ?? ''}
-                        onBlur={(e) => {
-                          if (!noteEditCancelRef.current) {
-                            const newData = JSON.parse(JSON.stringify(data)) as CanvasData
-                            newData.stickyNotes = newData.stickyNotes.map((n) =>
-                              n.id === editingNoteId ? { ...n, text: e.target.value } : n,
-                            )
-                            commit(newData)
-                          }
-                          noteEditCancelRef.current = false
-                          setEditingNoteId(null)
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Escape') {
-                            noteEditCancelRef.current = true
-                            ;(e.target as HTMLTextAreaElement).blur()
-                          }
-                          if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-                            ;(e.target as HTMLTextAreaElement).blur()
-                          }
-                        }}
-                        onPointerDown={(e) => e.stopPropagation()}
-                        className="w-full h-full bg-transparent border-none outline-none resize-none p-2"
-                        style={{
-                          fontFamily: 'var(--font-hand)',
-                          fontSize: 15 * displayScale,
-                          color: 'rgba(0,0,0,0.72)',
-                          lineHeight: 1.4,
-                        }}
-                      />
-                    </div>
-                  )}
-
-                  {/* Selection outlines + resize handle */}
-                  {(selectedStickerId || selectedShapeId || selectedNoteId || selectedTextId) && (() => {
-                    const sel = selectedStickerId
-                      ? data.stickers.find(s => s.id === selectedStickerId)
-                      : selectedShapeId
-                        ? data.shapes.find(s => s.id === selectedShapeId)
-                        : selectedNoteId
-                          ? data.stickyNotes.find(n => n.id === selectedNoteId)
-                          : selectedTextId
-                            ? data.texts.find(t => t.id === selectedTextId)
-                            : null
-                    if (!sel) return null
-                    const isSticker = !!selectedStickerId
-                    const isShape = !!selectedShapeId
-                    const isNote = !!selectedNoteId
-                    const isText = !!selectedTextId
-                    let x = isNote ? sel.x : isText ? sel.x : sel.x
-                    let y = isNote ? sel.y : isText ? sel.y : sel.y
-                    let w = isNote ? 120 : isText ? Math.max(20, sel.text.length * sel.fontSize * 0.58) : sel.width
-                    let h = isNote ? 120 : isText ? sel.fontSize * 1.3 : sel.height
+                  {editingNoteId && (() => {
+                    const editingNote = data.stickyNotes.find(n => n.id === editingNoteId)
+                    if (!editingNote) return null
+                    const noteW = (editingNote.width ?? 120) * displayScale
+                    const noteH = (editingNote.height ?? 120) * displayScale
                     return (
-                      <>
-                        <div
-                          className="absolute pointer-events-none border-2 border-dashed border-primary rounded-sm"
+                      <div
+                        className="absolute z-20 pointer-events-auto"
+                        style={{
+                          left: editingNote.x * displayScale,
+                          top: editingNote.y * displayScale,
+                          width: noteW,
+                          height: noteH,
+                          transform: editingNote.rotation ? `rotate(${editingNote.rotation}deg)` : undefined,
+                          transformOrigin: 'center center',
+                        }}
+                      >
+                        <textarea
+                          autoFocus
+                          defaultValue={editingNote.text}
+                          onBlur={(e) => {
+                            if (!noteEditCancelRef.current) {
+                              const newData = JSON.parse(JSON.stringify(data)) as CanvasData
+                              newData.stickyNotes = newData.stickyNotes.map((n) =>
+                                n.id === editingNoteId ? { ...n, text: e.target.value } : n,
+                              )
+                              commit(newData)
+                            }
+                            noteEditCancelRef.current = false
+                            setEditingNoteId(null)
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Escape') {
+                              noteEditCancelRef.current = true
+                              ;(e.target as HTMLTextAreaElement).blur()
+                            }
+                            if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                              ;(e.target as HTMLTextAreaElement).blur()
+                            }
+                          }}
+                          onPointerDown={(e) => e.stopPropagation()}
+                          className="w-full h-full bg-transparent border-none outline-none resize-none p-2"
                           style={{
-                            left: x * displayScale,
-                            top: y * displayScale,
-                            width: w * displayScale,
-                            height: h * displayScale,
+                            fontFamily: 'var(--font-hand)',
+                            fontSize: 15 * displayScale,
+                            color: 'rgba(0,0,0,0.72)',
+                            lineHeight: 1.4,
                           }}
                         />
-                        {(isSticker || isShape) && (
-                          <div
-                            className="absolute size-3 bg-primary rounded-full border-2 border-white cursor-nwse-resize"
-                            style={{
-                              left: (x + w) * displayScale - 6,
-                              top: (y + h) * displayScale - 6,
-                            }}
-                            onPointerDown={(e) => {
-                              e.stopPropagation()
-                              beginResize({ id: sel.id, type: isSticker ? 'sticker' : 'shape', width: sel.width, height: sel.height }, getPageCoords(e as unknown as React.PointerEvent))
-                            }}
-                          />
-                        )}
-                      </>
+                      </div>
+                    )
+                  })()}
+
+                  {/* Selection overlay (Canva-level) */}
+                  {selectedItems.length > 0 && (() => {
+                    const bounds = getSelectionBounds()
+                    if (!bounds) return null
+                    const primaryRef = selectedItems[0]
+                    const primaryItem = primaryRef.kind === 'sticker' ? data.stickers.find(s => s.id === primaryRef.id)
+                      : primaryRef.kind === 'shape' ? data.shapes.find(s => s.id === primaryRef.id)
+                      : primaryRef.kind === 'note' ? data.stickyNotes.find(n => n.id === primaryRef.id)
+                      : data.texts.find(t => t.id === primaryRef.id)
+                    const primaryLocked = primaryItem?.locked ?? false
+                    const multiSelect = selectedItems.length > 1
+
+                    // ─── Ações em lote ou singulares ───
+                    const deleteSelected = () => {
+                      const newData = JSON.parse(JSON.stringify(data)) as CanvasData
+                      const ids = selectedItems
+                      newData.stickers = newData.stickers.filter(s => !ids.some(i => i.kind === 'sticker' && i.id === s.id))
+                      newData.shapes = newData.shapes.filter(s => !ids.some(i => i.kind === 'shape' && i.id === s.id))
+                      newData.stickyNotes = newData.stickyNotes.filter(n => !ids.some(i => i.kind === 'note' && i.id === n.id))
+                      newData.texts = newData.texts.filter(t => !ids.some(i => i.kind === 'text' && i.id === t.id))
+                      commit(newData)
+                      clearSelection()
+                    }
+
+                    const duplicateSelected = () => {
+                      const newData = JSON.parse(JSON.stringify(data)) as CanvasData
+                      const OFFSET = 20
+                      for (const ref of selectedItems) {
+                        if (ref.kind === 'sticker') {
+                          const orig = newData.stickers.find(s => s.id === ref.id)
+                          if (orig) newData.stickers.push({ ...orig, id: uid(), x: orig.x + OFFSET, y: orig.y + OFFSET })
+                        } else if (ref.kind === 'shape') {
+                          const orig = newData.shapes.find(s => s.id === ref.id)
+                          if (orig) newData.shapes.push({ ...orig, id: uid(), x: orig.x + OFFSET, y: orig.y + OFFSET })
+                        } else if (ref.kind === 'note') {
+                          const orig = newData.stickyNotes.find(n => n.id === ref.id)
+                          if (orig) newData.stickyNotes.push({ ...orig, id: uid(), x: orig.x + OFFSET, y: orig.y + OFFSET })
+                        } else if (ref.kind === 'text') {
+                          const orig = newData.texts.find(t => t.id === ref.id)
+                          if (orig) newData.texts.push({ ...orig, id: uid(), x: orig.x + OFFSET, y: orig.y + OFFSET })
+                        }
+                      }
+                      commit(newData)
+                      toast({ title: `${selectedItems.length} item(s) duplicados` })
+                    }
+
+                    const toggleLockSelected = () => {
+                      const newData = JSON.parse(JSON.stringify(data)) as CanvasData
+                      const newLocked = !primaryLocked
+                      for (const ref of selectedItems) {
+                        if (ref.kind === 'sticker') newData.stickers = newData.stickers.map(s => s.id === ref.id ? { ...s, locked: newLocked } : s)
+                        else if (ref.kind === 'shape') newData.shapes = newData.shapes.map(s => s.id === ref.id ? { ...s, locked: newLocked } : s)
+                        else if (ref.kind === 'note') newData.stickyNotes = newData.stickyNotes.map(n => n.id === ref.id ? { ...n, locked: newLocked } : n)
+                        else if (ref.kind === 'text') newData.texts = newData.texts.map(t => t.id === ref.id ? { ...t, locked: newLocked } : t)
+                      }
+                      commit(newData)
+                      toast({ title: newLocked ? 'Bloqueado' : 'Desbloqueado' })
+                    }
+
+                    const bringToFrontSelected = () => {
+                      const newData = JSON.parse(JSON.stringify(data)) as CanvasData
+                      for (const ref of selectedItems) {
+                        if (ref.kind === 'sticker') {
+                          const idx = newData.stickers.findIndex(s => s.id === ref.id)
+                          if (idx >= 0) { const [it] = newData.stickers.splice(idx, 1); newData.stickers.push(it) }
+                        } else if (ref.kind === 'shape') {
+                          const idx = newData.shapes.findIndex(s => s.id === ref.id)
+                          if (idx >= 0) { const [it] = newData.shapes.splice(idx, 1); newData.shapes.push(it) }
+                        } else if (ref.kind === 'note') {
+                          const idx = newData.stickyNotes.findIndex(n => n.id === ref.id)
+                          if (idx >= 0) { const [it] = newData.stickyNotes.splice(idx, 1); newData.stickyNotes.push(it) }
+                        } else if (ref.kind === 'text') {
+                          const idx = newData.texts.findIndex(t => t.id === ref.id)
+                          if (idx >= 0) { const [it] = newData.texts.splice(idx, 1); newData.texts.push(it) }
+                        }
+                      }
+                      commit(newData)
+                    }
+
+                    const sendToBackSelected = () => {
+                      const newData = JSON.parse(JSON.stringify(data)) as CanvasData
+                      for (const ref of [...selectedItems].reverse()) {
+                        if (ref.kind === 'sticker') {
+                          const idx = newData.stickers.findIndex(s => s.id === ref.id)
+                          if (idx >= 0) { const [it] = newData.stickers.splice(idx, 1); newData.stickers.unshift(it) }
+                        } else if (ref.kind === 'shape') {
+                          const idx = newData.shapes.findIndex(s => s.id === ref.id)
+                          if (idx >= 0) { const [it] = newData.shapes.splice(idx, 1); newData.shapes.unshift(it) }
+                        } else if (ref.kind === 'note') {
+                          const idx = newData.stickyNotes.findIndex(n => n.id === ref.id)
+                          if (idx >= 0) { const [it] = newData.stickyNotes.splice(idx, 1); newData.stickyNotes.unshift(it) }
+                        } else if (ref.kind === 'text') {
+                          const idx = newData.texts.findIndex(t => t.id === ref.id)
+                          if (idx >= 0) { const [it] = newData.texts.splice(idx, 1); newData.texts.unshift(it) }
+                        }
+                      }
+                      commit(newData)
+                    }
+
+                    const rotate90Selected = () => {
+                      const newData = JSON.parse(JSON.stringify(data)) as CanvasData
+                      for (const ref of selectedItems) {
+                        if (ref.kind === 'sticker') newData.stickers = newData.stickers.map(s => s.id === ref.id ? { ...s, rotation: ((s.rotation + 90) % 360 + 360) % 360 } : s)
+                        else if (ref.kind === 'shape') newData.shapes = newData.shapes.map(s => s.id === ref.id ? { ...s, rotation: (((s.rotation ?? 0) + 90) % 360 + 360) % 360 } : s)
+                        else if (ref.kind === 'note') newData.stickyNotes = newData.stickyNotes.map(n => n.id === ref.id ? { ...n, rotation: (((n.rotation ?? 0) + 90) % 360 + 360) % 360 } : n)
+                        else if (ref.kind === 'text') newData.texts = newData.texts.map(t => t.id === ref.id ? { ...t, rotation: (((t.rotation ?? 0) + 90) % 360 + 360) % 360 } : t)
+                      }
+                      commit(newData)
+                    }
+
+                    const alignSelected = (mode: 'left' | 'centerH' | 'right' | 'top' | 'centerV' | 'bottom') => {
+                      if (selectedItems.length < 2) return
+                      const b = getSelectionBounds()
+                      if (!b) return
+                      const newData = JSON.parse(JSON.stringify(data)) as CanvasData
+                      for (const ref of selectedItems) {
+                        const ib = getItemBounds(ref)
+                        if (!ib) continue
+                        let newX = ib.x
+                        let newY = ib.y
+                        if (mode === 'left') newX = b.x
+                        else if (mode === 'centerH') newX = b.x + (b.width - ib.width) / 2
+                        else if (mode === 'right') newX = b.x + b.width - ib.width
+                        else if (mode === 'top') newY = b.y
+                        else if (mode === 'centerV') newY = b.y + (b.height - ib.height) / 2
+                        else if (mode === 'bottom') newY = b.y + b.height - ib.height
+
+                        if (ref.kind === 'sticker') newData.stickers = newData.stickers.map(s => s.id === ref.id ? { ...s, x: newX, y: newY } : s)
+                        else if (ref.kind === 'shape') newData.shapes = newData.shapes.map(s => s.id === ref.id ? { ...s, x: newX, y: newY } : s)
+                        else if (ref.kind === 'note') newData.stickyNotes = newData.stickyNotes.map(n => n.id === ref.id ? { ...n, x: newX, y: newY } : n)
+                        else if (ref.kind === 'text') newData.texts = newData.texts.map(t => t.id === ref.id ? { ...t, x: newX, y: newY } : t)
+                      }
+                      commit(newData)
+                      toast({ title: 'Alinhado!' })
+                    }
+
+                    const distributeSelected = (axis: 'horizontal' | 'vertical') => {
+                      if (selectedItems.length < 3) {
+                        toast({ title: 'Distribuir requer 3+ itens' })
+                        return
+                      }
+                      const itemsWithBounds = selectedItems
+                        .map(ref => ({ ref, bounds: getItemBounds(ref) }))
+                        .filter((x): x is { ref: CanvasItemRef; bounds: NonNullable<ReturnType<typeof getItemBounds>> } => x.bounds !== null)
+                        .sort((a, b) => axis === 'horizontal' ? a.bounds.x - b.bounds.x : a.bounds.y - b.bounds.y)
+
+                      if (itemsWithBounds.length < 3) return
+
+                      const b = getSelectionBounds()
+                      if (!b) return
+                      const newData = JSON.parse(JSON.stringify(data)) as CanvasData
+                      const totalSpan = axis === 'horizontal' ? b.width : b.height
+                      const totalItemSize = itemsWithBounds.reduce((sum, ib) => sum + (axis === 'horizontal' ? ib.bounds.width : ib.bounds.height), 0)
+                      const gap = (totalSpan - totalItemSize) / (itemsWithBounds.length - 1)
+
+                      let cursor = axis === 'horizontal' ? b.x : b.y
+                      for (const { ref, bounds: ib } of itemsWithBounds) {
+                        const newX = axis === 'horizontal' ? cursor : ib.x
+                        const newY = axis === 'vertical' ? cursor : ib.y
+                        cursor += (axis === 'horizontal' ? ib.width : ib.height) + gap
+
+                        if (ref.kind === 'sticker') newData.stickers = newData.stickers.map(s => s.id === ref.id ? { ...s, x: newX, y: newY } : s)
+                        else if (ref.kind === 'shape') newData.shapes = newData.shapes.map(s => s.id === ref.id ? { ...s, x: newX, y: newY } : s)
+                        else if (ref.kind === 'note') newData.stickyNotes = newData.stickyNotes.map(n => n.id === ref.id ? { ...n, x: newX, y: newY } : n)
+                        else if (ref.kind === 'text') newData.texts = newData.texts.map(t => t.id === ref.id ? { ...t, x: newX, y: newY } : t)
+                      }
+                      commit(newData)
+                      toast({ title: 'Distribuído!' })
+                    }
+
+                    const setOpacitySelected = (opacity: number) => {
+                      const newData = JSON.parse(JSON.stringify(data)) as CanvasData
+                      for (const ref of selectedItems) {
+                        if (ref.kind === 'sticker') newData.stickers = newData.stickers.map(s => s.id === ref.id ? { ...s, opacity } : s)
+                        else if (ref.kind === 'shape') newData.shapes = newData.shapes.map(s => s.id === ref.id ? { ...s, opacity } : s)
+                        else if (ref.kind === 'note') newData.stickyNotes = newData.stickyNotes.map(n => n.id === ref.id ? { ...n, opacity } : n)
+                        else if (ref.kind === 'text') newData.texts = newData.texts.map(t => t.id === ref.id ? { ...t, opacity } : t)
+                      }
+                      commit(newData)
+                    }
+
+                    const primaryOpacity = (primaryItem && 'opacity' in primaryItem && typeof primaryItem.opacity === 'number') ? primaryItem.opacity : 1
+
+                    return (
+                      <SelectionOverlay
+                        bounds={bounds}
+                        displayScale={displayScale}
+                        items={selectedItems}
+                        multiSelect={multiSelect}
+                        primaryLocked={primaryLocked}
+                        primaryOpacity={primaryOpacity}
+                        onStartResize={(handle, e) => {
+                          const pt = getPageCoords(e)
+                          beginResize(selectedItems, handle, pt)
+                        }}
+                        onStartRotate={(e) => {
+                          const pt = getPageCoords(e)
+                          beginRotate(selectedItems, pt)
+                        }}
+                        onDelete={deleteSelected}
+                        onDuplicate={duplicateSelected}
+                        onToggleLock={toggleLockSelected}
+                        onBringToFront={bringToFrontSelected}
+                        onSendToBack={sendToBackSelected}
+                        onRotate90={rotate90Selected}
+                        onAlignLeft={() => alignSelected('left')}
+                        onAlignCenterH={() => alignSelected('centerH')}
+                        onAlignRight={() => alignSelected('right')}
+                        onAlignTop={() => alignSelected('top')}
+                        onAlignCenterV={() => alignSelected('centerV')}
+                        onAlignBottom={() => alignSelected('bottom')}
+                        onDistributeH={() => distributeSelected('horizontal')}
+                        onDistributeV={() => distributeSelected('vertical')}
+                        onOpacityChange={setOpacitySelected}
+                        onClose={clearSelection}
+                      />
                     )
                   })()}
                   <div className="absolute inset-0 pointer-events-none paper-grain opacity-[0.05] mix-blend-overlay z-10" />
@@ -1815,105 +2224,91 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
           </div>
         </div>
 
-        {/* Side panel: Stickers */}
-        <AnimatePresence>
-          {showStickerPanel && (
-            <motion.div
-              initial={{ width: 0, opacity: 0 }}
-              animate={{ width: 300, opacity: 1 }}
-              exit={{ width: 0, opacity: 0 }}
-              className="shrink-0 border-l border-border/40 bg-background overflow-hidden fixed md:relative inset-0 z-50 md:z-auto"
-            >
-              <div className="w-[300px] p-4 h-full flex flex-col">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-semibold">Stickers</h3>
-                  <Button
-                    variant="ghost"
-                    size="icon-xs"
+        {/* Side panel: Stickers (desktop) / BottomSheet (mobile) */}
+        <BottomSheet
+          open={showStickerPanel}
+          onClose={() => {
+            setShowStickerPanel(false)
+            if (activeTool === 'sticker') setTool('pen')
+          }}
+          title="Stickers"
+          maxHeight="75vh"
+        >
+          <div className="w-full md:w-[300px] p-4 h-full flex flex-col overflow-hidden">
+            <Input
+              placeholder="Buscar stickers..."
+              value={stickerSearch}
+              onChange={(e) => setStickerSearch(e.target.value)}
+            />
+            <div className="flex gap-1.5 my-3 overflow-auto no-scrollbar">
+              {[{ id: 'all', label: 'Todos' }, { id: 'favorites', label: '★ Favoritos' }, ...STICKER_CATEGORIES.map((c) => ({ id: c, label: c }))].map(
+                (c) => (
+                  <button
+                    key={c.id}
+                    onClick={() => setStickerCat(c.id)}
+                    className={cn(
+                      'shrink-0 rounded-full px-3 py-1 text-[11px] font-medium transition-colors cursor-pointer',
+                      stickerCat === c.id
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted text-muted-foreground hover:bg-muted/80',
+                    )}
+                  >
+                    {c.label}
+                  </button>
+                ),
+              )}
+            </div>
+            <ScrollArea className="flex-1">
+              <div className="grid grid-cols-5 md:grid-cols-4 gap-2">
+                {stickers.map((st) => (
+                  <button
+                    key={st.id}
+                    className={cn(
+                      'aspect-square rounded-xl border border-border/40 p-2 hover:border-primary/30 hover:bg-muted/40 transition-all flex items-center justify-center cursor-pointer active:scale-95',
+                      favoriteStickers.has(st.id) && 'border-yellow-500/40',
+                    )}
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData('stickerId', st.id)
+                    }}
                     onClick={() => {
-                      setShowStickerPanel(false)
-                      if (activeTool === 'sticker') setTool('pan')
+                      placeSticker(st.id, 200, 200)
+                      toast({ title: 'Sticker adicionado!' })
+                    }}
+                    onDoubleClick={() => {
+                      setFavoriteStickers((prev) => {
+                        const next = new Set(prev)
+                        if (next.has(st.id)) next.delete(st.id)
+                        else next.add(st.id)
+                        return next
+                      })
                     }}
                   >
-                    <X size={14} />
-                  </Button>
-                </div>
-                <Input
-                  placeholder="Buscar stickers..."
-                  value={stickerSearch}
-                  onChange={(e) => setStickerSearch(e.target.value)}
-                />
-                <div className="flex gap-1.5 my-3 overflow-auto no-scrollbar">
-                  {[{ id: 'all', label: 'Todos' }, { id: 'favorites', label: '★ Favoritos' }, ...STICKER_CATEGORIES.map((c) => ({ id: c, label: c }))].map(
-                    (c) => (
-                      <button
-                        key={c.id}
-                        onClick={() => setStickerCat(c.id)}
-                        className={cn(
-                          'shrink-0 rounded-full px-3 py-1 text-[11px] font-medium transition-colors cursor-pointer',
-                          stickerCat === c.id
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-muted text-muted-foreground hover:bg-muted/80',
-                        )}
-                      >
-                        {c.label}
-                      </button>
-                    ),
-                  )}
-                </div>
-                <ScrollArea className="flex-1">
-                  <div className="grid grid-cols-4 gap-2">
-                    {stickers.map((st) => (
-                      <button
-                        key={st.id}
-                        className={cn(
-                          'aspect-square rounded-xl border border-border/40 p-2 hover:border-primary/30 hover:bg-muted/40 transition-all flex items-center justify-center cursor-pointer',
-                          favoriteStickers.has(st.id) && 'border-yellow-500/40',
-                        )}
-                        draggable
-                        onDragStart={(e) => {
-                          e.dataTransfer.setData('stickerId', st.id)
-                        }}
-                        onClick={() => {
-                          placeSticker(st.id, 200, 200)
-                          toast({ title: 'Sticker adicionado!' })
-                        }}
-                        onDoubleClick={() => {
-                          setFavoriteStickers((prev) => {
-                            const next = new Set(prev)
-                            if (next.has(st.id)) next.delete(st.id)
-                            else next.add(st.id)
-                            return next
-                          })
-                        }}
-                      >
-                        {st.lottieUrl && st.previewSvg ? (
-                          <img
-                            src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(st.previewSvg)}`}
-                            alt={st.name}
-                            className="w-full h-full object-contain"
-                            draggable={false}
-                          />
-                        ) : (
-                          <img
-                            src={stickerToDataUrl(st)}
-                            alt={st.name}
-                            className="w-full h-full object-contain"
-                            draggable={false}
-                          />
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                </ScrollArea>
-                <Separator className="my-3" />
-                <p className="text-[10px] text-muted-foreground text-center">
-                  Clique para adicionar &bull; Duplo clique para favoritar &bull; Arraste para o canvas
-                </p>
+                    {st.lottieUrl && st.previewSvg ? (
+                      <img
+                        src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(st.previewSvg)}`}
+                        alt={st.name}
+                        className="w-full h-full object-contain"
+                        draggable={false}
+                      />
+                    ) : (
+                      <img
+                        src={stickerToDataUrl(st)}
+                        alt={st.name}
+                        className="w-full h-full object-contain"
+                        draggable={false}
+                      />
+                    )}
+                  </button>
+                ))}
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+            </ScrollArea>
+            <Separator className="my-3" />
+            <p className="text-[10px] text-muted-foreground text-center">
+              Clique para adicionar &bull; Duplo clique para favoritar &bull; Arraste para o canvas
+            </p>
+          </div>
+        </BottomSheet>
 
         {/* Context Menu */}
         <ContextMenu
@@ -1925,25 +2320,139 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
           onClose={() => setCtxMenu(null)}
         />
 
-        {/* OCR Panel */}
-        <AnimatePresence>
-          {showOcrPanel && (
-            <motion.div
-              initial={{ width: 0, opacity: 0 }}
-              animate={{ width: 300, opacity: 1 }}
-              exit={{ width: 0, opacity: 0 }}
-              className="shrink-0 border-l border-border/40 bg-background overflow-hidden fixed md:relative inset-0 z-50 md:z-auto"
-            >
-              <div className="w-[300px] p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-semibold flex items-center gap-2">
-                    <ScanText size={16} /> OCR
-                  </h3>
-                  <Button variant="ghost" size="icon-xs" onClick={() => setShowOcrPanel(false)}>
-                    <X size={14} />
-                  </Button>
+        {/* Mobile text editor sheet */}
+        <BottomSheet
+          open={!!(textInput?.show && isMobile)}
+          onClose={() => {
+            setTextValue('')
+            setTextInput(null)
+          }}
+          title={textInput?.editingId ? 'Editar texto' : 'Novo texto'}
+          maxHeight="60vh"
+          desktopSidePanel={false}
+        >
+          <div className="p-4 space-y-4">
+            <textarea
+              autoFocus
+              value={textValue}
+              onChange={(e) => setTextValue(e.target.value)}
+              placeholder="Digite seu texto..."
+              className="w-full min-h-[120px] rounded-xl border border-border bg-background p-3 text-foreground outline-none focus:border-primary resize-none"
+              style={{
+                fontFamily:
+                  editor.textFontFamily === 'hand' ? 'var(--font-hand)' :
+                  editor.textFontFamily === 'serif' ? 'var(--font-serif)' :
+                  'var(--font-sans)',
+                fontSize: editor.textFontSize,
+                color: editor.textColor,
+              }}
+            />
+            <div className="space-y-3">
+              <div>
+                <p className="text-[11px] text-muted-foreground mb-1.5">Cor</p>
+                <ColorPalette
+                  color={editor.textColor}
+                  recent={editor.lastColors}
+                  onPick={(c) => { editor.setTextColor(c); editor.pushLastColor(c) }}
+                  onEyedropper={() => {
+                    setTool('eyedropper')
+                    setTextInput(null)
+                  }}
+                  onClearRecent={() => editor.clearLastColors()}
+                />
+              </div>
+              <div>
+                <p className="text-[11px] text-muted-foreground mb-1.5">
+                  Tamanho: <span className="font-bold text-foreground">{editor.textFontSize}px</span>
+                </p>
+                <input
+                  type="range"
+                  min={10}
+                  max={48}
+                  step={1}
+                  value={editor.textFontSize}
+                  onChange={(e) => editor.setTextFontSize(Number(e.target.value))}
+                  className="w-full"
+                />
+              </div>
+              <div>
+                <p className="text-[11px] text-muted-foreground mb-1.5">Fonte</p>
+                <div className="flex gap-2">
+                  {(['sans', 'serif', 'hand'] as const).map((f) => (
+                    <button
+                      key={f}
+                      onClick={() => editor.setTextFontFamily(f)}
+                      className={cn(
+                        'flex-1 rounded-xl py-2 text-xs transition-colors cursor-pointer',
+                        editor.textFontFamily === f ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/70',
+                      )}
+                    >
+                      {f === 'hand' ? 'Mão' : f === 'serif' ? 'Serif' : 'Sans'}
+                    </button>
+                  ))}
                 </div>
-                <p className="text-xs text-muted-foreground mb-4">Converter escrita manual em texto</p>
+              </div>
+            </div>
+            <div className="flex gap-2 pt-2">
+              <Button
+                variant="outline"
+                className="flex-1 rounded-xl"
+                onClick={() => {
+                  setTextValue('')
+                  setTextInput(null)
+                }}
+              >
+                Cancelar
+              </Button>
+              <Button
+                className="flex-1 rounded-xl"
+                disabled={!textValue.trim()}
+                onClick={commitTextInput}
+              >
+                Confirmar
+              </Button>
+            </div>
+          </div>
+        </BottomSheet>
+
+        {/* Radial menu (mobile tool selector) */}
+        <RadialMenu
+          open={radialMenuOpen}
+          items={
+            [
+              { id: 'pen', label: 'Caneta', icon: Pen, active: activeTool === 'pen' },
+              { id: 'pencil', label: 'Lápis', icon: Pencil, active: activeTool === 'pencil' },
+              { id: 'brush', label: 'Pincel', icon: Paintbrush, active: activeTool === 'brush' },
+              { id: 'highlighter', label: 'Marca-texto', icon: Highlighter, active: activeTool === 'highlighter' },
+              { id: 'eraser', label: 'Borracha', icon: Eraser, active: activeTool === 'eraser' },
+              { id: 'lasso', label: 'Seleção', icon: Lasso, active: activeTool === 'lasso' },
+              { id: 'text', label: 'Texto', icon: Type, active: activeTool === 'text' },
+              { id: 'hand', label: 'Mover', icon: Hand, active: activeTool === 'hand' || activeTool === 'pan' },
+              { id: 'settings', label: 'Config', icon: Settings, active: false },
+            ] as RadialItem[]
+          }
+          onSelect={(id) => {
+            if (id === 'settings') {
+              // Abre o popover de configurações sem fechar o radial
+              setShowToolSettingsFromRadial(true)
+              return
+            }
+            setTool(id as ToolType)
+            if (id === 'sticker') setShowStickerPanel(true)
+            setRadialMenuOpen(false)
+          }}
+          onClose={() => setRadialMenuOpen(false)}
+          triggerRef={radialTriggerRef}
+        />
+
+        {/* OCR Panel */}
+        <BottomSheet
+          open={showOcrPanel}
+          onClose={() => setShowOcrPanel(false)}
+          title="OCR — Reconhecer escrita"
+          maxHeight="75vh"
+        >
+          <div className="w-full md:w-[300px] p-4 overflow-auto">
 
                 {/* Status / progress */}
                 {ocr.status === 'idle' && !ocr.lastResult && (
@@ -2028,45 +2537,123 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
                   </div>
                 )}
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        </BottomSheet>
       </div>
 
-      {/* Mobile toolbar (bottom dock) */}
-      <div className="md:hidden flex items-center justify-around px-1 h-14 shrink-0 border-t border-border/40 bg-background/80 backdrop-blur-lg z-30 safe-area-bottom">
-        {toolbarItems().map((tool) => (
-          <Tooltip key={tool.id}>
-            <TooltipTrigger
+      {/* Mobile dock flutuante */}
+      <div className="md:hidden fixed bottom-3 inset-x-3 z-40 flex items-center justify-center gap-0.5 px-2 py-1.5 rounded-full bg-background/95 backdrop-blur-lg border border-border/40 shadow-xl safe-area-bottom">
+        {MOBILE_PRIMARY_TOOLS.map((toolId) => {
+          const tool = toolbarItems().find((t) => t.id === toolId)
+          if (!tool) return null
+          return (
+            <button
+              key={tool.id}
               className={cn(
-                'size-10 rounded-xl transition-all inline-flex items-center justify-center',
+                'size-10 rounded-full transition-all inline-flex items-center justify-center',
                 activeTool === tool.id
-                  ? 'bg-primary text-primary-foreground shadow-sm'
-                  : 'hover:bg-muted text-muted-foreground hover:text-foreground',
+                  ? 'bg-primary text-primary-foreground shadow-sm scale-110'
+                  : 'hover:bg-muted text-muted-foreground hover:text-foreground active:scale-95',
               )}
               onClick={() => {
                 setTool(tool.id)
-                if (tool.id === 'sticker') {
-                  setShowStickerPanel(true)
-                }
+                if (tool.id === 'sticker') setShowStickerPanel(true)
               }}
             >
               <tool.icon size={18} />
-            </TooltipTrigger>
-            <TooltipContent>{tool.label}</TooltipContent>
-          </Tooltip>
-        ))}
-        <div className="w-px h-5 bg-border/40 mx-0.5" />
-        <button
+            </button>
+          )
+        })}
+        <div className="w-px h-5 bg-border/40 mx-1" />
+        {/* More menu */}
+        <Popover open={showMoreMenu} onOpenChange={setShowMoreMenu}>
+          <PopoverTrigger className="size-10 rounded-full transition-all inline-flex items-center justify-center hover:bg-muted text-muted-foreground hover:text-foreground active:scale-95">
+            <GripHorizontal size={18} />
+          </PopoverTrigger>
+          <PopoverContent align="center" className="w-auto p-2 mb-2">
+            <div className="grid grid-cols-5 gap-1">
+              {toolbarItems()
+                .filter((t) => !MOBILE_PRIMARY_TOOLS.includes(t.id))
+                .map((tool) => (
+                  <button
+                    key={tool.id}
+                    className={cn(
+                      'size-10 rounded-xl transition-all inline-flex items-center justify-center flex-col gap-0.5',
+                      activeTool === tool.id
+                        ? 'bg-primary text-primary-foreground shadow-sm'
+                        : 'hover:bg-muted text-muted-foreground hover:text-foreground',
+                    )}
+                    onClick={() => {
+                      setTool(tool.id)
+                      setShowMoreMenu(false)
+                      if (tool.id === 'sticker') setShowStickerPanel(true)
+                    }}
+                  >
+                    <tool.icon size={16} />
+                    <span className="text-[8px] leading-none">{tool.label}</span>
+                  </button>
+                ))}
+              <button
+                className={cn(
+                  'size-10 rounded-xl transition-all inline-flex items-center justify-center flex-col gap-0.5',
+                  'hover:bg-muted text-muted-foreground hover:text-foreground',
+                )}
+                onClick={() => {
+                  setShowOcrPanel(true)
+                  setShowMoreMenu(false)
+                }}
+              >
+                <ScanText size={16} />
+                <span className="text-[8px] leading-none">OCR</span>
+              </button>
+              <button
+                className={cn(
+                  'size-10 rounded-xl transition-all inline-flex items-center justify-center flex-col gap-0.5',
+                  'hover:bg-muted text-muted-foreground hover:text-foreground',
+                )}
+                onClick={() => {
+                  setShowStickerPanel(true)
+                  setShowMoreMenu(false)
+                }}
+              >
+                <Star size={16} />
+                <span className="text-[8px] leading-none">Stickers</span>
+              </button>
+            </div>
+          </PopoverContent>
+        </Popover>
+        {/* Radial menu trigger */}
+        <Button
+          ref={radialTriggerRef}
+          variant="ghost"
+          size="icon-sm"
           className={cn(
-            'size-10 rounded-xl transition-all inline-flex items-center justify-center',
-            'hover:bg-muted text-muted-foreground hover:text-foreground',
+            'rounded-full size-10',
+            radialMenuOpen && 'bg-primary text-primary-foreground',
           )}
-          onClick={() => setShowOcrPanel(true)}
+          onClick={() => setRadialMenuOpen(!radialMenuOpen)}
         >
-          <ScanText size={18} />
-        </button>
-        <ToolSettings />
+          <CircleDot size={16} />
+        </Button>
+        {/* Undo / Redo mobile */}
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          className="rounded-full size-10"
+          onClick={handleUndo}
+          disabled={!(currentPage && (editor.undoStack[currentPage.id]?.length ?? 0) > 0)}
+        >
+          <Undo2 size={16} />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          className="rounded-full size-10"
+          onClick={handleRedo}
+          disabled={!(currentPage && (editor.redoStack[currentPage.id]?.length ?? 0) > 0)}
+        >
+          <Redo2 size={16} />
+        </Button>
+        <ToolSettings triggerFromRadial={showToolSettingsFromRadial} radialPosition={radialMenuOpen ? { x: 0, y: 0 } : undefined} />
       </div>
     </div>
   )

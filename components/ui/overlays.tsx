@@ -122,10 +122,12 @@ function PopoverTriggerW({
 function PopoverContentW({
   children,
   className,
+  style,
 }: {
   children: React.ReactNode
   className?: string
   align?: 'start' | 'center' | 'end'
+  style?: React.CSSProperties
 }) {
   return (
     <Popover.Portal>
@@ -136,6 +138,7 @@ function PopoverContentW({
             floatingAnim,
             className,
           )}
+          style={style}
         >
           {children}
         </Popover.Popup>

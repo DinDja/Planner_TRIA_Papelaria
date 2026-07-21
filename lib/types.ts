@@ -16,26 +16,47 @@ export interface StickerDef {
 export type ToolType =
   | 'pen'
   | 'pencil'
+  | 'brush'
+  | 'marker'
   | 'highlighter'
   | 'eraser'
+  | 'fill'
   | 'ruler'
   | 'lasso'
   | 'text'
   | 'sticker'
+  | 'rectangle'
+  | 'ellipse'
+  | 'line'
+  | 'arrow'
   | 'pan'
+  | 'hand'
+  | 'eyedropper'
+
+/** Quelle fonte uma ferramenta de traço usa — `perfect-freehand` variants. */
+export type BrushStyle = 'pen' | 'pencil' | 'brush' | 'marker' | 'highlighter'
 
 export interface StrokePoint {
   x: number
   y: number
   pressure: number
+  /** Tilt em graus (-90..90). Opcional — Suporte a canetas digitais. */
+  tiltX?: number
+  tiltY?: number
+  /** Twist em graus (0..359). Opcional — Suporte a rotacao da caneta. */
+  twist?: number
+  /** Tipo de pointer que produziu o ponto (para blending modes). */
+  pointerType?: 'mouse' | 'pen' | 'touch'
 }
 
 export interface Stroke {
   id: string
-  tool: 'pen' | 'pencil' | 'highlighter' | 'ruler'
+  tool: BrushStyle | 'ruler'
   color: string
   size: number
   opacity: number
+  /** Whether the stroke was pressure-sensitive (affects replay/render). */
+  pressureSensitive?: boolean
   points: StrokePoint[]
 }
 
@@ -51,6 +72,8 @@ export interface StickerInstance {
   width: number
   height: number
   rotation: number
+  /** Opacidade 0..1 (default 1). */
+  opacity?: number
   locked?: boolean
 }
 
@@ -62,6 +85,13 @@ export interface TextItem {
   color: string
   fontSize: number
   fontFamily: 'sans' | 'serif' | 'hand'
+  /** Largura da caixa de texto (auto se omitida). */
+  width?: number
+  /** Rotation in degrees. */
+  rotation?: number
+  /** Opacidade 0..1. */
+  opacity?: number
+  locked?: boolean
 }
 
 export interface ShapeItem {
@@ -72,6 +102,15 @@ export interface ShapeItem {
   width: number
   height: number
   color: string
+  /** Rotation in degrees (0..359). */
+  rotation?: number
+  /** If true: outline only (sem preenchimento). */
+  outline?: boolean
+  /** Stroke width when outline is true. */
+  strokeWidth?: number
+  /** Opacidade 0..1. */
+  opacity?: number
+  locked?: boolean
 }
 
 export interface StickyNote {
@@ -80,6 +119,24 @@ export interface StickyNote {
   y: number
   text: string
   color: string
+  /** Width em px (default 120). */
+  width?: number
+  /** Height em px (default 120). */
+  height?: number
+  /** Rotation in degrees. */
+  rotation?: number
+  /** Opacidade 0..1. */
+  opacity?: number
+  locked?: boolean
+}
+
+/** Tipo discriminado para itens selecionáveis/editáveis do canvas. */
+export type CanvasItemKind = 'sticker' | 'shape' | 'note' | 'text'
+
+/** Referência para um item do canvas. */
+export interface CanvasItemRef {
+  kind: CanvasItemKind
+  id: string
 }
 
 export interface CanvasData {

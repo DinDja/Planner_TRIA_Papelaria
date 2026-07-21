@@ -16,3 +16,4 @@ node_modules
 
 # OpenCode memory (session-persistent, not for version control)
 .opencode/memory/
+.vercel

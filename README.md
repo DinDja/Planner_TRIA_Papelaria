@@ -142,12 +142,6 @@ Abra [http://localhost:3000](http://localhost:3000) para visualizar.
 
 | Domínio                         | Funcionalidades Pendentes                                                                          |
 | ------------------------------- | -------------------------------------------------------------------------------------------------- |
-| **Hábitos**                     | Módulo dedicado de hábitos (apenas template de canvas)                                             |
-| **Retrospectiva**               | Retrospectivas, aniversários, cadastro de pessoas                                                  |
-| **Diário Digital**              | Escrita livre e escrita guiada                                                                     |
-| **Notas**                       | Criação e organização de notas                                                                     |
-| **Listas**                      | Listas personalizadas, listas de supermercado                                                      |
-| **Wishlist**                    | Gerenciamento de desejos e objetivos de compra                                                     |
 | **Checklists**                  | Listas verificáveis (apenas template de canvas)                                                    |
 | **Frases Favoritas**            | Armazenamento de citações e frases importantes                                                     |
 | **Caixa de Memórias**           | Registro de momentos felizes                                                                       |

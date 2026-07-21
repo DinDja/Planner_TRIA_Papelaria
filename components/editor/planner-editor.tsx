@@ -84,6 +84,7 @@ import {
   Magnet,
   Settings,
   CircleDot,
+  MoreVertical,
 } from 'lucide-react'
 
 import { ALL_STICKERS, STICKER_CATEGORIES, stickerToDataUrl } from '@/lib/stickers'
@@ -279,6 +280,8 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
   const [showExportMenu, setShowExportMenu] = useState(false)
   const [showImportMenu, setShowImportMenu] = useState(false)
   const [showMoreMenu, setShowMoreMenu] = useState(false)
+  const [showMobileTopMenu, setShowMobileTopMenu] = useState(false)
+  const [showTemplateSheet, setShowTemplateSheet] = useState(false)
   const [autoSaveStatus, setAutoSaveStatus] = useState<'saved' | 'saving'>('saved')
   const [radialMenuOpen, setRadialMenuOpen] = useState(false)
   const [radialMenu, setRadialMenu] = useState<{ x: number; y: number } | null>(null)
@@ -986,7 +989,7 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
 
   // ─── Tool settings ──────────────────────────────────────────────────────────
 
-  const ToolSettings = ({ triggerFromRadial, radialPosition }: { triggerFromRadial?: boolean; radialPosition?: { x: number; y: number } }) => {
+  const ToolSettings = ({ triggerFromRadial, mobile }: { triggerFromRadial?: boolean; mobile?: boolean }) => {
     const color = editor.getToolColor()
     const size = editor.getToolSize()
     const opacity = editor.getToolOpacity()
@@ -1022,6 +1025,165 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
 
     const isShapeTool = activeTool === 'rectangle' || activeTool === 'ellipse' || activeTool === 'line' || activeTool === 'arrow'
 
+    const content = (
+      <>
+        <p className="text-xs font-semibold mb-3">Configurações</p>
+        {setterColor && (
+          <div className="mb-3">
+            <ColorPalette
+              color={color}
+              recent={editor.lastColors}
+              onPick={(c) => { setterColor(c); editor.pushLastColor(c) }}
+              onEyedropper={() => {
+                setTool('eyedropper')
+                if (mobile) setShowToolSettingsFromRadial(false)
+              }}
+              onClearRecent={() => editor.clearLastColors()}
+            />
+          </div>
+        )}
+        {setterSize && (
+          <>
+            <p className="text-[11px] text-muted-foreground mb-1.5">
+              Espessura: <span className="font-bold text-foreground">{size}px</span>
+            </p>
+            <input
+              type="range"
+              min={0.5}
+              max={activeTool === 'highlighter' ? 30 : activeTool === 'brush' ? 24 : 12}
+              step={0.5}
+              value={size}
+              onChange={(e) => setterSize?.(Number(e.target.value))}
+              className="w-full mb-3"
+            />
+          </>
+        )}
+        {setterOpacity && (
+          <>
+            <p className="text-[11px] text-muted-foreground mb-1.5">
+              Opacidade: <span className="font-bold text-foreground">{Math.round(opacity * 100)}%</span>
+            </p>
+            <input
+              type="range"
+              min={0.1}
+              max={1}
+              step={0.05}
+              value={opacity}
+              onChange={(e) => setterOpacity?.(Number(e.target.value))}
+              className="w-full"
+            />
+          </>
+        )}
+        {(activeTool === 'pen' || activeTool === 'pencil' || activeTool === 'brush') && (
+          <label className="flex items-center gap-2 mt-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={editor.pressureSensitive}
+              onChange={(e) => editor.setPressureSensitive(e.target.checked)}
+              className="size-4 accent-primary"
+            />
+            <span className="text-[11px]">Sensível à pressão</span>
+          </label>
+        )}
+        {isShapeTool && (
+          <div className="mt-3 space-y-2 border-t border-border/40 pt-3">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={editor.shapeOutline}
+                onChange={(e) => editor.setShapeOutline(e.target.checked)}
+                className="size-4 accent-primary"
+              />
+              <span className="text-[11px]">Apenas contorno</span>
+            </label>
+            {editor.shapeOutline && (
+              <>
+                <p className="text-[11px] text-muted-foreground">
+                  Espessura do contorno: <span className="font-bold text-foreground">{editor.shapeStrokeWidth}px</span>
+                </p>
+                <input
+                  type="range"
+                  min={1}
+                  max={10}
+                  step={0.5}
+                  value={editor.shapeStrokeWidth}
+                  onChange={(e) => editor.setShapeStrokeWidth(Number(e.target.value))}
+                  className="w-full"
+                />
+              </>
+            )}
+          </div>
+        )}
+        <div className="mt-3 space-y-2 border-t border-border/40 pt-3">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={editor.snappingEnabled}
+              onChange={(e) => editor.setSnappingEnabled(e.target.checked)}
+              className="size-4 accent-primary"
+            />
+            <span className="text-[11px] flex items-center gap-1">
+              <Magnet size={11} /> Snap ao grid
+            </span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={editor.alignmentGuides}
+              onChange={(e) => editor.setAlignmentGuides(e.target.checked)}
+              className="size-4 accent-primary"
+            />
+            <span className="text-[11px]">Guias de alinhamento</span>
+          </label>
+        </div>
+        {activeTool === 'text' && (
+          <>
+            <p className="text-[11px] text-muted-foreground mb-1.5">Tamanho da fonte</p>
+            <input
+              type="range"
+              min={10}
+              max={48}
+              step={1}
+              value={editor.textFontSize}
+              onChange={(e) => editor.setTextFontSize(Number(e.target.value))}
+              className="w-full mb-3"
+            />
+            <p className="text-[11px] text-muted-foreground mb-1.5">Fonte</p>
+            <div className="flex gap-1">
+              {(['sans', 'serif', 'hand'] as const).map((f) => (
+                <button
+                  key={f}
+                  onClick={() => editor.setTextFontFamily(f)}
+                  className={cn(
+                    'flex-1 rounded-lg py-1 text-xs transition-colors cursor-pointer',
+                    editor.textFontFamily === f ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/70',
+                  )}
+                >
+                  {f === 'hand' ? 'Mão' : f === 'serif' ? 'Serif' : 'Sans'}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+      </>
+    )
+
+    if (mobile) {
+      return (
+        <BottomSheet
+          open={!!triggerFromRadial}
+          onClose={() => setShowToolSettingsFromRadial(false)}
+          title="Configurações"
+          maxHeight="70vh"
+          desktopSidePanel={false}
+        >
+          <div className="p-4">
+            {content}
+          </div>
+        </BottomSheet>
+      )
+    }
+
     return (
       <Popover open={triggerFromRadial ? true : undefined} onOpenChange={(open) => {
         if (!open) setShowToolSettingsFromRadial(false)
@@ -1029,150 +1191,8 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
         <PopoverTrigger className="rounded-xl p-1.5 hover:bg-muted transition-colors">
           <div className="size-4 rounded-full border border-border" style={{ backgroundColor: color }} />
         </PopoverTrigger>
-        <PopoverContent 
-          className="w-64 p-4 max-h-[80vh] overflow-auto"
-          style={radialPosition ? { 
-            position: 'fixed',
-            left: radialPosition.x + 20, 
-            top: radialPosition.y + 20,
-            transform: 'none' 
-          } : {}}
-        >
-          <p className="text-xs font-semibold mb-3">Configurações</p>
-          {setterColor && (
-            <div className="mb-3">
-              <ColorPalette
-                color={color}
-                recent={editor.lastColors}
-                onPick={(c) => { setterColor(c); editor.pushLastColor(c) }}
-                onEyedropper={() => setTool('eyedropper')}
-                onClearRecent={() => editor.clearLastColors()}
-              />
-            </div>
-          )}
-          {setterSize && (
-            <>
-              <p className="text-[11px] text-muted-foreground mb-1.5">
-                Espessura: <span className="font-bold text-foreground">{size}px</span>
-              </p>
-              <input
-                type="range"
-                min={0.5}
-                max={activeTool === 'highlighter' ? 30 : activeTool === 'brush' ? 24 : 12}
-                step={0.5}
-                value={size}
-                onChange={(e) => setterSize?.(Number(e.target.value))}
-                className="w-full mb-3"
-              />
-            </>
-          )}
-          {setterOpacity && (
-            <>
-              <p className="text-[11px] text-muted-foreground mb-1.5">
-                Opacidade: <span className="font-bold text-foreground">{Math.round(opacity * 100)}%</span>
-              </p>
-              <input
-                type="range"
-                min={0.1}
-                max={1}
-                step={0.05}
-                value={opacity}
-                onChange={(e) => setterOpacity?.(Number(e.target.value))}
-                className="w-full"
-              />
-            </>
-          )}
-          {(activeTool === 'pen' || activeTool === 'pencil' || activeTool === 'brush') && (
-            <label className="flex items-center gap-2 mt-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={editor.pressureSensitive}
-                onChange={(e) => editor.setPressureSensitive(e.target.checked)}
-                className="size-4 accent-primary"
-              />
-              <span className="text-[11px]">Sensível à pressão</span>
-            </label>
-          )}
-          {isShapeTool && (
-            <div className="mt-3 space-y-2 border-t border-border/40 pt-3">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={editor.shapeOutline}
-                  onChange={(e) => editor.setShapeOutline(e.target.checked)}
-                  className="size-4 accent-primary"
-                />
-                <span className="text-[11px]">Apenas contorno</span>
-              </label>
-              {editor.shapeOutline && (
-                <>
-                  <p className="text-[11px] text-muted-foreground">
-                    Espessura do contorno: <span className="font-bold text-foreground">{editor.shapeStrokeWidth}px</span>
-                  </p>
-                  <input
-                    type="range"
-                    min={1}
-                    max={10}
-                    step={0.5}
-                    value={editor.shapeStrokeWidth}
-                    onChange={(e) => editor.setShapeStrokeWidth(Number(e.target.value))}
-                    className="w-full"
-                  />
-                </>
-              )}
-            </div>
-          )}
-          <div className="mt-3 space-y-2 border-t border-border/40 pt-3">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={editor.snappingEnabled}
-                onChange={(e) => editor.setSnappingEnabled(e.target.checked)}
-                className="size-4 accent-primary"
-              />
-              <span className="text-[11px] flex items-center gap-1">
-                <Magnet size={11} /> Snap ao grid
-              </span>
-            </label>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={editor.alignmentGuides}
-                onChange={(e) => editor.setAlignmentGuides(e.target.checked)}
-                className="size-4 accent-primary"
-              />
-              <span className="text-[11px]">Guias de alinhamento</span>
-            </label>
-          </div>
-          {activeTool === 'text' && (
-            <>
-              <p className="text-[11px] text-muted-foreground mb-1.5">Tamanho da fonte</p>
-              <input
-                type="range"
-                min={10}
-                max={48}
-                step={1}
-                value={editor.textFontSize}
-                onChange={(e) => editor.setTextFontSize(Number(e.target.value))}
-                className="w-full mb-3"
-              />
-              <p className="text-[11px] text-muted-foreground mb-1.5">Fonte</p>
-              <div className="flex gap-1">
-                {(['sans', 'serif', 'hand'] as const).map((f) => (
-                  <button
-                    key={f}
-                    onClick={() => editor.setTextFontFamily(f)}
-                    className={cn(
-                      'flex-1 rounded-lg py-1 text-xs transition-colors cursor-pointer',
-                      editor.textFontFamily === f ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/70',
-                    )}
-                  >
-                    {f === 'hand' ? 'Mão' : f === 'serif' ? 'Serif' : 'Sans'}
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
+        <PopoverContent className="w-64 p-4 max-h-[80vh] overflow-auto">
+          {content}
         </PopoverContent>
       </Popover>
     )
@@ -1215,37 +1235,45 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
   // ─── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex h-screen flex-col bg-[color:light-dark(#e8e5df,#1a1a18)]">
-      {/* Top bar */}
-      <div className="flex items-center gap-2 h-12 px-3 border-b border-border/40 bg-background/80 backdrop-blur-lg shrink-0">
-        <Button variant="ghost" size="icon-sm" className="rounded-xl" onClick={() => router.back()}>
+    <div className="flex h-[100dvh] flex-col bg-[color:light-dark(#e8e5df,#1a1a18)]">
+      {/* Top bar (mobile-first) */}
+      <div className="flex items-center gap-2 h-12 md:h-14 px-2 md:px-3 border-b border-border/40 bg-background/80 backdrop-blur-lg shrink-0">
+        <Button variant="ghost" size="icon-sm" className="rounded-xl shrink-0" onClick={() => router.back()}>
           <ArrowLeft size={18} />
         </Button>
-        <span className="text-sm font-semibold truncate max-w-[200px]">{planner.name}</span>
-        <div className="w-px h-5 bg-border mx-1" />
-        {/* Page rename */}
-        <input
-          value={currentPage?.title ?? ''}
-          onChange={(e) => {
-            if (!currentPage) return
-            useAppStore.getState().updatePlanner(planner.id, {
-              pages: pages.map((p) => (p.id === currentPage.id ? { ...p, title: e.target.value } : p)),
-            })
-          }}
-          className="text-xs bg-transparent border-b border-transparent hover:border-border focus:border-primary outline-none px-1 max-w-[100px] text-muted-foreground"
-        />
-        <div className="w-px h-5 bg-border mx-1" />
-        {/* Autosave indicator */}
+
+        {/* Title / rename */}
+        <div className="flex flex-col min-w-0">
+          <span className="text-sm font-semibold truncate max-w-[120px] md:max-w-[200px]">{planner.name}</span>
+          <input
+            value={currentPage?.title ?? ''}
+            onChange={(e) => {
+              if (!currentPage) return
+              useAppStore.getState().updatePlanner(planner.id, {
+                pages: pages.map((p) => (p.id === currentPage.id ? { ...p, title: e.target.value } : p)),
+              })
+            }}
+            className="hidden md:block text-xs bg-transparent border-b border-transparent hover:border-border focus:border-primary outline-none px-1 max-w-[140px] text-muted-foreground"
+          />
+        </div>
+
+        <div className="hidden md:block w-px h-5 bg-border mx-1" />
+
+        {/* Autosave indicator (desktop) */}
         <span className={cn(
-          'text-[10px] transition-opacity duration-500',
+          'hidden md:block text-[10px] transition-opacity duration-500',
           autoSaveStatus === 'saving' ? 'opacity-100 text-amber-500' : 'opacity-50 text-muted-foreground'
         )}>
           {autoSaveStatus === 'saving' ? 'Salvando…' : 'Salvo ✓'}
         </span>
+
+        <div className="flex-1" />
+
         {/* Page navigator dropdown */}
         <Popover>
-          <PopoverTrigger className="text-xs text-muted-foreground ml-1 hover:text-foreground transition-colors rounded-md px-1.5 py-0.5 cursor-pointer">
-            Página {currentPageIdx + 1} de {pages.length}
+          <PopoverTrigger className="text-xs text-muted-foreground hover:text-foreground transition-colors rounded-md px-1.5 py-0.5 cursor-pointer shrink-0">
+            <span className="md:hidden">{currentPageIdx + 1}/{pages.length}</span>
+            <span className="hidden md:inline">Página {currentPageIdx + 1} de {pages.length}</span>
           </PopoverTrigger>
           <PopoverContent className="w-56 p-2" align="start">
             <div className="flex items-center justify-between mb-2 px-1">
@@ -1278,76 +1306,79 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
             </ScrollArea>
           </PopoverContent>
         </Popover>
-        {/* Duplicate page */}
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          className="rounded-xl"
-          onClick={() => {
-            if (!currentPage) return
-            const newPage: PlannerPage = {
-              id: `pg-${uid()}`,
-              title: `${currentPage.title} (cópia)`,
-              template: currentPage.template,
-              data: JSON.parse(JSON.stringify(currentPage.data)),
-            }
-            useAppStore.getState().updatePlanner(planner.id, {
-              pages: [...pages.slice(0, currentPageIdx + 1), newPage, ...pages.slice(currentPageIdx + 1)],
-            })
-            toast({ title: 'Página duplicada' })
-          }}
-        >
-          <Copy size={14} />
-        </Button>
-        {/* Template selector */}
-        <Popover>
-          <PopoverTrigger className="rounded-xl p-1 px-2 text-[11px] hover:bg-muted transition-colors flex items-center gap-1">
-            <Grid3X3 size={14} />
-            <span className="capitalize">{currentPage?.template ?? 'blank'}</span>
-          </PopoverTrigger>
-          <PopoverContent className="w-[300px] p-3.5">
-            <p className="text-xs font-semibold mb-2.5">Template da página</p>
-            <ScrollArea className="max-h-[320px] -mr-1 pr-1">
-              <div className="grid grid-cols-3 gap-2">
-                {(['blank', 'grid', 'dotted', 'lined', 'cornell', 'daily', 'weekly', 'monthly', 'kanban', 'checklist', 'habit', 'meal', 'finance', 'calendar'] as PageTemplateId[]).map((tpl) => {
-                  const isActive = currentPage?.template === tpl
-                  return (
-                    <button
-                      key={tpl}
-                      onClick={() => handleChangeTemplate(tpl)}
-                      className="group flex flex-col items-center gap-1.5 cursor-pointer"
-                    >
-                      <span
-                        className={cn(
-                          'block w-full overflow-hidden rounded-[5px] transition-all duration-200 aspect-[820/1160]',
-                          isActive
-                            ? 'ring-2 ring-primary ring-offset-2 ring-offset-popover shadow-md'
-                            : 'ring-1 ring-border/60 shadow-sm group-hover:ring-primary/40 group-hover:shadow-md group-hover:-translate-y-0.5',
-                        )}
+
+        {/* Desktop actions */}
+        <div className="hidden md:flex items-center gap-1">
+          {/* Duplicate page */}
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="rounded-xl"
+            onClick={() => {
+              if (!currentPage) return
+              const newPage: PlannerPage = {
+                id: `pg-${uid()}`,
+                title: `${currentPage.title} (cópia)`,
+                template: currentPage.template,
+                data: JSON.parse(JSON.stringify(currentPage.data)),
+              }
+              useAppStore.getState().updatePlanner(planner.id, {
+                pages: [...pages.slice(0, currentPageIdx + 1), newPage, ...pages.slice(currentPageIdx + 1)],
+              })
+              toast({ title: 'Página duplicada' })
+            }}
+          >
+            <Copy size={14} />
+          </Button>
+
+          {/* Template selector */}
+          <Popover>
+            <PopoverTrigger className="rounded-xl p-1 px-2 text-[11px] hover:bg-muted transition-colors flex items-center gap-1">
+              <Grid3X3 size={14} />
+              <span className="capitalize">{currentPage?.template ?? 'blank'}</span>
+            </PopoverTrigger>
+            <PopoverContent className="w-[300px] p-3.5">
+              <p className="text-xs font-semibold mb-2.5">Template da página</p>
+              <ScrollArea className="max-h-[320px] -mr-1 pr-1">
+                <div className="grid grid-cols-3 gap-2">
+                  {(['blank', 'grid', 'dotted', 'lined', 'cornell', 'daily', 'weekly', 'monthly', 'kanban', 'checklist', 'habit', 'meal', 'finance', 'calendar'] as PageTemplateId[]).map((tpl) => {
+                    const isActive = currentPage?.template === tpl
+                    return (
+                      <button
+                        key={tpl}
+                        onClick={() => handleChangeTemplate(tpl)}
+                        className="group flex flex-col items-center gap-1.5 cursor-pointer"
                       >
-                        {tpl === 'blank' ? (
-                          <span className="block size-full bg-[color:light-dark(#ffffff,#2a2a28)]" />
-                        ) : (
-                          <TemplateThumbnail template={tpl} width={90} className="block w-full" />
-                        )}
-                      </span>
-                      <span
-                        className={cn(
-                          'text-[10px] font-medium capitalize transition-colors',
-                          isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground',
-                        )}
-                      >
-                        {PAGE_TEMPLATES.find((t) => t.id === tpl)?.name ?? tpl}
-                      </span>
-                    </button>
-                  )
-                })}
-              </div>
-            </ScrollArea>
-          </PopoverContent>
-        </Popover>
-        <div className="flex-1" />
-        <div className="flex items-center gap-1">
+                        <span
+                          className={cn(
+                            'block w-full overflow-hidden rounded-[5px] transition-all duration-200 aspect-[820/1160]',
+                            isActive
+                              ? 'ring-2 ring-primary ring-offset-2 ring-offset-popover shadow-md'
+                              : 'ring-1 ring-border/60 shadow-sm group-hover:ring-primary/40 group-hover:shadow-md group-hover:-translate-y-0.5',
+                          )}
+                        >
+                          {tpl === 'blank' ? (
+                            <span className="block size-full bg-[color:light-dark(#ffffff,#2a2a28)]" />
+                          ) : (
+                            <TemplateThumbnail template={tpl} width={90} className="block w-full" />
+                          )}
+                        </span>
+                        <span
+                          className={cn(
+                            'text-[10px] font-medium capitalize transition-colors',
+                            isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground',
+                          )}
+                        >
+                          {PAGE_TEMPLATES.find((t) => t.id === tpl)?.name ?? tpl}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </ScrollArea>
+            </PopoverContent>
+          </Popover>
+
           {/* Insert menu */}
           <Popover open={showInsertMenu} onOpenChange={setShowInsertMenu}>
             <PopoverTrigger className="rounded-xl p-1.5 hover:bg-muted transition-colors">
@@ -1565,16 +1596,157 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
           >
             <Redo2 size={16} />
           </Button>
-
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            className="rounded-xl"
-            onClick={() => setShowPagesPanel(!showPagesPanel)}
-          >
-            <Layers size={16} />
-          </Button>
         </div>
+
+        {/* Mobile actions menu */}
+        <Popover open={showMobileTopMenu} onOpenChange={setShowMobileTopMenu}>
+          <PopoverTrigger className="md:hidden rounded-xl p-1.5 hover:bg-muted transition-colors shrink-0">
+            <MoreVertical size={18} />
+          </PopoverTrigger>
+          <PopoverContent className="w-56 p-2" align="end">
+            <div className="flex flex-col gap-0.5">
+              {/* Page rename */}
+              <div className="px-3 py-2">
+                <p className="text-[10px] text-muted-foreground mb-1">Nome da página</p>
+                <input
+                  value={currentPage?.title ?? ''}
+                  onChange={(e) => {
+                    if (!currentPage) return
+                    useAppStore.getState().updatePlanner(planner.id, {
+                      pages: pages.map((p) => (p.id === currentPage.id ? { ...p, title: e.target.value } : p)),
+                    })
+                  }}
+                  className="w-full text-xs bg-muted rounded-lg px-2 py-1.5 outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+              <div className="h-px bg-border/40 my-1" />
+              {/* Duplicate page */}
+              <button
+                className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm hover:bg-muted transition-colors text-left cursor-pointer"
+                onClick={() => {
+                  setShowMobileTopMenu(false)
+                  if (!currentPage) return
+                  const newPage: PlannerPage = {
+                    id: `pg-${uid()}`,
+                    title: `${currentPage.title} (cópia)`,
+                    template: currentPage.template,
+                    data: JSON.parse(JSON.stringify(currentPage.data)),
+                  }
+                  useAppStore.getState().updatePlanner(planner.id, {
+                    pages: [...pages.slice(0, currentPageIdx + 1), newPage, ...pages.slice(currentPageIdx + 1)],
+                  })
+                  toast({ title: 'Página duplicada' })
+                }}
+              >
+                <Copy size={16} className="text-muted-foreground" />
+                Duplicar página
+              </button>
+              {/* Template */}
+              <button
+                className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm hover:bg-muted transition-colors text-left cursor-pointer"
+                onClick={() => {
+                  setShowMobileTopMenu(false)
+                  setShowTemplateSheet(true)
+                }}
+              >
+                <Grid3X3 size={16} className="text-muted-foreground" />
+                Template: <span className="capitalize">{currentPage?.template ?? 'blank'}</span>
+              </button>
+              <div className="h-px bg-border/40 my-1" />
+              {/* Insert */}
+              <button
+                className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm hover:bg-muted transition-colors text-left cursor-pointer"
+                onClick={() => {
+                  setShowMobileTopMenu(false)
+                  setShowInsertMenu(true)
+                }}
+              >
+                <PlusCircle size={16} className="text-muted-foreground" />
+                Inserir forma / nota
+              </button>
+              {/* Import */}
+              <button
+                className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm hover:bg-muted transition-colors text-left cursor-pointer"
+                onClick={() => {
+                  setShowMobileTopMenu(false)
+                  setShowImportMenu(true)
+                }}
+              >
+                <Upload size={16} className="text-muted-foreground" />
+                Importar imagem
+              </button>
+              {/* Export */}
+              <button
+                className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm hover:bg-muted transition-colors text-left cursor-pointer"
+                onClick={() => {
+                  setShowMobileTopMenu(false)
+                  setShowExportMenu(true)
+                }}
+              >
+                <Download size={16} className="text-muted-foreground" />
+                Exportar
+              </button>
+              <div className="h-px bg-border/40 my-1" />
+              {/* Zoom */}
+              <div className="flex items-center justify-between px-3 py-2">
+                <span className="text-sm">Zoom</span>
+                <div className="flex items-center gap-1">
+                  <Button variant="ghost" size="icon-xs" className="rounded-lg" onClick={() => editor.zoomOut()}>
+                    <Minus size={12} />
+                  </Button>
+                  <span className="text-[11px] text-muted-foreground w-8 text-center">{Math.round(editor.zoom * 100)}%</span>
+                  <Button variant="ghost" size="icon-xs" className="rounded-lg" onClick={() => editor.zoomIn()}>
+                    <Plus size={12} />
+                  </Button>
+                </div>
+              </div>
+              {/* Page nav */}
+              <div className="flex items-center justify-between px-3 py-2">
+                <span className="text-sm">Páginas</span>
+                <div className="flex items-center gap-1">
+                  <Button variant="ghost" size="icon-xs" className="rounded-lg" onClick={() => goToPage(currentPageIdx - 1)}>
+                    <ChevronLeft size={12} />
+                  </Button>
+                  <span className="text-[11px] text-muted-foreground w-10 text-center">{currentPageIdx + 1} / {pages.length}</span>
+                  <Button variant="ghost" size="icon-xs" className="rounded-lg" onClick={() => goToPage(currentPageIdx + 1)}>
+                    <ChevronRight size={12} />
+                  </Button>
+                </div>
+              </div>
+              {/* Undo / Redo */}
+              <div className="flex items-center gap-1 px-3 py-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="flex-1 rounded-xl"
+                  onClick={() => { setShowMobileTopMenu(false); handleUndo() }}
+                  disabled={!(currentPage && (editor.undoStack[currentPage.id]?.length ?? 0) > 0)}
+                >
+                  <Undo2 size={14} className="mr-1.5" /> Desfazer
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="flex-1 rounded-xl"
+                  onClick={() => { setShowMobileTopMenu(false); handleRedo() }}
+                  disabled={!(currentPage && (editor.redoStack[currentPage.id]?.length ?? 0) > 0)}
+                >
+                  <Redo2 size={14} className="mr-1.5" /> Refazer
+                </Button>
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        {/* Layers toggle */}
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          className="rounded-xl shrink-0"
+          onClick={() => setShowPagesPanel(!showPagesPanel)}
+        >
+          <Layers size={16} />
+        </Button>
       </div>
 
       <div className="flex flex-1 min-h-0">
@@ -2320,6 +2492,56 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
           onClose={() => setCtxMenu(null)}
         />
 
+        {/* Mobile template sheet */}
+        <BottomSheet
+          open={showTemplateSheet}
+          onClose={() => setShowTemplateSheet(false)}
+          title="Template da página"
+          maxHeight="70vh"
+          desktopSidePanel={false}
+        >
+          <div className="p-4">
+            <div className="grid grid-cols-3 gap-3">
+              {(['blank', 'grid', 'dotted', 'lined', 'cornell', 'daily', 'weekly', 'monthly', 'kanban', 'checklist', 'habit', 'meal', 'finance', 'calendar'] as PageTemplateId[]).map((tpl) => {
+                const isActive = currentPage?.template === tpl
+                return (
+                  <button
+                    key={tpl}
+                    onClick={() => {
+                      handleChangeTemplate(tpl)
+                      setShowTemplateSheet(false)
+                    }}
+                    className="group flex flex-col items-center gap-2 cursor-pointer"
+                  >
+                    <span
+                      className={cn(
+                        'block w-full overflow-hidden rounded-lg transition-all duration-200 aspect-[820/1160]',
+                        isActive
+                          ? 'ring-2 ring-primary ring-offset-2 ring-offset-popover shadow-md'
+                          : 'ring-1 ring-border/60 shadow-sm group-active:ring-primary/40',
+                      )}
+                    >
+                      {tpl === 'blank' ? (
+                        <span className="block size-full bg-[color:light-dark(#ffffff,#2a2a28)]" />
+                      ) : (
+                        <TemplateThumbnail template={tpl} width={90} className="block w-full" />
+                      )}
+                    </span>
+                    <span
+                      className={cn(
+                        'text-[10px] font-medium capitalize transition-colors',
+                        isActive ? 'text-primary' : 'text-muted-foreground',
+                      )}
+                    >
+                      {PAGE_TEMPLATES.find((t) => t.id === tpl)?.name ?? tpl}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </BottomSheet>
+
         {/* Mobile text editor sheet */}
         <BottomSheet
           open={!!(textInput?.show && isMobile)}
@@ -2541,7 +2763,7 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
       </div>
 
       {/* Mobile dock flutuante */}
-      <div className="md:hidden fixed bottom-3 inset-x-3 z-40 flex items-center justify-center gap-0.5 px-2 py-1.5 rounded-full bg-background/95 backdrop-blur-lg border border-border/40 shadow-xl safe-area-bottom">
+      <div className="md:hidden fixed bottom-3 inset-x-3 z-40 flex items-center justify-center flex-wrap gap-0.5 gap-y-1 px-2 py-1.5 rounded-full bg-background/95 backdrop-blur-lg border border-border/40 shadow-xl safe-area-bottom">
         {MOBILE_PRIMARY_TOOLS.map((toolId) => {
           const tool = toolbarItems().find((t) => t.id === toolId)
           if (!tool) return null
@@ -2653,7 +2875,14 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
         >
           <Redo2 size={16} />
         </Button>
-        <ToolSettings triggerFromRadial={showToolSettingsFromRadial} radialPosition={radialMenuOpen ? { x: 0, y: 0 } : undefined} />
+        {/* Color / settings button */}
+        <button
+          className="size-10 rounded-full transition-all inline-flex items-center justify-center hover:bg-muted active:scale-95"
+          onClick={() => setShowToolSettingsFromRadial(true)}
+        >
+          <div className="size-4 rounded-full border border-border" style={{ backgroundColor: editor.getToolColor() }} />
+        </button>
+        <ToolSettings triggerFromRadial={showToolSettingsFromRadial} mobile />
       </div>
     </div>
   )

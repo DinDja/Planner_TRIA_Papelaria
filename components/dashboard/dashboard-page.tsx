@@ -14,6 +14,7 @@ import {
   Star,
   Target,
 } from 'lucide-react'
+import { ActivityChart } from './activity-chart'
 import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 
@@ -197,66 +198,7 @@ export function DashboardPage() {
           )}
 
           {/* Activity chart */}
-          <Card glass className={enter} style={stagger(7)}>
-            <CardHeader className="flex-row items-center justify-between pb-0">
-              <CardTitle className="text-base">Atividade semanal</CardTitle>
-              <span className="text-[11px] text-muted-foreground">
-                Total: <span className="font-semibold text-foreground tabular-nums">{MOCK_STATS.weeklyMinutes}min</span>
-              </span>
-            </CardHeader>
-            <CardContent>
-              <div className="relative flex items-end gap-3 h-36 pt-2">
-                {/* linhas-guia */}
-                <div className="absolute inset-x-0 top-2 bottom-6 flex flex-col justify-between pointer-events-none">
-                  {[0, 1, 2].map((i) => (
-                    <div key={i} className="border-t border-dashed border-border/40" />
-                  ))}
-                </div>
-                {MOCK_ACTIVITY.map((day, i) => {
-                  const h = (day.minutes / maxMinutes) * 100
-                  const isToday = i === todayIdx
-                  const isMax = day.minutes === maxMinutes
-                  const barColor = isMax ? '#f0b429' : '#5b8dbf'
-                  return (
-                    <div key={day.day} className="group relative flex-1 flex flex-col items-center gap-1.5 self-stretch">
-                      <span
-                        className={cn(
-                          'text-[11px] font-medium tabular-nums transition-colors',
-                          isToday ? 'text-foreground font-bold' : 'text-muted-foreground group-hover:text-foreground',
-                        )}
-                      >
-                        {day.minutes}m
-                      </span>
-                      <div className="flex-1 w-full flex items-end relative">
-                        <div
-                          className={cn(
-                            'w-full rounded-full transition-all duration-500 group-hover:brightness-110 group-hover:shadow-lg',
-                            isToday && 'shadow-md',
-                          )}
-                          style={{
-                            height: `${h}%`,
-                            background: gradCharts
-                              ? `linear-gradient(to top, ${barColor}, ${barColor}99)`
-                              : barColor,
-                            boxShadow: isToday ? `0 0 0 2px ${barColor}40` : undefined,
-                            opacity: isToday ? 1 : 0.85,
-                          }}
-                        />
-                      </div>
-                      <span
-                        className={cn(
-                          'text-[11px] transition-colors',
-                          isToday ? 'font-bold text-foreground' : 'text-muted-foreground',
-                        )}
-                      >
-                        {day.day}
-                      </span>
-                    </div>
-                  )
-                })}
-              </div>
-            </CardContent>
-          </Card>
+          <ActivityChart data={MOCK_ACTIVITY} totalMinutes={MOCK_STATS.weeklyMinutes} />
         </div>
 
         {/* Right sidebar content */}

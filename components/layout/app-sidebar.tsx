@@ -1,23 +1,42 @@
 'use client'
 
 import { useAppStore } from '@/lib/store/use-app-store'
+import { useMenuStore } from '@/lib/store/use-menu-store'
 import { cn } from '@/lib/utils'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
+  BookHeart,
+  Bookmark,
   BookOpen,
+  Box,
   BriefcaseBusiness,
+  Calendar,
+  CheckCircle,
   ChevronDown,
+  ClipboardList,
+  FileText,
   Folder,
+  Gift,
+  Heart,
+  HeartPulse,
+  KeyRound,
   LayoutDashboard,
+  List,
+  ListChecks,
   Menu,
   Moon,
   PanelLeftClose,
   PanelLeftOpen,
   Plus,
+  RefreshCw,
   Search,
   Settings,
   Sun,
   Tag,
+  Target,
+  Trash2,
+  User,
+  Wallet,
   X,
 } from 'lucide-react'
 import Link from 'next/link'
@@ -39,7 +58,22 @@ interface SidebarProps {
 }
 
 const NAV_ITEMS = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/diario', label: 'Diário', icon: BookHeart },
+  { href: '/notas', label: 'Notas', icon: FileText },
+  { href: '/listas', label: 'Listas', icon: List },
+  { href: '/checklists', label: 'Checklists', icon: ListChecks },
+  { href: '/frases', label: 'Frases', icon: Bookmark },
+  { href: '/memorias', label: 'Memórias', icon: Box },
+  { href: '/cofre', label: 'Cofre', icon: KeyRound },
+  { href: '/saude', label: 'Saúde', icon: HeartPulse },
+  { href: '/wishlist', label: 'Wishlist', icon: Heart },
+  { href: '/rotina', label: 'Rotina', icon: ClipboardList },
+  { href: '/calendario', label: 'Calendário', icon: Calendar },
+  { href: '/financas', label: 'Finanças', icon: Wallet },
+  { href: '/metas', label: 'Metas', icon: Target },
+  { href: '/habitos', label: 'Hábitos', icon: CheckCircle },
+  { href: '/retrospectiva', label: 'Retrospectiva', icon: RefreshCw },
   { href: '/templates', label: 'Templates', icon: BookOpen },
   { href: '/plans', label: 'Planos', icon: BriefcaseBusiness },
 ]
@@ -56,12 +90,18 @@ export function AppSidebar({
   const pathname = usePathname()
   const planners = useAppStore((s) => s.planners)
   const folders = useAppStore((s) => s.folders)
+  const menuModules = useMenuStore((s) => s.modules)
+  const enabledIds = new Set(menuModules.filter((m) => m.enabled).map((m) => m.id))
+  const navItems = NAV_ITEMS.filter((item) => {
+    const id = item.href === '/' ? 'dashboard' : item.href.replace('/', '')
+    return enabledIds.has(id)
+  })
 
   const sidebarContent = (
     <div className="flex h-full flex-col">
       {/* Logo */}
-      <div className={cn('flex items-center px-4 h-14 shrink-0', collapsed && 'justify-center px-2')}>
-        <img src="/logo.svg" alt="PlannerHub" className="h-12 w-auto" />
+      <div className={cn('flex items-center px-4 py-2 h-24 shrink-0', collapsed && 'justify-center px-2')}>
+        <img src="/logo.svg" alt="PlannerHub" className="h-20 w-auto" />
         <button
           onClick={() => setMobileOpen(false)}
           className="ml-auto rounded-lg p-1 hover:bg-muted md:hidden cursor-pointer"
@@ -101,7 +141,7 @@ export function AppSidebar({
 
         {/* Nav */}
         <nav className={cn('flex flex-col gap-0.5 px-3', collapsed && 'px-1.5')}>
-          {NAV_ITEMS.map((item) => {
+          {navItems.map((item) => {
             const active = pathname === item.href
             return (
               <Link
@@ -208,7 +248,7 @@ export function AppSidebar({
           variant="ghost"
           size={collapsed ? 'icon' : 'sm'}
           onClick={toggle}
-          className={cn('rounded-xl flex-1 justify-start gap-2', collapsed && 'flex-none')}
+          className={cn('rounded-xl', collapsed && 'size-9 flex items-center justify-center')}
         >
           {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
           {!collapsed && (theme === 'dark' ? 'Modo claro' : 'Modo escuro')}
@@ -222,6 +262,30 @@ export function AppSidebar({
         >
           <Settings size={15} />
         </Button>
+        <Link
+          href="/menu"
+          className="rounded-xl flex items-center justify-center size-9 hover:bg-muted"
+          aria-label="Personalizar Menu"
+          title="Personalizar Menu"
+        >
+          <List size={15} className="text-muted-foreground" />
+        </Link>
+        <Link
+          href="/conta"
+          className="rounded-xl flex items-center justify-center size-9 hover:bg-muted"
+          aria-label="Conta"
+          title="Conta e Admin"
+        >
+          <User size={15} className="text-muted-foreground" />
+        </Link>
+        <Link
+          href="/lixeira"
+          className="rounded-xl flex items-center justify-center size-9 hover:bg-muted"
+          aria-label="Lixeira"
+          title="Lixeira"
+        >
+          <Trash2 size={15} className="text-muted-foreground" />
+        </Link>
         <Button
           variant="ghost"
           size="icon-sm"

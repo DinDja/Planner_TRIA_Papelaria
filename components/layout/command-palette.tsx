@@ -6,12 +6,28 @@ import { motion } from 'framer-motion'
 import {
   ArrowDown,
   ArrowUp,
+  BookHeart,
+  Bookmark,
   BookOpen,
+  Box,
   BriefcaseBusiness,
+  Calendar,
+  CheckCircle,
+  ClipboardList,
   CornerDownLeft,
   FileText,
+  Heart,
+  HeartPulse,
+  KeyRound,
   LayoutDashboard,
+  List,
+  ListChecks,
+  RefreshCw,
   Search,
+  Target,
+  Trash2,
+  User,
+  Wallet,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -47,9 +63,27 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
   }, [open])
 
   const baseActions: PaletteItem[] = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard', section: 'Navegação' },
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, href: '/', section: 'Navegação' },
+    { id: 'diario', label: 'Diário Digital', icon: BookHeart, href: '/diario', section: 'Navegação' },
+    { id: 'notas', label: 'Notas', icon: FileText, href: '/notas', section: 'Navegação' },
+    { id: 'listas', label: 'Listas', icon: List, href: '/listas', section: 'Navegação' },
+    { id: 'checklists', label: 'Checklists', icon: ListChecks, href: '/checklists', section: 'Navegação' },
+    { id: 'frases', label: 'Frases Favoritas', icon: Bookmark, href: '/frases', section: 'Navegação' },
+    { id: 'memorias', label: 'Caixa de Memórias', icon: Box, href: '/memorias', section: 'Navegação' },
+    { id: 'cofre', label: 'Cofre de Senhas', icon: KeyRound, href: '/cofre', section: 'Navegação' },
+    { id: 'saude', label: 'Saúde', icon: HeartPulse, href: '/saude', section: 'Navegação' },
+    { id: 'wishlist', label: 'Wishlist', icon: Heart, href: '/wishlist', section: 'Navegação' },
+    { id: 'rotina', label: 'Rotina', icon: ClipboardList, href: '/rotina', section: 'Navegação' },
+    { id: 'calendario', label: 'Calendário', icon: Calendar, href: '/calendario', section: 'Navegação' },
+    { id: 'financas', label: 'Finanças', icon: Wallet, href: '/financas', section: 'Navegação' },
+    { id: 'metas', label: 'Metas Financeiras', icon: Target, href: '/metas', section: 'Navegação' },
+    { id: 'habitos', label: 'Hábitos', icon: CheckCircle, href: '/habitos', section: 'Navegação' },
+    { id: 'menu', label: 'Personalizar Menu', icon: List, href: '/menu', section: 'Navegação' },
+    { id: 'retrospectiva', label: 'Retrospectiva', icon: RefreshCw, href: '/retrospectiva', section: 'Navegação' },
     { id: 'templates', label: 'Galeria de templates', icon: BookOpen, href: '/templates', section: 'Navegação' },
     { id: 'plans', label: 'Planos', icon: BriefcaseBusiness, href: '/plans', section: 'Navegação' },
+    { id: 'conta', label: 'Conta e Admin', icon: User, href: '/conta', section: 'Sistema' },
+    { id: 'lixeira', label: 'Lixeira', icon: Trash2, href: '/lixeira', section: 'Sistema' },
   ]
 
   const plannerActions: PaletteItem[] = planners.map((p) => ({

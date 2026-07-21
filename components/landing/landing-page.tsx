@@ -119,7 +119,7 @@ export function LandingPage() {
             ))}
           </div>
           <Link
-            href="/dashboard"
+            href="/"
             className="px-5 py-2 rounded-xl bg-[#111] text-white text-sm tracking-widest hover:bg-[#333] transition-colors"
           >
             ABRIR
@@ -236,7 +236,7 @@ export function LandingPage() {
           {/* CTA — inicia o planner */}
           <div className="mt-10">
             <Link
-              href="/dashboard"
+              href="/"
               className="inline-flex items-center gap-2 px-8 py-3 rounded-xl bg-[#111] text-white text-sm tracking-widest hover:bg-[#333] transition-colors"
             >
               COMEÇAR AGORA
@@ -292,7 +292,7 @@ export function LandingPage() {
             Sem cadastro, sem backend. Seus planners ficam salvos no seu navegador. Pronto em segundos.
           </p>
           <Link
-            href="/dashboard"
+            href="/"
             className="inline-flex items-center gap-2 px-10 py-4 rounded-xl bg-[#111] text-white text-sm tracking-widest hover:bg-[#333] transition-colors"
           >
             ABRIR EDITOR
@@ -321,7 +321,7 @@ export function LandingPage() {
               </a>
             ))}
             <Link
-              href="/dashboard"
+              href="/"
               className="text-xs text-black/35 hover:text-black/70 transition-colors tracking-widest"
             >
               EDITOR

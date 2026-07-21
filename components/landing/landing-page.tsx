@@ -105,7 +105,7 @@ export function LandingPage() {
       <nav className="fixed top-0 inset-x-0 z-50 backdrop-blur-md bg-[#F5F4F0]/70 border-b border-black/[0.06]">
         <div className="max-w-6xl mx-auto px-6 md:px-12 lg:px-20 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center">
-            <img src="/logo.svg" alt="PlannerHub" className="h-14 w-auto" />
+            <img src="/Logo.svg" alt="PlannerHub" className="h-14 w-auto" />
           </Link>
           <div className="hidden md:flex items-center gap-8">
             {NAV_LINKS.map((l) => (

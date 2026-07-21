@@ -101,7 +101,7 @@ export function AppSidebar({
     <div className="flex h-full flex-col">
       {/* Logo */}
       <div className={cn('flex items-center px-4 py-2 h-24 shrink-0', collapsed && 'justify-center px-2')}>
-        <img src="/logo.svg" alt="PlannerHub" className="h-20 w-auto" />
+        <img src="/Logo.svg" alt="PlannerHub" className="h-20 w-auto" />
         <button
           onClick={() => setMobileOpen(false)}
           className="ml-auto rounded-lg p-1 hover:bg-muted md:hidden cursor-pointer"

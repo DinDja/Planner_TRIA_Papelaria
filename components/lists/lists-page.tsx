@@ -16,7 +16,7 @@ import { useState } from 'react'
 import { Button } from '../ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { Input as SearchInput } from '../ui/primitives'
-import { Tab, TabList, TabPanel, Tabs } from '../ui/overlays'
+import { Dialog, DialogContent, Tab, TabList, TabPanel, Tabs } from '../ui/overlays'
 import { AddItemDialog, AddListDialog } from './lists-dialogs'
 
 const enter = 'animate-in fade-in slide-in-from-bottom-3 duration-500 fill-mode-both'
@@ -185,11 +185,25 @@ export function ListsPage() {
   const [addListOpen, setAddListOpen] = useState(false)
   const [addItemOpen, setAddItemOpen] = useState(false)
   const [addItemListId, setAddItemListId] = useState<string | null>(null)
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
 
   const handleAddItem = (listId: string) => {
     setAddItemListId(listId)
     setAddItemOpen(true)
   }
+
+  const handleDeleteList = (id: string) => {
+    setDeleteConfirmId(id)
+  }
+
+  const confirmDeleteList = () => {
+    if (deleteConfirmId) {
+      deleteList(deleteConfirmId)
+      setDeleteConfirmId(null)
+    }
+  }
+
+  const listBeingDeleted = deleteConfirmId ? lists.find((l) => l.id === deleteConfirmId) : null
 
   const totalItems = lists.reduce((acc, l) => acc + l.items.length, 0)
   const checkedItems = lists.reduce((acc, l) => acc + l.items.filter((i) => i.checked).length, 0)
@@ -236,7 +250,7 @@ export function ListsPage() {
             <ListCard
               key={list.id}
               list={list}
-              onDelete={deleteList}
+              onDelete={handleDeleteList}
               onAddItem={handleAddItem}
               onToggleItem={toggleItem}
               onDeleteItem={deleteItem}
@@ -262,6 +276,29 @@ export function ListsPage() {
           listId={addItemListId}
         />
       )}
+
+      <Dialog open={deleteConfirmId !== null} onOpenChange={(o) => !o && setDeleteConfirmId(null)}>
+        <DialogContent title="Excluir lista" description="Esta ação não pode ser desfeita.">
+          <div className="flex flex-col gap-4">
+            <p className="text-sm text-muted-foreground">
+              Tem certeza que deseja excluir a lista{' '}
+              <strong className="text-foreground">{listBeingDeleted?.name}</strong>
+              {listBeingDeleted && listBeingDeleted.items.length > 0 && (
+                <> e todos os seus {listBeingDeleted.items.length} itens?</>
+              )}
+            </p>
+            <div className="flex justify-end gap-2 pt-1">
+              <Button variant="outline" onClick={() => setDeleteConfirmId(null)} className="rounded-xl">
+                Cancelar
+              </Button>
+              <Button variant="destructive" onClick={confirmDeleteList} className="rounded-xl gap-1.5">
+                <Trash2 size={14} />
+                Excluir
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

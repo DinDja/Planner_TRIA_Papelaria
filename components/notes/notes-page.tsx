@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 import {
   FileText,
   Folder as FolderIcon,
+  FolderInput,
   FolderPlus,
   Pin,
   PinOff,
@@ -16,7 +17,7 @@ import {
 import { useMemo, useState } from 'react'
 import { Button } from '../ui/button'
 import { Badge, Input as SearchInput, ScrollArea } from '../ui/primitives'
-import { Tab, TabList, TabPanel, Tabs } from '../ui/overlays'
+import { Dialog, DialogContent, Tab, TabList, TabPanel, Tabs } from '../ui/overlays'
 import { AddFolderDialog, AddNoteDialog } from './notes-dialogs'
 
 const enter = 'animate-in fade-in slide-in-from-bottom-3 duration-500 fill-mode-both'
@@ -29,12 +30,14 @@ function NoteCard({
   folderName,
   onDelete,
   onTogglePin,
+  onMove,
 }: {
   note: Note
   index: number
   folderName?: string
   onDelete: (id: string) => void
   onTogglePin: (id: string) => void
+  onMove: (id: string) => void
 }) {
   const lines = note.content.split('\n').filter(Boolean)
   const preview = lines.slice(0, 4).join('\n')
@@ -91,6 +94,14 @@ function NoteCard({
               aria-label={note.pinned ? 'Desfixar' : 'Fixar'}
             >
               {note.pinned ? <PinOff size={13} /> : <Pin size={13} />}
+            </button>
+            <button
+              onClick={() => onMove(note.id)}
+              className="rounded-lg p-1 text-muted-foreground/60 hover:text-primary transition-colors cursor-pointer"
+              aria-label="Mover para pasta"
+              title="Mover para pasta"
+            >
+              <FolderInput size={13} />
             </button>
             <button
               onClick={() => onDelete(note.id)}
@@ -161,11 +172,22 @@ export function NotesPage() {
   const deleteNote = useNotesStore((s) => s.deleteNote)
   const togglePinNote = useNotesStore((s) => s.togglePinNote)
   const deleteFolder = useNotesStore((s) => s.deleteFolder)
+  const updateNote = useNotesStore((s) => s.updateNote)
 
   const [tab, setTab] = useState('all')
   const [addNoteOpen, setAddNoteOpen] = useState(false)
   const [addFolderOpen, setAddFolderOpen] = useState(false)
   const [search, setSearch] = useState('')
+  const [moveNoteId, setMoveNoteId] = useState<string | null>(null)
+
+  const moveNote = moveNoteId ? notes.find((n) => n.id === moveNoteId) : null
+
+  const handleMoveToFolder = (folderId: string | null) => {
+    if (moveNoteId) {
+      updateNote(moveNoteId, { folderId })
+      setMoveNoteId(null)
+    }
+  }
 
   const folderMap = useMemo(() => {
     const m = new Map<string, string>()
@@ -376,6 +398,7 @@ export function NotesPage() {
                 folderName={folderMap.get(n.folderId ?? '')}
                 onDelete={deleteNote}
                 onTogglePin={togglePinNote}
+                onMove={setMoveNoteId}
               />
             ))}
           </div>
@@ -401,6 +424,50 @@ export function NotesPage() {
         defaultFolderId={tab.startsWith('folder-') ? tab.replace('folder-', '') : null}
       />
       <AddFolderDialog open={addFolderOpen} onClose={() => setAddFolderOpen(false)} />
+
+      <Dialog open={moveNoteId !== null} onOpenChange={(o) => !o && setMoveNoteId(null)}>
+        <DialogContent title="Mover nota" description={moveNote ? `Reorganize «${moveNote.title}» em outra pasta.` : undefined}>
+          <div className="flex flex-col gap-2">
+            <button
+              onClick={() => handleMoveToFolder(null)}
+              className={cn(
+                'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors text-left cursor-pointer',
+                moveNote?.folderId === null
+                  ? 'bg-primary/10 text-primary'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
+              )}
+            >
+              <FileText size={16} />
+              Sem pasta
+            </button>
+            {folders.map((f) => {
+              const count = notes.filter((n) => n.folderId === f.id).length
+              const active = moveNote?.folderId === f.id
+              return (
+                <button
+                  key={f.id}
+                  onClick={() => handleMoveToFolder(f.id)}
+                  className={cn(
+                    'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors text-left cursor-pointer',
+                    active
+                      ? 'bg-primary/10 text-primary'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
+                  )}
+                >
+                  <span className="size-2.5 rounded-md shrink-0" style={{ backgroundColor: f.color }} />
+                  <span className="truncate flex-1">{f.name}</span>
+                  <span className="text-xs text-muted-foreground/60">{count}</span>
+                </button>
+              )
+            })}
+            {folders.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                Nenhuma pasta criada. Crie uma pasta primeiro.
+              </p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

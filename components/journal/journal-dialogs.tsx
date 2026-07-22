@@ -386,13 +386,22 @@ export function ViewEntryDialog({
                   </div>
                 </div>
               </div>
-              <button
-                onClick={startEdit}
-                className="shrink-0 rounded-lg p-1.5 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer"
-                aria-label="Editar"
-              >
-                <Pencil size={15} />
-              </button>
+              <div className="flex items-center gap-1 shrink-0">
+                <button
+                  onClick={startEdit}
+                  className="rounded-lg p-1.5 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer"
+                  aria-label="Editar"
+                >
+                  <Pencil size={15} />
+                </button>
+                <button
+                  onClick={onClose}
+                  className="rounded-lg p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer"
+                  aria-label="Fechar"
+                >
+                  <X size={16} />
+                </button>
+              </div>
             </div>
 
             {entry.tags.length > 0 && (
@@ -435,10 +444,6 @@ export function ViewEntryDialog({
                 📌 Fixado no topo
               </p>
             )}
-
-            <div className="flex justify-end pt-1">
-              <Button variant="outline" onClick={onClose} className="rounded-xl">Fechar</Button>
-            </div>
           </div>
         )}
       </DialogContent>

@@ -145,6 +145,8 @@ export interface CanvasData {
   texts: TextItem[]
   shapes: ShapeItem[]
   stickyNotes: StickyNote[]
+  /** Cor de fundo da página (opcional). */
+  bgColor?: string
 }
 
 export const EMPTY_CANVAS: CanvasData = {

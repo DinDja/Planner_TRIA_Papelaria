@@ -6,15 +6,55 @@ import {
   CheckCircle2,
   Circle,
   ListChecks,
+  PartyPopper,
   Plus,
   Trash2,
 } from 'lucide-react'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Button } from '../ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { AddChecklistDialog } from './checklists-dialogs'
 
 const enter = 'animate-in fade-in slide-in-from-bottom-3 duration-500 fill-mode-both'
+
+// Cores festivas para os confetes
+const CONFETTI_COLORS = ['#7bb686', '#f0b429', '#5b8dbf', '#e8a0a0', '#c9b6e4', '#e05b6d', '#f5c8a0']
+
+function CelebrationOverlay() {
+  // 18 confetes com posições/cores/durações variadas
+  const pieces = Array.from({ length: 18 }, (_, i) => {
+    const left = (i * 53) % 100
+    const delay = (i % 6) * 70
+    const duration = 1400 + ((i * 37) % 1100)
+    const size = 6 + ((i * 13) % 8)
+    const rotate = (i * 53) % 360
+    const color = CONFETTI_COLORS[i % CONFETTI_COLORS.length]
+    return { left, delay, duration, size, rotate, color, i }
+  })
+  return (
+    <div className="pointer-events-none absolute inset-0 z-30 overflow-hidden">
+      {pieces.map((p) => (
+        <span
+          key={p.i}
+          className="absolute top-[-12px] block"
+          style={{
+            left: `${p.left}%`,
+            width: `${p.size}px`,
+            height: `${p.size * 1.4}px`,
+            backgroundColor: p.color,
+            borderRadius: p.i % 2 === 0 ? '2px' : '9999px',
+            animationName: 'confetti-fall',
+            animationTimingFunction: 'ease-out',
+            animationFillMode: 'forwards',
+            animationIterationCount: '1',
+            animationDelay: `${p.delay}ms`,
+            animationDuration: `${p.duration}ms`,
+          }}
+        />
+      ))}
+    </div>
+  )
+}
 
 function ChecklistCard({
   checklist,
@@ -29,10 +69,12 @@ function ChecklistCard({
 
   const [newItemText, setNewItemText] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
+  const [celebrate, setCelebrate] = useState(false)
 
   const checked = checklist.items.filter((i) => i.checked).length
   const total = checklist.items.length
   const progress = total > 0 ? Math.round((checked / total) * 100) : 0
+  const allDone = total > 0 && checked === total
 
   const handleAdd = () => {
     const text = newItemText.trim()
@@ -42,34 +84,72 @@ function ChecklistCard({
     inputRef.current?.focus()
   }
 
+  // Detecta o momento em que o último item é concluído -> dispara celebração
+  const prevAllDoneRef = useRef(false)
+  useEffect(() => {
+    // dispara só na transição de "nem todos" -> "todos concluídos"
+    if (allDone && !prevAllDoneRef.current) {
+      setCelebrate(true)
+      const t = setTimeout(() => setCelebrate(false), 2600)
+      prevAllDoneRef.current = true
+      return () => clearTimeout(t)
+    }
+    if (!allDone) {
+      prevAllDoneRef.current = false
+    }
+  }, [allDone])
+
+  const handleToggle = (itemId: string) => {
+    toggleItem(checklist.id, itemId)
+  }
+
   return (
     <Card
       glass
-      className="overflow-hidden"
+      className={cn(
+        'relative overflow-hidden transition-all duration-300',
+        celebrate && 'animate-[celebrate_0.6s_ease-out]',
+        allDone && !celebrate && 'ring-2 ring-emerald-500/30',
+      )}
       style={{
         borderTopColor: checklist.color,
         borderTopWidth: 3,
       }}
     >
+      {/* Overlay festivo animado ao concluir o checklist */}
+      {celebrate && <CelebrationOverlay />}
       <CardHeader className="flex-row items-center justify-between pb-0 gap-3">
-        <div className="flex items-center gap-3 min-w-0">
-          <div
-            className="flex size-10 shrink-0 items-center justify-center rounded-xl"
-            style={{ backgroundColor: checklist.color + '18' }}
-          >
-            <ListChecks size={18} style={{ color: checklist.color }} />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <CardTitle className="text-base">{checklist.title}</CardTitle>
+          <div className="flex items-center gap-3 min-w-0">
+            <div
+              className={cn(
+                'flex size-10 shrink-0 items-center justify-center rounded-xl transition-all',
+                allDone && 'animate-[pop_0.4s_ease-out]',
+              )}
+              style={{ backgroundColor: allDone ? '#7bb68618' : checklist.color + '18' }}
+            >
+              {allDone ? (
+                <PartyPopper size={18} className="text-emerald-500" />
+              ) : (
+                <ListChecks size={18} style={{ color: checklist.color }} />
+              )}
             </div>
-            {total > 0 && (
-              <p className="text-[11px] text-muted-foreground mt-0.5">
-                {checked}/{total} concluídos
-              </p>
-            )}
+            <div>
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-base">{checklist.title}</CardTitle>
+                {allDone && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-600 animate-[pop_0.4s_ease-out]">
+                    <PartyPopper size={10} />
+                    Concluído!
+                  </span>
+                )}
+              </div>
+              {total > 0 && (
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  {checked}/{total} concluídos
+                </p>
+              )}
+            </div>
           </div>
-        </div>
         <div className="flex items-center gap-2">
           {total > 0 && (
             <span
@@ -112,18 +192,28 @@ function ChecklistCard({
             className="group flex items-center gap-3 rounded-xl px-2 py-1.5 hover:bg-muted/40 transition-colors"
           >
             <button
-              onClick={() => toggleItem(checklist.id, item.id)}
+              onClick={() => handleToggle(item.id)}
               className="shrink-0 text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+              aria-label={item.checked ? 'Desmarcar item' : 'Concluir item'}
             >
-              {item.checked ? (
-                <CheckCircle2 size={18} className="text-emerald-500" />
-              ) : (
-                <Circle size={18} />
-              )}
+              <span
+                key={item.checked ? 'checked' : 'unchecked'}
+                className={cn(
+                  'inline-flex items-center justify-center transition-all duration-300',
+                  item.checked && 'animate-[pop_0.3s_ease-out]',
+                )}
+                style={item.checked ? { transformOrigin: 'center' } : undefined}
+              >
+                {item.checked ? (
+                  <CheckCircle2 size={18} className="text-emerald-500" />
+                ) : (
+                  <Circle size={18} />
+                )}
+              </span>
             </button>
             <span
               className={cn(
-                'text-sm flex-1',
+                'text-sm flex-1 transition-all duration-300',
                 item.checked && 'line-through text-muted-foreground',
               )}
             >

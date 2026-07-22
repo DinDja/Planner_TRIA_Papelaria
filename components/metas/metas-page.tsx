@@ -13,7 +13,7 @@ import {
   TrendingUp,
   Wallet,
 } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Button } from '../ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { Badge } from '../ui/primitives'
@@ -41,20 +41,33 @@ function DepositDialog({
   goalTitle: string
 }) {
   const addGoalDeposit = useFinanceStore((s) => s.addGoalDeposit)
-  const [amount, setAmount] = useState(0)
+  const [type, setType] = useState<'deposit' | 'withdraw'>('deposit')
+  const [amount, setAmount] = useState('')
   const [notes, setNotes] = useState('')
 
+  // Reset sempre que o dialog reabre / troca de meta
+  useEffect(() => {
+    if (open) {
+      setType('deposit')
+      setAmount('')
+      setNotes('')
+    }
+  }, [open, goalId])
+
+  const parsedAmount = Math.round((Number(amount.replace(',', '.')) || 0) * 100)
+  const signed = type === 'withdraw' ? -parsedAmount : parsedAmount
+
   const handleDeposit = () => {
-    if (amount === 0) {
-      toast({ title: 'Digite um valor', variant: 'error' })
+    if (parsedAmount <= 0) {
+      toast({ title: 'Digite um valor válido', variant: 'error' })
       return
     }
-    addGoalDeposit({ goalId, amount, notes: notes.trim() || undefined })
+    addGoalDeposit({ goalId, amount: signed, notes: notes.trim() || undefined })
     toast({
-      title: amount > 0 ? 'Aporte registrado!' : 'Retirada registrada!',
+      title: type === 'withdraw' ? 'Retirada registrada!' : 'Aporte registrado!',
       variant: 'success',
     })
-    setAmount(0)
+    setAmount('')
     setNotes('')
     onClose()
   }
@@ -63,33 +76,65 @@ function DepositDialog({
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent title={goalTitle} description="Registrar aporte ou retirada">
         <div className="flex flex-col gap-4">
+          {/* Seleção de tipo */}
+          <div>
+            <label className="text-sm font-medium mb-2 block">Tipo de movimentação</label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setType('deposit')}
+                className={cn(
+                  'flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-medium transition-all cursor-pointer',
+                  type === 'deposit'
+                    ? 'border-emerald-500/60 bg-emerald-500/10 text-emerald-600 shadow-sm'
+                    : 'border-border/60 text-muted-foreground hover:bg-muted/50',
+                )}
+              >
+                <ArrowUp size={16} />
+                Aporte
+              </button>
+              <button
+                type="button"
+                onClick={() => setType('withdraw')}
+                className={cn(
+                  'flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-medium transition-all cursor-pointer',
+                  type === 'withdraw'
+                    ? 'border-rose-500/60 bg-rose-500/10 text-rose-600 shadow-sm'
+                    : 'border-border/60 text-muted-foreground hover:bg-muted/50',
+                )}
+              >
+                <ArrowDown size={16} />
+                Retirada
+              </button>
+            </div>
+          </div>
+
           <div>
             <label className="text-sm font-medium mb-1.5 block">Valor</label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">R$</span>
               <input
-                type="number"
-                step="0.01"
-                className="flex h-10 w-full rounded-xl border border-border bg-background pl-9 pr-3 py-2 text-sm shadow-sm outline-none transition-colors focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/20 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                type="text"
+                inputMode="decimal"
+                value={amount}
+                onChange={(e) => {
+                  // Permite dígitos, vírgula e ponto
+                  const v = e.target.value.replace(/[^\d.,]/g, '')
+                  setAmount(v)
+                }}
                 placeholder="0,00"
                 autoFocus
-                onChange={(e) => {
-                  const raw = e.target.value.replace(/\D/g, '')
-                  setAmount(Number(raw) || 0)
-                }}
                 onKeyDown={(e) => e.key === 'Enter' && handleDeposit()}
+                className="flex h-10 w-full rounded-xl border border-border bg-background pl-9 pr-3 py-2 text-sm shadow-sm outline-none transition-colors focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/20"
               />
             </div>
-            <p className="text-[11px] text-muted-foreground mt-1">
-              Use valor negativo (ex: -5000) para retirada.
-            </p>
           </div>
           <div>
             <label className="text-sm font-medium mb-1.5 block">Descrição (opcional)</label>
             <Input
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Ex: Depósito do mês..."
+              placeholder={type === 'deposit' ? 'Ex: Depósito do mês...' : 'Ex: Resgate emergência...'}
             />
           </div>
           <div className="flex justify-end gap-2 pt-1">
@@ -99,9 +144,9 @@ function DepositDialog({
             <Button
               onClick={handleDeposit}
               className="rounded-xl shadow-md"
-              style={{ backgroundColor: amount >= 0 ? '#7bb686' : '#e05b6d' }}
+              style={{ backgroundColor: type === 'withdraw' ? '#e05b6d' : '#7bb686' }}
             >
-              {amount >= 0 ? 'Adicionar aporte' : 'Registrar retirada'}
+              {type === 'withdraw' ? 'Registrar retirada' : 'Adicionar aporte'}
             </Button>
           </div>
         </div>

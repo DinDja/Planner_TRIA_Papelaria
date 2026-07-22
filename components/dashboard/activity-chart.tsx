@@ -3,7 +3,7 @@
 import { cn } from '@/lib/utils'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip'
-import { BarChart3, Clock, FileText } from 'lucide-react'
+import { BarChart3, Clock, FileText, Sparkles, TrendingUp, Timer } from 'lucide-react'
 
 interface ActivityChartProps {
   data: Array<{
@@ -158,14 +158,17 @@ export function ActivityChart({ data, totalMinutes }: ActivityChartProps) {
 
           {/* Insights */}
           <div className="flex flex-wrap gap-2 pt-2">
-            <div className="text-xs px-3 py-1.5 bg-muted text-muted-foreground rounded-full">
-              ⭐ Mais produtivo: {data.reduce((max, day) => day.minutes > max.minutes ? day : max, data[0]).day}
+            <div className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 bg-muted text-muted-foreground rounded-full">
+              <Sparkles size={12} className="text-amber-500" />
+              Mais produtivo: {data.reduce((max, day) => day.minutes > max.minutes ? day : max, data[0]).day}
             </div>
-            <div className="text-xs px-3 py-1.5 bg-muted text-muted-foreground rounded-full">
-              📈 {data.filter(d => d.pages > 3).length} dias com +3 páginas
+            <div className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 bg-muted text-muted-foreground rounded-full">
+              <TrendingUp size={12} className="text-emerald-500" />
+              {data.filter(d => d.pages > 3).length} dias com +3 páginas
             </div>
-            <div className="text-xs px-3 py-1.5 bg-muted text-muted-foreground rounded-full">
-              ⏱️ {Math.round(totalMinutes / 60)}h semanais
+            <div className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 bg-muted text-muted-foreground rounded-full">
+              <Timer size={12} className="text-blue-500" />
+              {Math.round(totalMinutes / 60)}h semanais
             </div>
           </div>
         </div>

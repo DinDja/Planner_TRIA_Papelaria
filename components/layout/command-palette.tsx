@@ -70,7 +70,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
     { id: 'checklists', label: 'Checklists', icon: ListChecks, href: '/checklists', section: 'Navegação' },
     { id: 'frases', label: 'Frases Favoritas', icon: Bookmark, href: '/frases', section: 'Navegação' },
     { id: 'memorias', label: 'Caixa de Memórias', icon: Box, href: '/memorias', section: 'Navegação' },
-    { id: 'cofre', label: 'Cofre de Senhas', icon: KeyRound, href: '/cofre', section: 'Navegação' },
+    { id: 'cofre', label: 'Cofre de Credenciais', icon: KeyRound, href: '/cofre', section: 'Navegação' },
     { id: 'saude', label: 'Saúde', icon: HeartPulse, href: '/saude', section: 'Navegação' },
     { id: 'wishlist', label: 'Wishlist', icon: Heart, href: '/wishlist', section: 'Navegação' },
     { id: 'rotina', label: 'Rotina', icon: ClipboardList, href: '/rotina', section: 'Navegação' },

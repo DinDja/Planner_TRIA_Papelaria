@@ -410,7 +410,12 @@ export function useCanvasPointer({
   const floodFill = useCallback((pageX: number, pageY: number, color: string) => {
     const d = dataRef.current
     const newData = JSON.parse(JSON.stringify(d)) as CanvasData
-    let changed = false
+
+    // 1) Preenche o fundo de toda a página
+    newData.bgColor = color
+    let changed = true // fundo sempre muda quando há nova cor
+
+    // 2) Recolore strokes cuja distância do centróide < 90px (efeito "fechado")
     for (const s of newData.strokes) {
       let cx = 0
       let cy = 0
@@ -420,14 +425,32 @@ export function useCanvasPointer({
       const dist = Math.hypot(cx - pageX, cy - pageY)
       if (dist < 90) {
         s.color = color
-        changed = true
       }
     }
+
+    // 3) Recolore shapes próximos (por centróide)
+    for (const s of newData.shapes) {
+      const cx = s.x + s.width / 2
+      const cy = s.y + s.height / 2
+      if (Math.hypot(cx - pageX, cy - pageY) < 90) {
+        s.color = color
+      }
+    }
+
+    // 4) Recolore sticky notes próximos (cor de fundo)
+    for (const n of newData.stickyNotes) {
+      const w = n.width ?? 120
+      const h = n.height ?? 120
+      if (pageX >= n.x && pageX <= n.x + w && pageY >= n.y && pageY <= n.y + h) {
+        n.color = color
+      }
+    }
+
     if (changed) {
       commit(newData)
-      toast({ title: 'Preenchido!' })
+      toast({ title: 'Página preenchida!' })
     } else {
-      toast({ title: 'Nada para preencher', description: 'Toque em uma area fechada' })
+      toast({ title: 'Nada para preencher', description: 'Toque em uma área fechada' })
     }
   }, [commit])
 
@@ -916,14 +939,52 @@ export function useCanvasPointer({
     // ── Eraser ──
     if (tool === 'eraser' && currentPoints.length > 0) {
       const newData = JSON.parse(JSON.stringify(d)) as CanvasData
-      const eraserRadius = store.eraserSize
+      const eraserRadius = Math.max(8, store.eraserSize)
       const eraserPoints = currentPoints
-      const splitStrokes: Stroke[] = []
 
+      // Helper de hit-test de um ponto contra os pontos da borracha
+      const hitsAny = (px: number, py: number, pad = 0) =>
+        eraserPoints.some((ep) => Math.hypot(ep.x - px, ep.y - py) < eraserRadius + pad)
+
+      // 1) Apaga stickers cuja área contém um ponto da borracha
+      newData.stickers = newData.stickers.filter((s) => {
+        const cx = s.x + s.width / 2
+        const cy = s.y + s.width / 2 // aproximação: tratar como ~quadrado
+        // remove se o centróide for atingido
+        return !hitsAny(cx, cy, s.width / 2)
+      })
+
+      // 2) Apaga shapes cujo centróide for atingido
+      newData.shapes = newData.shapes.filter((s) => {
+        const cx = s.x + s.width / 2
+        const cy = s.y + s.height / 2
+        return !hitsAny(cx, cy, Math.max(s.width, s.height) / 2)
+      })
+
+      // 3) Apaga sticky notes atingidos
+      newData.stickyNotes = newData.stickyNotes.filter((n) => {
+        const w = n.width ?? 120
+        const h = n.height ?? 120
+        const cx = n.x + w / 2
+        const cy = n.y + h / 2
+        return !hitsAny(cx, cy, Math.max(w, h) / 2)
+      })
+
+      // 4) Apaga textos atingidos
+      newData.texts = newData.texts.filter((t) => {
+        const w = t.width ?? Math.max(20, t.text.length * t.fontSize * 0.58)
+        const h = t.fontSize * 1.3
+        const cx = t.x + w / 2
+        const cy = t.y + h / 2
+        return !hitsAny(cx, cy, Math.max(w, h) / 2)
+      })
+
+      // 5) Divide/remove strokes atingidos (lógica original melhorada)
+      const splitStrokes: Stroke[] = []
       for (const s of newData.strokes) {
         const segments: StrokePoint[][] = [[]]
         for (const sp of s.points) {
-          const hit = eraserPoints.some((ep) => Math.hypot(ep.x - sp.x, ep.y - sp.y) < eraserRadius)
+          const hit = hitsAny(sp.x, sp.y)
           if (hit) {
             if (segments[segments.length - 1].length > 1) {
               splitStrokes.push({ ...s, id: `${s.id}-${uid()}`, points: [...segments[segments.length - 1]] })
@@ -933,13 +994,16 @@ export function useCanvasPointer({
             segments[segments.length - 1].push(sp)
           }
         }
+        // O segmento final (não-atingido) preserva o id original
         if (segments[segments.length - 1].length > 1) {
-          splitStrokes.push({ ...s, id: s.id, points: [...segments[segments.length - 1]] })
+          splitStrokes.push({ ...s, points: [...segments[segments.length - 1]] })
         } else if (segments.length === 1) {
+          // nunca atingido — preserva integralmente
           splitStrokes.push(s)
         }
       }
       newData.strokes = splitStrokes.filter((s) => s.points.length > 1)
+
       commit(newData)
       setIsDrawing(false)
       setCurrentPoints([])

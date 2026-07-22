@@ -16,7 +16,7 @@ import {
   Sun,
   Trash2,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button } from '../ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { Badge, Switch } from '../ui/primitives'
@@ -101,7 +101,21 @@ function RecurringRow({ task, compact }: { task: RecurringTask; compact?: boolea
   const toggleRecurringActive = useRoutineStore((s) => s.toggleRecurringActive)
   const deleteRecurring = useRoutineStore((s) => s.deleteRecurring)
 
-  const isDue = task.nextDue <= todayStr()
+  const [justCompleted, setJustCompleted] = useState(false)
+  const today = todayStr()
+  const isDue = task.nextDue <= today
+  const isOverdue = task.nextDue < today
+  useEffect(() => {
+    if (justCompleted) {
+      const t = setTimeout(() => setJustCompleted(false), 800)
+      return () => clearTimeout(t)
+    }
+  }, [justCompleted])
+
+  const handleComplete = () => {
+    setJustCompleted(true)
+    completeRecurring(task.id)
+  }
 
   const freqLabel =
     task.frequency === 'daily'
@@ -119,12 +133,16 @@ function RecurringRow({ task, compact }: { task: RecurringTask; compact?: boolea
     >
       {compact ? (
         <button
-          onClick={() => completeRecurring(task.id)}
+          onClick={handleComplete}
           disabled={!task.active}
           className="shrink-0 text-muted-foreground hover:text-primary transition-colors cursor-pointer disabled:cursor-not-allowed"
           aria-label="Concluir ocorrência de hoje"
         >
-          <Circle size={20} />
+          {justCompleted ? (
+            <CheckCircle2 size={20} className="text-emerald-500 animate-[pop_0.3s_ease-out]" />
+          ) : (
+            <Circle size={20} />
+          )}
         </button>
       ) : (
         <div
@@ -135,11 +153,22 @@ function RecurringRow({ task, compact }: { task: RecurringTask; compact?: boolea
         </div>
       )}
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium truncate">{task.title}</p>
+        <p
+          className={cn(
+            'text-sm font-medium truncate',
+            justCompleted && 'line-through text-muted-foreground',
+          )}
+        >
+          {task.title}
+        </p>
         <p className="text-[11px] text-muted-foreground truncate">
           {freqLabel} ·{' '}
           {isDue ? (
-            <span className="font-semibold text-primary">vence hoje</span>
+            isOverdue ? (
+              <span className="font-semibold text-destructive">atrasada</span>
+            ) : (
+              <span className="font-semibold text-primary">vence hoje</span>
+            )
           ) : (
             <>próxima: {formatDateShort(task.nextDue)}</>
           )}

@@ -34,7 +34,7 @@ function MoodPicker({
   onChange: (m: MemoryMood) => void
 }) {
   return (
-    <div className="flex gap-2">
+    <div className="grid grid-cols-5 gap-1.5 sm:gap-2 sm:flex">
       {MOOD_OPTIONS.map((opt) => {
         const active = value === opt.value
         return (
@@ -43,7 +43,7 @@ function MoodPicker({
             type="button"
             onClick={() => onChange(opt.value)}
             className={cn(
-              'flex flex-col items-center gap-1 flex-1 rounded-xl border px-2 py-3 text-[10px] font-medium transition-all duration-200 cursor-pointer',
+              'flex flex-col items-center gap-1 flex-1 rounded-xl border px-1 py-2 sm:px-2 sm:py-3 text-[9px] sm:text-[10px] font-medium transition-all duration-200 cursor-pointer',
               active
                 ? 'border-transparent shadow-md text-white'
                 : 'border-border/60 text-muted-foreground hover:bg-muted/50',
@@ -51,11 +51,11 @@ function MoodPicker({
             style={active ? { backgroundColor: opt.color } : undefined}
           >
             <opt.icon
-              size={20}
+              size={18}
               className={active ? 'text-white' : ''}
               style={!active ? { color: opt.color } : undefined}
             />
-            {opt.label}
+            <span className="leading-tight">{opt.label}</span>
           </button>
         )
       })}
@@ -122,7 +122,7 @@ export function AddMemoryDialog({
               autoFocus
             />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="text-sm font-medium mb-1.5 block">Data</label>
               <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />

@@ -3,7 +3,7 @@
 import { useCalendarStore } from '@/lib/store/use-calendar-store'
 import { cn } from '@/lib/utils'
 import { Check } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button } from '../ui/button'
 import { Dialog, DialogContent } from '../ui/overlays'
 import { Input } from '../ui/primitives'
@@ -32,13 +32,35 @@ export function CalendarEventDialog({
 
   const existing = editId ? events.find((e) => e.id === editId) : null
 
-  const [title, setTitle] = useState(existing?.title ?? '')
-  const [date, setDate] = useState(existing?.date ?? defaultDate ?? '')
-  const [startTime, setStartTime] = useState(existing?.startTime ?? '')
-  const [endTime, setEndTime] = useState(existing?.endTime ?? '')
-  const [allDay, setAllDay] = useState(existing?.allDay ?? false)
-  const [color, setColor] = useState(existing?.color ?? EVENT_COLORS[4])
-  const [notes, setNotes] = useState(existing?.notes ?? '')
+  const [title, setTitle] = useState('')
+  const [date, setDate] = useState('')
+  const [startTime, setStartTime] = useState('')
+  const [endTime, setEndTime] = useState('')
+  const [allDay, setAllDay] = useState(false)
+  const [color, setColor] = useState(EVENT_COLORS[4])
+  const [notes, setNotes] = useState('')
+
+  // Sincroniza os campos sempre que o modal abre ou muda entre criar/editar
+  useEffect(() => {
+    if (!open) return
+    if (editId && existing) {
+      setTitle(existing.title ?? '')
+      setDate(existing.date ?? '')
+      setStartTime(existing.startTime ?? '')
+      setEndTime(existing.endTime ?? '')
+      setAllDay(existing.allDay ?? false)
+      setColor(existing.color ?? EVENT_COLORS[4])
+      setNotes(existing.notes ?? '')
+    } else {
+      setTitle('')
+      setDate(defaultDate ?? '')
+      setStartTime('')
+      setEndTime('')
+      setAllDay(false)
+      setColor(EVENT_COLORS[4])
+      setNotes('')
+    }
+  }, [open, editId, defaultDate]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const reset = () => {
     setTitle('')

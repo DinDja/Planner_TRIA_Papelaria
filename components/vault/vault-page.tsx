@@ -145,6 +145,9 @@ export function VaultPage() {
   const [confirmPin, setConfirmPin] = useState('')
   const [settingPin, setSettingPin] = useState(masterPin === '')
   const [visiblePasswords, setVisiblePasswords] = useState<Set<string>>(new Set())
+  const [showPin, setShowPin] = useState(false)
+  const [showConfirmPin, setShowConfirmPin] = useState(false)
+  const [showUnlockPin, setShowUnlockPin] = useState(false)
 
   const toggleVisibility = (id: string) => {
     setVisiblePasswords((prev) => {
@@ -201,17 +204,27 @@ export function VaultPage() {
             <p className="text-sm text-muted-foreground">Digite seu PIN para acessar</p>
           </CardHeader>
           <CardContent className="space-y-3">
-            <Input
-              type="password"
-              inputMode="numeric"
-              maxLength={6}
-              value={pinInput}
-              onChange={(e) => setPinInput(e.target.value)}
-              placeholder="Digite o PIN"
-              onKeyDown={(e) => e.key === 'Enter' && handleUnlock()}
-              className="text-center text-lg font-mono tracking-[0.5em]"
-              autoFocus
-            />
+            <div className="relative">
+              <Input
+                type={showUnlockPin ? 'text' : 'password'}
+                inputMode="numeric"
+                maxLength={6}
+                value={pinInput}
+                onChange={(e) => setPinInput(e.target.value)}
+                placeholder="Digite o PIN"
+                onKeyDown={(e) => e.key === 'Enter' && handleUnlock()}
+                className="text-center text-lg font-mono tracking-[0.5em] pr-10"
+                autoFocus
+              />
+              <button
+                type="button"
+                onClick={() => setShowUnlockPin((v) => !v)}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-lg p-1 text-muted-foreground/60 hover:text-foreground transition-colors cursor-pointer"
+                aria-label={showUnlockPin ? 'Ocultar PIN' : 'Exibir PIN'}
+              >
+                {showUnlockPin ? <EyeOff size={15} /> : <Eye size={15} />}
+              </button>
+            </div>
             <Button className="w-full rounded-xl" onClick={handleUnlock} disabled={pinInput.length < 4}>
               <Unlock size={15} className="mr-1.5" />
               Desbloquear
@@ -233,29 +246,49 @@ export function VaultPage() {
             </div>
             <CardTitle className="text-lg">Proteger o cofre</CardTitle>
             <p className="text-sm text-muted-foreground">
-              Crie um PIN para proteger suas senhas. Ele ficará salvo neste dispositivo.
+              Crie um PIN para proteger suas credenciais. Ele ficará salvo neste dispositivo.
             </p>
           </CardHeader>
           <CardContent className="space-y-3">
-            <Input
-              type="password"
-              inputMode="numeric"
-              maxLength={6}
-              value={newPin}
-              onChange={(e) => setNewPin(e.target.value)}
-              placeholder="Crie um PIN (4-6 dígitos)"
-              className="text-center text-lg font-mono tracking-[0.5em]"
-              autoFocus
-            />
-            <Input
-              type="password"
-              inputMode="numeric"
-              maxLength={6}
-              value={confirmPin}
-              onChange={(e) => setConfirmPin(e.target.value)}
-              placeholder="Confirme o PIN"
-              className="text-center text-lg font-mono tracking-[0.5em]"
-            />
+            <div className="relative">
+              <Input
+                type={showPin ? 'text' : 'password'}
+                inputMode="numeric"
+                maxLength={6}
+                value={newPin}
+                onChange={(e) => setNewPin(e.target.value)}
+                placeholder="Crie um PIN (4-6 dígitos)"
+                className="text-center text-lg font-mono tracking-[0.5em] pr-10"
+                autoFocus
+              />
+              <button
+                type="button"
+                onClick={() => setShowPin((v) => !v)}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-lg p-1 text-muted-foreground/60 hover:text-foreground transition-colors cursor-pointer"
+                aria-label={showPin ? 'Ocultar PIN' : 'Exibir PIN'}
+              >
+                {showPin ? <EyeOff size={15} /> : <Eye size={15} />}
+              </button>
+            </div>
+            <div className="relative">
+              <Input
+                type={showConfirmPin ? 'text' : 'password'}
+                inputMode="numeric"
+                maxLength={6}
+                value={confirmPin}
+                onChange={(e) => setConfirmPin(e.target.value)}
+                placeholder="Confirme o PIN"
+                className="text-center text-lg font-mono tracking-[0.5em] pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPin((v) => !v)}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-lg p-1 text-muted-foreground/60 hover:text-foreground transition-colors cursor-pointer"
+                aria-label={showConfirmPin ? 'Ocultar PIN' : 'Exibir PIN'}
+              >
+                {showConfirmPin ? <EyeOff size={15} /> : <Eye size={15} />}
+              </button>
+            </div>
             <Button className="w-full rounded-xl" onClick={handleSetPin} disabled={!newPin || !confirmPin}>
               <ShieldCheck size={15} className="mr-1.5" />
               Proteger cofre
@@ -280,7 +313,7 @@ export function VaultPage() {
             >
               <KeyRound size={22} style={{ color: '#e05b6d' }} />
             </span>
-            Cofre de Senhas
+            Cofre de Credenciais
           </h1>
           <p className="text-muted-foreground mt-2">
             Gerencie suas credenciais com segurança.
@@ -302,7 +335,7 @@ export function VaultPage() {
           )}
           <Button className="rounded-xl gap-1.5 shadow-md" onClick={() => setAddOpen(true)}>
             <Plus size={15} />
-            Nova senha
+            Nova credencial
           </Button>
         </div>
       </div>
@@ -322,10 +355,10 @@ export function VaultPage() {
       ) : (
         <div className="text-center py-16">
           <KeyRound size={40} className="mx-auto text-muted-foreground/30 mb-4" />
-          <p className="text-muted-foreground">Nenhuma senha salva ainda.</p>
+          <p className="text-muted-foreground">Nenhuma credencial salva ainda.</p>
           <Button variant="outline" className="mt-4 rounded-xl" onClick={() => setAddOpen(true)}>
             <Plus size={14} className="mr-1.5" />
-            Adicionar senha
+            Adicionar credencial
           </Button>
         </div>
       )}

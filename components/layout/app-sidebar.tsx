@@ -90,6 +90,7 @@ export function AppSidebar({
   const pathname = usePathname()
   const planners = useAppStore((s) => s.planners)
   const folders = useAppStore((s) => s.folders)
+  const tags = useAppStore((s) => s.tags)
   const menuModules = useMenuStore((s) => s.modules)
   const enabledIds = new Set(menuModules.filter((m) => m.enabled).map((m) => m.id))
   const navItems = NAV_ITEMS.filter((item) => {
@@ -174,8 +175,9 @@ export function AppSidebar({
               </div>
               <div className="flex flex-col gap-0.5">
                 {folders.map((f) => (
-                  <div
+                  <Link
                     key={f.id}
+                    href={`/pastas/${f.id}`}
                     className="flex items-center gap-3 rounded-xl px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer"
                   >
                     <div className="size-2.5 rounded-md" style={{ backgroundColor: f.color }} />
@@ -183,7 +185,7 @@ export function AppSidebar({
                     <span className="ml-auto text-xs text-muted-foreground/60">
                       {planners.filter((p) => p.folderId === f.id).length}
                     </span>
-                  </div>
+                  </Link>
                 ))}
               </div>
             </div>
@@ -197,21 +199,25 @@ export function AppSidebar({
                 </span>
               </div>
               <div className="flex flex-wrap gap-2">
-                {['Urgente', 'Importante', 'Ideia'].map((tag, i) => {
-                  const colors = ['#e05b6d', '#f0b429', '#a5c8e4']
-                  return (
-                    <span
-                      key={tag}
-                      className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs transition-colors cursor-pointer hover:brightness-110 hover:opacity-90"
+                {tags.length === 0 ? (
+                  <span className="text-[10px] text-muted-foreground/50 px-1">
+                    Nenhuma tag ainda
+                  </span>
+                ) : (
+                  tags.map((t) => (
+                    <Link
+                      key={t.id}
+                      href={`/tags/${encodeURIComponent(t.id)}`}
+                      className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs transition-colors cursor-pointer hover:brightness-110"
                       style={{
-                        backgroundColor: colors[i] + '20',
-                        color: colors[i],
+                        backgroundColor: t.color + '20',
+                        color: t.color,
                       }}
                     >
-                      {tag}
-                    </span>
-                  )
-                })}
+                      {t.name}
+                    </Link>
+                  ))
+                )}
               </div>
             </div>
           </>

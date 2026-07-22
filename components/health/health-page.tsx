@@ -11,6 +11,7 @@ import {
   HeartPulse,
   Pill,
   Plus,
+  RefreshCw,
   Stethoscope,
   Target,
   Trash2,
@@ -23,6 +24,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { Badge, Input } from '../ui/primitives'
 import { Tab, TabList, TabPanel, Tabs } from '../ui/overlays'
 import { AddWeightDialog, AddSymptomDialog, AddMedicationDialog, AddCycleDialog, AddDoctorDialog, AddAppointmentDialog, AddExamDialog, AddMeasurementDialog } from './health-dialogs'
+import { HealthOnboarding } from './health-onboarding'
 
 const enter = 'animate-in fade-in slide-in-from-bottom-3 duration-500 fill-mode-both'
 
@@ -638,6 +640,13 @@ function ExamsTab() {
 
 export function HealthPage() {
   const [tab, setTab] = useState('peso')
+  const onboarded = useHealthStore((s) => s.onboarded)
+  const resetOnboarding = useHealthStore((s) => s.resetOnboarding)
+  const sex = useHealthStore((s) => s.sex)
+
+  if (!onboarded) {
+    return <HealthOnboarding />
+  }
 
   return (
     <div className="p-6 lg:p-8 max-w-[1000px] mx-auto">
@@ -653,6 +662,15 @@ export function HealthPage() {
             Acompanhe seu bem-estar completo.
           </p>
         </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="rounded-xl text-xs text-muted-foreground"
+          onClick={resetOnboarding}
+        >
+          <RefreshCw size={13} className="mr-1.5" />
+          Refazer perfil
+        </Button>
       </div>
 
       <Tabs value={tab} onValueChange={setTab} className={enter}>
@@ -661,7 +679,9 @@ export function HealthPage() {
           <Tab value="medidas"><Activity size={14} className="mr-1.5" />Medidas</Tab>
           <Tab value="sintomas"><Cigarette size={14} className="mr-1.5" />Sintomas</Tab>
           <Tab value="medicamentos"><Pill size={14} className="mr-1.5" />Medicamentos</Tab>
-          <Tab value="ciclo"><Venus size={14} className="mr-1.5" />Ciclo</Tab>
+          {sex !== 'male' && (
+            <Tab value="ciclo"><Venus size={14} className="mr-1.5" />Ciclo</Tab>
+          )}
           <Tab value="medicos"><Stethoscope size={14} className="mr-1.5" />Médicos</Tab>
           <Tab value="consultas"><CalendarClock size={14} className="mr-1.5" />Consultas</Tab>
           <Tab value="exames"><Beaker size={14} className="mr-1.5" />Exames</Tab>
@@ -671,7 +691,9 @@ export function HealthPage() {
         <TabPanel value="medidas"><MeasurementsTab /></TabPanel>
         <TabPanel value="sintomas"><SymptomsTab /></TabPanel>
         <TabPanel value="medicamentos"><MedicationsTab /></TabPanel>
-        <TabPanel value="ciclo"><CyclesTab /></TabPanel>
+        {sex !== 'male' && (
+          <TabPanel value="ciclo"><CyclesTab /></TabPanel>
+        )}
         <TabPanel value="medicos"><DoctorsTab /></TabPanel>
         <TabPanel value="consultas"><AppointmentsTab /></TabPanel>
         <TabPanel value="exames"><ExamsTab /></TabPanel>

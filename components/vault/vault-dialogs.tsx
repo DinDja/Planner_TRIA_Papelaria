@@ -86,14 +86,14 @@ export function AddPasswordDialog({
       notes: notes.trim() || undefined,
       color,
     })
-    toast({ title: 'Senha salva!', variant: 'success' })
+    toast({ title: 'Credencial salva!', variant: 'success' })
     reset()
     onClose()
   }
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent title="Nova senha" description="Salve suas credenciais com segurança.">
+      <DialogContent title="Nova credencial" description="Salve suas credenciais com segurança.">
         <div className="flex flex-col gap-4">
           <div className="grid grid-cols-2 gap-3">
             <div>

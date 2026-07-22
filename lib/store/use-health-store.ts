@@ -108,6 +108,16 @@ interface HealthState {
   addExam: (data: { name: string; date: string; doctor?: string; laboratory?: string; result?: string; notes?: string; color?: string }) => void
   updateExam: (id: string, patch: Partial<ExamRecord>) => void
   deleteExam: (id: string) => void
+
+  /** Sexo biológico do usuário (para filtros de onboarding e ciclo). */
+  sex: 'male' | 'female' | null
+  /** Indica se o onboarding inicial já foi feito. */
+  onboarded: boolean
+  setSex: (sex: 'male' | 'female') => void
+  /** Marca o onboarding como concluído. */
+  completeOnboarding: () => void
+  /** Reseta o onboarding (usado para testar/alterar perfil). */
+  resetOnboarding: () => void
 }
 
 const COLORS = ['#e05b6d', '#f0b429', '#7bb686', '#5b8dbf', '#c9b6e4', '#e8a0a0']
@@ -125,6 +135,8 @@ export const useHealthStore = create<HealthState>()(
       exams: seedExams,
       height: 170,
       goalWeight: 65,
+      sex: null,
+      onboarded: false,
 
       addWeight: (data) =>
         set((s) => ({ weights: [{ id: `w-${uid()}`, ...data, createdAt: nowISO() }, ...s.weights] })),
@@ -181,6 +193,10 @@ export const useHealthStore = create<HealthState>()(
         set((s) => ({ exams: s.exams.map((e) => (e.id === id ? { ...e, ...patch } : e)) })),
       deleteExam: (id) =>
         set((s) => ({ exams: s.exams.filter((e) => e.id !== id) })),
+
+      setSex: (sex) => set({ sex }),
+      completeOnboarding: () => set({ onboarded: true }),
+      resetOnboarding: () => set({ onboarded: false, sex: null }),
     }),
     { name: 'plannerhub-health' },
   ),

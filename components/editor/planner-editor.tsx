@@ -1906,6 +1906,7 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
                     width: '100%',
                     height: '100%',
                     touchAction: 'none',
+                    backgroundColor: data.bgColor ?? undefined,
                     cursor:
                       activeTool === 'eraser' ? 'none' :
                       activeTool === 'text' ? 'text' :

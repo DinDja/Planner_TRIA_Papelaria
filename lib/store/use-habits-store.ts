@@ -61,8 +61,8 @@ interface HabitsState {
 export const useHabitsStore = create<HabitsState>()(
   persist(
     (set, get) => ({
-      habits: seedHabits,
-      logs: seedLogs,
+      habits: [],
+      logs: [],
 
       addHabit: ({ color = '#7bb686', ...data }) =>
         set((s) => ({

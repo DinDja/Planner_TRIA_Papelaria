@@ -2,13 +2,15 @@
 
 import { Button } from '@/components/ui/button'
 import { Menu, Search } from 'lucide-react'
+import { UserMenu } from './user-menu'
 
 interface TopBarProps {
   onToggleSidebar: () => void
   onOpenCommand: () => void
+  onOpenSettings: () => void
 }
 
-export function TopBar({ onToggleSidebar, onOpenCommand }: TopBarProps) {
+export function TopBar({ onToggleSidebar, onOpenCommand, onOpenSettings }: TopBarProps) {
   return (
     <header className="h-14 shrink-0 flex items-center gap-4 px-4 border-b border-border/40 bg-background/80 backdrop-blur-xl z-20">
       {/* Mobile hamburger */}
@@ -36,7 +38,9 @@ export function TopBar({ onToggleSidebar, onOpenCommand }: TopBarProps) {
       </div>
 
       {/* Right actions */}
-      <div className="flex items-center gap-1" />
+      <div className="flex items-center gap-1 ml-auto">
+        <UserMenu onOpenSettings={onOpenSettings} />
+      </div>
     </header>
   )
 }

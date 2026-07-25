@@ -1,5 +1,5 @@
-import { JournalPage } from '@/components/journal/journal-page'
+import { DiarioPage } from '@/components/diario/diario-page'
 
 export default function Page() {
-  return <JournalPage />
+  return <DiarioPage />
 }

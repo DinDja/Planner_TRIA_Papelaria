@@ -62,7 +62,7 @@ interface QuotesState {
 export const useQuotesStore = create<QuotesState>()(
   persist(
     (set, get) => ({
-      quotes: seedQuotes,
+      quotes: [],
 
       addQuote: ({ color, tags, ...data }) =>
         set((s) => ({

@@ -125,14 +125,14 @@ const COLORS = ['#e05b6d', '#f0b429', '#7bb686', '#5b8dbf', '#c9b6e4', '#e8a0a0'
 export const useHealthStore = create<HealthState>()(
   persist(
     (set) => ({
-      weights: seedWeights,
+      weights: [],
       measurements: [],
-      symptoms: seedSymptoms,
-      medications: seedMedications,
-      cycles: seedCycles,
-      doctors: seedDoctors,
-      appointments: seedAppointments,
-      exams: seedExams,
+      symptoms: [],
+      medications: [],
+      cycles: [],
+      doctors: [],
+      appointments: [],
+      exams: [],
       height: 170,
       goalWeight: 65,
       sex: null,

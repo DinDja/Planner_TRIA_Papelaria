@@ -1,5 +1,10 @@
+import { Suspense } from 'react'
 import { AuthForm } from '@/components/auth/auth-form'
 
 export default function EsqueciSenhaPage() {
-  return <AuthForm initialView="esqueci-senha" />
+  return (
+    <Suspense>
+      <AuthForm initialView="esqueci-senha" />
+    </Suspense>
+  )
 }

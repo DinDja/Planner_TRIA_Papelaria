@@ -106,7 +106,7 @@ interface RetroState {
 export const useRetroStore = create<RetroState>()(
   persist(
     (set, get) => ({
-      entries: seedEntries,
+      entries: [],
 
       addEntry: (data) =>
         set((s) => ({

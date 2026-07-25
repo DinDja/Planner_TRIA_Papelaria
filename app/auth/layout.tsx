@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { AuthDecorativePanel } from '@/components/auth/auth-decorative-panel'
+import { ThemeToggle } from '@/components/auth/theme-toggle'
 
 export const metadata: Metadata = {
   title: 'PlannerHub — Entrar',
@@ -12,7 +13,10 @@ export default function AuthLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="flex min-h-dvh">
+    <div className="relative flex min-h-dvh">
+      {/* Switch de tema — canto superior direito, acima de tudo */}
+      <ThemeToggle className="absolute right-5 top-5 z-50" />
+
       {/* Left decorative panel — hidden on mobile */}
       <div className="hidden lg:flex lg:w-1/2 lg:h-dvh lg:sticky lg:top-0">
         <AuthDecorativePanel />

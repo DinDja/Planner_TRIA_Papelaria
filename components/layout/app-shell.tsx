@@ -50,6 +50,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <TopBar
           onToggleSidebar={() => setMobileOpen((v) => !v)}
           onOpenCommand={() => setCmdOpen(true)}
+          onOpenSettings={openSettings}
         />
         <main className="flex-1 overflow-auto">{children}</main>
       </div>

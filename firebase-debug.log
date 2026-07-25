@@ -1,0 +1,46 @@
+[debug] [2026-07-25T12:35:51.038Z] ----------------------------------------------------------------------
+[debug] [2026-07-25T12:35:51.044Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\Bruno\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js projects:list
+[debug] [2026-07-25T12:35:51.045Z] CLI Version:   15.3.1
+[debug] [2026-07-25T12:35:51.045Z] Platform:      win32
+[debug] [2026-07-25T12:35:51.045Z] Node Version:  v24.11.1
+[debug] [2026-07-25T12:35:51.046Z] Time:          Sat Jul 25 2026 09:35:51 GMT-0300 (Horário Padrão de Brasília)
+[debug] [2026-07-25T12:35:51.046Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-07-25T12:35:51.067Z] >>> [apiv2][query] GET https://firebase-public.firebaseio.com/cli.json [none]
+[debug] [2026-07-25T12:35:51.182Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-07-25T12:35:51.183Z] > authorizing via signed-in user (obitoandradeuthiha@gmail.com)
+[debug] [2026-07-25T12:35:51.188Z] Checked if tokens are valid: false, expires at: 1783017027918
+[debug] [2026-07-25T12:35:51.188Z] Checked if tokens are valid: false, expires at: 1783017027918
+[debug] [2026-07-25T12:35:51.188Z] > refreshing access token with scopes: []
+[debug] [2026-07-25T12:35:51.190Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-07-25T12:35:51.190Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-07-25T12:35:51.460Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2026-07-25T12:35:51.460Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-07-25T12:35:51.485Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects pageSize=1000
+[debug] [2026-07-25T12:35:51.610Z] <<< [apiv2][status] GET https://firebase-public.firebaseio.com/cli.json 200
+[debug] [2026-07-25T12:35:51.611Z] <<< [apiv2][body] GET https://firebase-public.firebaseio.com/cli.json {"cloudBuildErrorAfter":1594252800000,"cloudBuildWarnAfter":1590019200000,"defaultNode10After":1594252800000,"minVersion":"3.0.5","node8DeploysDisabledAfter":1613390400000,"node8RuntimeDisabledAfter":1615809600000,"node8WarnAfter":1600128000000}
+[debug] [2026-07-25T12:35:52.810Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects 200
+[debug] [2026-07-25T12:35:52.810Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects [omitted]
+[info] ┌──────────────────────┬─────────────────────┬────────────────┬──────────────────────┐
+│ Project Display Name │ Project ID          │ Project Number │ Resource Location ID │
+├──────────────────────┼─────────────────────┼────────────────┼──────────────────────┤
+│ cloudspeak           │ cloudspeak-172f7    │ 941328194884   │ [Not specified]      │
+├──────────────────────┼─────────────────────┼────────────────┼──────────────────────┤
+│ ContratosSecti       │ contratossecti      │ 297313871015   │ [Not specified]      │
+├──────────────────────┼─────────────────────┼────────────────┼──────────────────────┤
+│ inovasecti           │ inovasecti-a3dea    │ 151677863168   │ [Not specified]      │
+├──────────────────────┼─────────────────────┼────────────────┼──────────────────────┤
+│ INPI-DATABASE        │ inpi-database-b5010 │ 802642406302   │ [Not specified]      │
+├──────────────────────┼─────────────────────┼────────────────┼──────────────────────┤
+│ LoveBuilder          │ lovebuilder-87763   │ 272837748642   │ [Not specified]      │
+├──────────────────────┼─────────────────────┼────────────────┼──────────────────────┤
+│ RadarPolitico        │ radarpolitico-f6258 │ 918757630786   │ [Not specified]      │
+├──────────────────────┼─────────────────────┼────────────────┼──────────────────────┤
+│ RedeSocial           │ redesocial-fdc4b    │ 213468488967   │ [Not specified]      │
+├──────────────────────┼─────────────────────┼────────────────┼──────────────────────┤
+│ SECTI                │ secti-551ad         │ 854998983216   │ [Not specified]      │
+├──────────────────────┼─────────────────────┼────────────────┼──────────────────────┤
+│ SECTInventario       │ sectinventario      │ 364739554135   │ [Not specified]      │
+└──────────────────────┴─────────────────────┴────────────────┴──────────────────────┘
+[info] 
+[info] 9 project(s) total.

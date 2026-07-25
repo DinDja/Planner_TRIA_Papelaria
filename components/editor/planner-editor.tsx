@@ -246,6 +246,239 @@ const ShapeRenderer = memo(function ShapeRenderer({ shape }: { shape: ShapeItem 
   }
 })
 
+// ─── Tool settings popover ────────────────────────────────────────────────────
+// Componente extraído do PlannerEditor para ser estável entre renders,
+// evitando que o Popover interno desmonte a cada mudança no editor store.
+
+type EditorState = ReturnType<typeof useEditorStore.getState>
+
+const SHAPE_TOOLS: ToolType[] = ['rectangle', 'ellipse', 'line', 'arrow']
+
+function useToolSettingsEditor() {
+  return useEditorStore()
+}
+
+function ToolSettings({
+  triggerFromRadial,
+  mobile,
+  setShowToolSettingsFromRadial,
+}: {
+  triggerFromRadial?: boolean
+  mobile?: boolean
+  setShowToolSettingsFromRadial: (v: boolean) => void
+}) {
+  const editor = useToolSettingsEditor()
+  const activeTool = editor.activeTool
+  const setTool = editor.setActiveTool
+
+  const color = editor.getToolColor()
+  const size = editor.getToolSize()
+  const opacity = editor.getToolOpacity()
+
+  const setterColor =
+    activeTool === 'pen' ? editor.setPenColor :
+    activeTool === 'pencil' ? editor.setPencilColor :
+    activeTool === 'brush' ? editor.setBrushColor :
+    activeTool === 'marker' ? editor.setMarkerColor :
+    activeTool === 'highlighter' ? editor.setHighlighterColor :
+    activeTool === 'ruler' ? editor.setRulerColor :
+    activeTool === 'text' ? editor.setTextColor :
+    SHAPE_TOOLS.includes(activeTool) ? editor.setShapeColor :
+    activeTool === 'fill' ? editor.setFillColor :
+    null
+
+  const setterSize =
+    activeTool === 'pen' ? editor.setPenSize :
+    activeTool === 'pencil' ? editor.setPencilSize :
+    activeTool === 'brush' ? editor.setBrushSize :
+    activeTool === 'marker' ? editor.setMarkerSize :
+    activeTool === 'highlighter' ? editor.setHighlighterSize :
+    activeTool === 'ruler' ? editor.setRulerSize :
+    activeTool === 'eraser' ? editor.setEraserSize : null
+
+  const setterOpacity =
+    activeTool === 'pen' ? editor.setPenOpacity :
+    activeTool === 'pencil' ? editor.setPencilOpacity :
+    activeTool === 'brush' ? editor.setBrushOpacity :
+    activeTool === 'marker' ? editor.setMarkerOpacity :
+    activeTool === 'highlighter' ? editor.setHighlighterOpacity :
+    activeTool === 'ruler' ? editor.setRulerOpacity : null
+
+  const isShapeTool = SHAPE_TOOLS.includes(activeTool)
+
+  const content = (
+    <>
+      <p className="text-xs font-semibold mb-3">Configurações</p>
+      {setterColor && (
+        <div className="mb-3">
+          <ColorPalette
+            color={color}
+            recent={editor.lastColors}
+            onPick={(c) => { setterColor(c); editor.pushLastColor(c) }}
+            onEyedropper={() => {
+              setTool('eyedropper')
+              if (mobile) setShowToolSettingsFromRadial(false)
+            }}
+            onClearRecent={() => editor.clearLastColors()}
+          />
+        </div>
+      )}
+      {setterSize && (
+        <>
+          <p className="text-[11px] text-muted-foreground mb-1.5">
+            Espessura: <span className="font-bold text-foreground">{size}px</span>
+          </p>
+          <input
+            type="range"
+            min={0.5}
+            max={activeTool === 'highlighter' ? 30 : activeTool === 'brush' ? 24 : 12}
+            step={0.5}
+            value={size}
+            onChange={(e) => setterSize?.(Number(e.target.value))}
+            className="w-full mb-3"
+          />
+        </>
+      )}
+      {setterOpacity && (
+        <>
+          <p className="text-[11px] text-muted-foreground mb-1.5">
+            Opacidade: <span className="font-bold text-foreground">{Math.round(opacity * 100)}%</span>
+          </p>
+          <input
+            type="range"
+            min={0.1}
+            max={1}
+            step={0.05}
+            value={opacity}
+            onChange={(e) => setterOpacity?.(Number(e.target.value))}
+            className="w-full"
+          />
+        </>
+      )}
+      {(activeTool === 'pen' || activeTool === 'pencil' || activeTool === 'brush') && (
+        <label className="flex items-center gap-2 mt-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={editor.pressureSensitive}
+            onChange={(e) => editor.setPressureSensitive(e.target.checked)}
+            className="size-4 accent-primary"
+          />
+          <span className="text-[11px]">Sensível à pressão</span>
+        </label>
+      )}
+      {isShapeTool && (
+        <div className="mt-3 space-y-2 border-t border-border/40 pt-3">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={editor.shapeOutline}
+              onChange={(e) => editor.setShapeOutline(e.target.checked)}
+              className="size-4 accent-primary"
+            />
+            <span className="text-[11px]">Apenas contorno</span>
+          </label>
+          {editor.shapeOutline && (
+            <>
+              <p className="text-[11px] text-muted-foreground">
+                Espessura do contorno: <span className="font-bold text-foreground">{editor.shapeStrokeWidth}px</span>
+              </p>
+              <input
+                type="range"
+                min={1}
+                max={10}
+                step={0.5}
+                value={editor.shapeStrokeWidth}
+                onChange={(e) => editor.setShapeStrokeWidth(Number(e.target.value))}
+                className="w-full"
+              />
+            </>
+          )}
+        </div>
+      )}
+      <div className="mt-3 space-y-2 border-t border-border/40 pt-3">
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={editor.snappingEnabled}
+            onChange={(e) => editor.setSnappingEnabled(e.target.checked)}
+            className="size-4 accent-primary"
+          />
+          <span className="text-[11px] flex items-center gap-1">
+            <Magnet size={11} /> Snap ao grid
+          </span>
+        </label>
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={editor.alignmentGuides}
+            onChange={(e) => editor.setAlignmentGuides(e.target.checked)}
+            className="size-4 accent-primary"
+          />
+          <span className="text-[11px]">Guias de alinhamento</span>
+        </label>
+      </div>
+      {activeTool === 'text' && (
+        <>
+          <p className="text-[11px] text-muted-foreground mb-1.5">Tamanho da fonte</p>
+          <input
+            type="range"
+            min={10}
+            max={48}
+            step={1}
+            value={editor.textFontSize}
+            onChange={(e) => editor.setTextFontSize(Number(e.target.value))}
+            className="w-full mb-3"
+          />
+          <p className="text-[11px] text-muted-foreground mb-1.5">Fonte</p>
+          <div className="flex gap-1">
+            {(['sans', 'serif', 'hand'] as const).map((f) => (
+              <button
+                key={f}
+                onClick={() => editor.setTextFontFamily(f)}
+                className={cn(
+                  'flex-1 rounded-lg py-1 text-xs transition-colors cursor-pointer',
+                  editor.textFontFamily === f ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/70',
+                )}
+              >
+                {f === 'hand' ? 'Mão' : f === 'serif' ? 'Serif' : 'Sans'}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </>
+  )
+
+  if (mobile) {
+    return (
+      <BottomSheet
+        open={!!triggerFromRadial}
+        onClose={() => setShowToolSettingsFromRadial(false)}
+        title="Configurações"
+        maxHeight="70vh"
+        desktopSidePanel={false}
+      >
+        <div className="p-4">
+          {content}
+        </div>
+      </BottomSheet>
+    )
+  }
+
+  return (
+    <Popover open={triggerFromRadial ? true : undefined} onOpenChange={(open) => {
+      if (!open) setShowToolSettingsFromRadial(false)
+    }}>
+      <PopoverTrigger className="rounded-xl p-1.5 hover:bg-muted transition-colors">
+        <div className="size-4 rounded-full border border-border" style={{ backgroundColor: color }} />
+      </PopoverTrigger>
+      <PopoverContent className="w-64 p-4 max-h-[80vh] overflow-auto">
+        {content}
+      </PopoverContent>
+    </Popover>
+  )
+}
+
 // ─── Main Editor ─────────────────────────────────────────────────────────────
 
 export function PlannerEditor({ planner }: { planner: Planner }) {
@@ -987,216 +1220,8 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
     return null
   }
 
-  // ─── Tool settings ──────────────────────────────────────────────────────────
-
-  const ToolSettings = ({ triggerFromRadial, mobile }: { triggerFromRadial?: boolean; mobile?: boolean }) => {
-    const color = editor.getToolColor()
-    const size = editor.getToolSize()
-    const opacity = editor.getToolOpacity()
-
-    const setterColor =
-      activeTool === 'pen' ? editor.setPenColor :
-      activeTool === 'pencil' ? editor.setPencilColor :
-      activeTool === 'brush' ? editor.setBrushColor :
-      activeTool === 'marker' ? editor.setMarkerColor :
-      activeTool === 'highlighter' ? editor.setHighlighterColor :
-      activeTool === 'ruler' ? editor.setRulerColor :
-      activeTool === 'text' ? editor.setTextColor :
-      (activeTool === 'rectangle' || activeTool === 'ellipse' || activeTool === 'line' || activeTool === 'arrow') ? editor.setShapeColor :
-      activeTool === 'fill' ? editor.setFillColor :
-      null
-
-    const setterSize =
-      activeTool === 'pen' ? editor.setPenSize :
-      activeTool === 'pencil' ? editor.setPencilSize :
-      activeTool === 'brush' ? editor.setBrushSize :
-      activeTool === 'marker' ? editor.setMarkerSize :
-      activeTool === 'highlighter' ? editor.setHighlighterSize :
-      activeTool === 'ruler' ? editor.setRulerSize :
-      activeTool === 'eraser' ? editor.setEraserSize : null
-
-    const setterOpacity =
-      activeTool === 'pen' ? editor.setPenOpacity :
-      activeTool === 'pencil' ? editor.setPencilOpacity :
-      activeTool === 'brush' ? editor.setBrushOpacity :
-      activeTool === 'marker' ? editor.setMarkerOpacity :
-      activeTool === 'highlighter' ? editor.setHighlighterOpacity :
-      activeTool === 'ruler' ? editor.setRulerOpacity : null
-
-    const isShapeTool = activeTool === 'rectangle' || activeTool === 'ellipse' || activeTool === 'line' || activeTool === 'arrow'
-
-    const content = (
-      <>
-        <p className="text-xs font-semibold mb-3">Configurações</p>
-        {setterColor && (
-          <div className="mb-3">
-            <ColorPalette
-              color={color}
-              recent={editor.lastColors}
-              onPick={(c) => { setterColor(c); editor.pushLastColor(c) }}
-              onEyedropper={() => {
-                setTool('eyedropper')
-                if (mobile) setShowToolSettingsFromRadial(false)
-              }}
-              onClearRecent={() => editor.clearLastColors()}
-            />
-          </div>
-        )}
-        {setterSize && (
-          <>
-            <p className="text-[11px] text-muted-foreground mb-1.5">
-              Espessura: <span className="font-bold text-foreground">{size}px</span>
-            </p>
-            <input
-              type="range"
-              min={0.5}
-              max={activeTool === 'highlighter' ? 30 : activeTool === 'brush' ? 24 : 12}
-              step={0.5}
-              value={size}
-              onChange={(e) => setterSize?.(Number(e.target.value))}
-              className="w-full mb-3"
-            />
-          </>
-        )}
-        {setterOpacity && (
-          <>
-            <p className="text-[11px] text-muted-foreground mb-1.5">
-              Opacidade: <span className="font-bold text-foreground">{Math.round(opacity * 100)}%</span>
-            </p>
-            <input
-              type="range"
-              min={0.1}
-              max={1}
-              step={0.05}
-              value={opacity}
-              onChange={(e) => setterOpacity?.(Number(e.target.value))}
-              className="w-full"
-            />
-          </>
-        )}
-        {(activeTool === 'pen' || activeTool === 'pencil' || activeTool === 'brush') && (
-          <label className="flex items-center gap-2 mt-3 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={editor.pressureSensitive}
-              onChange={(e) => editor.setPressureSensitive(e.target.checked)}
-              className="size-4 accent-primary"
-            />
-            <span className="text-[11px]">Sensível à pressão</span>
-          </label>
-        )}
-        {isShapeTool && (
-          <div className="mt-3 space-y-2 border-t border-border/40 pt-3">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={editor.shapeOutline}
-                onChange={(e) => editor.setShapeOutline(e.target.checked)}
-                className="size-4 accent-primary"
-              />
-              <span className="text-[11px]">Apenas contorno</span>
-            </label>
-            {editor.shapeOutline && (
-              <>
-                <p className="text-[11px] text-muted-foreground">
-                  Espessura do contorno: <span className="font-bold text-foreground">{editor.shapeStrokeWidth}px</span>
-                </p>
-                <input
-                  type="range"
-                  min={1}
-                  max={10}
-                  step={0.5}
-                  value={editor.shapeStrokeWidth}
-                  onChange={(e) => editor.setShapeStrokeWidth(Number(e.target.value))}
-                  className="w-full"
-                />
-              </>
-            )}
-          </div>
-        )}
-        <div className="mt-3 space-y-2 border-t border-border/40 pt-3">
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={editor.snappingEnabled}
-              onChange={(e) => editor.setSnappingEnabled(e.target.checked)}
-              className="size-4 accent-primary"
-            />
-            <span className="text-[11px] flex items-center gap-1">
-              <Magnet size={11} /> Snap ao grid
-            </span>
-          </label>
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={editor.alignmentGuides}
-              onChange={(e) => editor.setAlignmentGuides(e.target.checked)}
-              className="size-4 accent-primary"
-            />
-            <span className="text-[11px]">Guias de alinhamento</span>
-          </label>
-        </div>
-        {activeTool === 'text' && (
-          <>
-            <p className="text-[11px] text-muted-foreground mb-1.5">Tamanho da fonte</p>
-            <input
-              type="range"
-              min={10}
-              max={48}
-              step={1}
-              value={editor.textFontSize}
-              onChange={(e) => editor.setTextFontSize(Number(e.target.value))}
-              className="w-full mb-3"
-            />
-            <p className="text-[11px] text-muted-foreground mb-1.5">Fonte</p>
-            <div className="flex gap-1">
-              {(['sans', 'serif', 'hand'] as const).map((f) => (
-                <button
-                  key={f}
-                  onClick={() => editor.setTextFontFamily(f)}
-                  className={cn(
-                    'flex-1 rounded-lg py-1 text-xs transition-colors cursor-pointer',
-                    editor.textFontFamily === f ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/70',
-                  )}
-                >
-                  {f === 'hand' ? 'Mão' : f === 'serif' ? 'Serif' : 'Sans'}
-                </button>
-              ))}
-            </div>
-          </>
-        )}
-      </>
-    )
-
-    if (mobile) {
-      return (
-        <BottomSheet
-          open={!!triggerFromRadial}
-          onClose={() => setShowToolSettingsFromRadial(false)}
-          title="Configurações"
-          maxHeight="70vh"
-          desktopSidePanel={false}
-        >
-          <div className="p-4">
-            {content}
-          </div>
-        </BottomSheet>
-      )
-    }
-
-    return (
-      <Popover open={triggerFromRadial ? true : undefined} onOpenChange={(open) => {
-        if (!open) setShowToolSettingsFromRadial(false)
-      }}>
-        <PopoverTrigger className="rounded-xl p-1.5 hover:bg-muted transition-colors">
-          <div className="size-4 rounded-full border border-border" style={{ backgroundColor: color }} />
-        </PopoverTrigger>
-        <PopoverContent className="w-64 p-4 max-h-[80vh] overflow-auto">
-          {content}
-        </PopoverContent>
-      </Popover>
-    )
-  }
+  // ToolSettings agora é um componente próprio (declarado fora deste componente),
+  // para evitar que o Popover interno desmonte a cada re-render.
 
   // ─── Text input commit handler ──────────────────────────────────────────────
 
@@ -1785,7 +1810,7 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
             <TooltipContent>OCR — Reconhecer escrita</TooltipContent>
           </Tooltip>
           <div className="mt-auto">
-            {!isMobile && <ToolSettings triggerFromRadial={showToolSettingsFromRadial} />}
+            {!isMobile && <ToolSettings triggerFromRadial={showToolSettingsFromRadial} setShowToolSettingsFromRadial={setShowToolSettingsFromRadial} />}
           </div>
         </div>
 
@@ -2883,7 +2908,7 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
         >
           <div className="size-4 rounded-full border border-border" style={{ backgroundColor: editor.getToolColor() }} />
         </button>
-        <ToolSettings triggerFromRadial={showToolSettingsFromRadial} mobile />
+        <ToolSettings triggerFromRadial={showToolSettingsFromRadial} setShowToolSettingsFromRadial={setShowToolSettingsFromRadial} mobile />
       </div>
     </div>
   )

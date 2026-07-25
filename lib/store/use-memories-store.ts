@@ -92,7 +92,7 @@ interface MemoriesState {
 export const useMemoriesStore = create<MemoriesState>()(
   persist(
     (set, get) => ({
-      entries: seedMemories,
+      entries: [],
 
       addEntry: ({ tags, color, ...data }) =>
         set((s) => ({

@@ -1,43 +1,21 @@
 'use client'
 
 import { useAppStore } from '@/lib/store/use-app-store'
+import { ModuloIcon, type ModuloId } from '@/components/icons/modules'
 import { cn } from '@/lib/utils'
 import { motion } from 'framer-motion'
-import {
-  ArrowDown,
-  ArrowUp,
-  BookHeart,
-  Bookmark,
-  BookOpen,
-  Box,
-  BriefcaseBusiness,
-  Calendar,
-  CheckCircle,
-  ClipboardList,
-  CornerDownLeft,
-  FileText,
-  Heart,
-  HeartPulse,
-  KeyRound,
-  LayoutDashboard,
-  List,
-  ListChecks,
-  RefreshCw,
-  Search,
-  Target,
-  Trash2,
-  User,
-  Wallet,
-} from 'lucide-react'
+import { ArrowDown, ArrowUp, CornerDownLeft, Search } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 interface PaletteItem {
   id: string
   label: string
-  icon: typeof FileText
+  /** Identificador do ícone de módulo — ver components/icons/modules. */
+  iconId?: ModuloId
+  /** Quando é planner (não módulo), usa cor, não ícone. */
+  dotColor?: string
   href: string
-  color?: string
   section: string
   tag?: string
 }
@@ -63,35 +41,35 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
   }, [open])
 
   const baseActions: PaletteItem[] = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, href: '/', section: 'Navegação' },
-    { id: 'diario', label: 'Diário Digital', icon: BookHeart, href: '/diario', section: 'Navegação' },
-    { id: 'notas', label: 'Notas', icon: FileText, href: '/notas', section: 'Navegação' },
-    { id: 'listas', label: 'Listas', icon: List, href: '/listas', section: 'Navegação' },
-    { id: 'checklists', label: 'Checklists', icon: ListChecks, href: '/checklists', section: 'Navegação' },
-    { id: 'frases', label: 'Frases Favoritas', icon: Bookmark, href: '/frases', section: 'Navegação' },
-    { id: 'memorias', label: 'Caixa de Memórias', icon: Box, href: '/memorias', section: 'Navegação' },
-    { id: 'cofre', label: 'Cofre de Credenciais', icon: KeyRound, href: '/cofre', section: 'Navegação' },
-    { id: 'saude', label: 'Saúde', icon: HeartPulse, href: '/saude', section: 'Navegação' },
-    { id: 'wishlist', label: 'Wishlist', icon: Heart, href: '/wishlist', section: 'Navegação' },
-    { id: 'rotina', label: 'Rotina', icon: ClipboardList, href: '/rotina', section: 'Navegação' },
-    { id: 'calendario', label: 'Calendário', icon: Calendar, href: '/calendario', section: 'Navegação' },
-    { id: 'financas', label: 'Finanças', icon: Wallet, href: '/financas', section: 'Navegação' },
-    { id: 'metas', label: 'Metas Financeiras', icon: Target, href: '/metas', section: 'Navegação' },
-    { id: 'habitos', label: 'Hábitos', icon: CheckCircle, href: '/habitos', section: 'Navegação' },
-    { id: 'menu', label: 'Personalizar Menu', icon: List, href: '/menu', section: 'Navegação' },
-    { id: 'retrospectiva', label: 'Retrospectiva', icon: RefreshCw, href: '/retrospectiva', section: 'Navegação' },
-    { id: 'templates', label: 'Galeria de templates', icon: BookOpen, href: '/templates', section: 'Navegação' },
-    { id: 'plans', label: 'Planos', icon: BriefcaseBusiness, href: '/plans', section: 'Navegação' },
-    { id: 'conta', label: 'Conta e Admin', icon: User, href: '/conta', section: 'Sistema' },
-    { id: 'lixeira', label: 'Lixeira', icon: Trash2, href: '/lixeira', section: 'Sistema' },
+    { id: 'dashboard',     label: 'Dashboard',            iconId: 'dashboard',     href: '/',              section: 'Navegação' },
+    { id: 'diario',        label: 'Diário Digital',        iconId: 'diario',        href: '/diario',        section: 'Navegação' },
+    { id: 'notas',         label: 'Notas',                 iconId: 'notas',         href: '/notas',         section: 'Navegação' },
+    { id: 'listas',        label: 'Listas',                iconId: 'listas',        href: '/listas',        section: 'Navegação' },
+    { id: 'checklists',    label: 'Checklists',            iconId: 'checklists',    href: '/checklists',    section: 'Navegação' },
+    { id: 'frases',        label: 'Frases Favoritas',      iconId: 'frases',        href: '/frases',        section: 'Navegação' },
+    { id: 'memorias',      label: 'Caixa de Memórias',     iconId: 'memorias',      href: '/memorias',      section: 'Navegação' },
+    { id: 'cofre',         label: 'Cofre de Credenciais',  iconId: 'cofre',         href: '/cofre',         section: 'Navegação' },
+    { id: 'saude',         label: 'Saúde',                 iconId: 'saude',         href: '/saude',         section: 'Navegação' },
+    { id: 'wishlist',     label: 'Wishlist',              iconId: 'wishlist',      href: '/wishlist',      section: 'Navegação' },
+    { id: 'rotina',        label: 'Rotina',                iconId: 'rotina',        href: '/rotina',        section: 'Navegação' },
+    { id: 'calendario',    label: 'Calendário',            iconId: 'calendario',    href: '/calendario',    section: 'Navegação' },
+    { id: 'financas',      label: 'Finanças',              iconId: 'financas',      href: '/financas',      section: 'Navegação' },
+    { id: 'metas',         label: 'Metas Financeiras',     iconId: 'metas',         href: '/metas',         section: 'Navegação' },
+    { id: 'habitos',       label: 'Hábitos',               iconId: 'habitos',       href: '/habitos',       section: 'Navegação' },
+    { id: 'retrospectiva', label: 'Retrospectiva',         iconId: 'retrospectiva', href: '/retrospectiva', section: 'Navegação' },
+    { id: 'templates',     label: 'Galeria de templates',  iconId: 'templates',     href: '/templates',     section: 'Navegação' },
+    { id: 'plans',         label: 'Planos',                iconId: 'plans',         href: '/plans',         section: 'Navegação' },
+    { id: 'menu',          label: 'Personalizar Menu',     iconId: 'admin',         href: '/menu',          section: 'Sistema' },
+    { id: 'conta',         label: 'Conta e Admin',         iconId: 'perfil',        href: '/conta',         section: 'Sistema' },
+    { id: 'lixeira',       label: 'Lixeira',               iconId: 'memorias',      href: '/lixeira',       section: 'Sistema' },
   ]
 
+  // Planners não são módulos — ganham ponto de cor, não ícone de módulo.
   const plannerActions: PaletteItem[] = planners.map((p) => ({
     id: p.id,
     label: p.name,
-    icon: FileText,
+    dotColor: p.color,
     href: `/planner/${p.id}`,
-    color: p.color,
     section: 'Seus planners',
     tag: 'Planner',
   }))
@@ -101,7 +79,6 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
     ? allItems.filter((item) => item.label.toLowerCase().includes(query.toLowerCase()))
     : allItems
 
-  // Agrupa mantendo a ordem das seções
   const sections = filtered.reduce<{ name: string; items: (PaletteItem & { idx: number })[] }[]>(
     (acc, item) => {
       const idx = filtered.indexOf(item)
@@ -138,7 +115,6 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
     }
   }
 
-  // Global shortcut
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
@@ -193,8 +169,9 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
         <div className="max-h-[360px] overflow-auto scrollbar-thin py-2">
           {filtered.length === 0 ? (
             <div className="px-5 py-10 text-center">
-              <Search size={22} className="mx-auto text-muted-foreground/40 mb-2" />
-              <p className="text-sm text-muted-foreground">Nenhum resultado para “{query}”.</p>
+              <p className="text-sm text-muted-foreground">
+                Nenhum resultado para “{query}”.
+              </p>
             </div>
           ) : (
             sections.map((section) => (
@@ -216,15 +193,22 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
                     <div
                       className={cn(
                         'flex size-8 items-center justify-center rounded-xl shrink-0 transition-colors',
-                        !item.color && 'bg-muted text-muted-foreground',
+                        !item.dotColor && 'bg-muted text-foreground',
                       )}
                       style={
-                        item.color
-                          ? { backgroundColor: item.color + '18', color: item.color }
+                        item.dotColor
+                          ? { backgroundColor: item.dotColor + '18', color: item.dotColor }
                           : undefined
                       }
                     >
-                      <item.icon size={16} />
+                      {item.iconId ? (
+                        <ModuloIcon name={item.iconId} size={16} />
+                      ) : (
+                        <span
+                          className="size-2.5 rounded-md"
+                          style={{ backgroundColor: item.dotColor }}
+                        />
+                      )}
                     </div>
                     <span className="flex-1 text-left truncate">{item.label}</span>
                     {item.tag && (
@@ -242,7 +226,6 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
           )}
         </div>
 
-        {/* Footer com dicas */}
         <div className="flex items-center gap-4 border-t border-border/30 px-5 py-2.5 text-[10px] text-muted-foreground/80">
           <span className="inline-flex items-center gap-1.5">
             <kbd className="inline-flex items-center rounded-md border border-border/60 bg-muted/60 px-1.5 py-0.5">

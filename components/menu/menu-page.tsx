@@ -1,54 +1,13 @@
 'use client'
 
-import { useMenuStore, type ModuleDef } from '@/lib/store/use-menu-store'
+import { useMenuStore } from '@/lib/store/use-menu-store'
+import { ModuloIcon } from '@/components/icons/modules'
 import { cn } from '@/lib/utils'
-import {
-  BookHeart,
-  Bookmark,
-  BookOpen,
-  Box,
-  BriefcaseBusiness,
-  Calendar,
-  CheckCircle,
-  ClipboardList,
-  FileText,
-  Heart,
-  HeartPulse,
-  KeyRound,
-  LayoutDashboard,
-  List,
-  ListChecks,
-  RefreshCw,
-  GripVertical,
-  Target,
-  Wallet,
-} from 'lucide-react'
+import { GripVertical } from 'lucide-react'
 import { useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { Switch } from '../ui/primitives'
 
 const enter = 'animate-in fade-in slide-in-from-bottom-3 duration-500 fill-mode-both'
-
-const ICON_MAP: Record<string, React.ComponentType<{ size?: number }>> = {
-  LayoutDashboard,
-  BookHeart,
-  FileText,
-  List,
-  ListChecks,
-  Heart,
-  Bookmark,
-  Box,
-  KeyRound,
-  HeartPulse,
-  ClipboardList,
-  Calendar,
-  Wallet,
-  Target,
-  CheckCircle,
-  RefreshCw,
-  BookOpen,
-  BriefcaseBusiness,
-}
 
 export function MenuPage() {
   const modules = useMenuStore((s) => s.modules)
@@ -76,30 +35,28 @@ export function MenuPage() {
   return (
     <div className="p-6 lg:p-8 max-w-[700px] mx-auto">
       <div className={cn('mb-8', enter)}>
-        <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
-          <span className="flex size-11 items-center justify-center rounded-2xl" style={{ backgroundColor: '#5b8dbf18' }}>
-            <List size={22} style={{ color: '#5b8dbf' }} />
-          </span>
-          Personalizar Menu
+        <h1 className="text-3xl font-bold tracking-tight">
+          Personalizar menu
         </h1>
+        {/* Sem ícone na manchete — o título comunica a função. */}
         <p className="text-muted-foreground mt-2">
           Organize os módulos na ordem que preferir. Arraste para reordenar.
         </p>
       </div>
 
       <div className={cn('mb-6 flex items-center gap-4', enter)}>
-        <div className="flex items-center gap-2 rounded-2xl border border-border/50 bg-card/60 px-3.5 py-2 shadow-sm">
-          <LayoutDashboard size={16} className="text-primary" />
-          <div className="leading-tight">
-            <p className="text-sm font-bold tabular-nums">{enabledCount}/{modules.length}</p>
-            <p className="text-[10px] text-muted-foreground">módulos ativos</p>
-          </div>
+        <div className="flex items-baseline gap-2 rounded-2xl border border-border/50 bg-card/60 px-3.5 py-2 shadow-sm">
+          <span className="text-lg font-semibold tabular-nums text-foreground">
+            {enabledCount}<span className="text-muted-foreground/40">/{modules.length}</span>
+          </span>
+          <span className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+            módulos ativos
+          </span>
         </div>
       </div>
 
       <div className={cn('space-y-1', enter)}>
         {modules.map((mod, idx) => {
-          const Icon = ICON_MAP[mod.icon]
           return (
             <div
               key={mod.id}
@@ -116,7 +73,7 @@ export function MenuPage() {
             >
               <GripVertical size={14} className="shrink-0 text-muted-foreground/40" />
               <div className="flex size-8 items-center justify-center rounded-xl bg-muted text-muted-foreground shrink-0">
-                {Icon && <Icon size={15} />}
+                <ModuloIcon name={mod.id} size={16} />
               </div>
               <span className="text-sm flex-1 font-medium">{mod.label}</span>
               <Switch

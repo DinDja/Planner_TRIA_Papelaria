@@ -1,5 +1,7 @@
 'use client'
 
+import { useAuth } from '@/lib/auth/auth-context'
+import { setItem } from '@/lib/db/client'
 import { useAppStore } from '@/lib/store/use-app-store'
 import { useSettingsStore } from '@/lib/store/use-settings-store'
 import {
@@ -57,13 +59,14 @@ export function TemplatesPage() {
   const addPlannerWithPages = useAppStore((s) => s.addPlannerWithPages)
   const gradBadges = useSettingsStore((s) => s.gradients.badges)
   const router = useRouter()
+  const { user } = useAuth()
 
   const filtered = useMemo(() => {
     if (activeTab === 'Todos') return PLANNER_TEMPLATES
     return PLANNER_TEMPLATES.filter((t) => t.category === activeTab)
   }, [activeTab])
 
-  const handleUseTemplate = (tpl: PlannerTemplate) => {
+  const handleUseTemplate = async (tpl: PlannerTemplate) => {
     const iconName = tpl.icon
     const id = addPlannerWithPages(
       {
@@ -75,6 +78,12 @@ export function TemplatesPage() {
       tpl.pages,
     )
     toast({ title: 'Template aplicado!', description: `${tpl.pages.length} páginas criadas.` })
+    // Persiste no Firestore antes de navegar para evitar race condition
+    // do StoreSyncProvider (planners têm write: false no sync).
+    if (user) {
+      const planner = useAppStore.getState().planners.find((p) => p.id === id)
+      if (planner) await setItem(user, 'planners', planner)
+    }
     router.push(`/planner/${id}`)
   }
 

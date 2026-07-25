@@ -4,49 +4,14 @@ import { useAppStore } from '@/lib/store/use-app-store'
 import { useMenuStore } from '@/lib/store/use-menu-store'
 import { cn } from '@/lib/utils'
 import { AnimatePresence, motion } from 'framer-motion'
-import {
-  BookHeart,
-  Bookmark,
-  BookOpen,
-  Box,
-  BriefcaseBusiness,
-  Calendar,
-  CheckCircle,
-  ChevronDown,
-  ClipboardList,
-  FileText,
-  Folder,
-  Gift,
-  Heart,
-  HeartPulse,
-  KeyRound,
-  LayoutDashboard,
-  List,
-  ListChecks,
-  Menu,
-  Moon,
-  PanelLeftClose,
-  PanelLeftOpen,
-  Plus,
-  RefreshCw,
-  Search,
-  Settings,
-  Sun,
-  Tag,
-  Target,
-  Trash2,
-  User,
-  Wallet,
-  X,
-} from 'lucide-react'
+import { Moon, PanelLeftClose, PanelLeftOpen, Plus, Sun, X } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useEffect, useState } from 'react'
 import { useTheme } from '../providers/theme-provider'
 import { Button } from '../ui/button'
-import { ScrollArea } from '../ui/primitives'
-import { Separator } from '../ui/primitives'
+import { ScrollArea, Separator } from '../ui/primitives'
 import { CommandPalette } from './command-palette'
+import { ModuloIcon } from '@/components/icons/modules'
 
 interface SidebarProps {
   collapsed: boolean
@@ -56,27 +21,6 @@ interface SidebarProps {
   onOpenCreate: () => void
   onOpenSettings: () => void
 }
-
-const NAV_ITEMS = [
-  { href: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/diario', label: 'Diário', icon: BookHeart },
-  { href: '/notas', label: 'Notas', icon: FileText },
-  { href: '/listas', label: 'Listas', icon: List },
-  { href: '/checklists', label: 'Checklists', icon: ListChecks },
-  { href: '/frases', label: 'Frases', icon: Bookmark },
-  { href: '/memorias', label: 'Memórias', icon: Box },
-  { href: '/cofre', label: 'Cofre', icon: KeyRound },
-  { href: '/saude', label: 'Saúde', icon: HeartPulse },
-  { href: '/wishlist', label: 'Wishlist', icon: Heart },
-  { href: '/rotina', label: 'Rotina', icon: ClipboardList },
-  { href: '/calendario', label: 'Calendário', icon: Calendar },
-  { href: '/financas', label: 'Finanças', icon: Wallet },
-  { href: '/metas', label: 'Metas', icon: Target },
-  { href: '/habitos', label: 'Hábitos', icon: CheckCircle },
-  { href: '/retrospectiva', label: 'Retrospectiva', icon: RefreshCw },
-  { href: '/templates', label: 'Templates', icon: BookOpen },
-  { href: '/plans', label: 'Planos', icon: BriefcaseBusiness },
-]
 
 export function AppSidebar({
   collapsed,
@@ -92,11 +36,7 @@ export function AppSidebar({
   const folders = useAppStore((s) => s.folders)
   const tags = useAppStore((s) => s.tags)
   const menuModules = useMenuStore((s) => s.modules)
-  const enabledIds = new Set(menuModules.filter((m) => m.enabled).map((m) => m.id))
-  const navItems = NAV_ITEMS.filter((item) => {
-    const id = item.href === '/' ? 'dashboard' : item.href.replace('/', '')
-    return enabledIds.has(id)
-  })
+  const enabledModules = menuModules.filter((m) => m.enabled)
 
   const sidebarContent = (
     <div className="flex h-full flex-col">
@@ -106,6 +46,7 @@ export function AppSidebar({
         <button
           onClick={() => setMobileOpen(false)}
           className="ml-auto rounded-lg p-1 hover:bg-muted md:hidden cursor-pointer"
+          aria-label="Fechar"
         >
           <X size={16} />
         </button>
@@ -115,7 +56,7 @@ export function AppSidebar({
 
       <ScrollArea className="flex-1 py-3">
         {/* Quick Create */}
-        {!collapsed && (
+        {!collapsed ? (
           <div className="px-3 pb-3">
             <Button
               variant="default"
@@ -126,27 +67,27 @@ export function AppSidebar({
               Novo planner
             </Button>
           </div>
-        )}
-        {collapsed && (
+        ) : (
           <div className="flex justify-center pb-3">
             <Button
               variant="default"
               size="icon"
               className="size-9 rounded-xl"
               onClick={onOpenCreate}
+              aria-label="Novo planner"
             >
               <Plus size={16} />
             </Button>
           </div>
         )}
 
-        {/* Nav */}
+        {/* Nav — módulos. Ícone de `components/icons/modules`, não Lucide. */}
         <nav className={cn('flex flex-col gap-0.5 px-3', collapsed && 'px-1.5')}>
-          {navItems.map((item) => {
+          {enabledModules.map((item) => {
             const active = pathname === item.href
             return (
               <Link
-                key={item.href}
+                key={item.id}
                 href={item.href}
                 className={cn(
                   'flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-all duration-200',
@@ -156,7 +97,7 @@ export function AppSidebar({
                   collapsed && 'justify-center px-0 py-2',
                 )}
               >
-                <item.icon size={collapsed ? 20 : 18} />
+                <ModuloIcon name={item.id} size={collapsed ? 22 : 18} />
                 {!collapsed && <span>{item.label}</span>}
               </Link>
             )
@@ -165,14 +106,11 @@ export function AppSidebar({
 
         {!collapsed && (
           <>
-            {/* Folders */}
-            <div className="mt-5 px-3">
-              <div className="flex items-center gap-2 mb-2">
-                <Folder size={14} className="text-muted-foreground" />
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Pastas
-                </span>
-              </div>
+            {/* Pastas — sem ícone decorativo; tipografia small-caps. */}
+            <div className="mt-6 px-3">
+              <p className="mb-2 px-3 text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground/55">
+                Pastas
+              </p>
               <div className="flex flex-col gap-0.5">
                 {folders.map((f) => (
                   <Link
@@ -182,7 +120,7 @@ export function AppSidebar({
                   >
                     <div className="size-2.5 rounded-md" style={{ backgroundColor: f.color }} />
                     <span className="truncate">{f.name}</span>
-                    <span className="ml-auto text-xs text-muted-foreground/60">
+                    <span className="ml-auto text-xs text-muted-foreground/60 tabular-nums">
                       {planners.filter((p) => p.folderId === f.id).length}
                     </span>
                   </Link>
@@ -190,15 +128,12 @@ export function AppSidebar({
               </div>
             </div>
 
-            {/* Tags */}
+            {/* Tags — sem ícone decorativo. */}
             <div className="mt-5 px-3">
-              <div className="flex items-center gap-2 mb-2">
-                <Tag size={14} className="text-muted-foreground" />
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Tags
-                </span>
-              </div>
-              <div className="flex flex-wrap gap-2">
+              <p className="mb-2 px-3 text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground/55">
+                Tags
+              </p>
+              <div className="flex flex-wrap gap-2 px-2">
                 {tags.length === 0 ? (
                   <span className="text-[10px] text-muted-foreground/50 px-1">
                     Nenhuma tag ainda
@@ -220,86 +155,55 @@ export function AppSidebar({
                 )}
               </div>
             </div>
-          </>
-        )}
 
-        {/* Recent Planners shortcut */}
-        {!collapsed && (
-          <div className="mt-5 px-3">
-            <div className="flex items-center gap-2 mb-2">
-              <BookOpen size={14} className="text-muted-foreground" />
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            {/* Planners recentes — sem ícone decorativo; não duplica templates. */}
+            <div className="mt-5 px-3">
+              <p className="mb-2 px-3 text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground/55">
                 Planners recentes
-              </span>
+              </p>
+              <div className="flex flex-col gap-0.5">
+                {planners.slice(0, 5).map((p) => (
+                  <Link
+                    key={p.id}
+                    href={`/planner/${p.id}`}
+                    className="flex items-center gap-2.5 rounded-xl px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors truncate"
+                  >
+                    <div className="size-2 rounded-full shrink-0" style={{ backgroundColor: p.color }} />
+                    <span className="truncate">{p.name}</span>
+                  </Link>
+                ))}
+              </div>
             </div>
-            <div className="flex flex-col gap-0.5">
-              {planners.slice(0, 5).map((p) => (
-                <Link
-                  key={p.id}
-                  href={`/planner/${p.id}`}
-                  className="flex items-center gap-2.5 rounded-xl px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors truncate"
-                >
-                  <div className="size-2 rounded-full shrink-0" style={{ backgroundColor: p.color }} />
-                  <span className="truncate">{p.name}</span>
-                </Link>
-              ))}
-            </div>
-          </div>
+          </>
         )}
       </ScrollArea>
 
-      {/* Bottom */}
-      <div className={cn('p-3 flex items-center gap-1', collapsed && 'flex-col')}>
+      {/* Bottom — ferramentas. Lucide só para transiente (Menu/Theme/panel). */}
+      <div className={cn('p-3 flex items-center gap-0.5', collapsed && 'flex-col gap-1')}>
         <Button
           variant="ghost"
-          size={collapsed ? 'icon' : 'sm'}
+          size={collapsed ? 'icon' : 'icon-sm'}
           onClick={toggle}
-          className={cn('rounded-xl', collapsed && 'size-9 flex items-center justify-center')}
+          className={cn('rounded-xl shrink-0', collapsed && 'size-9')}
         >
           {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
-          {!collapsed && (theme === 'dark' ? 'Modo claro' : 'Modo escuro')}
         </Button>
         <Button
           variant="ghost"
           size={collapsed ? 'icon' : 'icon-sm'}
           onClick={onOpenSettings}
-          className="rounded-xl"
+          className={cn('rounded-xl shrink-0', collapsed && 'size-9')}
           aria-label="Configurações"
         >
-          <Settings size={15} />
+          <span className="text-[0.65rem] uppercase tracking-[0.18em] text-muted-foreground font-semibold">
+            cfg
+          </span>
         </Button>
-        <Link
-          href="/menu"
-          className="rounded-xl flex items-center justify-center size-9 hover:bg-muted"
-          aria-label="Personalizar Menu"
-          title="Personalizar Menu"
-        >
-          <List size={15} className="text-muted-foreground" />
-        </Link>
-        <Link
-          href="/conta"
-          className="rounded-xl flex items-center justify-center size-9 hover:bg-muted"
-          aria-label="Conta"
-          title="Conta e Admin"
-        >
-          <User size={15} className="text-muted-foreground" />
-        </Link>
-        <Link
-          href="/lixeira"
-          className="rounded-xl flex items-center justify-center size-9 hover:bg-muted"
-          aria-label="Lixeira"
-          title="Lixeira"
-        >
-          <Trash2 size={15} className="text-muted-foreground" />
-        </Link>
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          onClick={() => setCollapsed(!collapsed)}
-          className="rounded-xl hidden md:flex"
-        >
-          {collapsed ? <PanelLeftOpen size={15} /> : <PanelLeftClose size={15} />}
-        </Button>
+
+        {/* Ferramentas — não duplicam ícones de módulo. */}
+        <ToolLink href="/menu"    label="Menu"     glyph="≡"   collapsed={collapsed} />
+        <ToolLink href="/admin"   label="Admin"    glyph="adm"  collapsed={collapsed} />
+        <ToolLink href="/lixeira" label="Lixeira"  glyph="excl" collapsed={collapsed} />
       </div>
     </div>
   )
@@ -309,7 +213,7 @@ export function AppSidebar({
       {/* Desktop sidebar */}
       <aside
         className={cn(
-          'hidden md:flex flex-col h-screen shrink-0 glass border-r border-border/40 transition-all duration-300 z-30',
+          'hidden md:flex flex-col h-screen shrink-0 glass border-r border-border/40 transition-all duration-300 z-30 overflow-hidden',
           collapsed ? 'w-[68px]' : 'w-[260px]',
         )}
       >
@@ -340,5 +244,44 @@ export function AppSidebar({
         )}
       </AnimatePresence>
     </>
+  )
+}
+
+/**
+ * Link de ferramenta no rodapé da sidebar. Quando expandido, mostra rótulo
+ * textual; quando recolhido, mostra o glifo abreviado. Não usa ícone de
+ * biblioteca — evita duplicar `List` (Listas), `Shield` (já evitado) ou
+ * `Trash2` (usado em 20 lugares).
+ */
+function ToolLink({
+  href,
+  label,
+  glyph,
+  collapsed,
+}: {
+  href: string
+  label: string
+  glyph: string
+  collapsed: boolean
+}) {
+  if (collapsed) {
+    return (
+      <Link
+        href={href}
+        className="flex size-9 items-center justify-center rounded-xl text-[0.7rem] uppercase tracking-[0.16em] text-muted-foreground hover:bg-muted hover:text-foreground"
+        aria-label={label}
+        title={label}
+      >
+        {glyph}
+      </Link>
+    )
+  }
+  return (
+    <Link
+      href={href}
+      className="inline-flex items-center h-8 shrink-0 rounded-xl px-2.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+    >
+      {label}
+    </Link>
   )
 }

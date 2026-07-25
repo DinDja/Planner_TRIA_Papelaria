@@ -105,8 +105,8 @@ interface NotesState {
 export const useNotesStore = create<NotesState>()(
   persist(
     (set, get) => ({
-      notes: seedNotes,
-      folders: seedFolders,
+      notes: [],
+      folders: [],
 
       addNote: ({ tags, color, ...data }) =>
         set((s) => ({

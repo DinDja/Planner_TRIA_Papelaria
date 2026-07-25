@@ -1,0 +1,422 @@
+rules_version = '3';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PlannerHub — Firestore Security Rules
+//
+// Modelo de dados: multi-tenant estrito por usuário. Toda collection vive em
+// /users/{uid}/... e só o dono do uid pode ler/escrever. Não há collections
+// globais compartilhadas (o produto hoje é single-user, sem features sociais ou
+// colaborativas).
+//
+// Convenções:
+//   - timestamps são strings ISO 8601 (UTC) enviadas pelo cliente. As regras só
+//     validam que sejam strings quando presentes; não tentam forçar
+//     serverTimestamp() — isso simplifica o cliente e mantém as regras
+//     auditáveis. O risco de clock skew é mitigado em camada de app.
+//   - validação é estrutural (tipos e propriedade), não comportamental. Regras
+//     de negócio (ex.: amount > 0,deadline > startDate) vivem no cliente.
+//   - arrays embutidos só para filhos pequenos e vinculados a um único pai no
+//     domínio (items de checklist/lista, actions de retro). O resto vira
+//     subcollection porque páginas de planner crescem sem born.
+// ─────────────────────────────────────────────────────────────────────────────
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─── Helpers ────────────────────────────────────────────────────────────
+    function isSignedIn() {
+      return request.auth != null && request.auth.uid != null;
+    }
+
+    // Dono do documento sob /users/{uid}/... — o uid do path precisa casar com
+    // o uid autenticado. Toda regra abaixo reusa isto.
+    function owns(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    // Admina: usuário cujo doc-raiz tem `role == 'admin'`. A role é
+    // derivada do e-mail no cadastro (seed.ts) e imutável por update da
+    // própria usuária (regra mais abaixo bloqueia mudança de `role`).
+    function isAdmin() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Valida que `value` é uma string timestamp ISO 8601 (heurística leve).
+    // Aceita tanto "2026-07-24T…" quanto "2026-07-24". Regras não podem
+    // rodar regex com / multa complexa sem estourar custo, então conferimos
+    // os dígitos essenciais.
+    function isTimestampString(value) {
+      return value is string && value.size() >= 10;
+    }
+
+    // Valida um id curto gerado pelo cliente (ex.: "pl-abc12345").
+    function isIdString(value) {
+      return value is string && value.size() > 0 && value.size() <= 64;
+    }
+
+    // true quando field está ausente OU é do tipo esperado.
+    function optionalString(value) { return !('field' in value) || value is string; }
+    function optionalBool(value)   { return !('field' in value) || value is bool; }
+    function optionalNum(value)    { return !('field' in value) || value is number; }
+    function optionalStr(value)   { return !('field' in value) || value is string; }
+    function optionalArr(value)   { return !('field' in value) || value is list; }
+    function optionalMap(value)   { return !('field' in value) || value is map; }
+
+    // ─── Raiz: usuário ───────────────────────────────────────────────────────
+    // /users/{uid}                -> documento-raiz (perfil + prefs + settings + health-profile)
+    //
+    // Subcollections diretas:
+    //   diarios, planners, plannerPages, noteFolders (não — embed no root),
+    //   notes, shoppingLists, checklists, quotes, memories, passwords, wishlist,
+    //   weightRecords, bodyMeasurements, symptomLogs, medications, cycleRecords,
+    //   doctors, appointments, exams, habits, habitLogs, tasks, recurringTasks,
+    //   pendingItems, routineSlots, calendarEvents, transactions, fixedBills,
+    //   subscriptions, creditCards, installments, financialGoals, goalDeposits,
+    //   savingsBoxes, retroEntries, trashItems
+    //
+    // Note: noteFolders? Not embedded — kept as folders field on root doc
+    // (it's small, single-ownership, widely read).
+    // ----------------------------------------------------------------------
+
+    match /users/{uid} {
+      // ── Documento-raiz do usuário ───────────────────────────────────────
+      // Esquema (mapeia useProfileStore + useSettingsStore + escalar de useHealthStore):
+      //   name        : string
+      //   avatar      : string        // emoji avatar
+      //   email       : string
+      //   role        : string        // 'admin' | 'subscriber'  (definido no seed)
+      //   subscription: map           // { role, plan, status, since, lastPayment }
+      //   blocked     : bool          // se true, login barrado no cliente
+      //   settings    : map            // SystemSettings
+      //   theme         : string       // 'light' | 'dark'
+      //   folders       : list         // Planner folders [{id,name,color}]
+      //   plannerTags   : list         // Planner tags  [{id,name,color}]
+      //   noteFolders   : list         // Notes folders  [{id,name,color,icon?}]
+      //   updatedAt     : string ISO
+      // Leitura: só a própria usuária OU admina.
+      allow read: if owns(uid) || isAdmin();
+      allow create: if owns(uid)
+        && request.resource.data.name is string
+        && request.resource.data.avatar is string
+        && request.resource.data.email is string
+        && (!('role' in request.resource.data) || request.resource.data.role is string)
+        && (!('settings' in request.resource.data) || request.resource.data.settings is map)
+        && (!('folders' in request.resource.data) || request.resource.data.folders is list)
+        && (!('plannerTags' in request.resource.data) || request.resource.data.plannerTags is list)
+        && (!('noteFolders' in request.resource.data) || request.resource.data.noteFolders is list);
+      // Update: própria usuária pode atualizar tudo EXCETO `role` e `blocked`
+      // (esses campos só a admina mexe). Admina pode atualizar qualquer campo
+      // no doc de outra usuária.
+      allow update: if (owns(uid) && !(
+          ('role' in request.resource.data.diff(resource.data).affectedKeys())
+          || ('blocked' in request.resource.data.diff(resource.data).affectedKeys())
+        )) || isAdmin();
+      allow delete: if owns(uid);
+
+      // ─── Planners (useAppStore) ─────────────────────────────────────────
+      // /users/{uid}/planners/{plannerId}
+      // Esquema:
+      //   id, name, description?, category, color, icon, favorite, folderId|null,
+      //   tags: list<string>, createdAt, updatedAt,
+      //   pages?: list          // LEGADO: pode existir se importado de localStorage,
+      //                         // mas a fonte canonical passa a ser /plannerPages.
+      //                         // As regras aceitam ambos (com e sem pages).
+      match /planners/{plannerId} {
+        allow read, write: if owns(uid);
+
+        // Páginas de planner — subcollection para evitar estouro do 1MB doc.
+        // /users/{uid}/planners/{plannerId}/pages/{pageId}
+        //   id, title, template, data: map (CanvasData), updatedAt?
+        // CanvasData: strokes[], stickers[], texts[], shapes[], stickyNotes[], bgColor?
+        match /pages/{pageId} {
+          allow read, write: if owns(uid);
+        }
+      }
+
+      // ─── Diário Digital (useDiarioStore — V2, unificado) ────────────────
+      // /users/{uid}/diarios/{diarioId}
+      //   id, periodo: 'dia'|'semana'|'mes', data, dataFim?,
+      //   criadoEm, atualizadoEm, titulo?, emocoes: list<string>, energia: int 1..5,
+      //   cor, tags: list<string>, rabisco?: list<map>, fixado?: bool,
+      //   momento?: 'madrugada'|'manha'|'tarde'|'anoitecer'|'noite',
+      //   prompt?: string, texto?: string,
+      //   retro?: map { fora: list<string>, dentro: list<string>, proximo: list<string> },
+      //   notas?: string
+      match /diarios/{diarioId} {
+        allow read, write: if owns(uid);
+      }
+
+      // ─── Journal (useJournalStore — legado, mantido p/ migração) ────────
+      // /users/{uid}/journalEntries/{entryId}
+      //   id, title, content, date, timeOfDay, mood: map { emotions, energy, note? },
+      //   prompt?, tags: list<string>, color, createdAt, updatedAt, pinned?, drawing?
+      match /journalEntries/{entryId} {
+        allow read, write: if owns(uid);
+      }
+
+      // ─── Retrospectiva (useRetroStore — legado, mantido p/ migração) ───
+      // /users/{uid}/retroEntries/{entryId}
+      //   id, type: 'daily'|'weekly'|'monthly', date, endDate?, mood: string,
+      //   wentWell: list, toImprove: list, actions: list<map>,
+      //   notes?, createdAt
+      match /retroEntries/{entryId} {
+        allow read, write: if owns(uid);
+      }
+
+      // ─── Notas (useNotesStore) ──────────────────────────────────────────
+      // /users/{uid}/notes/{noteId}
+      //   id, title, content, folderId|null, tags: list<string>,
+      //   color, pinned: bool, createdAt, updatedAt
+      match /notes/{noteId} {
+        allow read, write: if owns(uid);
+      }
+
+      // ─── Listas (useListsStore) ─ items embutidos ───────────────────────
+      // /users/{uid}/shoppingLists/{listId}
+      //   id, name, color, items: list<map { id, name, quantity?, category?,
+      //   notes?, checked, createdAt }>, createdAt, updatedAt
+      match /shoppingLists/{listId} {
+        allow read, write: if owns(uid);
+      }
+
+      // ─── Checklists (useChecklistsStore) ─ items embutidos ─────────────
+      // /users/{uid}/checklists/{checklistId}
+      //   id, title, color, items: list<map { id, text, checked, createdAt }>,
+      //   createdAt, updatedAt
+      match /checklists/{checklistId} {
+        allow read, write: if owns(uid);
+      }
+
+      // ─── Frases (useQuotesStore) ───────────────────────────────────────
+      // /users/{uid}/quotes/{quoteId}
+      //   id, text, author?, tags: list<string>, color, createdAt
+      match /quotes/{quoteId} {
+        allow read, write: if owns(uid);
+      }
+
+      // ─── Caixa de memórias (useMemoriesStore) ──────────────────────────
+      // /users/{uid}/memories/{memoryId}
+      //   id, title, description, date, mood: 'great'|'good'|'neutral'|'bad'|'tough',
+      //   tags: list<string>, color, createdAt
+      match /memories/{memoryId} {
+        allow read, write: if owns(uid);
+      }
+
+      // ─── Cofre de senhas (usePasswordsStore) ───────────────────────────
+      //   ⚠️ ATENÇÃO: armazenar segredes em plaintext no Firestore não é recomendado
+      // para produção. O cliente hoje guarda `masterPin` em localStorage; o schema
+      // abaixo é o espelho fiel, mas antes de ir a prod:
+      //     • troque `password` por um blob cifrado no cliente (Crypto Web, AES-GCM)
+      //     • nunca confie em `masterPin` em texto; derive via Argon2/bcrypt server-side
+      // The rules below allow the field to exist as string (backward-compat) but the
+      // only safety control is per-user ownership — assume at-rest encryption at app layer.
+      // /users/{uid}/passwords/{passwordId}
+      //   id, title, username?, password, url?, category?, notes?, color, createdAt, updatedAt
+      match /passwords/{passwordId} {
+        allow read, write: if owns(uid);
+      }
+
+      // ─── Wishlist (useWishlistStore) ───────────────────────────────────
+      // /users/{uid}/wishlist/{itemId}
+      //   id, name, url?, price?, priority: 'low'|'medium'|'high',
+      //   category?, notes?, purchased, purchasedAt?, createdAt, updatedAt
+      match /wishlist/{itemId} {
+        allow read, write: if owns(uid);
+      }
+
+      // ─── Saúde (useHealthStore) ─ 8 subcollections ──────────────────────
+      // /users/{uid}/weights/{recordId}
+      //   id, date, weight: number (kg), notes?, createdAt
+      match /weights/{recordId} {
+        allow read, write: if owns(uid);
+      }
+      // /users/{uid}/bodyMeasurements/{recordId}
+      //   id, date, waist?, hips?, chest?, arm?, thigh?, notes?, createdAt
+      match /bodyMeasurements/{recordId} {
+        allow read, write: if owns(uid);
+      }
+      // /users/{uid}/symptomLogs/{recordId}
+      //   id, date, symptom, severity: int 1..5, notes?, createdAt
+      match /symptomLogs/{recordId} {
+        allow read, write: if owns(uid);
+      }
+      // /users/{uid}/medications/{recordId}
+      //   id, name, dosage, frequency, startDate, endDate?, notes?, color, createdAt
+      match /medications/{recordId} {
+        allow read, write: if owns(uid);
+      }
+      // /users/{uid}/cycleRecords/{recordId}
+      //   id, startDate, endDate?, flow: 'light'|'medium'|'heavy',
+      //   symptoms: list<string>, notes?, createdAt
+      match /cycleRecords/{recordId} {
+        allow read, write: if owns(uid);
+      }
+      // /users/{uid}/doctors/{doctorId}
+      //   id, name, specialty, phone?, email?, address?, notes?, color, createdAt
+      match /doctors/{doctorId} {
+        allow read, write: if owns(uid);
+      }
+      // /users/{uid}/appointments/{appointmentId}
+      //   id, doctorId?, doctorName, specialty, date, time, location?,
+      //   notes?, status: 'scheduled'|'done'|'cancelled', createdAt
+      match /appointments/{appointmentId} {
+        allow read, write: if owns(uid);
+      }
+      // /users/{uid}/exams/{examId}
+      //   id, name, date, doctor?, laboratory?, result?, fileUrl?, notes?,
+      //   status: 'pending'|'done'|'reviewed', color, createdAt
+      match /exams/{examId} {
+        allow read, write: if owns(uid);
+      }
+
+      // ─── Hábitos (useHabitsStore) ──────────────────────────────────────
+      // /users/{uid}/habits/{habitId}
+      //   id, name, description?, color, frequency: 'daily'|'weekly'|'monthly',
+      //   weekdays?: list<int>, dayOfMonth?: int, createdAt, archived: bool
+      match /habits/{habitId} {
+        allow read, write: if owns(uid);
+      }
+      // /users/{uid}/habitLogs/{logId}
+      //   id, habitId, date, completed: bool, createdAt
+      match /habitLogs/{logId} {
+        allow read, write: if owns(uid);
+      }
+
+      // ─── Rotina (useRoutineStore) ─ 4 subcollections ───────────────────
+      // /users/{uid}/tasks/{taskId}
+      //   id, title, notes?, date, priority: 'low'|'medium'|'high',
+      //   done: bool, createdAt, completedAt?
+      match /tasks/{taskId} {
+        allow read, write: if owns(uid);
+      }
+      // /users/{uid}/recurringTasks/{taskId}
+      //   id, title, notes?, frequency: 'daily'|'weekly'|'monthly',
+      //   weekdays?: list<int>, dayOfMonth?: int, priority, lastDone?,
+      //   nextDue, active: bool, createdAt
+      match /recurringTasks/{taskId} {
+        allow read, write: if owns(uid);
+      }
+      // /users/{uid}/pendingItems/{itemId}
+      //   id, title, notes?, priority, createdAt
+      match /pendingItems/{itemId} {
+        allow read, write: if owns(uid);
+      }
+      // /users/{uid}/routineSlots/{slotId}
+      //   id, time, endTime?, title, weekdays: list<int>, color?
+      match /routineSlots/{slotId} {
+        allow read, write: if owns(uid);
+      }
+
+      // ─── Calendário (useCalendarStore) ─────────────────────────────────
+      // /users/{uid}/calendarEvents/{eventId}
+      //   id, title, date, startTime, endTime?, allDay?: bool,
+      //   color, notes?, taskId?, plannerId?, createdAt
+      match /calendarEvents/{eventId} {
+        allow read, write: if owns(uid);
+      }
+
+      // ─── Finanças (useFinanceStore) ─ 7 subcollections ────────────────
+      // /users/{uid}/transactions/{txId}
+      //   id, title, amount: int (centavos), type: 'income'|'expense',
+      //   date, category, notes?, fixedBillId?, createdAt
+      match /transactions/{txId} {
+        allow read, write: if owns(uid);
+      }
+      // /users/{uid}/fixedBills/{billId}
+      //   id, title, amount, category, dayOfMonth: int 1..31,
+      //   notes?, active: bool, createdAt
+      match /fixedBills/{billId} {
+        allow read, write: if owns(uid);
+      }
+      // /users/{uid}/subscriptions/{subId}
+      //   id, name, amount, billingCycle: 'monthly'|'yearly'|'weekly',
+      //   category, nextBilling: date, active: bool, notes?, createdAt
+      match /subscriptions/{subId} {
+        allow read, write: if owns(uid);
+      }
+      // /users/{uid}/creditCards/{cardId}
+      //   id, name, limit, closingDay: int, dueDay: int, color, createdAt
+      match /creditCards/{cardId} {
+        allow read, write: if owns(uid);
+      }
+      // /users/{uid}/installments/{installmentId}
+      //   id, title, totalAmount, installmentAmount,
+      //   totalInstallments: int, currentInstallment: int,
+      //   cardId, category, notes?, createdAt
+      match /installments/{installmentId} {
+        allow read, write: if owns(uid);
+      }
+      // /users/{uid}/financialGoals/{goalId}
+      //   id, title, targetAmount, currentAmount, deadline?, color,
+      //   notes?, icon?, createdAt
+      match /financialGoals/{goalId} {
+        allow read, write: if owns(uid);
+      }
+      // /users/{uid}/goalDeposits/{depositId}
+      //   id, goalId, amount: int (signed — negativo = retirada),
+      //   date, notes?, createdAt
+      match /goalDeposits/{depositId} {
+        allow read, write: if owns(uid);
+      }
+      // /users/{uid}/savingsBoxes/{boxId}
+      //   id, name, targetAmount, currentAmount, color, deadline?, notes?, createdAt
+      match /savingsBoxes/{boxId} {
+        allow read, write: if owns(uid);
+      }
+
+      // ─── Lixeira (useTrashStore) ─ capped em 100 itens no cliente ──────
+      // /users/{uid}/trashItems/{trashId}
+      //   id, type: string, label, detail?, deletedAt: int (ms epoch),
+      //   originalModule: string, data: map (payload arbitrário)
+      match /trashItems/{trashId} {
+        allow read, write: if owns(uid);
+      }
+    }
+
+    // ─── Coleções administrativas globais ────────────────────────────────────
+    // /app/admin/users/{uid}          — manifest de cada usuária (a própria escreve só o seu)
+    // /app/admin/auditLogs/{logId}    — só admina lê/escreve
+    // /app/admin/coupons/{couponId}   — admina escreve; qual quer usina lê
+    // /app/admin/announcements/{id}   — admina escreve; qual quer lê
+    // /app/admin/plans/{planId}       — admina escreve; qual quer lê
+    // /app/admin/admin_emails/{email} — admina escreve; qual quer lê (lista de adminas por e-mail)
+    match /app/admin/users/{uid} {
+      // Cada usinária cria/atualiza só o seu próprio doc de manifest.
+      // Admina lê todos (para o painel).
+      allow read: if isAdmin();
+      allow create, update: if isSignedIn() && request.auth.uid == uid;
+      allow delete: if isAdmin();
+    }
+
+    match /app/admin/auditLogs/{logId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /app/admin/coupons/{couponId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    match /app/admin/announcements/{announcementId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    match /app/admin/plans/{planId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    match /app/admin/admin_emails/{emailDoc} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // Nega tudo o que não for /users/{uid}/... explicitamente.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

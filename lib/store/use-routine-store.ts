@@ -227,10 +227,10 @@ const seedRoutine: RoutineSlot[] = [
 export const useRoutineStore = create<RoutineState>()(
   persist(
     (set) => ({
-      tasks: seedTasks,
-      recurringTasks: seedRecurring,
-      pendingItems: seedPending,
-      routineSlots: seedRoutine,
+      tasks: [],
+      recurringTasks: [],
+      pendingItems: [],
+      routineSlots: [],
 
       // ── Tarefas únicas ────────────────────────────────────────────
       addTask: ({ title, date, priority = 'medium', notes }) =>

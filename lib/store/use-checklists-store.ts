@@ -70,7 +70,7 @@ interface ChecklistsState {
 export const useChecklistsStore = create<ChecklistsState>()(
   persist(
     (set, get) => ({
-      checklists: seedChecklists,
+      checklists: [],
 
       addChecklist: ({ color = COLORS[Math.floor(Math.random() * COLORS.length)], ...data }) =>
         set((s) => ({

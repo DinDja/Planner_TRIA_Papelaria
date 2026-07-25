@@ -2,7 +2,47 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { ArrowRight, PenLine, Sparkles } from 'lucide-react'
+import { ArrowRight, PenLine } from 'lucide-react'
+
+/** Ícones próprios para a landing — não Lucide; cada um codifica a feature. */
+function StickersGlyph({ size = 18, strokeWidth = 1.5 }: { size?: number; strokeWidth?: number }) {
+  // Três adesivos sobrepostos ("cena de stickers") — não um Sparkles genérico.
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={strokeWidth}
+      strokeLinecap="butt"
+      aria-hidden
+    >
+      <path d="M4 5 L11 5 L11 12 L4 12 Z" />
+      <path d="M7 8 L14 8 L14 15 L7 15 Z" />
+      <path d="M10 11 L17 11 L17 18 L10 18 Z" />
+    </svg>
+  )
+}
+function TemplatesGlyph({ size = 18, strokeWidth = 1.5 }: { size?: number; strokeWidth?: number }) {
+  // Pilha de páginas (também o ícone de módulo templates, mantém coerência).
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={strokeWidth}
+      strokeLinecap="butt"
+      aria-hidden
+    >
+      <path d="M6 6 L15 6 L15 16 L6 16 Z" />
+      <path d="M7 4 L16 4 L16 14" />
+      <path d="M8 2 L17 2 L17 12" />
+    </svg>
+  )
+}
 
 const HERO_VIDEO =
   'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/agentic-hero-9yW3wnTNMfn2U6lsVhTTZSJFEvAoSj.mp4'
@@ -27,12 +67,12 @@ const FEATURE_CARDS = [
     desc: 'Traços suaves com pressão, opacidade e espessura ajustáveis via perfect-freehand.',
   },
   {
-    icon: Sparkles,
+    icon: StickersGlyph,
     title: 'Stickers & animações',
     desc: 'Biblioteca com 180+ stickers SVG e animações Lottie diretamente no canvas.',
   },
   {
-    icon: ArrowRight,
+    icon: TemplatesGlyph,
     title: '14 templates de página',
     desc: 'Em branco, pautado, grade, Cornell, diário, semanal, Kanban, finanças e mais.',
   },
@@ -62,7 +102,7 @@ function RevealFeature({
   desc,
   delay = 0,
 }: {
-  icon: typeof PenLine
+  icon: React.ComponentType<{ size?: number; strokeWidth?: number }>
   title: string
   desc: string
   delay?: number

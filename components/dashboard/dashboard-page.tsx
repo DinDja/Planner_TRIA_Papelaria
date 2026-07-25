@@ -2,26 +2,30 @@
 
 import { useAppStore } from '@/lib/store/use-app-store'
 import { useSettingsStore } from '@/lib/store/use-settings-store'
-import { MOCK_ACTIVITY, MOCK_AGENDA, MOCK_GOALS, MOCK_STATS } from '@/lib/mock-data'
+import { useCalendarStore } from '@/lib/store/use-calendar-store'
+import { useFinanceStore } from '@/lib/store/use-finance-store'
+import { useProfileStore } from '@/lib/store/use-profile-store'
 import { cn } from '@/lib/utils'
 import {
   ArrowUpRight,
   Calendar,
-  Clock,
-  Flame,
   FolderOpen,
   NotebookPen,
   Star,
   Target,
 } from 'lucide-react'
-import { ActivityChart } from './activity-chart'
 import Link from 'next/link'
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
+import { Card, CardHeader, CardTitle } from '../ui/card'
+import { TemplateThumbnail } from '../templates-page/template-thumbnail'
 
 /** Atraso escalonado para animação de entrada */
 const stagger = (i: number) => ({ animationDelay: `${i * 70}ms` })
 const enter =
   'animate-in fade-in slide-in-from-bottom-3 duration-500 fill-mode-both'
+
+/** Formata centavos (int) como moeda BRL compacta. */
+const formatBRL = (centavos: number) =>
+  (centavos / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })
 
 export function DashboardPage() {
   const planners = useAppStore((s) => s.planners)
@@ -29,9 +33,26 @@ export function DashboardPage() {
   const gradCharts = useSettingsStore((s) => s.gradients.charts)
   const gradCovers = useSettingsStore((s) => s.gradients.covers)
   const favorites = planners.filter((p) => p.favorite)
+  const userName = useProfileStore((s) => s.name).split(' ')[0] || ''
   const recents = [...planners].sort(
     (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
   )
+
+  const totalPlanners = planners.length
+  const totalPages = planners.reduce((n, p) => n + (p.pages?.length ?? 0), 0)
+
+  const todayISO = (() => {
+    const d = new Date()
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${y}-${m}-${day}`
+  })()
+  const agenda = useCalendarStore((s) => s.events)
+    .filter((e) => e.date === todayISO)
+    .sort((a, b) => a.startTime.localeCompare(b.startTime))
+
+  const goals = useFinanceStore((s) => s.goals)
 
   const hour = new Date().getHours()
   const greeting =
@@ -45,9 +66,6 @@ export function DashboardPage() {
   const firstDay = (new Date(year, now.getMonth(), 1).getDay() + 6) % 7
   const today = now.getDate()
 
-  const maxMinutes = Math.max(...MOCK_ACTIVITY.map((d) => d.minutes))
-  const todayIdx = (now.getDay() + 6) % 7 // Seg = 0
-
   return (
     <div className="p-6 lg:p-8 max-w-[1400px] mx-auto">
       {/* Header */}
@@ -55,17 +73,17 @@ export function DashboardPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
             {greeting},{' '}
-            <span
-              data-grad="dashboard"
-              className={cn(
-                'bg-clip-text text-transparent',
-                gradDash
-                  ? 'bg-gradient-to-r from-primary via-[#e05b6d] to-[#f0b429]'
-                  : 'text-primary bg-none',
-              )}
-            >
-              usuário
-            </span>
+<span
+                data-grad="dashboard"
+                className={cn(
+                  'bg-clip-text text-transparent',
+                  gradDash
+                    ? 'bg-gradient-to-r from-primary via-[#e05b6d] to-[#f0b429]'
+                    : 'text-primary bg-none',
+                )}
+              >
+                {userName || 'você'}
+              </span>
           </h1>
           <p className="text-muted-foreground mt-1 capitalize">
             {now.toLocaleDateString('pt-BR', {
@@ -76,22 +94,14 @@ export function DashboardPage() {
             })}
           </p>
         </div>
-        <div className="flex items-center gap-2 rounded-2xl border border-border/50 bg-card/60 px-3.5 py-2 shadow-sm">
-          <Flame size={16} className="text-orange-500 fill-orange-500/30" />
-          <div className="leading-tight">
-            <p className="text-sm font-bold tabular-nums">{MOCK_STATS.currentStreak} dias</p>
-            <p className="text-[10px] text-muted-foreground">de sequência</p>
-          </div>
-        </div>
       </div>
 
       {/* Stats row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
         {[
-          { label: 'Planners', value: MOCK_STATS.totalPlanners, icon: FolderOpen, color: '#e05b6d' },
-          { label: 'Páginas', value: MOCK_STATS.totalPages, icon: NotebookPen, color: '#5b8dbf' },
-          { label: 'Minutos esta semana', value: MOCK_STATS.weeklyMinutes, icon: Clock, color: '#f0b429' },
-          { label: 'Dias de streak', value: MOCK_STATS.currentStreak, icon: Flame, color: '#e8a0a0' },
+          { label: 'Planners', value: totalPlanners, icon: FolderOpen, color: '#e05b6d' },
+          { label: 'Páginas', value: totalPages, icon: NotebookPen, color: '#5b8dbf' },
+          { label: 'Favoritos', value: favorites.length, icon: Star, color: '#f0b429' },
         ].map((stat) => (
           <Card key={stat.label} glass hover className="relative overflow-hidden">
             <div className="absolute top-0 right-0 w-20 h-20 rounded-bl-full opacity-10" style={{ backgroundColor: stat.color }} />
@@ -126,35 +136,33 @@ export function DashboardPage() {
               </Link>
             </CardHeader>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-5 pt-3">
-              {recents.slice(0, 6).map((planner) => (
-                <Link
-                  key={planner.id}
-                  href={`/planner/${planner.id}`}
-                  className="group flex flex-col items-start gap-3 rounded-2xl border border-border/60 p-4 transition-all duration-300 hover:shadow-lift hover:border-transparent hover:-translate-y-1"
-                  style={{ ['--pc' as string]: planner.color }}
-                >
-                  <div
-                    data-grad="cover"
-                    className="relative flex size-12 items-center justify-center rounded-2xl text-white text-lg font-bold shadow-md transition-transform duration-300 group-hover:scale-105 group-hover:rotate-[-4deg] overflow-hidden"
-                    style={{
-                      background: gradCovers
-                        ? `linear-gradient(135deg, ${planner.color}, ${planner.color}b3)`
-                        : planner.color,
-                    }}
+              {recents.slice(0, 6).map((planner) => {
+                const firstPage = planner.pages?.[0]
+                return (
+                  <Link
+                    key={planner.id}
+                    href={`/planner/${planner.id}`}
+                    className="group flex flex-col rounded-2xl border border-border/60 overflow-hidden transition-all duration-300 hover:shadow-lift hover:border-transparent hover:-translate-y-1"
                   >
-                    {gradCovers && (
-                      <div className="absolute inset-0 bg-gradient-to-br from-white/25 to-transparent" />
-                    )}
-                    <span className="relative drop-shadow-sm">{planner.name[0]}</span>
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold truncate">{planner.name}</p>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">
-                      {planner.pages.length} páginas
-                    </p>
-                  </div>
-                </Link>
-              ))}
+                    <div className="relative bg-[color:light-dark(#f4f2ed,#1b1b19)] px-2 pt-2 overflow-hidden">
+                      <div className="relative overflow-hidden rounded-[4px] ring-1 ring-black/[0.07] dark:ring-white/10 shadow-sm bg-[color:light-dark(#ffffff,#2a2a28)]">
+                        {firstPage?.template && (
+                          <TemplateThumbnail
+                            template={firstPage.template}
+                            className="block w-full"
+                          />
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between gap-2 px-3 py-2.5">
+                      <p className="text-sm font-semibold truncate">{planner.name}</p>
+                      <span className="shrink-0 text-[10px] text-muted-foreground tabular-nums">
+                        {planner.pages?.length ?? 0} pág.
+                      </span>
+                    </div>
+                  </Link>
+                )
+              })}
             </div>
           </Card>
 
@@ -197,8 +205,6 @@ export function DashboardPage() {
             </Card>
           )}
 
-          {/* Activity chart */}
-          <ActivityChart data={MOCK_ACTIVITY} totalMinutes={MOCK_STATS.weeklyMinutes} />
         </div>
 
         {/* Right sidebar content */}
@@ -250,22 +256,24 @@ export function DashboardPage() {
                 Agenda de hoje
               </CardTitle>
               <span className="text-[11px] text-muted-foreground tabular-nums">
-                {MOCK_AGENDA.length} eventos
+                {agenda.length} eventos
               </span>
             </CardHeader>
             <div className="px-5 py-3">
-              {MOCK_AGENDA.length > 0 ? (
+              {agenda.length > 0 ? (
                 <div className="relative space-y-1">
                   {/* trilha da timeline */}
                   <div className="absolute left-[59px] top-3 bottom-3 w-px bg-border/70" />
-                  {MOCK_AGENDA.map((event) => (
+                  {agenda.map((event) => (
                     <div
                       key={event.id}
                       className="relative flex items-center gap-3 rounded-xl p-2 hover:bg-muted/40 transition-colors group"
                     >
                       <div className="flex flex-col items-end shrink-0 w-10">
-                        <span className="text-xs font-semibold tabular-nums">{event.time}</span>
-                        <span className="text-[10px] text-muted-foreground tabular-nums">{event.endTime}</span>
+                        <span className="text-xs font-semibold tabular-nums">{event.startTime}</span>
+                        <span className="text-[10px] text-muted-foreground tabular-nums">
+                          {event.allDay ? 'dia todo' : event.endTime}
+                        </span>
                       </div>
                       <div
                         className="relative z-10 size-2.5 rounded-full shrink-0 ring-4 ring-card transition-transform duration-200 group-hover:scale-125"
@@ -292,36 +300,47 @@ export function DashboardPage() {
               </CardTitle>
             </CardHeader>
             <div className="px-5 pb-3 space-y-3.5">
-              {MOCK_GOALS.map((goal) => {
-                const pct = Math.round((goal.current / goal.target) * 100)
-                return (
-                  <div key={goal.id}>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-xs font-medium">{goal.title}</span>
-                      <span className="text-[11px] text-muted-foreground tabular-nums">
-                        <span className="font-semibold text-foreground">{goal.current}</span>
-                        /{goal.target} {goal.unit}
-                      </span>
-                    </div>
-                    <div className="h-2 rounded-full bg-muted/80 overflow-hidden">
-                      <div
-                        className="relative h-full rounded-full transition-all duration-700"
-                        style={{
-                          width: `${Math.min(pct, 100)}%`,
-                          background: gradCharts
-                            ? `linear-gradient(90deg, ${goal.color}cc, ${goal.color})`
-                            : goal.color,
-                          boxShadow: `0 1px 6px -1px ${goal.color}80`,
-                        }}
-                      >
-                        {gradCharts && (
-                          <div className="absolute inset-0 rounded-full bg-gradient-to-b from-white/30 to-transparent" />
-                        )}
+              {goals.length > 0 ? (
+                goals.map((goal) => {
+                  const pct =
+                    goal.targetAmount > 0
+                      ? Math.round((goal.currentAmount / goal.targetAmount) * 100)
+                      : 0
+                  return (
+                    <div key={goal.id}>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-xs font-medium">{goal.title}</span>
+                        <span className="text-[11px] text-muted-foreground tabular-nums">
+                          <span className="font-semibold text-foreground">
+                            {formatBRL(goal.currentAmount)}
+                          </span>
+                          /{formatBRL(goal.targetAmount)}
+                        </span>
+                      </div>
+                      <div className="h-2 rounded-full bg-muted/80 overflow-hidden">
+                        <div
+                          className="relative h-full rounded-full transition-all duration-700"
+                          style={{
+                            width: `${Math.min(pct, 100)}%`,
+                            background: gradCharts
+                              ? `linear-gradient(90deg, ${goal.color}cc, ${goal.color})`
+                              : goal.color,
+                            boxShadow: `0 1px 6px -1px ${goal.color}80`,
+                          }}
+                        >
+                          {gradCharts && (
+                            <div className="absolute inset-0 rounded-full bg-gradient-to-b from-white/30 to-transparent" />
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )
-              })}
+                  )
+                })
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  Nenhum objetivo cadastrado.
+                </p>
+              )}
             </div>
           </Card>
         </div>

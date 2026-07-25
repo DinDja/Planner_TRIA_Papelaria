@@ -1,5 +1,7 @@
 'use client'
 
+import { useAuth } from '@/lib/auth/auth-context'
+import { setItem } from '@/lib/db/client'
 import { useAppStore } from '@/lib/store/use-app-store'
 import { useSettingsStore } from '@/lib/store/use-settings-store'
 import type { PageTemplateId, PlannerCategory } from '@/lib/types'
@@ -37,6 +39,7 @@ const categoryTemplateMap: Record<PlannerCategory, PageTemplateId> = {
 function CreatePlannerDialog({ open, onClose }: Props) {
   const addPlanner = useAppStore((s) => s.addPlanner)
   const gradCovers = useSettingsStore((s) => s.gradients.covers)
+  const { user } = useAuth()
   const [name, setName] = useState('')
   const [category, setCategory] = useState<PlannerCategory>('diario')
   const [color, setColor] = useState('#e05b6d')
@@ -54,17 +57,21 @@ function CreatePlannerDialog({ open, onClose }: Props) {
 
   const activeCategory = categories.find((c) => c.id === category)!
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!name.trim()) {
       toast({ title: 'Digite um nome para o planner', variant: 'error' })
       return
     }
-    addPlanner({
+    const id = addPlanner({
       name: name.trim(),
       category,
       color,
       icon: activeCategory.icon.displayName ?? 'NotebookPen',
     })
+    if (user) {
+      const planner = useAppStore.getState().planners.find((p) => p.id === id)
+      if (planner) await setItem(user, 'planners', planner)
+    }
     toast({ title: 'Planner criado!', variant: 'success' })
     setName('')
     onClose()

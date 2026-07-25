@@ -1,33 +1,36 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import type { ModuloId } from '@/components/icons/modules'
 
 export interface ModuleDef {
-  id: string
+  /** Identificador canônico do módulo — também é a chave do ícone. */
+  id: ModuloId
   href: string
   label: string
-  icon: string
   enabled: boolean
 }
 
-const DEFAULT_MODULES: ModuleDef[] = [
-  { id: 'dashboard', href: '/', label: 'Dashboard', icon: 'LayoutDashboard', enabled: true },
-  { id: 'diario', href: '/diario', label: 'Diário', icon: 'BookHeart', enabled: true },
-  { id: 'notas', href: '/notas', label: 'Notas', icon: 'FileText', enabled: true },
-  { id: 'listas', href: '/listas', label: 'Listas', icon: 'List', enabled: true },
-  { id: 'checklists', href: '/checklists', label: 'Checklists', icon: 'ListChecks', enabled: true },
-  { id: 'wishlist', href: '/wishlist', label: 'Wishlist', icon: 'Heart', enabled: true },
-  { id: 'frases', href: '/frases', label: 'Frases', icon: 'Bookmark', enabled: true },
-  { id: 'memorias', href: '/memorias', label: 'Memórias', icon: 'Box', enabled: true },
-  { id: 'cofre', href: '/cofre', label: 'Cofre', icon: 'KeyRound', enabled: true },
-  { id: 'saude', href: '/saude', label: 'Saúde', icon: 'HeartPulse', enabled: true },
-  { id: 'rotina', href: '/rotina', label: 'Rotina', icon: 'ClipboardList', enabled: true },
-  { id: 'calendario', href: '/calendario', label: 'Calendário', icon: 'Calendar', enabled: true },
-  { id: 'financas', href: '/financas', label: 'Finanças', icon: 'Wallet', enabled: true },
-  { id: 'metas', href: '/metas', label: 'Metas', icon: 'Target', enabled: true },
-  { id: 'habitos', href: '/habitos', label: 'Hábitos', icon: 'CheckCircle', enabled: true },
-  { id: 'retrospectiva', href: '/retrospectiva', label: 'Retrospectiva', icon: 'RefreshCw', enabled: true },
-  { id: 'templates', href: '/templates', label: 'Templates', icon: 'BookOpen', enabled: true },
-  { id: 'plans', href: '/plans', label: 'Planos', icon: 'BriefcaseBusiness', enabled: true },
+export const DEFAULT_MODULES: ModuleDef[] = [
+  { id: 'dashboard',       href: '/',              label: 'Dashboard',      enabled: true },
+  { id: 'diario',          href: '/diario',        label: 'Diário',         enabled: true },
+  { id: 'notas',           href: '/notas',         label: 'Notas',          enabled: true },
+  { id: 'listas',          href: '/listas',        label: 'Listas',         enabled: true },
+  { id: 'checklists',      href: '/checklists',    label: 'Checklists',     enabled: true },
+  { id: 'wishlist',        href: '/wishlist',       label: 'Wishlist',       enabled: true },
+  { id: 'frases',          href: '/frases',         label: 'Frases',         enabled: true },
+  { id: 'memorias',        href: '/memorias',       label: 'Memórias',      enabled: true },
+  { id: 'cofre',           href: '/cofre',          label: 'Cofre',          enabled: true },
+  { id: 'saude',           href: '/saude',          label: 'Saúde',          enabled: true },
+  { id: 'rotina',          href: '/rotina',         label: 'Rotina',         enabled: true },
+  { id: 'calendario',      href: '/calendario',     label: 'Calendário',    enabled: true },
+  { id: 'financas',        href: '/financas',       label: 'Finanças',       enabled: true },
+  { id: 'metas',           href: '/metas',          label: 'Metas',          enabled: true },
+  { id: 'habitos',         href: '/habitos',        label: 'Hábitos',        enabled: true },
+  { id: 'retrospectiva',   href: '/retrospectiva', label: 'Retrospectiva',  enabled: true },
+  { id: 'templates',       href: '/templates',     label: 'Templates',      enabled: true },
+  { id: 'plans',           href: '/plans',          label: 'Planos',         enabled: true },
+  { id: 'admin',           href: '/admin',          label: 'Admin',          enabled: true },
+  { id: 'perfil',          href: '/perfil',         label: 'Perfil',         enabled: true },
 ]
 
 interface MenuState {
@@ -60,6 +63,28 @@ export const useMenuStore = create<MenuState>()(
 
       getEnabledModules: () => get().modules.filter((m) => m.enabled),
     }),
-    { name: 'plannerhub-menu' },
+    {
+      name: 'plannerhub-menu',
+      version: 2,
+      // Antes da v2, cada item levava `icon: 'BookHeart'` etc (nome Lucide).
+      // O ícone virou derivado de `id` (ver components/icons/modules). Aqui
+      // descartamos o campo legado ao reidratar do localStorage.
+      //
+      // `migrate` (não `merge`) é o lugar correto: roda só quando a `version`
+      // muda, recebe o estado velho, e devolve apenas os campos persistidos.
+      // As actions ficam de fora — o zustand recria-as ao montar a store.
+      migrate: (persisted, _fromVersion) => {
+        const p = (persisted as { modules?: ModuleDef[]; [k: string]: unknown }) | undefined
+        if (!p || !Array.isArray(p.modules)) {
+          return { modules: DEFAULT_MODULES }
+        }
+        const cleaned = p.modules.map((m) => {
+          const { icon: _drop, ...rest } = m as ModuleDef & { icon?: string }
+          return rest as ModuleDef
+        })
+        return { modules: cleaned }
+      },
+      partialize: (s) => ({ modules: s.modules }),
+    },
   ),
 )

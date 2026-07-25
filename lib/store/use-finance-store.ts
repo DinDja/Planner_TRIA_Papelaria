@@ -120,14 +120,14 @@ interface FinanceState {
 export const useFinanceStore = create<FinanceState>()(
   persist(
     (set, get) => ({
-      transactions: seedTransactions,
-      fixedBills: seedFixedBills,
-      subscriptions: seedSubscriptions,
-      cards: seedCards,
-      installments: seedInstallments,
-      goals: seedGoals,
+      transactions: [],
+      fixedBills: [],
+      subscriptions: [],
+      cards: [],
+      installments: [],
+      goals: [],
       goalDeposits: [],
-      savingsBoxes: seedBoxes,
+      savingsBoxes: [],
 
       // ── Transações ──────────────────────────────────────────────────
       addTransaction: ({ fixedBillId, ...data }) =>

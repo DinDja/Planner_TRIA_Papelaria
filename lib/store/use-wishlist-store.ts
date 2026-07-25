@@ -90,7 +90,7 @@ interface WishlistState {
 export const useWishlistStore = create<WishlistState>()(
   persist(
     (set, get) => ({
-      items: seedWishlist,
+      items: [],
 
       addItem: (data) =>
         set((s) => ({

@@ -68,7 +68,7 @@ interface PasswordsState {
 export const usePasswordsStore = create<PasswordsState>()(
   persist(
     (set, get) => ({
-      entries: seedPasswords,
+      entries: [],
       masterPin: '',
 
       setMasterPin: (pin) => set({ masterPin: pin }),

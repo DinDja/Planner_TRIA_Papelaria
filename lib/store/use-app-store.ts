@@ -1,14 +1,12 @@
+'use client'
+
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { CanvasData, Folder, Planner, PlannerPage, Tag } from '../types'
-import { MOCK_FOLDERS, MOCK_PLANNERS, MOCK_TAGS } from '../mock-data'
 import { EMPTY_CANVAS } from '../types'
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
 const uid = () => Math.random().toString(36).slice(2, 10)
-
-// ─── Store ────────────────────────────────────────────────────────────────────
+const nowISO = () => new Date().toISOString()
 
 interface AppState {
   planners: Planner[]
@@ -18,7 +16,6 @@ interface AppState {
 
   setTheme: (t: 'light' | 'dark') => void
 
-  // Planners
   addPlanner: (
     p: Pick<Planner, 'name' | 'category' | 'color' | 'icon'> & Partial<Planner>,
   ) => string
@@ -30,17 +27,14 @@ interface AppState {
   deletePlanner: (id: string) => void
   toggleFavorite: (id: string) => void
 
-  // Pages
   addPage: (plannerId: string, template?: PlannerPage['template']) => void
   deletePage: (plannerId: string, pageId: string) => void
   updatePageData: (plannerId: string, pageId: string, data: CanvasData) => void
   updatePageTemplate: (plannerId: string, pageId: string, template: PlannerPage['template']) => void
 
-  // Folders
   addFolder: (name: string, color: string) => void
   deleteFolder: (id: string) => void
 
-  // Tags
   addTag: (name: string, color: string) => void
   deleteTag: (id: string) => void
 }
@@ -48,34 +42,32 @@ interface AppState {
 export const useAppStore = create<AppState>()(
   persist(
     (set) => ({
-      planners: MOCK_PLANNERS,
-      folders: MOCK_FOLDERS,
-      tags: MOCK_TAGS,
+      planners: [],
+      folders: [],
+      tags: [],
       theme: 'light',
 
       setTheme: (theme) => set({ theme }),
 
       addPlanner: (data) => {
-        const now = new Date().toISOString()
+        const now = nowISO()
         const id = `pl-${uid()}`
-        set((s) => {
-          const planner: Planner = {
-            ...data,
-            id,
-            favorite: false,
-            folderId: data.folderId ?? null,
-            tags: data.tags ?? [],
-            pages: [],
-            createdAt: now,
-            updatedAt: now,
-          }
-          return { planners: [...s.planners, planner] }
-        })
+        const planner: Planner = {
+          ...data,
+          id,
+          favorite: false,
+          folderId: data.folderId ?? null,
+          tags: data.tags ?? [],
+          pages: [],
+          createdAt: now,
+          updatedAt: now,
+        }
+        set((s) => ({ planners: [...s.planners, planner] }))
         return id
       },
 
       addPlannerWithPages: (data, pages) => {
-        const now = new Date().toISOString()
+        const now = nowISO()
         const id = `pl-${uid()}`
         const plannerPages: PlannerPage[] = pages.map((p, i) => ({
           id: `${id}-pg-${i}`,
@@ -83,26 +75,24 @@ export const useAppStore = create<AppState>()(
           template: p.template,
           data: { strokes: [], stickers: [], texts: [], shapes: [], stickyNotes: [] },
         }))
-        set((s) => {
-          const planner: Planner = {
-            ...data,
-            id,
-            favorite: false,
-            folderId: data.folderId ?? null,
-            tags: data.tags ?? [],
-            pages: plannerPages,
-            createdAt: now,
-            updatedAt: now,
-          }
-          return { planners: [...s.planners, planner] }
-        })
+        const planner: Planner = {
+          ...data,
+          id,
+          favorite: false,
+          folderId: data.folderId ?? null,
+          tags: data.tags ?? [],
+          pages: plannerPages,
+          createdAt: now,
+          updatedAt: now,
+        }
+        set((s) => ({ planners: [...s.planners, planner] }))
         return id
       },
 
       updatePlanner: (id, patch) =>
         set((s) => ({
           planners: s.planners.map((p) =>
-            p.id === id ? { ...p, ...patch, updatedAt: new Date().toISOString() } : p,
+            p.id === id ? { ...p, ...patch, updatedAt: nowISO() } : p,
           ),
         })),
 
@@ -112,7 +102,7 @@ export const useAppStore = create<AppState>()(
       toggleFavorite: (id) =>
         set((s) => ({
           planners: s.planners.map((p) =>
-            p.id === id ? { ...p, favorite: !p.favorite } : p,
+            p.id === id ? { ...p, favorite: !p.favorite, updatedAt: nowISO() } : p,
           ),
         })),
 
@@ -123,7 +113,7 @@ export const useAppStore = create<AppState>()(
             const idx = p.pages.length
             return {
               ...p,
-              updatedAt: new Date().toISOString(),
+              updatedAt: nowISO(),
               pages: [
                 ...p.pages,
                 {
@@ -141,7 +131,7 @@ export const useAppStore = create<AppState>()(
         set((s) => ({
           planners: s.planners.map((p) =>
             p.id === plannerId
-              ? { ...p, pages: p.pages.filter((pg) => pg.id !== pageId), updatedAt: new Date().toISOString() }
+              ? { ...p, pages: p.pages.filter((pg) => pg.id !== pageId), updatedAt: nowISO() }
               : p,
           ),
         })),
@@ -152,7 +142,7 @@ export const useAppStore = create<AppState>()(
             p.id === plannerId
               ? {
                   ...p,
-                  updatedAt: new Date().toISOString(),
+                  updatedAt: nowISO(),
                   pages: p.pages.map((pg) =>
                     pg.id === pageId ? { ...pg, data } : pg,
                   ),
@@ -167,7 +157,7 @@ export const useAppStore = create<AppState>()(
             p.id === plannerId
               ? {
                   ...p,
-                  updatedAt: new Date().toISOString(),
+                  updatedAt: nowISO(),
                   pages: p.pages.map((pg) =>
                     pg.id === pageId ? { ...pg, template } : pg,
                   ),

@@ -108,7 +108,7 @@ interface CalendarState {
 export const useCalendarStore = create<CalendarState>()(
   persist(
     (set) => ({
-      events: seedEvents,
+      events: [],
 
       addEvent: ({ color = '#5b8dbf', ...rest }) =>
         set((s) => ({

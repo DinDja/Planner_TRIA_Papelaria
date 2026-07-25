@@ -3,20 +3,12 @@
 import { useRetroStore } from '@/lib/store/use-retro-store'
 import type { RetrospectiveMood, RetrospectiveType } from '@/lib/types'
 import { cn } from '@/lib/utils'
-import { Angry, Frown, Meh, Smile, Sparkles } from 'lucide-react'
 import { useState } from 'react'
+import { MoodPicker as MoodPickerUI, type MoodId } from '@/components/icons/mood'
 import { Button } from '../ui/button'
 import { Dialog, DialogContent } from '../ui/overlays'
 import { Input } from '../ui/primitives'
 import { toast } from '../ui/toaster'
-
-const MOOD_OPTIONS: { value: RetrospectiveMood; label: string; icon: typeof Smile; color: string }[] = [
-  { value: 'great', label: 'Excelente', icon: Sparkles, color: '#7bb686' },
-  { value: 'good', label: 'Bom', icon: Smile, color: '#5b8dbf' },
-  { value: 'neutral', label: 'Neutro', icon: Meh, color: '#f0b429' },
-  { value: 'bad', label: 'Ruim', icon: Frown, color: '#e8a0a0' },
-  { value: 'tough', label: 'Difícil', icon: Angry, color: '#e05b6d' },
-]
 
 const TYPE_LABELS: Record<RetrospectiveType, string> = {
   daily: 'Diária',
@@ -33,6 +25,8 @@ const dayStr = (offset = 0): string => {
   return `${y}-${m}-${day}`
 }
 
+// `RetrospectiveMood` da base legado tem casal grato para com `MoodId` do novo
+// sistema; fazemos o cast aqui para o componente UI funcionar sem migrar tipos.
 function MoodPicker({
   value,
   onChange,
@@ -41,28 +35,10 @@ function MoodPicker({
   onChange: (m: RetrospectiveMood) => void
 }) {
   return (
-    <div className="flex gap-2">
-      {MOOD_OPTIONS.map((opt) => {
-        const active = value === opt.value
-        return (
-          <button
-            key={opt.value}
-            type="button"
-            onClick={() => onChange(opt.value)}
-            className={cn(
-              'flex flex-col items-center gap-1 flex-1 rounded-xl border px-2 py-3 text-[10px] font-medium transition-all duration-200 cursor-pointer',
-              active
-                ? 'border-transparent shadow-md text-white'
-                : 'border-border/60 text-muted-foreground hover:bg-muted/50',
-            )}
-            style={active ? { backgroundColor: opt.color } : undefined}
-          >
-            <opt.icon size={20} className={active ? 'text-white' : ''} style={!active ? { color: opt.color } : undefined} />
-            {opt.label}
-          </button>
-        )
-      })}
-    </div>
+    <MoodPickerUI
+      value={value as MoodId}
+      onChange={(v) => onChange(v as RetrospectiveMood)}
+    />
   )
 }
 

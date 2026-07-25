@@ -71,7 +71,7 @@ interface ListsState {
 export const useListsStore = create<ListsState>()(
   persist(
     (set, get) => ({
-      lists: seedLists,
+      lists: [],
 
       addList: ({ color = LIST_COLORS[Math.floor(Math.random() * LIST_COLORS.length)], ...data }) =>
         set((s) => ({

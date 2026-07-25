@@ -4,6 +4,7 @@ import { Caveat, Geist, Instrument_Serif, IBM_Plex_Sans } from 'next/font/google
 import { Tooltip } from '@base-ui/react/tooltip'
 import { ThemeProvider } from '@/components/providers/theme-provider'
 import { SettingsProvider } from '@/components/providers/settings-provider'
+import { AuthProvider } from '@/lib/auth/auth-context'
 import { Toaster } from '@/components/ui/toaster'
 import './globals.css'
 
@@ -64,12 +65,14 @@ export default function RootLayout({
     >
       <body className="font-sans antialiased">
         <Tooltip.Provider closeDelay={200}>
-          <ThemeProvider>
-            <SettingsProvider>
-              {children}
-              <Toaster />
-            </SettingsProvider>
-          </ThemeProvider>
+          <AuthProvider>
+            <ThemeProvider>
+              <SettingsProvider>
+                {children}
+                <Toaster />
+              </SettingsProvider>
+            </ThemeProvider>
+          </AuthProvider>
         </Tooltip.Provider>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>

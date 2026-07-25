@@ -544,23 +544,85 @@ export interface RetrospectiveEntry {
 
 // ─── Módulo de Diário Digital ─────────────────────────────────────────────────
 
-/** Humor/emoção associada a uma entrada do diário */
-export type JournalMood = 'great' | 'good' | 'neutral' | 'bad' | 'tough'
+export type JournalEmotion =
+  | 'excited' | 'happy' | 'calm' | 'grateful' | 'inspired'
+  | 'anxious' | 'sad' | 'tired' | 'frustrated' | 'stressed'
+  | 'confused' | 'hopeful'
+  | 'neutral'
+
+export type JournalTimeOfDay = 'morning' | 'afternoon' | 'evening' | 'night'
+
+export type PromptCategory = 'gratitude' | 'reflection' | 'creativity' | 'goals' | 'emotions' | 'memory'
+
+export interface JournalPrompt {
+  id: string
+  text: string
+  category: PromptCategory
+}
+
+export interface MoodSnapshot {
+  emotions: JournalEmotion[]
+  energy: 1 | 2 | 3 | 4 | 5
+  note?: string
+}
 
 export interface JournalEntry {
   id: string
   title: string
   content: string
-  /** ISO date (YYYY-MM-DD) */
   date: string
-  mood?: JournalMood
+  timeOfDay: JournalTimeOfDay
+  mood: MoodSnapshot
+  prompt?: string
   tags: string[]
+  color: string
   createdAt: string
   updatedAt: string
-  /** Se verdadeiro, fixa no topo */
   pinned?: boolean
-  /** Traços de escrita à mão */
   drawing?: Stroke[]
+}
+
+export const JOURNAL_PROMPTS: JournalPrompt[] = [
+  { id: 'p1', text: 'O que te fez sorrir hoje?', category: 'gratitude' },
+  { id: 'p2', text: 'Se você pudesse mudar algo no dia de hoje, o que seria?', category: 'reflection' },
+  { id: 'p3', text: 'Qual ideia está borbulhando na sua mente?', category: 'creativity' },
+  { id: 'p4', text: 'O que você aprendeu hoje?', category: 'reflection' },
+  { id: 'p5', text: 'Por que você está grato(a) agora?', category: 'gratitude' },
+  { id: 'p6', text: 'Como você quer se sentir amanhã?', category: 'goals' },
+  { id: 'p7', text: 'Qual emoção está mais presente em você agora?', category: 'emotions' },
+  { id: 'p8', text: 'Descreva seu dia em uma palavra e depois explique.', category: 'reflection' },
+  { id: 'p9', text: 'O que te inspirou recentemente?', category: 'inspiration' },
+  { id: 'p10', text: 'Lembre-se de um momento feliz desta semana.', category: 'memory' },
+  { id: 'p11', text: 'Se o dia de hoje fosse uma música, qual seria?', category: 'creativity' },
+  { id: 'p12', text: 'O que você precisa deixar ir?', category: 'emotions' },
+]
+
+export const ENTRY_COLORS = [
+  '#e8a0a0', '#f0b429', '#7bb686', '#5b8dbf', '#c9b6e4',
+  '#e05b6d', '#f7c59f', '#a0c4ff', '#bdb2ff', '#ffc6ff',
+]
+
+export const EMOTION_CONFIG: Record<JournalEmotion, { label: string; color: string; emoji: string }> = {
+  excited:   { label: 'Animado',    color: '#f7c59f', emoji: '✨' },
+  happy:     { label: 'Feliz',      color: '#7bb686', emoji: '😊' },
+  calm:      { label: 'Calmo',      color: '#a0c4ff', emoji: '😌' },
+  grateful:  { label: 'Grato',      color: '#c9b6e4', emoji: '🙏' },
+  inspired:  { label: 'Inspirado',  color: '#f0b429', emoji: '💡' },
+  anxious:  { label: 'Ansioso',    color: '#e8a0a0', emoji: '😰' },
+  sad:       { label: 'Triste',     color: '#5b8dbf', emoji: '😢' },
+  tired:     { label: 'Cansado',    color: '#a0a0a0', emoji: '😴' },
+  frustrated:{ label: 'Frustrado',  color: '#e05b6d', emoji: '😤' },
+  stressed:  { label: 'Estressado', color: '#e8a0a0', emoji: '😣' },
+  confused:  { label: 'Confuso',   color: '#c9b6e4', emoji: '😕' },
+  hopeful:   { label: 'Esperançoso',color: '#7bb686', emoji: '🌱' },
+  neutral:   { label: 'Neutro',     color: '#a0a0a0', emoji: '😐' },
+}
+
+export const TIME_OF_DAY_CONFIG: Record<JournalTimeOfDay, { label: string; icon: string }> = {
+  morning:   { label: 'Manhã',    icon: '🌅' },
+  afternoon: { label: 'Tarde',    icon: '☀️' },
+  evening:   { label: 'Noite',    icon: '🌙' },
+  night:     { label: 'Noite',    icon: '🌃' },
 }
 
 // ─── Módulo de Notas ──────────────────────────────────────────────────────────

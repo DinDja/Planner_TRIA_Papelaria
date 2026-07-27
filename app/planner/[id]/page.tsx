@@ -16,7 +16,7 @@ export default function EditorPage() {
 
   return (
     <RequireAuth>
-      <StoreSyncProvider>
+      <StoreSyncProvider editorMode>
         {planner ? (
           <PlannerEditor planner={planner} />
         ) : (

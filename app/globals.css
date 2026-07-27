@@ -352,3 +352,36 @@ html[data-reduce-motion="on"] *::after {
   60% { transform: scale(1.05) translateY(0); opacity: 1; }
   100% { transform: scale(1) translateY(0); opacity: 1; }
 }
+
+/* ─── Ecos do Diário — animações ───────────────────────────────────────────── */
+
+@keyframes eco-rise {
+  0% { transform: translateY(8px); opacity: 0; }
+  60% { opacity: 1; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes eco-fade {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+/* O traço da linha de vida se desenha do início ao fim,
+   como uma caneta passando no papel. Cada segmento começa
+   levemente depois do anterior, criando o efeito de progressão. */
+@keyframes linha-de-vida-desenha {
+  0% { stroke-dashoffset: 160; opacity: 0.2; }
+  60% { opacity: 1; }
+  100% { stroke-dashoffset: 0; opacity: 1; }
+}
+
+.linha-de-vida__stroke {
+  stroke-dasharray: 160;
+  stroke-dashoffset: 160;
+  animation: linha-de-vida-desenha 720ms ease-out both;
+}
+
+@keyframes eco-marcador-ascende {
+  0% { transform: scaleY(0); opacity: 0; transform-origin: bottom; }
+  100% { transform: scaleY(1); opacity: 1; transform-origin: bottom; }
+}

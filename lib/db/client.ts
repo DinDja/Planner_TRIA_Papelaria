@@ -14,6 +14,7 @@ import {
   type Unsubscribe,
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
+import { stripUndefined } from './write-through'
 import type { User } from 'firebase/auth'
 
 const nowISO = () => new Date().toISOString()
@@ -33,7 +34,7 @@ export function userRootDoc(user: User) {
 }
 
 export async function ensureUserDoc(user: User, partial: Record<string, unknown>) {
-  await setDoc(userRootDoc(user), { ...partial, updatedAt: nowISO() }, { merge: true })
+  await setDoc(userRootDoc(user), stripUndefined({ ...partial, updatedAt: nowISO() }), { merge: true })
 }
 
 export async function getUserDoc(user: User) {
@@ -69,13 +70,13 @@ export function subscribeCollection<T extends WithId>(
 
 export async function setItem<T extends WithId>(user: User, path: string, item: T) {
   const ref = doc(db, 'users', user.uid, path, item.id)
-  await setDoc(ref, { ...item, updatedAt: nowISO() }, { merge: true })
+  await setDoc(ref, stripUndefined({ ...item, updatedAt: nowISO() }), { merge: true })
   return ref
 }
 
 export async function setItemNoMerge<T extends WithId>(user: User, path: string, item: T) {
   const ref = doc(db, 'users', user.uid, path, item.id)
-  await setDoc(ref, { ...item, updatedAt: nowISO() })
+  await setDoc(ref, stripUndefined({ ...item, updatedAt: nowISO() }))
   return ref
 }
 
@@ -86,7 +87,7 @@ export async function updateItem(
   patch: Record<string, unknown>,
 ) {
   const ref = doc(db, 'users', user.uid, path, id)
-  await updateDoc(ref, { ...patch, updatedAt: nowISO() })
+  await updateDoc(ref, stripUndefined({ ...patch, updatedAt: nowISO() }))
   return ref
 }
 
@@ -105,7 +106,7 @@ export async function writeBatchItems<T extends WithId>(
   const batch = writeBatch(db)
   for (const item of items) {
     const ref = doc(db, 'users', user.uid, path, item.id)
-    batch.set(ref, { ...item, updatedAt: nowISO() }, { merge })
+    batch.set(ref, stripUndefined({ ...item, updatedAt: nowISO() }), { merge })
   }
   await batch.commit()
 }

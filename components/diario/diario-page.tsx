@@ -22,11 +22,16 @@ const FONT_MONO = 'var(--font-geist), system-ui, sans-serif'
 export function DiarioPage() {
   const registros = useDiarioStore((s) => s.registros)
   const linhaDoTempo = useDiarioStore((s) => s.linhaDoTempo)
-  const sequencia = useDiarioStore((s) => s.sequencia())
-  const episodios = useDiarioStore((s) => s.episodios())
   const fixar = useDiarioStore((s) => s.fixar)
   const remover = useDiarioStore((s) => s.remover)
-  const emocoesFrequentes = useDiarioStore((s) => s.emocoesFrequentes)
+  // `sequencia` e `episodios` são chamadas que devolvem novo valor a cada
+  // invocação (cierto para número/bad — mas o React useSyncExternalStore
+  // considera "snapshot mudou" a cada chamada mesmo se o resultado for o
+  // mesmo. Causam loop infinito. Memoizamos via `registros` como dep.
+  const sequenciFn = useDiarioStore((s) => s.sequencia)
+  const episodiosFn = useDiarioStore((s) => s.episodios)
+  const sequencia = useMemo(() => sequenciFn(), [sequenciFn, registros])
+  const episodios = useMemo(() => episodiosFn(), [episodiosFn, registros])
 
   const [escreverOpen, setEscreverOpen] = useState(false)
   const [editar, setEditar] = useState<Registro | null>(null)
@@ -34,6 +39,9 @@ export function DiarioPage() {
 
   const hoje = isoDia()
   const temHoje = registros.some((r) => r.periodo === 'dia' && r.data === hoje)
+  // Quantos registros você já escreveu no dia de hoje — permite múltiplos,
+  // cada um sendo uma parte do dia contada por si só.
+  const qtdHoje = registros.filter((r) => r.periodo === 'dia' && r.data === hoje).length
   const prompt = useMemo(() => promptDoDia(), [])
   const timeline = useMemo(() => linhaDoTempo(), [registros])
   const filtrados = useMemo(() => {
@@ -47,7 +55,8 @@ export function DiarioPage() {
         r.tags.some((t) => t.toLowerCase().includes(q)),
     )
   }, [timeline, busca])
-  const topEmocoes = useMemo(() => emocoesFrequentes(3), [registros])
+  const emocoesFrequentes = useDiarioStore((s) => s.emocoesFrequentes)
+  const topEmocoes = useMemo(() => emocoesFrequentes(3), [emocoesFrequentes, registros])
 
   const abrirParaEditar = (r: Registro) => {
     setEditar(r)
@@ -69,6 +78,7 @@ export function DiarioPage() {
     <div className="mx-auto max-w-[1180px] px-4 pb-28 pt-8 sm:px-8 lg:pt-12">
       <Abertura
         temHoje={temHoje}
+        qtdHoje={qtdHoje}
         prompt={prompt.texto}
         sequencia={sequencia}
         episodios={episodios}
@@ -134,6 +144,7 @@ export function DiarioPage() {
 
 function Abertura({
   temHoje,
+  qtdHoje,
   prompt,
   sequencia,
   episodios,
@@ -141,6 +152,7 @@ function Abertura({
   onEscrever,
 }: {
   temHoje: boolean
+  qtdHoje: number
   prompt: string
   sequencia: number
   episodios: number
@@ -161,13 +173,52 @@ function Abertura({
           {agora.getDate()} de {agora.toLocaleDateString('pt-BR', { month: 'long' })}
         </p>
 
+        {/* A porta nunca se fecha. Já escreveu? Reconhecemos, mas deixamos
+            aberto: é possível escrever de novo, ou voltar a um dia anterior
+            que ficou em silêncio. Cada folha é uma parte do dia. */}
         {temHoje ? (
-          <p
-            className="font-serif italic text-muted-foreground"
-            style={{ fontFamily: FONT_SERIF, fontSize: '1.15rem' }}
-          >
-            Você já escreveu hoje. Voltar aqui é só querer lembrar.
-          </p>
+          <div className="flex max-w-[34rem] flex-col gap-5">
+            <p
+              className="font-serif italic text-muted-foreground"
+              style={{ fontFamily: FONT_SERIF, fontSize: '1.15rem' }}
+            >
+              {qtdHoje === 1
+                ? 'Você já escreveu hoje. Voltar aqui é só querer lembrar.'
+                : `${qtdHoje} folhas para este dia — cada uma foi sua.`}
+            </p>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-baseline sm:gap-7">
+              <button
+                type="button"
+                onClick={onEscrever}
+                className="group flex flex-col gap-1.5 text-left"
+              >
+                <span className="text-[0.78rem] uppercase tracking-[0.18em] text-muted-foreground/55 transition-colors group-hover:text-foreground/80">
+                  escrever outra
+                </span>
+                <span
+                  className="block border-b border-foreground/15 pb-1 transition-colors group-hover:border-foreground/40"
+                  style={{ fontFamily: FONT_HAND, fontSize: '1.15rem' }}
+                >
+                  a mesma caneta, outra página
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={onEscrever}
+                className="group flex flex-col gap-1.5 text-left"
+              >
+                <span className="text-[0.78rem] uppercase tracking-[0.18em] text-muted-foreground/55 transition-colors group-hover:text-foreground/80">
+                  um dia antes
+                </span>
+                <span
+                  className="block border-b border-foreground/15 pb-1 transition-colors group-hover:border-foreground/40"
+                  style={{ fontFamily: FONT_HAND, fontSize: '1.15rem' }}
+                >
+                  voltar e escrever o que ficou em silêncio
+                </span>
+              </button>
+            </div>
+          </div>
         ) : (
           <button
             type="button"

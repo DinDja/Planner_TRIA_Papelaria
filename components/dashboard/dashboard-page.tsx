@@ -1,22 +1,28 @@
 'use client'
 
+import { useMemo } from 'react'
 import { useAppStore } from '@/lib/store/use-app-store'
 import { useSettingsStore } from '@/lib/store/use-settings-store'
 import { useCalendarStore } from '@/lib/store/use-calendar-store'
 import { useFinanceStore } from '@/lib/store/use-finance-store'
-import { useProfileStore } from '@/lib/store/use-profile-store'
-import { cn } from '@/lib/utils'
+import { useDiarioStore, isoDia, promptDoDia } from '@/lib/diario/use-diario-store'
 import {
-  ArrowUpRight,
-  Calendar,
-  FolderOpen,
-  NotebookPen,
-  Star,
-  Target,
-} from 'lucide-react'
+  ecoDoDia,
+  linhaSeteDias,
+  fraseDaSemana,
+  descidaDeHumor,
+  conviteDeHoje,
+} from '@/lib/diario/ecos'
+import { EcoDoDia } from '@/components/diario/eco-do-dia'
+import { LinhaDeVida } from '@/components/diario/linha-de-vida'
+import { EMOCOES } from '@/lib/diario/types'
+import { cn } from '@/lib/utils'
+import { Calendar, FolderOpen, NotebookPen, Star, Target } from 'lucide-react'
 import Link from 'next/link'
 import { Card, CardHeader, CardTitle } from '../ui/card'
 import { TemplateThumbnail } from '../templates-page/template-thumbnail'
+
+const FONT_HAND = 'var(--font-caveat), "Segoe Script", cursive'
 
 /** Atraso escalonado para animação de entrada */
 const stagger = (i: number) => ({ animationDelay: `${i * 70}ms` })
@@ -27,36 +33,60 @@ const enter =
 const formatBRL = (centavos: number) =>
   (centavos / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })
 
+/** Momento do dia corrente, no idioma do diário. */
+const momentoAgora = (): 'manha' | 'tarde' | 'anoitecer' | 'noite' | 'madrugada' => {
+  const h = new Date().getHours()
+  if (h >= 0 && h < 5) return 'madrugada'
+  if (h >= 5 && h < 12) return 'manha'
+  if (h >= 12 && h < 17) return 'tarde'
+  if (h >= 17 && h < 20) return 'anoitecer'
+  return 'noite'
+}
+
 export function DashboardPage() {
   const planners = useAppStore((s) => s.planners)
-  const gradDash = useSettingsStore((s) => s.gradients.dashboard)
-  const gradCharts = useSettingsStore((s) => s.gradients.charts)
   const gradCovers = useSettingsStore((s) => s.gradients.covers)
+  const gradCharts = useSettingsStore((s) => s.gradients.charts)
   const favorites = planners.filter((p) => p.favorite)
-  const userName = useProfileStore((s) => s.name).split(' ')[0] || ''
   const recents = [...planners].sort(
     (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
   )
 
+  // ─── Ecos do Diário ──────────────────────────────────────────────────
+  // O dashboard lê o caderno: data por extenso, humor dominante,
+  // energia da semana. Tudo derivado dos registros; nada inventado.
+  const registros = useDiarioStore((s) => s.registros)
+  const convite = useMemo(
+    () => conviteDeHoje(registros, () => promptDoDia().texto),
+    [registros],
+  )
+  const ecoHoje = useMemo(() => ecoDoDia(registros, isoDia()), [registros])
+  const verticeSemana = useMemo(() => linhaSeteDias(registros), [registros])
+  const fraseSemana = useMemo(() => fraseDaSemana(registros), [registros])
+  const humorDescendo = useMemo(() => descidaDeHumor(registros), [registros])
+  // `sequencia`, `episodios` e `emocoesFrequentes` são seletores derivados
+  // que devolvem nova referência a cada chamada (vetor/objeto fresco).
+  // Via `useDiarioStore((s) => s.metodo())` o `useSyncExternalStore` acredita
+  // que o snapshot mudou a cada render → loop infinito.
+  // Solução: puxar os métodos uma vez do store, e memoizar os resultados
+  // com `registros` como dependência (registros é referência estável).
+  const sequencia = useDiarioStore((s) => s.sequencia)
+  const episodios = useDiarioStore((s) => s.episodios)
+  const emocoesFrequentes = useDiarioStore((s) => s.emocoesFrequentes)
+  const seq = useMemo(() => sequencia(), [sequencia, registros])
+  const ep = useMemo(() => episodios(), [episodios, registros])
+  const humorDominante = useMemo(() => emocoesFrequentes(3), [emocoesFrequentes, registros])
+
+  // ─── Dados das outras superfícies (mantidos) ───────────────────────
   const totalPlanners = planners.length
   const totalPages = planners.reduce((n, p) => n + (p.pages?.length ?? 0), 0)
 
-  const todayISO = (() => {
-    const d = new Date()
-    const y = d.getFullYear()
-    const m = String(d.getMonth() + 1).padStart(2, '0')
-    const day = String(d.getDate()).padStart(2, '0')
-    return `${y}-${m}-${day}`
-  })()
+  const todayISO = isoDia()
   const agenda = useCalendarStore((s) => s.events)
     .filter((e) => e.date === todayISO)
     .sort((a, b) => a.startTime.localeCompare(b.startTime))
 
   const goals = useFinanceStore((s) => s.goals)
-
-  const hour = new Date().getHours()
-  const greeting =
-    hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite'
 
   // Mini calendar
   const now = new Date()
@@ -68,35 +98,112 @@ export function DashboardPage() {
 
   return (
     <div className="p-6 lg:p-8 max-w-[1400px] mx-auto">
-      {/* Header */}
-      <div className={cn('flex flex-wrap items-end justify-between gap-4 mb-8', enter)}>
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            {greeting},{' '}
-<span
-                data-grad="dashboard"
-                className={cn(
-                  'bg-clip-text text-transparent',
-                  gradDash
-                    ? 'bg-gradient-to-r from-primary via-[#e05b6d] to-[#f0b429]'
-                    : 'text-primary bg-none',
-                )}
-              >
-                {userName || 'você'}
-              </span>
-          </h1>
-          <p className="text-muted-foreground mt-1 capitalize">
-            {now.toLocaleDateString('pt-BR', {
-              weekday: 'long',
-              day: 'numeric',
-              month: 'long',
-              year: 'numeric',
-            })}
-          </p>
-        </div>
-      </div>
+      {/* ─── Abertura — sem "Bom dia, {nome}", sem gradiente ───
+          O que abre o dashboard é a data de hoje desenhada à mão,
+          no mesmo idioma do caderno. Nada de hero SaaS. */}
+      <header
+        className={cn('mb-8 flex flex-col gap-3', enter)}
+        aria-label="Abertura do dia"
+      >
+        <h1
+          className="font-hand text-foreground text-balance leading-none"
+          style={{ fontFamily: FONT_HAND, fontSize: '2.05rem' }}
+        >
+          {now.toLocaleDateString('pt-BR', {
+            weekday: 'long',
+            day: 'numeric',
+            month: 'long',
+          })}
+        </h1>
 
-      {/* Stats row */}
+        {/* Frase da semana — uma só linha manuscrita, como uma rubrica.
+            Quando não houver o que dizer, dizemos nada. */}
+        {fraseSemana && (
+          <p
+            className="font-hand text-muted-foreground/75 -mt-1 text-pretty"
+            style={{ fontFamily: FONT_HAND, fontSize: '1.15rem', lineHeight: 1.2 }}
+          >
+            {fraseSemana}
+          </p>
+        )}
+
+        {/* Linha de vida — a assinatura dos Ecos no dashboard.
+            Não é "gráfico de atividade"; é um gesto de 7 dias. */}
+        <div className="mt-2">
+          <LinhaDeVida
+            vertices={verticeSemana}
+            largura={320}
+            altura={56}
+          />
+        </div>
+      </header>
+
+      {/* ─── Eco + Sinais ───
+          Em vez de "Planners/Páginas/Favoritos" com ícones lucide coloridos,
+          a primeira fila do dashboard é o Eco do Diário sentado ao lado
+          de três sinais discretos: sequência, episódios, humor mais ouvido.
+          Mesma linguagem do caderno — nada de cards SaaS. */}
+      <section
+        className={cn(
+          'grid gap-x-10 gap-y-8 border-t border-border/40 py-7 mb-10',
+          'grid-cols-1 lg:grid-cols-[minmax(0,1fr)_15rem]',
+        )}
+        style={{ animation: 'eco-fade 700ms ease-out both' }}
+      >
+        <EcoDoDia
+          eco={ecoHoje}
+          promptHoje={convite.preciso ? convite.prompt : ''}
+          momentoAgora={momentoAgora()}
+          className="pt-0.5"
+        />
+
+        <aside className="flex flex-col justify-start gap-6 lg:border-l lg:border-border/40 lg:pl-6">
+          <Sinal rotulo="sequência" valor={seq} suffix={seq === 1 ? 'dia seguido' : 'dias seguidos'} />
+          <Sinal rotulo="guardado" valor={ep} suffix={ep === 1 ? 'registro' : 'registros'} />
+          {humorDominante.length > 0 && (
+            <div className="flex flex-col gap-1.5">
+              <span className="text-[0.65rem] uppercase tracking-[0.24em] text-muted-foreground/45">
+                mais ouvidas dentro de você
+              </span>
+              <ul className="flex flex-col gap-1.5">
+                {humorDominante.map(({ emocao, n }) => (
+                  <li key={emocao} className="flex items-baseline gap-2">
+                    <span
+                      aria-hidden
+                      className="inline-block h-1.5 w-1.5 translate-y-px rounded-[1px]"
+                      style={{ backgroundColor: EMOCOES[emocao].cor }}
+                    />
+                    <span
+                      className="italic"
+                      style={{ fontFamily: 'var(--font-instrument), Georgia, serif' }}
+                    >
+                      {EMOCOES[emocao].rotulo}
+                    </span>
+                    <span className="text-[0.7rem] text-muted-foreground/55 tabular-nums">
+                      {n}×
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {/* Aviso discreto de descida de humor — não é um alerta SaaS,
+              é uma nota de quem lê o caderno e percebe. */}
+          {humorDescendo && ep >= 4 && (
+            <p
+              className="border-l-2 border-amber-500/60 pl-3 font-hand text-amber-700/80 dark:text-amber-300/80 text-pretty"
+              style={{ fontFamily: FONT_HAND, fontSize: '1rem', lineHeight: 1.25 }}
+            >
+              a semana tem pesado mais que a anterior — sem pressa de levantar.
+            </p>
+          )}
+        </aside>
+      </section>
+
+      {/* ─── Stats row — três cards no estilo de "Planners recentes" ───
+          Mesmo vidro (glass), mesmo canto arredondado, mesma sombra suave,
+          ícone em bolinha translúcida — alinhado com os Cards da coluna
+          lateral. */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
         {[
           { label: 'Planners', value: totalPlanners, icon: FolderOpen, color: '#e05b6d' },
@@ -132,7 +239,7 @@ export function DashboardPage() {
                 href="/templates"
                 className="text-xs text-primary hover:underline flex items-center gap-1 transition-colors"
               >
-                Explorar templates <ArrowUpRight size={12} />
+                Explorar templates →
               </Link>
             </CardHeader>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-5 pt-3">
@@ -171,7 +278,6 @@ export function DashboardPage() {
             <Card glass className={enter} style={stagger(6)}>
               <CardHeader className="flex-row items-center justify-between pb-0">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Star size={16} className="text-yellow-500 fill-yellow-500" />
                   Favoritos
                 </CardTitle>
               </CardHeader>
@@ -348,3 +454,36 @@ export function DashboardPage() {
     </div>
   )
 }
+
+// ─── Sinais — micro-componentes tipográficos, no idioma do Diário ──────────
+
+/** Um sinal: rótulo discreto em caixa-alta + valor manuscrito + unidade. */
+function Sinal({
+  rotulo,
+  valor,
+  suffix,
+}: {
+  rotulo: string
+  valor: number
+  suffix: string
+}) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <span className="text-[0.65rem] uppercase tracking-[0.24em] text-muted-foreground/45">
+        {rotulo}
+      </span>
+      <div className="flex items-baseline gap-2">
+        <span
+          className="font-hand text-foreground leading-none"
+          style={{ fontFamily: FONT_HAND, fontSize: '1.9rem' }}
+        >
+          {valor}
+        </span>
+        <span className="text-[0.7rem] uppercase tracking-[0.22em] text-muted-foreground/60">
+          {suffix}
+        </span>
+      </div>
+    </div>
+  )
+}
+

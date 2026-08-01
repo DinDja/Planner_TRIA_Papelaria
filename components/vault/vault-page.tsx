@@ -163,17 +163,17 @@ export function VaultPage() {
       setLocked(false)
       setPinInput('')
     } else {
-      toast({ title: 'PIN incorreto', variant: 'error' })
+      toast({ title: 'Senha incorreta', variant: 'error' })
     }
   }
 
   const handleSetPin = () => {
     if (newPin.length < 4) {
-      toast({ title: 'O PIN deve ter ao menos 4 dígitos', variant: 'error' })
+      toast({ title: 'A senha deve ter ao menos 4 caracteres', variant: 'error' })
       return
     }
     if (newPin !== confirmPin) {
-      toast({ title: 'Os PINs não conferem', variant: 'error' })
+      toast({ title: 'As senhas não conferem', variant: 'error' })
       return
     }
     setMasterPin(newPin)
@@ -181,7 +181,7 @@ export function VaultPage() {
     setSettingPin(false)
     setNewPin('')
     setConfirmPin('')
-    toast({ title: 'PIN definido com sucesso!', variant: 'success' })
+    toast({ title: 'Senha definida com sucesso!', variant: 'success' })
   }
 
   const handleRemovePin = () => {
@@ -200,18 +200,16 @@ export function VaultPage() {
             <div className="flex size-14 items-center justify-center rounded-2xl bg-primary/10 mb-3">
               <Lock size={28} className="text-primary" />
             </div>
-            <CardTitle className="text-lg">Cofre bloqueado</CardTitle>
-            <p className="text-sm text-muted-foreground">Digite seu PIN para acessar</p>
+            <CardTitle className="text-lg">Senhas bloqueadas</CardTitle>
+            <p className="text-sm text-muted-foreground">Digite sua senha de acesso</p>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="relative">
               <Input
                 type={showUnlockPin ? 'text' : 'password'}
-                inputMode="numeric"
-                maxLength={6}
                 value={pinInput}
                 onChange={(e) => setPinInput(e.target.value)}
-                placeholder="Digite o PIN"
+                placeholder="Digite a senha"
                 onKeyDown={(e) => e.key === 'Enter' && handleUnlock()}
                 className="text-center text-lg font-mono tracking-[0.5em] pr-10"
                 autoFocus
@@ -220,7 +218,7 @@ export function VaultPage() {
                 type="button"
                 onClick={() => setShowUnlockPin((v) => !v)}
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-lg p-1 text-muted-foreground/60 hover:text-foreground transition-colors cursor-pointer"
-                aria-label={showUnlockPin ? 'Ocultar PIN' : 'Exibir PIN'}
+                aria-label={showUnlockPin ? 'Ocultar senha' : 'Exibir senha'}
               >
                 {showUnlockPin ? <EyeOff size={15} /> : <Eye size={15} />}
               </button>
@@ -235,7 +233,7 @@ export function VaultPage() {
     )
   }
 
-  // Tela de configuração de PIN
+  // Tela de configuração de senha
   if (settingPin) {
     return (
       <div className="flex items-center justify-center min-h-[80vh] p-6">
@@ -244,20 +242,18 @@ export function VaultPage() {
             <div className="flex size-14 items-center justify-center rounded-2xl bg-primary/10 mb-3">
               <ShieldCheck size={28} className="text-primary" />
             </div>
-            <CardTitle className="text-lg">Proteger o cofre</CardTitle>
+            <CardTitle className="text-lg">Proteger as senhas</CardTitle>
             <p className="text-sm text-muted-foreground">
-              Crie um PIN para proteger suas credenciais. Ele ficará salvo neste dispositivo.
+              Crie uma senha de acesso — pode ser diferente da senha da sua conta. Ela ficará salva neste dispositivo.
             </p>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="relative">
               <Input
                 type={showPin ? 'text' : 'password'}
-                inputMode="numeric"
-                maxLength={6}
                 value={newPin}
                 onChange={(e) => setNewPin(e.target.value)}
-                placeholder="Crie um PIN (4-6 dígitos)"
+                placeholder="Crie uma senha (mínimo 4 caracteres)"
                 className="text-center text-lg font-mono tracking-[0.5em] pr-10"
                 autoFocus
               />
@@ -265,7 +261,7 @@ export function VaultPage() {
                 type="button"
                 onClick={() => setShowPin((v) => !v)}
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-lg p-1 text-muted-foreground/60 hover:text-foreground transition-colors cursor-pointer"
-                aria-label={showPin ? 'Ocultar PIN' : 'Exibir PIN'}
+                aria-label={showPin ? 'Ocultar senha' : 'Exibir senha'}
               >
                 {showPin ? <EyeOff size={15} /> : <Eye size={15} />}
               </button>
@@ -273,25 +269,23 @@ export function VaultPage() {
             <div className="relative">
               <Input
                 type={showConfirmPin ? 'text' : 'password'}
-                inputMode="numeric"
-                maxLength={6}
                 value={confirmPin}
                 onChange={(e) => setConfirmPin(e.target.value)}
-                placeholder="Confirme o PIN"
+                placeholder="Confirme a senha"
                 className="text-center text-lg font-mono tracking-[0.5em] pr-10"
               />
               <button
                 type="button"
                 onClick={() => setShowConfirmPin((v) => !v)}
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-lg p-1 text-muted-foreground/60 hover:text-foreground transition-colors cursor-pointer"
-                aria-label={showConfirmPin ? 'Ocultar PIN' : 'Exibir PIN'}
+                aria-label={showConfirmPin ? 'Ocultar senha' : 'Exibir senha'}
               >
                 {showConfirmPin ? <EyeOff size={15} /> : <Eye size={15} />}
               </button>
             </div>
             <Button className="w-full rounded-xl" onClick={handleSetPin} disabled={!newPin || !confirmPin}>
               <ShieldCheck size={15} className="mr-1.5" />
-              Proteger cofre
+              Proteger
             </Button>
             <Button variant="ghost" className="w-full rounded-xl text-muted-foreground" onClick={() => setSettingPin(false)}>
               Pular — usar sem proteção
@@ -313,10 +307,10 @@ export function VaultPage() {
             >
               <KeyRound size={22} style={{ color: '#e05b6d' }} />
             </span>
-            Cofre de Credenciais
+            Senhas
           </h1>
           <p className="text-muted-foreground mt-2">
-            Gerencie suas credenciais com segurança.
+            Gerencie suas senhas com segurança.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -330,12 +324,12 @@ export function VaultPage() {
           </Button>
           {masterPin && (
             <Button variant="ghost" size="sm" className="rounded-xl text-xs text-muted-foreground" onClick={handleRemovePin}>
-              Remover PIN
+              Remover senha
             </Button>
           )}
           <Button className="rounded-xl gap-1.5 shadow-md" onClick={() => setAddOpen(true)}>
             <Plus size={15} />
-            Nova credencial
+            Nova senha
           </Button>
         </div>
       </div>
@@ -355,10 +349,10 @@ export function VaultPage() {
       ) : (
         <div className="text-center py-16">
           <KeyRound size={40} className="mx-auto text-muted-foreground/30 mb-4" />
-          <p className="text-muted-foreground">Nenhuma credencial salva ainda.</p>
+          <p className="text-muted-foreground">Nenhuma senha salva ainda.</p>
           <Button variant="outline" className="mt-4 rounded-xl" onClick={() => setAddOpen(true)}>
             <Plus size={14} className="mr-1.5" />
-            Adicionar credencial
+            Adicionar senha
           </Button>
         </div>
       )}

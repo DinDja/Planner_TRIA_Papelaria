@@ -175,8 +175,9 @@ service cloud.firestore {
 
       // ─── Listas (useListsStore) ─ items embutidos ───────────────────────
       // /users/{uid}/shoppingLists/{listId}
-      //   id, name, color, items: list<map { id, name, quantity?, category?,
-      //   notes?, checked, createdAt }>, createdAt, updatedAt
+      //   id, name, color, kind?: 'supermercado'|'farmacia'|'mala'|'custom',
+      //   items: list<map { id, name, quantity?, category?, checked, dosage?,
+      //   packed?, notes?, createdAt }>, createdAt, updatedAt
       match /shoppingLists/{listId} {
         allow read, write: if owns(uid);
       }
@@ -220,7 +221,7 @@ service cloud.firestore {
 
       // ─── Wishlist (useWishlistStore) ───────────────────────────────────
       // /users/{uid}/wishlist/{itemId}
-      //   id, name, url?, price?, priority: 'low'|'medium'|'high',
+      //   id, name, store?, url?, price?, priority: 'low'|'medium'|'high',
       //   category?, notes?, purchased, purchasedAt?, createdAt, updatedAt
       match /wishlist/{itemId} {
         allow read, write: if owns(uid);
@@ -233,17 +234,19 @@ service cloud.firestore {
         allow read, write: if owns(uid);
       }
       // /users/{uid}/bodyMeasurements/{recordId}
-      //   id, date, waist?, hips?, chest?, arm?, thigh?, notes?, createdAt
+      //   id, date, bust?, waist?, abdomen?, hips?, arm?, thigh?, calf?, notes?, createdAt
       match /bodyMeasurements/{recordId} {
         allow read, write: if owns(uid);
       }
       // /users/{uid}/symptomLogs/{recordId}
-      //   id, date, symptom, severity: int 1..5, notes?, createdAt
+      //   id, date, symptom, time?: 'HH:mm', possibleCause?,
+      //   severity: int 1..5, notes?, createdAt
       match /symptomLogs/{recordId} {
         allow read, write: if owns(uid);
       }
       // /users/{uid}/medications/{recordId}
-      //   id, name, dosage, frequency, startDate, endDate?, notes?, color, createdAt
+      //   id, name, dosage, frequency, times?: list<string>, startDate,
+      //   endDate?, reason?, notes?, color, createdAt
       match /medications/{recordId} {
         allow read, write: if owns(uid);
       }
@@ -259,14 +262,15 @@ service cloud.firestore {
         allow read, write: if owns(uid);
       }
       // /users/{uid}/appointments/{appointmentId}
-      //   id, doctorId?, doctorName, specialty, date, time, location?,
-      //   notes?, status: 'scheduled'|'done'|'cancelled', createdAt
+      //   id, doctorId?, doctorName, specialty, date, time, whatToBring?,
+      //   questions?, location?, notes?, status: 'scheduled'|'done'|'cancelled',
+      //   createdAt
       match /appointments/{appointmentId} {
         allow read, write: if owns(uid);
       }
       // /users/{uid}/exams/{examId}
-      //   id, name, date, doctor?, laboratory?, result?, fileUrl?, notes?,
-      //   status: 'pending'|'done'|'reviewed', color, createdAt
+      //   id, name, date, time?, doctor?, laboratory?, address?, result?,
+      //   fileUrl?, notes?, status: 'pending'|'done'|'reviewed', color, createdAt
       match /exams/{examId} {
         allow read, write: if owns(uid);
       }
@@ -286,15 +290,15 @@ service cloud.firestore {
 
       // ─── Rotina (useRoutineStore) ─ 4 subcollections ───────────────────
       // /users/{uid}/tasks/{taskId}
-      //   id, title, notes?, date, priority: 'low'|'medium'|'high',
+      //   id, title, notes?, date, time?: 'HH:mm', priority: 'low'|'medium'|'high',
       //   done: bool, createdAt, completedAt?
       match /tasks/{taskId} {
         allow read, write: if owns(uid);
       }
       // /users/{uid}/recurringTasks/{taskId}
       //   id, title, notes?, frequency: 'daily'|'weekly'|'monthly',
-      //   weekdays?: list<int>, dayOfMonth?: int, priority, lastDone?,
-      //   nextDue, active: bool, createdAt
+      //   weekdays?: list<int>, dayOfMonth?: int, time?: 'HH:mm', priority,
+      //   lastDone?, nextDue, active: bool, createdAt
       match /recurringTasks/{taskId} {
         allow read, write: if owns(uid);
       }

@@ -52,6 +52,15 @@ function PriorityPicker({
 
 // ─── Dialog: Nova tarefa ──────────────────────────────────────────────────────
 
+type TaskFormFrequency = 'once' | RecurrenceFrequency
+
+const TASK_FREQUENCY_LABELS: Record<TaskFormFrequency, string> = {
+  once: 'Somente da Data',
+  daily: 'Diária',
+  weekly: 'Semanal',
+  monthly: 'Mensal',
+}
+
 export function AddTaskDialog({
   open,
   onClose,
@@ -62,13 +71,29 @@ export function AddTaskDialog({
   defaultDate?: string
 }) {
   const addTask = useRoutineStore((s) => s.addTask)
+  const addRecurring = useRoutineStore((s) => s.addRecurring)
   const [title, setTitle] = useState('')
   const [date, setDate] = useState(defaultDate ?? todayStr())
+  const [time, setTime] = useState('')
+  const [frequency, setFrequency] = useState<TaskFormFrequency>('once')
+  const [weekdays, setWeekdays] = useState<Weekday[]>([0, 1, 2, 3, 4])
+  const [dayOfMonth, setDayOfMonth] = useState(1)
+  const [notes, setNotes] = useState('')
   const [priority, setPriority] = useState<TaskPriority>('medium')
+
+  const toggleWeekday = (d: Weekday) =>
+    setWeekdays((cur) =>
+      cur.includes(d) ? cur.filter((x) => x !== d) : [...cur, d].sort(),
+    )
 
   const reset = () => {
     setTitle('')
     setDate(defaultDate ?? todayStr())
+    setTime('')
+    setFrequency('once')
+    setWeekdays([0, 1, 2, 3, 4])
+    setDayOfMonth(1)
+    setNotes('')
     setPriority('medium')
   }
 
@@ -77,15 +102,35 @@ export function AddTaskDialog({
       toast({ title: 'Digite um título para a tarefa', variant: 'error' })
       return
     }
-    addTask({ title: title.trim(), date, priority })
-    toast({ title: 'Tarefa criada!', variant: 'success' })
+    if (frequency === 'weekly' && weekdays.length === 0) {
+      toast({ title: 'Escolha ao menos um dia da semana', variant: 'error' })
+      return
+    }
+    const common = {
+      title: title.trim(),
+      time: time || undefined,
+      notes: notes.trim() || undefined,
+      priority,
+    }
+    if (frequency === 'once') {
+      addTask({ ...common, date })
+      toast({ title: 'Tarefa criada!', variant: 'success' })
+    } else {
+      addRecurring({
+        ...common,
+        frequency,
+        weekdays: frequency === 'weekly' ? weekdays : undefined,
+        dayOfMonth: frequency === 'monthly' ? dayOfMonth : undefined,
+      })
+      toast({ title: 'Tarefa recorrente criada!', variant: 'success' })
+    }
     reset()
     onClose()
   }
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent title="Nova tarefa" description="Uma tarefa única, com data definida.">
+      <DialogContent title="Nova tarefa" description="Uma tarefa única ou recorrente.">
         <div className="flex flex-col gap-4">
           <div>
             <label className="text-sm font-medium mb-1.5 block">Título</label>
@@ -97,14 +142,95 @@ export function AddTaskDialog({
               autoFocus
             />
           </div>
+
           <div>
-            <label className="text-sm font-medium mb-1.5 block">Data</label>
-            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+            <label className="text-sm font-medium mb-2 block">Frequência</label>
+            <div className="flex gap-2 flex-wrap">
+              {(['once', 'daily', 'weekly', 'monthly'] as const).map((f) => (
+                <button
+                  key={f}
+                  type="button"
+                  onClick={() => setFrequency(f)}
+                  className={cn(
+                    'flex-1 min-w-[90px] rounded-xl border px-3 py-2 text-xs font-medium transition-all duration-200 cursor-pointer',
+                    frequency === f
+                      ? 'border-primary/50 bg-primary/10 text-primary shadow-sm'
+                      : 'border-border/60 text-muted-foreground hover:bg-muted/50',
+                  )}
+                >
+                  {TASK_FREQUENCY_LABELS[f]}
+                </button>
+              ))}
+            </div>
           </div>
+
+          {frequency === 'once' && (
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Data</label>
+              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+            </div>
+          )}
+
+          <div>
+            <label className="text-sm font-medium mb-1.5 block">Hora</label>
+            <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
+          </div>
+
+          {frequency === 'weekly' && (
+            <div>
+              <label className="text-sm font-medium mb-2 block">Dias da semana</label>
+              <div className="flex gap-1.5 flex-wrap">
+                {([0, 1, 2, 3, 4, 5, 6] as Weekday[]).map((d) => {
+                  const active = weekdays.includes(d)
+                  return (
+                    <button
+                      key={d}
+                      type="button"
+                      onClick={() => toggleWeekday(d)}
+                      className={cn(
+                        'size-9 rounded-xl text-xs font-semibold transition-all duration-200 cursor-pointer inline-flex items-center justify-center',
+                        active
+                          ? 'bg-primary text-primary-foreground shadow-md'
+                          : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground',
+                      )}
+                    >
+                      {WEEKDAY_SHORT[d]}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {frequency === 'monthly' && (
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Dia do mês</label>
+              <Input
+                type="number"
+                min={1}
+                max={31}
+                value={dayOfMonth}
+                onChange={(e) =>
+                  setDayOfMonth(Math.min(31, Math.max(1, Number(e.target.value) || 1)))
+                }
+              />
+            </div>
+          )}
+
+          <div>
+            <label className="text-sm font-medium mb-1.5 block">Descrição</label>
+            <Input
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Detalhes da tarefa..."
+            />
+          </div>
+
           <div>
             <label className="text-sm font-medium mb-2 block">Prioridade</label>
             <PriorityPicker value={priority} onChange={setPriority} />
           </div>
+
           <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end">
             <Button variant="outline" onClick={onClose} className="rounded-xl">
               Cancelar

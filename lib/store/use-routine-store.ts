@@ -85,6 +85,7 @@ interface RoutineState {
     date: string
     priority?: TaskPriority
     notes?: string
+    time?: string
   }) => void
   updateTask: (id: string, patch: Partial<Task>) => void
   toggleTask: (id: string) => void
@@ -98,6 +99,7 @@ interface RoutineState {
     dayOfMonth?: number
     priority?: TaskPriority
     notes?: string
+    time?: string
   }) => void
   updateRecurring: (id: string, patch: Partial<RecurringTask>) => void
   completeRecurring: (id: string) => void
@@ -233,7 +235,7 @@ export const useRoutineStore = create<RoutineState>()(
       routineSlots: [],
 
       // ── Tarefas únicas ────────────────────────────────────────────
-      addTask: ({ title, date, priority = 'medium', notes }) =>
+      addTask: ({ title, date, priority = 'medium', notes, time }) =>
         set((s) => ({
           tasks: [
             ...s.tasks,
@@ -243,6 +245,7 @@ export const useRoutineStore = create<RoutineState>()(
               date,
               priority,
               notes,
+              time,
               done: false,
               createdAt: nowISO(),
             },
@@ -271,7 +274,7 @@ export const useRoutineStore = create<RoutineState>()(
         set((s) => ({ tasks: s.tasks.filter((t) => t.id !== id) })),
 
       // ── Tarefas recorrentes ────────────────────────────────────────
-      addRecurring: ({ title, frequency, weekdays, dayOfMonth, priority = 'medium', notes }) => {
+      addRecurring: ({ title, frequency, weekdays, dayOfMonth, priority = 'medium', notes, time }) => {
         const draft: RecurringTask = {
           id: `rec-${uid()}`,
           title,
@@ -280,6 +283,7 @@ export const useRoutineStore = create<RoutineState>()(
           dayOfMonth,
           priority,
           notes,
+          time,
           active: true,
           nextDue: '',
           createdAt: nowISO(),

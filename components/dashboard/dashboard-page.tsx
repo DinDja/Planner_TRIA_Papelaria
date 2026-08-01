@@ -22,7 +22,10 @@ import Link from 'next/link'
 import { Card, CardHeader, CardTitle } from '../ui/card'
 import { TemplateThumbnail } from '../templates-page/template-thumbnail'
 
-const FONT_HAND = 'var(--font-caveat), "Segoe Script", cursive'
+// Cliente pediu fonte mais retinha (ela achou a cursiva "feminina demais").
+// Aproveitamos o token --font-geist (mesma sans do app) para mudar SÓ o
+// family no Dashboard, mantendo pesos/tamanhos — sem reescrever estilo.
+const FONT_SANS = 'var(--font-geist), system-ui, sans-serif'
 
 /** Atraso escalonado para animação de entrada */
 const stagger = (i: number) => ({ animationDelay: `${i * 70}ms` })
@@ -106,8 +109,8 @@ export function DashboardPage() {
         aria-label="Abertura do dia"
       >
         <h1
-          className="font-hand text-foreground text-balance leading-none"
-          style={{ fontFamily: FONT_HAND, fontSize: '2.05rem' }}
+          className="font-sans text-foreground text-balance leading-none"
+          style={{ fontFamily: FONT_SANS, fontSize: '2.05rem', fontWeight: 500 }}
         >
           {now.toLocaleDateString('pt-BR', {
             weekday: 'long',
@@ -116,12 +119,12 @@ export function DashboardPage() {
           })}
         </h1>
 
-        {/* Frase da semana — uma só linha manuscrita, como uma rubrica.
+        {/* Frase da semana — uma só linha, como uma rubrica.
             Quando não houver o que dizer, dizemos nada. */}
         {fraseSemana && (
           <p
-            className="font-hand text-muted-foreground/75 -mt-1 text-pretty"
-            style={{ fontFamily: FONT_HAND, fontSize: '1.15rem', lineHeight: 1.2 }}
+            className="font-sans text-muted-foreground/75 -mt-1 text-pretty"
+            style={{ fontFamily: FONT_SANS, fontSize: '1.15rem', lineHeight: 1.2, fontWeight: 400 }}
           >
             {fraseSemana}
           </p>
@@ -191,8 +194,8 @@ export function DashboardPage() {
               é uma nota de quem lê o caderno e percebe. */}
           {humorDescendo && ep >= 4 && (
             <p
-              className="border-l-2 border-amber-500/60 pl-3 font-hand text-amber-700/80 dark:text-amber-300/80 text-pretty"
-              style={{ fontFamily: FONT_HAND, fontSize: '1rem', lineHeight: 1.25 }}
+              className="border-l-2 border-amber-500/60 pl-3 font-sans text-amber-700/80 dark:text-amber-300/80 text-pretty"
+              style={{ fontFamily: FONT_SANS, fontSize: '1rem', lineHeight: 1.25 }}
             >
               a semana tem pesado mais que a anterior — sem pressa de levantar.
             </p>
@@ -474,8 +477,8 @@ function Sinal({
       </span>
       <div className="flex items-baseline gap-2">
         <span
-          className="font-hand text-foreground leading-none"
-          style={{ fontFamily: FONT_HAND, fontSize: '1.9rem' }}
+          className="font-sans text-foreground leading-none"
+          style={{ fontFamily: FONT_SANS, fontSize: '1.9rem', fontWeight: 600 }}
         >
           {valor}
         </span>

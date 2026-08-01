@@ -126,6 +126,12 @@ function WishCard({
         )}
 
         <div className="flex items-center gap-2">
+          {item.store && (
+            <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+              <ShoppingBag size={10} />
+              {item.store}
+            </span>
+          )}
           {item.url && (
             <a
               href={item.url}
@@ -180,6 +186,7 @@ export function WishlistPage() {
       list = list.filter(
         (i) =>
           i.name.toLowerCase().includes(q) ||
+          i.store?.toLowerCase().includes(q) ||
           i.category?.toLowerCase().includes(q) ||
           i.notes?.toLowerCase().includes(q),
       )

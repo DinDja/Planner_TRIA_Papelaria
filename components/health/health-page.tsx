@@ -371,11 +371,15 @@ function SymptomsTab() {
         {sorted.map((s) => (
           <div key={s.id} className="group flex items-center gap-4 rounded-xl px-3 py-2 hover:bg-muted/40 transition-colors">
             <span className="text-xs text-muted-foreground w-20 shrink-0">{formatDate(s.date)}</span>
-            <span className="text-sm font-medium flex-1">{s.symptom}</span>
-            <div className="flex gap-0.5">
-              {[1, 2, 3, 4, 5].map((n) => (
-                <div key={n} className={cn('size-2 rounded-full', n <= s.severity ? 'bg-destructive' : 'bg-muted')} />
-              ))}
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium">{s.symptom}</p>
+              {(s.time || s.possibleCause) && (
+                <p className="text-[11px] text-muted-foreground/70 truncate">
+                  {s.time && `às ${s.time}`}
+                  {s.time && s.possibleCause && ' · '}
+                  {s.possibleCause && `possível causa: ${s.possibleCause}`}
+                </p>
+              )}
             </div>
             {s.notes && <span className="text-xs text-muted-foreground/70 truncate max-w-[200px]">{s.notes}</span>}
             <button onClick={() => deleteSymptom(s.id)} className="rounded-md p-1 text-muted-foreground/30 opacity-0 group-hover:opacity-100 hover:text-destructive cursor-pointer">
@@ -418,6 +422,14 @@ function MedicationsTab() {
             </CardHeader>
             <CardContent className="pt-1">
               <p className="text-[10px] text-muted-foreground">Desde {formatDate(m.startDate)}{m.endDate ? ` até ${formatDate(m.endDate)}` : ''}</p>
+              {m.times && m.times.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-1.5">
+                  {m.times.map((t) => (
+                    <Badge key={t} variant="outline" className="text-[9px] px-1.5">{t}</Badge>
+                  ))}
+                </div>
+              )}
+              {m.reason && <p className="text-xs text-muted-foreground/70 mt-1">Motivo: {m.reason}</p>}
               {m.notes && <p className="text-xs text-muted-foreground/70 mt-1">{m.notes}</p>}
             </CardContent>
           </Card>
@@ -553,9 +565,12 @@ function AppointmentsTab() {
                 </Badge>
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
-                {formatDate(a.date)} às {a.time} · {a.specialty}
+                {formatDate(a.date)} às {a.time}
+                {a.specialty && a.specialty !== '—' && ` · ${a.specialty}`}
                 {a.location && ` · ${a.location}`}
               </p>
+              {a.whatToBring && <p className="text-xs text-muted-foreground/70 mt-1">Levar: {a.whatToBring}</p>}
+              {a.questions && <p className="text-xs text-muted-foreground/70 mt-1">Perguntas: {a.questions}</p>}
               {a.notes && <p className="text-xs text-muted-foreground/70 mt-1">{a.notes}</p>}
             </div>
             <div className="flex items-center gap-0.5 shrink-0">
@@ -606,7 +621,7 @@ function ExamsTab() {
                   </div>
                   <div>
                     <CardTitle className="text-sm">{e.name}</CardTitle>
-                    <p className="text-xs text-muted-foreground">{formatDate(e.date)}</p>
+                    <p className="text-xs text-muted-foreground">{formatDate(e.date)}{e.time ? ` às ${e.time}` : ''}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-0.5">
@@ -627,6 +642,7 @@ function ExamsTab() {
               </Badge>
               {e.doctor && <p className="text-xs text-muted-foreground/70 mt-1">Médico: {e.doctor}</p>}
               {e.laboratory && <p className="text-xs text-muted-foreground/70">Laboratório: {e.laboratory}</p>}
+              {e.address && <p className="text-xs text-muted-foreground/70">Endereço: {e.address}</p>}
               {e.result && <p className="text-xs text-muted-foreground/80 mt-1 bg-muted/50 rounded-lg px-2 py-1">{e.result}</p>}
               {e.notes && <p className="text-xs text-muted-foreground/60 mt-1">{e.notes}</p>}
             </CardContent>
@@ -722,12 +738,14 @@ function MeasurementsTab() {
           {sorted.map((m) => (
             <div key={m.id} className="group flex items-center gap-4 rounded-xl px-3 py-2 hover:bg-muted/40 transition-colors">
               <span className="text-xs text-muted-foreground w-20 shrink-0">{formatDate(m.date)}</span>
-              <div className="flex gap-3 text-sm flex-1">
+              <div className="flex gap-3 text-sm flex-1 flex-wrap">
+                {m.bust && <span>Busto: <strong>{m.bust}cm</strong></span>}
                 {m.waist && <span>Cintura: <strong>{m.waist}cm</strong></span>}
-                {m.hips && <span>Quadril: <strong>{m.hips}cm</strong></span>}
-                {m.chest && <span>Tórax: <strong>{m.chest}cm</strong></span>}
+                {m.abdomen && <span>Abdômen: <strong>{m.abdomen}cm</strong></span>}
+                {m.hips && <span>Quadris: <strong>{m.hips}cm</strong></span>}
                 {m.arm && <span>Braço: <strong>{m.arm}cm</strong></span>}
                 {m.thigh && <span>Coxa: <strong>{m.thigh}cm</strong></span>}
+                {m.calf && <span>Panturrilha: <strong>{m.calf}cm</strong></span>}
               </div>
               {m.notes && <span className="text-xs text-muted-foreground/70 truncate">{m.notes}</span>}
               <button onClick={() => deleteMeasurement(m.id)} className="ml-auto rounded-md p-1 text-muted-foreground/30 opacity-0 group-hover:opacity-100 hover:text-destructive cursor-pointer">

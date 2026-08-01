@@ -71,6 +71,7 @@ interface WishlistState {
 
   addItem: (data: {
     name: string
+    store?: string
     url?: string
     price?: number
     priority: 'low' | 'medium' | 'high'

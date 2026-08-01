@@ -1,13 +1,17 @@
 'use client'
 
+import { getListKindMeta, LIST_KINDS } from '@/lib/lists'
+import type { PresetCombo, PresetItem } from '@/lib/lists'
 import { useListsStore } from '@/lib/store/use-lists-store'
+import type { ShoppingListKind } from '@/lib/types'
 import { cn } from '@/lib/utils'
-import { Check } from 'lucide-react'
+import { Check, Package } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '../ui/button'
 import { Dialog, DialogContent } from '../ui/overlays'
 import { Input } from '../ui/primitives'
 import { toast } from '../ui/toaster'
+import { ListKindIcon } from './list-kind-icon'
 
 const LIST_COLORS = ['#7bb686', '#5b8dbf', '#f0b429', '#e8a0a0', '#c9b6e4', '#f5c8a0']
 
@@ -53,10 +57,18 @@ export function AddListDialog({
 }) {
   const addList = useListsStore((s) => s.addList)
   const [name, setName] = useState('')
+  const [kind, setKind] = useState<ShoppingListKind>('custom')
   const [color, setColor] = useState(LIST_COLORS[Math.floor(Math.random() * LIST_COLORS.length)])
+
+  const handleSelectKind = (nextKind: ShoppingListKind) => {
+    setKind(nextKind)
+    const meta = getListKindMeta(nextKind)
+    if (meta.defaultColor) setColor(meta.defaultColor)
+  }
 
   const reset = () => {
     setName('')
+    setKind('custom')
     setColor(LIST_COLORS[Math.floor(Math.random() * LIST_COLORS.length)])
   }
 
@@ -65,7 +77,7 @@ export function AddListDialog({
       toast({ title: 'Digite um nome para a lista', variant: 'error' })
       return
     }
-    addList({ name: name.trim(), color })
+    addList({ name: name.trim(), color, kind })
     toast({ title: 'Lista criada!', variant: 'success' })
     reset()
     onClose()
@@ -73,14 +85,41 @@ export function AddListDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent title="Nova lista" description="Lista de compras, tarefas ou o que precisar.">
+      <DialogContent title="Nova lista" description="Compras, tarefas, viagem ou o que precisar.">
         <div className="flex flex-col gap-4">
+          <div>
+            <label className="text-sm font-medium mb-2 block">Tipo de lista</label>
+            <div className="grid grid-cols-2 gap-2">
+              {LIST_KINDS.map((meta) => {
+                const active = kind === meta.kind
+                return (
+                  <button
+                    key={meta.kind}
+                    type="button"
+                    onClick={() => handleSelectKind(meta.kind)}
+                    className={cn(
+                      'flex flex-col items-start gap-1 rounded-xl border p-3 text-left transition-all cursor-pointer',
+                      active
+                        ? 'border-foreground/50 bg-muted/40 ring-2 ring-foreground/10'
+                        : 'border-border/60 hover:border-foreground/30 hover:bg-muted/20',
+                    )}
+                  >
+                    <ListKindIcon kind={meta.kind} size={16} color={meta.defaultColor} />
+                    <span className="text-sm font-medium leading-tight">{meta.label}</span>
+                    <span className="text-[10px] text-muted-foreground leading-tight">
+                      {meta.description}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
           <div>
             <label className="text-sm font-medium mb-1.5 block">Nome</label>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Ex: Supermercado, Farmácia..."
+              placeholder="Ex: Compra da semana, Testes de sangue..."
               onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
               autoFocus
             />
@@ -112,19 +151,66 @@ export function AddItemDialog({
   onClose: () => void
   listId: string
 }) {
+  const list = useListsStore((s) => s.lists.find((l) => l.id === listId))
   const addItem = useListsStore((s) => s.addItem)
   const getAllCategories = useListsStore((s) => s.getAllCategories)
   const [name, setName] = useState('')
   const [quantity, setQuantity] = useState('')
   const [category, setCategory] = useState('')
+  const [dosage, setDosage] = useState('')
+  const [packed, setPacked] = useState(false)
   const [notes, setNotes] = useState('')
+
+  const kindMeta = getListKindMeta(list?.kind)
+  const isFarmacia = kindMeta.kind === 'farmacia'
+  const isMala = kindMeta.kind === 'mala'
   const existingCategories = getAllCategories()
+  const categorySuggestions = [...new Set([...kindMeta.presetCategories, ...existingCategories])]
+
+  const presetGroups = new Map<string, PresetItem[]>()
+  kindMeta.presetItems.forEach((p) => {
+    const cat = p.category ?? 'Outros'
+    const arr = presetGroups.get(cat) ?? []
+    arr.push(p)
+    presetGroups.set(cat, arr)
+  })
+
+  const existingNames = new Set((list?.items ?? []).map((i) => i.name.trim().toLowerCase()))
 
   const reset = () => {
     setName('')
     setQuantity('')
     setCategory('')
+    setDosage('')
+    setPacked(false)
     setNotes('')
+  }
+
+  const handleAddPreset = (preset: PresetItem) => {
+    addItem(listId, {
+      name: preset.name,
+      quantity: preset.quantity,
+      category: preset.category,
+      dosage: isFarmacia ? preset.dosage : undefined,
+    })
+    toast({ title: `${preset.name} adicionado à lista!`, variant: 'success' })
+  }
+
+  const handleAddCombo = (combo: PresetCombo) => {
+    const missing = combo.items.filter((p) => !existingNames.has(p.name.trim().toLowerCase()))
+    if (missing.length === 0) return
+    missing.forEach((p) =>
+      addItem(listId, {
+        name: p.name,
+        quantity: p.quantity,
+        category: p.category,
+        dosage: isFarmacia ? p.dosage : undefined,
+      }),
+    )
+    toast({
+      title: `${combo.label}: ${missing.length} itens adicionados!`,
+      variant: 'success',
+    })
   }
 
   const handleCreate = () => {
@@ -136,6 +222,8 @@ export function AddItemDialog({
       name: name.trim(),
       quantity: quantity.trim() || undefined,
       category: category.trim() || undefined,
+      dosage: isFarmacia ? dosage.trim() || undefined : undefined,
+      packed: isMala ? packed : undefined,
       notes: notes.trim() || undefined,
     })
     toast({ title: 'Item adicionado!', variant: 'success' })
@@ -145,57 +233,178 @@ export function AddItemDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent title="Novo item" description="Adicione um item à lista.">
+      <DialogContent title="Novo item" description={kindMeta.description}>
         <div className="flex flex-col gap-4">
-          <div>
-            <label className="text-sm font-medium mb-1.5 block">Nome</label>
-            <Input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Ex: Arroz, Leite..."
-              onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
-              autoFocus
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
+          {(presetGroups.size > 0 || kindMeta.combos.length > 0) && (
             <div>
-              <label className="text-sm font-medium mb-1.5 block">Quantidade</label>
-              <Input
-                value={quantity}
-                onChange={(e) => setQuantity(e.target.value)}
-                placeholder="Ex: 2kg, 6 un..."
-              />
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                Prontos para usar
+              </p>
+              <div className="max-h-56 overflow-y-auto rounded-xl border border-border/50 p-2.5 space-y-3">
+                {kindMeta.combos.length > 0 && (
+                  <div className="space-y-1.5">
+                    {kindMeta.combos.map((combo) => {
+                      const missing = combo.items.filter(
+                        (p) => !existingNames.has(p.name.trim().toLowerCase()),
+                      ).length
+                      const done = missing === 0
+                      return (
+                        <button
+                          key={combo.id}
+                          type="button"
+                          disabled={done}
+                          onClick={() => handleAddCombo(combo)}
+                          className={cn(
+                            'flex w-full items-center justify-between gap-2 rounded-xl border px-3 py-2 text-left transition-all cursor-pointer',
+                            done
+                              ? 'border-transparent bg-muted/50 text-muted-foreground/50'
+                              : 'border-border/60 hover:border-primary/50 hover:bg-primary/5',
+                          )}
+                        >
+                          <span className="flex items-center gap-2 min-w-0">
+                            <Package
+                              size={14}
+                              className={cn('shrink-0', done ? '' : 'text-muted-foreground')}
+                            />
+                            <span className="text-xs font-medium truncate">{combo.label}</span>
+                          </span>
+                          <span className="text-[10px] text-muted-foreground shrink-0">
+                            {done ? 'Tudo já na lista' : `+${missing} itens`}
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+                {presetGroups.size > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                      Sugestões avulsas — toque para adicionar
+                    </p>
+                    {[...presetGroups.entries()].map(([cat, presets]) => (
+                      <div key={cat}>
+                        <p className="text-[10px] text-muted-foreground/70 mb-1">{cat}</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {presets.map((p) => {
+                            const added = existingNames.has(p.name.trim().toLowerCase())
+                            return (
+                              <button
+                                key={p.name}
+                                type="button"
+                                disabled={added}
+                                onClick={() => handleAddPreset(p)}
+                                className={cn(
+                                  'rounded-full border px-2.5 py-1 text-xs transition-all cursor-pointer',
+                                  added
+                                    ? 'border-transparent bg-muted/50 text-muted-foreground/50 line-through cursor-default'
+                                    : 'border-border/60 text-foreground hover:border-primary/50 hover:bg-primary/5',
+                                )}
+                              >
+                                {p.name}
+                                {p.quantity && (
+                                  <span className="text-muted-foreground/60 ml-1">{p.quantity}</span>
+                                )}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
-            <div>
-              <label className="text-sm font-medium mb-1.5 block">Categoria</label>
-              <Input
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                placeholder="Ex: Grãos"
-                list="item-categories"
-              />
-              <datalist id="item-categories">
-                {existingCategories.map((c) => (
-                  <option key={c} value={c} />
-                ))}
-              </datalist>
+          )}
+          <div className="border-t border-border/50 pt-4">
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+              Item personalizado
+            </p>
+            <div className="flex flex-col gap-4">
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">Nome</label>
+                <Input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Ex: Arroz, Leite..."
+                  onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
+                  autoFocus
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-sm font-medium mb-1.5 block">Quantidade</label>
+                  <Input
+                    value={quantity}
+                    onChange={(e) => setQuantity(e.target.value)}
+                    placeholder="Ex: 2kg, 6 un..."
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-1.5 block">Categoria</label>
+                  <Input
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    placeholder="Ex: Grãos"
+                    list="item-categories"
+                  />
+                  <datalist id="item-categories">
+                    {categorySuggestions.map((c) => (
+                      <option key={c} value={c} />
+                    ))}
+                  </datalist>
+                </div>
+              </div>
+              {isFarmacia && (
+                <div>
+                  <label className="text-sm font-medium mb-1.5 block">Dosagem / posologia</label>
+                  <Input
+                    value={dosage}
+                    onChange={(e) => setDosage(e.target.value)}
+                    placeholder="Ex: 1 comprimido ao dia"
+                  />
+                </div>
+              )}
+              {isMala && (
+                <div>
+                  <label className="text-sm font-medium mb-1.5 block">Já colocou na mala?</label>
+                  <button
+                    type="button"
+                    onClick={() => setPacked(!packed)}
+                    className={cn(
+                      'flex items-center gap-2 rounded-xl border px-3 py-2 text-sm transition-all cursor-pointer',
+                      packed
+                        ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-600'
+                        : 'border-border/60 text-muted-foreground hover:border-foreground/30',
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        'flex size-4 items-center justify-center rounded-md border transition-colors',
+                        packed ? 'border-emerald-500 bg-emerald-500' : 'border-muted-foreground/40',
+                      )}
+                    >
+                      {packed && <Check size={11} strokeWidth={3} className="text-white" />}
+                    </span>
+                    {packed ? 'Está na mala' : 'Ainda não'}
+                  </button>
+                </div>
+              )}
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">Observação</label>
+                <Input
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                />
+              </div>
+              <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end">
+                <Button variant="outline" onClick={onClose} className="rounded-xl">
+                  Cancelar
+                </Button>
+                <Button onClick={handleCreate} className="rounded-xl shadow-md">
+                  Adicionar
+                </Button>
+              </div>
             </div>
-          </div>
-          <div>
-            <label className="text-sm font-medium mb-1.5 block">Observação</label>
-            <Input
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Opcional"
-            />
-          </div>
-          <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end">
-            <Button variant="outline" onClick={onClose} className="rounded-xl">
-              Cancelar
-            </Button>
-            <Button onClick={handleCreate} className="rounded-xl shadow-md">
-              Adicionar
-            </Button>
           </div>
         </div>
       </DialogContent>

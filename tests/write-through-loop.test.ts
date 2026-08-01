@@ -22,11 +22,13 @@ vi.mock('@/lib/firebase', () => ({
 
 // IMPORTS depois dos mocks.
 import { create } from 'zustand'
-import { bindCollectionWriteThrough } from '@/lib/db/write-through'
+import { bindCollectionWriteThrough, stripUndefined } from '@/lib/db/write-through'
 import {
   markDocWrite,
   isOwnDocSnapshot,
 } from '@/lib/db/own-writes'
+import { useListsStore } from '@/lib/store/use-lists-store'
+import type { ShoppingList } from '@/lib/types'
 
 type Item = { id: string; titulo: string }
 
@@ -178,6 +180,121 @@ describe('write-through — flush no unsubscribe persiste estado pendente', () =
     store.getState().setList({ id: 'L1', titulo: 'Pendentes' })
     unsub()
     expect(state.commit).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('stripUndefined — arrays embutidos', () => {
+  it('remove undefined aninhado dentro de arrays (itens de lista)', () => {
+    const doc = {
+      id: 'list-1',
+      name: 'Supermercado',
+      kind: 'supermercado',
+      items: [
+        { id: 'item-1', name: 'Arroz', quantity: undefined, dosage: undefined, checked: false },
+        { id: 'item-2', name: 'Curativos', quantity: undefined, category: undefined, packed: undefined, checked: true },
+      ],
+    }
+    const cleaned = stripUndefined(doc) as typeof doc
+    expect(cleaned.items[0]).toEqual({ id: 'item-1', name: 'Arroz', checked: false })
+    expect(cleaned.items[1]).toEqual({ id: 'item-2', name: 'Curativos', checked: true })
+    expect(JSON.stringify(cleaned)).not.toContain('undefined')
+  })
+
+  it('preserva null dentro de arrays e itens sem undefined', () => {
+    const doc = {
+      id: 'list-2',
+      items: [
+        { id: 'i1', name: 'A', folderId: null },
+        { id: 'i2', name: 'B', quantity: '2kg' },
+      ],
+    }
+    const cleaned = stripUndefined(doc) as typeof doc
+    expect(cleaned.items[0]).toEqual({ id: 'i1', name: 'A', folderId: null })
+    expect(cleaned.items[1]).toEqual({ id: 'i2', name: 'B', quantity: '2kg' })
+  })
+})
+
+describe('write-through — reprodução do crash "Unsupported field value: undefined"', () => {
+  function hasUndefined(value: unknown): boolean {
+    if (value === undefined) return true
+    if (Array.isArray(value)) return value.some(hasUndefined)
+    if (value && typeof value === 'object') return Object.values(value).some(hasUndefined)
+    return false
+  }
+
+  it('addList + addItem (dialog com opcionais undefined) → payload do batch.set limpo', async () => {
+    vi.useFakeTimers()
+    useListsStore.setState({ lists: [] })
+
+    const unsub = bindCollectionWriteThrough<any>(user as any, {
+      store: useListsStore as any,
+      field: 'lists',
+      collectionName: 'shoppingLists',
+    })
+
+    // Fluxo exato do AddListDialog + AddItemDialog:
+    useListsStore.getState().addList({ name: 'Compra da semana', color: '#7bb686', kind: 'supermercado' })
+    const listId = useListsStore.getState().lists[0].id
+    useListsStore.getState().addItem(listId, {
+      name: 'Arroz',
+      quantity: undefined,
+      category: undefined,
+      dosage: undefined,
+      packed: undefined,
+      notes: undefined,
+    })
+
+    vi.advanceTimersByTime(1500)
+    await vi.runAllTimersAsync()
+
+    // O estado NÃO guarda undefined (limpeza na fonte):
+    expect(hasUndefined(useListsStore.getState().lists)).toBe(false)
+
+    // E o payload que chega ao batch.set está limpo (o que o SDK valida):
+    expect(state.set).toHaveBeenCalled()
+    for (const call of state.set.mock.calls) {
+      expect(hasUndefined(call[1])).toBe(false)
+      expect(JSON.stringify(call[1])).not.toContain('undefined')
+    }
+    expect(state.commit).toHaveBeenCalledTimes(1)
+
+    unsub()
+  })
+
+  it('itens de listas pré-existentes com undefined também chegam limpos ao batch', async () => {
+    vi.useFakeTimers()
+    const pre: ShoppingList[] = [
+      {
+        id: 'list-antiga',
+        name: 'Farmácia',
+        color: '#5b8dbf',
+        kind: 'farmacia',
+        items: [
+          { id: 'i1', name: 'Vitamina C', quantity: undefined, dosage: '1x ao dia', checked: false, createdAt: '2026-01-01T00:00:00.000Z' },
+        ],
+        createdAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: '2026-01-01T00:00:00.000Z',
+      },
+    ]
+    useListsStore.setState({ lists: pre })
+
+    const unsub = bindCollectionWriteThrough<any>(user as any, {
+      store: useListsStore as any,
+      field: 'lists',
+      collectionName: 'shoppingLists',
+    })
+
+    // Nova ação local força a reescrita da coleção inteira:
+    const listId = useListsStore.getState().lists[0].id
+    useListsStore.getState().toggleItem(listId, 'i1')
+
+    vi.advanceTimersByTime(1500)
+    await vi.runAllTimersAsync()
+
+    for (const call of state.set.mock.calls) {
+      expect(hasUndefined(call[1])).toBe(false)
+    }
+    unsub()
   })
 })
 

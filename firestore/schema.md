@@ -172,9 +172,10 @@ users/{uid}/notes/{noteId} {
 
 ```
 users/{uid}/shoppingLists/{listId} {
-  id, name, color,
+  id, name, color, kind?: 'supermercado'|'farmacia'|'mala'|'custom',
   items: list<map {
-    id, name, quantity?, category?, notes?, checked: bool, createdAt
+    id, name, quantity?, category?, checked: bool, dosage?, packed?, notes?,
+    createdAt
   }>,
   createdAt, updatedAt
 }
@@ -220,7 +221,7 @@ users/{uid}/passwords/{passwordId} {
 
 ```
 users/{uid}/wishlist/{itemId} {
-  id, name, url?, price?: int (centavos),
+  id, name, store?, url?, price?: int (centavos),
   priority: 'low'|'medium'|'high', category?, notes?,
   purchased: bool, purchasedAt?: string ISO,
   createdAt, updatedAt
@@ -231,13 +232,13 @@ users/{uid}/wishlist/{itemId} {
 
 ```
 weights/{id}            { id, date, weight: number (kg), notes?, createdAt }
-bodyMeasurements/{id}  { id, date, waist?, hips?, chest?, arm?, thigh?, notes?, createdAt }
-symptomLogs/{id}       { id, date, symptom, severity: int 1..5, notes?, createdAt }
-medications/{id}       { id, name, dosage, frequency, startDate, endDate?, notes?, color, createdAt }
+bodyMeasurements/{id}  { id, date, bust?, waist?, abdomen?, hips?, arm?, thigh?, calf?, notes?, createdAt }
+symptomLogs/{id}       { id, date, symptom, time?: 'HH:mm', possibleCause?, severity: int 1..5, notes?, createdAt }
+medications/{id}       { id, name, dosage, frequency, times?: list<string>, startDate, endDate?, reason?, notes?, color, createdAt }
 cycleRecords/{id}      { id, startDate, endDate?, flow: 'light'|'medium'|'heavy', symptoms: list<string>, notes?, createdAt }
 doctors/{id}           { id, name, specialty, phone?, email?, address?, notes?, color, createdAt }
-appointments/{id}      { id, doctorId?, doctorName, specialty, date, time, location?, notes?, status: 'scheduled'|'done'|'cancelled', createdAt }
-exams/{id}             { id, name, date, doctor?, laboratory?, result?, fileUrl?, notes?, status: 'pending'|'done'|'reviewed', color, createdAt }
+appointments/{id}      { id, doctorId?, doctorName, specialty, date, time, whatToBring?, questions?, location?, notes?, status: 'scheduled'|'done'|'cancelled', createdAt }
+exams/{id}             { id, name, date, time?, doctor?, laboratory?, address?, result?, fileUrl?, notes?, status: 'pending'|'done'|'reviewed', color, createdAt }
 ```
 
 ### Hábitos
@@ -250,8 +251,8 @@ habitLogs/{id} { id, habitId, date, completed: bool, createdAt }
 ### Rotina (4 subcollections)
 
 ```
-tasks/{id}           { id, title, notes?, date, priority, done: bool, createdAt, completedAt? }
-recurringTasks/{id}  { id, title, notes?, frequency, weekdays?, dayOfMonth?, priority, lastDone?, nextDue, active: bool, createdAt }
+tasks/{id}           { id, title, notes?, date, time?: 'HH:mm', priority, done: bool, createdAt, completedAt? }
+recurringTasks/{id}  { id, title, notes?, frequency, weekdays?, dayOfMonth?, time?: 'HH:mm', priority, lastDone?, nextDue, active: bool, createdAt }
 pendingItems/{id}    { id, title, notes?, priority, createdAt }
 routineSlots/{id}    { id, time, endTime?, title, weekdays: list<int>, color? }
 ```

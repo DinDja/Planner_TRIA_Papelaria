@@ -1,5 +1,6 @@
 'use client'
 
+import { getListKindMeta } from '@/lib/lists'
 import { useListsStore } from '@/lib/store/use-lists-store'
 import type { ShoppingItem, ShoppingList } from '@/lib/types'
 import { cn } from '@/lib/utils'
@@ -8,6 +9,7 @@ import {
   CheckCircle2,
   Circle,
   List,
+  Luggage,
   Plus,
   ShoppingCart,
   Trash2,
@@ -17,6 +19,7 @@ import { Button } from '../ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { Input as SearchInput } from '../ui/primitives'
 import { Dialog, DialogContent, Tab, TabList, TabPanel, Tabs } from '../ui/overlays'
+import { ListKindIcon } from './list-kind-icon'
 import { AddItemDialog, AddListDialog } from './lists-dialogs'
 
 const enter = 'animate-in fade-in slide-in-from-bottom-3 duration-500 fill-mode-both'
@@ -26,17 +29,20 @@ function ListCard({
   onDelete,
   onAddItem,
   onToggleItem,
+  onTogglePacked,
   onDeleteItem,
 }: {
   list: ShoppingList
   onDelete: (id: string) => void
   onAddItem: (listId: string) => void
   onToggleItem: (listId: string, itemId: string) => void
+  onTogglePacked: (listId: string, itemId: string) => void
   onDeleteItem: (listId: string, itemId: string) => void
 }) {
   const checked = list.items.filter((i) => i.checked).length
   const total = list.items.length
   const progress = total > 0 ? Math.round((checked / total) * 100) : 0
+  const isMala = getListKindMeta(list.kind).kind === 'mala'
 
   const grouped = list.items.reduce<Record<string, ShoppingItem[]>>((acc, item) => {
     const cat = item.category ?? 'Outros'
@@ -60,7 +66,7 @@ function ListCard({
             className="flex size-10 shrink-0 items-center justify-center rounded-xl"
             style={{ backgroundColor: list.color + '18' }}
           >
-            <ShoppingCart size={18} style={{ color: list.color }} />
+            <ListKindIcon kind={list.kind} size={18} color={list.color} />
           </div>
           <div>
             <CardTitle className="text-base">{list.name}</CardTitle>
@@ -142,12 +148,32 @@ function ListCard({
                           {item.quantity}
                         </span>
                       )}
+                      {item.dosage && (
+                        <span className="text-xs text-muted-foreground/70 ml-1.5">
+                          • {item.dosage}
+                        </span>
+                      )}
                       {item.notes && (
                         <p className="text-[10px] text-muted-foreground/60 truncate">
                           {item.notes}
                         </p>
                       )}
                     </div>
+                    {isMala && (
+                      <button
+                        onClick={() => onTogglePacked(list.id, item.id)}
+                        className={cn(
+                          'shrink-0 rounded-md p-1 transition-all cursor-pointer',
+                          item.packed
+                            ? 'text-emerald-500'
+                            : 'text-muted-foreground/30 opacity-0 group-hover:opacity-100 hover:text-foreground',
+                        )}
+                        title={item.packed ? 'Está na mala' : 'Já colocou na mala?'}
+                        aria-label={item.packed ? 'Marcar como fora da mala' : 'Marcar como colocado na mala'}
+                      >
+                        <Luggage size={13} />
+                      </button>
+                    )}
                     <button
                       onClick={() => onDeleteItem(list.id, item.id)}
                       className="shrink-0 rounded-md p-1 text-muted-foreground/30 opacity-0 group-hover:opacity-100 hover:text-destructive transition-all cursor-pointer"
@@ -179,6 +205,7 @@ export function ListsPage() {
   const lists = useListsStore((s) => s.lists)
   const deleteList = useListsStore((s) => s.deleteList)
   const toggleItem = useListsStore((s) => s.toggleItem)
+  const togglePacked = useListsStore((s) => s.togglePacked)
   const deleteItem = useListsStore((s) => s.deleteItem)
 
   const [tab, setTab] = useState('all')
@@ -253,6 +280,7 @@ export function ListsPage() {
               onDelete={handleDeleteList}
               onAddItem={handleAddItem}
               onToggleItem={toggleItem}
+              onTogglePacked={togglePacked}
               onDeleteItem={deleteItem}
             />
           ))}

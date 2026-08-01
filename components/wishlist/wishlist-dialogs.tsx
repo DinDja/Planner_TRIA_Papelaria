@@ -24,6 +24,7 @@ export function AddWishDialog({
   const addItem = useWishlistStore((s) => s.addItem)
   const getAllCategories = useWishlistStore((s) => s.getAllCategories)
   const [name, setName] = useState('')
+  const [store, setStore] = useState('')
   const [url, setUrl] = useState('')
   const [price, setPrice] = useState('')
   const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('medium')
@@ -33,6 +34,7 @@ export function AddWishDialog({
 
   const reset = () => {
     setName('')
+    setStore('')
     setUrl('')
     setPrice('')
     setPriority('medium')
@@ -47,6 +49,7 @@ export function AddWishDialog({
     }
     addItem({
       name: name.trim(),
+      store: store.trim() || undefined,
       url: url.trim() || undefined,
       price: price ? Math.round(parseFloat(price.replace(',', '.')) * 100) : undefined,
       priority,
@@ -100,6 +103,22 @@ export function AddWishDialog({
             </div>
           </div>
           <div>
+            <label className="text-sm font-medium mb-1.5 block">Loja</label>
+            <Input
+              value={store}
+              onChange={(e) => setStore(e.target.value)}
+              placeholder="Ex: Americanas, loja do bairro..."
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium mb-1.5 block">Link</label>
+            <Input
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="https://..."
+            />
+          </div>
+          <div>
             <label className="text-sm font-medium mb-2 block">Prioridade</label>
             <div className="flex gap-2">
               {PRIORITY_OPTIONS.map((opt) => (
@@ -121,19 +140,10 @@ export function AddWishDialog({
             </div>
           </div>
           <div>
-            <label className="text-sm font-medium mb-1.5 block">Link</label>
-            <Input
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              placeholder="https://..."
-            />
-          </div>
-          <div>
             <label className="text-sm font-medium mb-1.5 block">Observação</label>
             <Input
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Opcional"
             />
           </div>
           <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end">

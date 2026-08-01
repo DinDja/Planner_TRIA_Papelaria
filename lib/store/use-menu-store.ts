@@ -19,7 +19,7 @@ export const DEFAULT_MODULES: ModuleDef[] = [
   { id: 'wishlist',        href: '/wishlist',       label: 'Wishlist',       enabled: true },
   { id: 'frases',          href: '/frases',         label: 'Frases',         enabled: true },
   { id: 'memorias',        href: '/memorias',       label: 'Memórias',      enabled: true },
-  { id: 'cofre',           href: '/cofre',          label: 'Cofre',          enabled: true },
+  { id: 'cofre',           href: '/cofre',          label: 'Senhas',         enabled: true },
   { id: 'saude',           href: '/saude',          label: 'Saúde',          enabled: true },
   { id: 'rotina',          href: '/rotina',         label: 'Rotina',         enabled: true },
   { id: 'calendario',      href: '/calendario',     label: 'Calendário',    enabled: true },

@@ -74,7 +74,11 @@ function TaskRow({ task }: { task: Task }) {
         </p>
         <p className="text-[11px] text-muted-foreground">
           {relativeDateLabel(task.date)} · {formatDateShort(task.date)}
+          {task.time ? ` às ${task.time}` : ''}
         </p>
+        {task.notes && (
+          <p className="text-[11px] text-muted-foreground/70 truncate mt-0.5">{task.notes}</p>
+        )}
       </div>
       <Badge
         variant="outline"
@@ -162,7 +166,8 @@ function RecurringRow({ task, compact }: { task: RecurringTask; compact?: boolea
           {task.title}
         </p>
         <p className="text-[11px] text-muted-foreground truncate">
-          {freqLabel} ·{' '}
+          {freqLabel}
+          {task.time ? ` · ${task.time}` : ''} ·{' '}
           {isDue ? (
             isOverdue ? (
               <span className="font-semibold text-destructive">atrasada</span>
@@ -173,6 +178,9 @@ function RecurringRow({ task, compact }: { task: RecurringTask; compact?: boolea
             <>próxima: {formatDateShort(task.nextDue)}</>
           )}
         </p>
+        {task.notes && (
+          <p className="text-[11px] text-muted-foreground/70 truncate mt-0.5">{task.notes}</p>
+        )}
       </div>
       {compact ? (
         <Badge

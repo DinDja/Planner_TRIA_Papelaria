@@ -19,7 +19,12 @@ type WithId = { id: string }
  * diferenciar "vazio" de "ausente".
  */
 export function stripUndefined<T>(obj: T): T {
-  if (obj === null || typeof obj !== 'object' || Array.isArray(obj)) return obj
+  if (obj === null || typeof obj !== 'object') return obj
+  if (Array.isArray(obj)) {
+    return obj.map((x) =>
+      typeof x === 'object' && x !== null ? stripUndefined(x) : x,
+    ) as T
+  }
   const out: Record<string, unknown> = {}
   for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
     if (v === undefined) continue

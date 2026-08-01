@@ -331,6 +331,8 @@ export interface Task {
   notes?: string
   /** ISO date (YYYY-MM-DD) —dia planejado */
   date: string
+  /** HH:mm —horário do dia */
+  time?: string
   priority: TaskPriority
   done: boolean
   createdAt: string
@@ -350,6 +352,8 @@ export interface RecurringTask {
   weekdays?: Weekday[]
   /** Dia do mês (1-31) para monthly */
   dayOfMonth?: number
+  /** HH:mm —horário do dia */
+  time?: string
   priority: TaskPriority
   /** ISO date da última conclusão */
   lastDone?: string
@@ -648,12 +652,16 @@ export interface Note {
 
 // ─── Módulo de Listas ─────────────────────────────────────────────────────────
 
+export type ShoppingListKind = 'supermercado' | 'farmacia' | 'mala' | 'custom'
+
 export interface ShoppingItem {
   id: string
   name: string
   quantity?: string
   category?: string
   checked: boolean
+  dosage?: string
+  packed?: boolean
   notes?: string
   createdAt: string
 }
@@ -662,6 +670,7 @@ export interface ShoppingList {
   id: string
   name: string
   color: string
+  kind?: ShoppingListKind
   items: ShoppingItem[]
   createdAt: string
   updatedAt: string
@@ -672,6 +681,7 @@ export interface ShoppingList {
 export interface WishlistItem {
   id: string
   name: string
+  store?: string
   url?: string
   price?: number
   priority: 'low' | 'medium' | 'high'
@@ -759,15 +769,19 @@ export interface BodyMeasurement {
   id: string
   date: string
   /** cm */
+  bust?: number
+  /** cm */
   waist?: number
   /** cm */
-  hips?: number
+  abdomen?: number
   /** cm */
-  chest?: number
+  hips?: number
   /** cm */
   arm?: number
   /** cm */
   thigh?: number
+  /** cm */
+  calf?: number
   notes?: string
   createdAt: string
 }
@@ -776,6 +790,9 @@ export interface SymptomLog {
   id: string
   date: string
   symptom: string
+  /** HH:mm */
+  time?: string
+  possibleCause?: string
   severity: 1 | 2 | 3 | 4 | 5
   notes?: string
   createdAt: string
@@ -786,10 +803,14 @@ export interface Medication {
   name: string
   dosage: string
   frequency: string
+  /** Períodos do dia em que deve ser tomado (ex: Manhã, Noite) */
+  times?: string[]
   /** ISO date */
   startDate: string
   /** ISO date (opcional) */
   endDate?: string
+  /** Motivo/indicação do medicamento */
+  reason?: string
   notes?: string
   color: string
   createdAt: string
@@ -827,6 +848,10 @@ export interface Appointment {
   /** ISO date */
   date: string
   time: string
+  /** O que levar para a consulta */
+  whatToBring?: string
+  /** Perguntas para fazer ao médico */
+  questions?: string
   location?: string
   notes?: string
   status: 'scheduled' | 'done' | 'cancelled'
@@ -838,8 +863,12 @@ export interface ExamRecord {
   name: string
   /** ISO date */
   date: string
+  /** HH:mm */
+  time?: string
   doctor?: string
   laboratory?: string
+  /** Endereço do laboratório/clínica */
+  address?: string
   result?: string
   fileUrl?: string
   notes?: string

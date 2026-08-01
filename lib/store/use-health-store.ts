@@ -85,13 +85,13 @@ interface HealthState {
   setHeight: (cm: number) => void
   setGoalWeight: (kg: number | null) => void
 
-  addMeasurement: (data: { date: string; waist?: number; hips?: number; chest?: number; arm?: number; thigh?: number; notes?: string }) => void
+  addMeasurement: (data: { date: string; bust?: number; waist?: number; abdomen?: number; hips?: number; arm?: number; thigh?: number; calf?: number; notes?: string }) => void
   deleteMeasurement: (id: string) => void
 
-  addSymptom: (data: { date: string; symptom: string; severity: 1 | 2 | 3 | 4 | 5; notes?: string }) => void
+  addSymptom: (data: { date: string; symptom: string; time?: string; possibleCause?: string; severity: 1 | 2 | 3 | 4 | 5; notes?: string }) => void
   deleteSymptom: (id: string) => void
 
-  addMedication: (data: { name: string; dosage: string; frequency: string; startDate: string; endDate?: string; notes?: string; color?: string }) => void
+  addMedication: (data: { name: string; dosage: string; frequency: string; times?: string[]; startDate: string; endDate?: string; reason?: string; notes?: string; color?: string }) => void
   deleteMedication: (id: string) => void
 
   addCycle: (data: { startDate: string; endDate?: string; flow: 'light' | 'medium' | 'heavy'; symptoms?: string[]; notes?: string }) => void
@@ -101,11 +101,11 @@ interface HealthState {
   updateDoctor: (id: string, patch: Partial<Doctor>) => void
   deleteDoctor: (id: string) => void
 
-  addAppointment: (data: { doctorId?: string; doctorName: string; specialty: string; date: string; time: string; location?: string; notes?: string }) => void
+  addAppointment: (data: { doctorId?: string; doctorName: string; specialty: string; date: string; time: string; whatToBring?: string; questions?: string; location?: string; notes?: string }) => void
   updateAppointment: (id: string, patch: Partial<Appointment>) => void
   deleteAppointment: (id: string) => void
 
-  addExam: (data: { name: string; date: string; doctor?: string; laboratory?: string; result?: string; notes?: string; color?: string }) => void
+  addExam: (data: { name: string; date: string; time?: string; doctor?: string; laboratory?: string; address?: string; result?: string; notes?: string; color?: string }) => void
   updateExam: (id: string, patch: Partial<ExamRecord>) => void
   deleteExam: (id: string) => void
 

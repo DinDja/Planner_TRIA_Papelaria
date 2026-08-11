@@ -27,10 +27,10 @@ const dayStr = (offset = 0): string => {
 
 const seedTransactions: Transaction[] = [
   { id: 'tx-seed-1', title: 'Salário Julho', amount: 450000, type: 'income', date: dayStr(-5), category: 'Salário', createdAt: nowISO() },
-  { id: 'tx-seed-2', title: 'Freelance site', amount: 150000, type: 'income', date: dayStr(-3), category: 'Freelance', createdAt: nowISO() },
+  { id: 'tx-seed-2', title: 'Freelance site', amount: 150000, type: 'income', date: dayStr(-3), category: 'Clientes', createdAt: nowISO() },
   { id: 'tx-seed-3', title: 'Aluguel', amount: 120000, type: 'expense', date: dayStr(-2), category: 'Moradia', createdAt: nowISO() },
-  { id: 'tx-seed-4', title: 'Supermercado mês', amount: 85000, type: 'expense', date: dayStr(-2), category: 'Supermercado', createdAt: nowISO() },
-  { id: 'tx-seed-5', title: 'Gasolina', amount: 18000, type: 'expense', date: dayStr(-1), category: 'Transporte', createdAt: nowISO() },
+  { id: 'tx-seed-4', title: 'Supermercado mês', amount: 85000, type: 'expense', date: dayStr(-2), category: 'Mercado', createdAt: nowISO() },
+  { id: 'tx-seed-5', title: 'Gasolina', amount: 18000, type: 'expense', date: dayStr(-1), category: 'Outros', createdAt: nowISO() },
   { id: 'tx-seed-6', title: 'Jantar fora', amount: 8900, type: 'expense', date: dayStr(0), category: 'Lazer', createdAt: nowISO() },
   { id: 'tx-seed-7', title: 'Curso online', amount: 4900, type: 'expense', date: dayStr(0), category: 'Educação', createdAt: nowISO() },
 ]
@@ -38,13 +38,13 @@ const seedTransactions: Transaction[] = [
 const seedFixedBills: FixedBill[] = [
   { id: 'bill-seed-1', title: 'Aluguel', amount: 120000, category: 'Moradia', dayOfMonth: 5, active: true, createdAt: nowISO() },
   { id: 'bill-seed-2', title: 'Internet', amount: 10990, category: 'Moradia', dayOfMonth: 10, active: true, createdAt: nowISO() },
-  { id: 'bill-seed-3', title: 'Plano de saúde', amount: 24990, category: 'Saúde', dayOfMonth: 15, active: true, createdAt: nowISO() },
+  { id: 'bill-seed-3', title: 'Plano de saúde', amount: 24990, category: 'Outros', dayOfMonth: 15, active: true, createdAt: nowISO() },
 ]
 
 const seedSubscriptions: Subscription[] = [
-  { id: 'sub-seed-1', name: 'Netflix', amount: 5590, billingCycle: 'monthly', category: 'Lazer', nextBilling: dayStr(5), active: true, createdAt: nowISO() },
-  { id: 'sub-seed-2', name: 'Spotify', amount: 2190, billingCycle: 'monthly', category: 'Lazer', nextBilling: dayStr(8), active: true, createdAt: nowISO() },
-  { id: 'sub-seed-3', name: 'Academia', amount: 8990, billingCycle: 'monthly', category: 'Saúde', nextBilling: dayStr(1), active: true, createdAt: nowISO() },
+  { id: 'sub-seed-1', name: 'Netflix', amount: 5590, billingCycle: 'monthly', category: 'Assinaturas', nextBilling: dayStr(5), active: true, createdAt: nowISO() },
+  { id: 'sub-seed-2', name: 'Spotify', amount: 2190, billingCycle: 'monthly', category: 'Assinaturas', nextBilling: dayStr(8), active: true, createdAt: nowISO() },
+  { id: 'sub-seed-3', name: 'Academia', amount: 8990, billingCycle: 'monthly', category: 'Outros', nextBilling: dayStr(1), active: true, createdAt: nowISO() },
 ]
 
 const seedCards: CreditCard[] = [
@@ -53,7 +53,7 @@ const seedCards: CreditCard[] = [
 ]
 
 const seedInstallments: Installment[] = [
-  { id: 'inst-seed-1', title: 'iPhone 15', totalAmount: 720000, installmentAmount: 60000, totalInstallments: 12, currentInstallment: 4, cardId: 'card-seed-1', category: 'Eletrônicos', createdAt: nowISO() },
+  { id: 'inst-seed-1', title: 'iPhone 15', totalAmount: 720000, installmentAmount: 60000, totalInstallments: 12, currentInstallment: 4, cardId: 'card-seed-1', category: 'Compras', createdAt: nowISO() },
   { id: 'inst-seed-2', title: 'Curso de inglês', totalAmount: 240000, installmentAmount: 20000, totalInstallments: 12, currentInstallment: 8, cardId: 'card-seed-2', category: 'Educação', notes: 'Curso 1 ano', createdAt: nowISO() },
 ]
 
@@ -82,7 +82,11 @@ interface FinanceState {
   savingsBoxes: SavingsBox[]
 
   // Transações
-  addTransaction: (data: { title: string; amount: number; type: Transaction['type']; date: string; category: string; notes?: string; fixedBillId?: string }) => void
+  addTransaction: (data: {
+    title: string; amount: number; type: Transaction['type']; date: string; category: string;
+    recurrence?: Transaction['recurrence']; paymentMethod?: string; account?: string;
+    status?: Transaction['status']; notes?: string; fixedBillId?: string;
+  }) => void
   deleteTransaction: (id: string) => void
 
   // Contas fixas
@@ -96,11 +100,16 @@ interface FinanceState {
   deleteSubscription: (id: string) => void
 
   // Cartões
-  addCard: (data: { name: string; limit: number; closingDay: number; dueDay: number; color?: string }) => void
+  addCard: (data: {
+    bank: string; brand: string; lastDigits?: string; closingDay: number; dueDay: number; color?: string;
+  }) => void
   deleteCard: (id: string) => void
 
   // Parcelamentos
-  addInstallment: (data: { title: string; totalAmount: number; installmentAmount: number; totalInstallments: number; cardId: string; category: string; notes?: string }) => void
+  addInstallment: (data: {
+    title: string; totalAmount: number; installmentAmount: number; totalInstallments: number;
+    cardId: string; category: string; firstInstallment?: string; notes?: string;
+  }) => void
   advanceInstallment: (id: string) => void
   deleteInstallment: (id: string) => void
 
@@ -185,7 +194,7 @@ export const useFinanceStore = create<FinanceState>()(
         set((s) => ({
           cards: [
             ...s.cards,
-            { id: `card-${uid()}`, ...data, color, createdAt: nowISO() },
+            { id: `card-${uid()}`, ...data, name: data.bank, limit: 0, color, createdAt: nowISO() },
           ],
         })),
       deleteCard: (id) =>

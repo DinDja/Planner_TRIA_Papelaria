@@ -227,6 +227,13 @@ service cloud.firestore {
         allow read, write: if owns(uid);
       }
 
+      // ─── Aniversários (useBirthdaysStore) ───────────────────────────────
+      // /users/{uid}/birthdays/{birthdayId}
+      //   id, name, date (YYYY-MM-DD), notes?, color, createdAt
+      match /birthdays/{birthdayId} {
+        allow read, write: if owns(uid);
+      }
+
       // ─── Saúde (useHealthStore) ─ 8 subcollections ──────────────────────
       // /users/{uid}/weights/{recordId}
       //   id, date, weight: number (kg), notes?, createdAt

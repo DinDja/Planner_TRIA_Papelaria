@@ -47,6 +47,7 @@
 | `useRoutineStore`                      | `tasks`, `recurringTasks`, `pendingItems`, `routineSlots` | 4 subcollections |
 | `useCalendarStore`                     | `users/{uid}/calendarEvents`              |       |
 | `useFinanceStore`                      | `transactions`, `fixedBills`, `subscriptions`, `creditCards`, `installments`, `financialGoals`, `goalDeposits`, `savingsBoxes` | 8 subcollections |
+| `useBirthdaysStore`                    | `users/{uid}/birthdays`                   |       |
 | `useTrashStore`                        | `users/{uid}/trashItems`                   | capped 100 no cliente |
 
 > As stores de UI transient (editor, dialogs, sidebar) **não** vão pro Firestore

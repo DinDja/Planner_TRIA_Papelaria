@@ -54,7 +54,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
     { id: 'rotina',        label: 'Rotina',                iconId: 'rotina',        href: '/rotina',        section: 'Navegação' },
     { id: 'calendario',    label: 'Calendário',            iconId: 'calendario',    href: '/calendario',    section: 'Navegação' },
     { id: 'financas',      label: 'Finanças',              iconId: 'financas',      href: '/financas',      section: 'Navegação' },
-    { id: 'metas',         label: 'Metas Financeiras',     iconId: 'metas',         href: '/metas',         section: 'Navegação' },
+    { id: 'aniversarios',  label: 'Aniversários',          iconId: 'aniversarios',  href: '/aniversarios',  section: 'Navegação' },
     { id: 'habitos',       label: 'Hábitos',               iconId: 'habitos',       href: '/habitos',       section: 'Navegação' },
     { id: 'retrospectiva', label: 'Retrospectiva',         iconId: 'retrospectiva', href: '/retrospectiva', section: 'Navegação' },
     { id: 'templates',     label: 'Galeria de templates',  iconId: 'templates',     href: '/templates',     section: 'Navegação' },

@@ -39,7 +39,7 @@ export type ModuloId =
   | 'rotina'
   | 'calendario'
   | 'financas'
-  | 'metas'
+  | 'aniversarios'
   | 'habitos'
   | 'retrospectiva'
   | 'templates'
@@ -212,13 +212,14 @@ export function FinancasIcon({ size, ...p }: P) {
   )
 }
 
-export function MetasIcon({ size, ...p }: P) {
-  // Bandeira em cimo + linha de base.
+export function AniversariosIcon({ size, ...p }: P) {
+  // Bolo com glacê ondulado + vela — celebração de data.
   return (
     <svg {...svgProps(size)} {...p}>
-      <path d="M5 16 L5 4" />
-      <path d="M5 4 L15 4 L13.5 7.5 L15 11 L5 11" />
       <path d="M3 16 L17 16" />
+      <path d="M5 16 L5 11.5 L7.5 9.8 L10 11.5 L12.5 9.8 L15 12 L15 16" />
+      <path d="M10 11.5 L10 7.5" />
+      <path d="M10 7.5 L10 6.4" />
     </svg>
   )
 }
@@ -323,7 +324,7 @@ export const MODULO_ICONS: Record<ModuloId, (p: P) => JSX.Element> = {
   rotina: RotinaIcon,
   calendario: CalendarioIcon,
   financas: FinancasIcon,
-  metas: MetasIcon,
+  aniversarios: AniversariosIcon,
   habitos: HabitosIcon,
   retrospectiva: RetrospectivaIcon,
   templates: TemplatesIcon,

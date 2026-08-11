@@ -29,6 +29,7 @@ import { useHabitsStore } from '@/lib/store/use-habits-store'
 import { useRoutineStore } from '@/lib/store/use-routine-store'
 import { useCalendarStore } from '@/lib/store/use-calendar-store'
 import { useFinanceStore } from '@/lib/store/use-finance-store'
+import { useBirthdaysStore } from '@/lib/store/use-birthdays-store'
 import { useTrashStore } from '@/lib/store/use-trash-store'
 import { useSubscriptionStore } from '@/lib/subscriptions/use-subscription-store'
 
@@ -105,6 +106,7 @@ const COL_BINDINGS: ColBinding[] = [
   { store: useFinanceStore as unknown as StoreLike, field: 'goals', collection: 'financialGoals', read: true, write: true },
   { store: useFinanceStore as unknown as StoreLike, field: 'goalDeposits', collection: 'goalDeposits', read: true, write: true },
   { store: useFinanceStore as unknown as StoreLike, field: 'savingsBoxes', collection: 'savingsBoxes', read: true, write: true },
+  { store: useBirthdaysStore as unknown as StoreLike, field: 'entries', collection: 'birthdays', read: true, write: true },
   { store: useHealthStore as unknown as StoreLike, field: 'weights', collection: 'weights', read: true, write: true },
   { store: useHealthStore as unknown as StoreLike, field: 'measurements', collection: 'bodyMeasurements', read: true, write: true },
   { store: useHealthStore as unknown as StoreLike, field: 'symptoms', collection: 'symptomLogs', read: true, write: true },

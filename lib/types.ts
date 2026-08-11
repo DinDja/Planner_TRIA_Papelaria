@@ -393,13 +393,30 @@ export interface RoutineSlot {
 export type TransactionType = 'income' | 'expense'
 
 export const INCOME_CATEGORIES = [
-  'Salário', 'Freelance', 'Investimentos', 'Vendas', 'Presente', 'Outros',
+  'Aluguel recebido', 'Clientes', 'Comissão', 'Extra', 'Investimentos',
+  'Outros', 'Presente', 'Pró-labore', 'Reembolso', 'Salário', 'Vendas',
 ] as const
 
 export const EXPENSE_CATEGORIES = [
-  'Alimentação', 'Transporte', 'Moradia', 'Saúde', 'Lazer',
-  'Educação', 'Vestuário', 'Assinaturas', 'Supermercado', 'Outros',
+  'Assinaturas', 'Beleza', 'Compras', 'Educação', 'Lazer', 'Mercado',
+  'Moradia', 'Outros', 'Pets', 'Presentes', 'Restaurantes',
 ] as const
+
+/** Recorrência de receitas — ausente = avulsa. */
+export const TRANSACTION_RECURRENCE = ['monthly', 'weekly', 'biweekly', 'yearly'] as const
+export type TransactionRecurrence = (typeof TRANSACTION_RECURRENCE)[number]
+
+/** Formas de recebimento e pagamento. */
+export const PAYMENT_METHODS = [
+  'Pix', 'Transferência', 'Dinheiro', 'Débito', 'Crédito', 'Conta bancária', 'Outro',
+] as const
+
+/** Bandeiras de cartão. */
+export const CARD_BRANDS = [
+  'Visa', 'Mastercard', 'Elo', 'Hipercard', 'Amex', 'Outros',
+] as const
+
+export type TransactionStatus = 'received' | 'paid' | 'pending'
 
 export interface Transaction {
   id: string
@@ -408,6 +425,14 @@ export interface Transaction {
   type: TransactionType
   date: string /** YYYY-MM-DD */
   category: string
+  /** Recorrência (mensal/semanal/quinzenal/anual). Ausente = avulsa. */
+  recurrence?: TransactionRecurrence
+  /** Pix, Transferência, Dinheiro, Débito... */
+  paymentMethod?: string
+  /** Conta de recebimento (receitas) */
+  account?: string
+  /** received (receita), paid (despesa) ou pending (pendente) */
+  status?: TransactionStatus
   notes?: string
   fixedBillId?: string
   createdAt: string
@@ -438,7 +463,14 @@ export interface Subscription {
 
 export interface CreditCard {
   id: string
+  /** Nome amigável p/ exibição — derivado do banco emissor. */
   name: string
+  /** Banco emissor (ex: Nubank, Itaú) */
+  bank?: string
+  /** Bandeira (Visa, Mastercard, Elo...) */
+  brand?: string
+  /** Últimos 4 dígitos do cartão */
+  lastDigits?: string
   limit: number /** em centavos */
   closingDay: number /** 1–31 */
   dueDay: number /** 1–31 */
@@ -455,6 +487,8 @@ export interface Installment {
   currentInstallment: number
   cardId: string
   category: string
+  /** Data da primeira parcela (YYYY-MM-DD) */
+  firstInstallment?: string
   notes?: string
   createdAt: string
 }
@@ -876,3 +910,20 @@ export interface ExamRecord {
   color: string
   createdAt: string
 }
+
+// ─── Módulo de Aniversários ───────────────────────────────────────────────────
+
+export interface BirthdayRecord {
+  id: string
+  /** Nome da pessoa */
+  name: string
+  /** ISO date (YYYY-MM-DD) — dia do aniversário */
+  date: string
+  notes?: string
+  color: string
+  createdAt: string
+}
+
+export const BIRTHDAY_COLORS = [
+  '#e8a0a0', '#f0b429', '#7bb686', '#5b8dbf', '#c9b6e4', '#e05b6d', '#d4b070',
+]

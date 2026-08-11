@@ -1,8 +1,14 @@
 'use client'
 
 import { useFinanceStore } from '@/lib/store/use-finance-store'
-import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '@/lib/types'
-import type { Subscription } from '@/lib/types'
+import {
+  CARD_BRANDS,
+  EXPENSE_CATEGORIES,
+  INCOME_CATEGORIES,
+  PAYMENT_METHODS,
+  TRANSACTION_RECURRENCE,
+} from '@/lib/types'
+import type { Subscription, Transaction } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import { Check } from 'lucide-react'
 import { useState } from 'react'
@@ -12,6 +18,16 @@ import { Input } from '../ui/primitives'
 import { toast } from '../ui/toaster'
 
 const COLORS = ['#e05b6d', '#f0b429', '#7bb686', '#5b8dbf', '#c9b6e4', '#e8a0a0', '#d4b070']
+
+const selectClass =
+  'flex h-9 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm shadow-sm outline-none transition-colors focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/20'
+
+const RECURRENCE_LABELS: Record<NonNullable<Transaction['recurrence']>, string> = {
+  monthly: 'Mensal',
+  weekly: 'Semanal',
+  biweekly: 'Quinzenal',
+  yearly: 'Anual',
+}
 
 function AmountInput({ value, onChange, ...props }: { value: number; onChange: (v: number) => void } & Omit<React.InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange'>) {
   const display = value > 0 ? (value / 100).toFixed(2) : ''
@@ -48,18 +64,48 @@ export function AddTransactionDialog({
   const [type, setType] = useState<'income' | 'expense'>(defaultType ?? 'expense')
   const [category, setCategory] = useState('')
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
+  const [recurrence, setRecurrence] = useState<Transaction['recurrence']>()
+  const [paymentMethod, setPaymentMethod] = useState('')
+  const [account, setAccount] = useState('')
+  const [status, setStatus] = useState<Transaction['status']>(defaultType === 'income' ? 'received' : 'paid')
+  const [notes, setNotes] = useState('')
 
-  const reset = () => { setTitle(''); setAmount(0); setType(defaultType ?? 'expense'); setCategory(''); setDate(new Date().toISOString().slice(0, 10)) }
+  const reset = () => {
+    setTitle(''); setAmount(0); setType(defaultType ?? 'expense'); setCategory('')
+    setDate(new Date().toISOString().slice(0, 10)); setRecurrence(undefined)
+    setPaymentMethod(''); setAccount('')
+    setStatus(defaultType === 'income' ? 'received' : 'paid'); setNotes('')
+  }
+
+  const switchType = (t: 'income' | 'expense') => {
+    setType(t)
+    setCategory('')
+    setStatus(t === 'income' ? 'received' : 'paid')
+  }
 
   const handleSave = () => {
     if (!title.trim() || amount <= 0 || !category) {
       toast({ title: 'Preencha título, valor e categoria', variant: 'error' }); return
     }
-    addTransaction({ title: title.trim(), amount, type, date, category })
-    toast({ title: 'Transação adicionada!', variant: 'success' }); reset(); onClose()
+    addTransaction({
+      title: title.trim(),
+      amount,
+      type,
+      date,
+      category,
+      recurrence: recurrence ?? undefined,
+      paymentMethod: paymentMethod || undefined,
+      account: type === 'income' ? account.trim() || undefined : undefined,
+      status,
+      notes: notes.trim() || undefined,
+    })
+    toast({ title: type === 'income' ? 'Receita adicionada!' : 'Despesa adicionada!', variant: 'success' }); reset(); onClose()
   }
 
   const cats = type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES
+  const statusOptions = type === 'income'
+    ? [{ value: 'received', label: 'Recebido' }, { value: 'pending', label: 'Pendente' }]
+    : [{ value: 'paid', label: 'Pago' }, { value: 'pending', label: 'Pendente' }]
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
@@ -67,7 +113,7 @@ export function AddTransactionDialog({
         <div className="flex flex-col gap-4">
           <div className="flex gap-2">
             {(['expense', 'income'] as const).map((t) => (
-              <button key={t} onClick={() => { setType(t); setCategory('') }}
+              <button key={t} onClick={() => switchType(t)}
                 className={cn('flex-1 rounded-xl border px-3 py-2 text-xs font-medium transition-all cursor-pointer',
                   type === t ? 'border-transparent text-white shadow-md' : 'border-border/60 text-muted-foreground hover:bg-muted/50',
                 )}
@@ -101,6 +147,76 @@ export function AddTransactionDialog({
               ))}
             </div>
           </div>
+
+          {type === 'income' && (
+            <>
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">Recorrência</label>
+                <select
+                  className={selectClass}
+                  value={recurrence ?? ''}
+                  onChange={(e) => setRecurrence(e.target.value ? (e.target.value as Transaction['recurrence']) : undefined)}
+                >
+                  <option value="">Não se repete</option>
+                  {TRANSACTION_RECURRENCE.map((r) => (
+                    <option key={r} value={r}>{RECURRENCE_LABELS[r]}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">Forma de Recebimento</label>
+                <select
+                  className={selectClass}
+                  value={paymentMethod}
+                  onChange={(e) => setPaymentMethod(e.target.value)}
+                >
+                  <option value="">Selecione</option>
+                  {PAYMENT_METHODS.map((m) => (
+                    <option key={m} value={m}>{m}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">Conta de Recebimento</label>
+                <Input value={account} onChange={(e) => setAccount(e.target.value)} placeholder="Ex: Nubank, Itaú..." />
+              </div>
+            </>
+          )}
+
+          {type === 'expense' && (
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Forma de Pagamento</label>
+              <select
+                className={selectClass}
+                value={paymentMethod}
+                onChange={(e) => setPaymentMethod(e.target.value)}
+              >
+                <option value="">Selecione</option>
+                {PAYMENT_METHODS.map((m) => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <div>
+            <label className="text-sm font-medium mb-1.5 block">Status</label>
+            <select
+              className={selectClass}
+              value={status}
+              onChange={(e) => setStatus(e.target.value as Transaction['status'])}
+            >
+              {statusOptions.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="text-sm font-medium mb-1.5 block">Observação</label>
+            <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Detalhes (opcional)" />
+          </div>
+
           <div className="flex justify-end gap-2 pt-1">
             <Button variant="outline" onClick={onClose} className="rounded-xl">Cancelar</Button>
             <Button onClick={handleSave} className="rounded-xl shadow-md">Adicionar</Button>
@@ -233,16 +349,18 @@ export function AddSubscriptionDialog({ open, onClose }: { open: boolean; onClos
 
 export function AddCardDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const addCard = useFinanceStore((s) => s.addCard)
-  const [name, setName] = useState('')
-  const [limit, setLimit] = useState(0)
+  const [bank, setBank] = useState('')
+  const [brand, setBrand] = useState<string>(CARD_BRANDS[0])
+  const [lastDigits, setLastDigits] = useState('')
   const [closingDay, setClosingDay] = useState(1)
   const [dueDay, setDueDay] = useState(10)
   const [color, setColor] = useState(COLORS[3])
 
   const handleSave = () => {
-    if (!name.trim() || limit <= 0) { toast({ title: 'Preencha nome e limite', variant: 'error' }); return }
-    addCard({ name: name.trim(), limit, closingDay, dueDay, color })
-    toast({ title: 'Cartão adicionado!', variant: 'success' }); onClose()
+    if (!bank.trim()) { toast({ title: 'Digite o banco', variant: 'error' }); return }
+    addCard({ bank: bank.trim(), brand, lastDigits: lastDigits || undefined, closingDay, dueDay, color })
+    toast({ title: 'Cartão adicionado!', variant: 'success' })
+    setBank(''); setBrand(CARD_BRANDS[0]); setLastDigits(''); setClosingDay(1); setDueDay(10); onClose()
   }
 
   return (
@@ -250,22 +368,41 @@ export function AddCardDialog({ open, onClose }: { open: boolean; onClose: () =>
       <DialogContent title="Novo cartão de crédito">
         <div className="flex flex-col gap-4">
           <div>
-            <label className="text-sm font-medium mb-1.5 block">Nome</label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Nubank, Inter..."
+            <label className="text-sm font-medium mb-1.5 block">Banco</label>
+            <Input value={bank} onChange={(e) => setBank(e.target.value)} placeholder="Ex: Nubank, Itaú, Inter..."
               onKeyDown={(e) => e.key === 'Enter' && handleSave()} autoFocus />
-          </div>
-          <div>
-            <label className="text-sm font-medium mb-1.5 block">Limite</label>
-            <AmountInput value={limit} onChange={setLimit} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-sm font-medium mb-1.5 block">Fecha (dia)</label>
+              <label className="text-sm font-medium mb-1.5 block">Bandeira</label>
+              <select
+                className={selectClass}
+                value={brand}
+                onChange={(e) => setBrand(e.target.value)}
+              >
+                {CARD_BRANDS.map((b) => (
+                  <option key={b} value={b}>{b}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Final</label>
+              <Input
+                value={lastDigits}
+                onChange={(e) => setLastDigits(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                placeholder="0000"
+                inputMode="numeric"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Fechamento (dia)</label>
               <Input type="number" min={1} max={31} value={closingDay}
                 onChange={(e) => setClosingDay(Math.min(31, Math.max(1, Number(e.target.value) || 1)))} />
             </div>
             <div>
-              <label className="text-sm font-medium mb-1.5 block">Vence (dia)</label>
+              <label className="text-sm font-medium mb-1.5 block">Vencimento (dia)</label>
               <Input type="number" min={1} max={31} value={dueDay}
                 onChange={(e) => setDueDay(Math.min(31, Math.max(1, Number(e.target.value) || 1)))} />
             </div>
@@ -301,16 +438,20 @@ export function AddInstallmentDialog({ open, onClose }: { open: boolean; onClose
   const [title, setTitle] = useState('')
   const [totalAmount, setTotalAmount] = useState(0)
   const [totalInstallments, setTotalInstallments] = useState(12)
+  const [firstInstallment, setFirstInstallment] = useState(new Date().toISOString().slice(0, 10))
   const [cardId, setCardId] = useState('')
-  const [category, setCategory] = useState('Eletrônicos')
+  const [category, setCategory] = useState('Compras')
 
   const installmentAmount = totalInstallments > 0 ? Math.round(totalAmount / totalInstallments) : 0
 
   const handleSave = () => {
     if (!title.trim() || totalAmount <= 0 || !cardId) {
-      toast({ title: 'Preencha título, valor e cartão', variant: 'error' }); return
+      toast({ title: 'Preencha descrição, valor e cartão', variant: 'error' }); return
     }
-    addInstallment({ title: title.trim(), totalAmount, installmentAmount, totalInstallments, cardId, category })
+    addInstallment({
+      title: title.trim(), totalAmount, installmentAmount, totalInstallments, cardId, category,
+      firstInstallment: firstInstallment || undefined,
+    })
     toast({ title: 'Parcelamento adicionado!', variant: 'success' }); onClose()
   }
 
@@ -319,7 +460,7 @@ export function AddInstallmentDialog({ open, onClose }: { open: boolean; onClose
       <DialogContent title="Novo parcelamento">
         <div className="flex flex-col gap-4">
           <div>
-            <label className="text-sm font-medium mb-1.5 block">Produto</label>
+            <label className="text-sm font-medium mb-1.5 block">Descrição</label>
             <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ex: iPhone, Curso..."
               onKeyDown={(e) => e.key === 'Enter' && handleSave()} autoFocus />
           </div>
@@ -333,6 +474,10 @@ export function AddInstallmentDialog({ open, onClose }: { open: boolean; onClose
               <Input type="number" min={1} max={120} value={totalInstallments}
                 onChange={(e) => setTotalInstallments(Math.max(1, Number(e.target.value) || 1))} />
             </div>
+          </div>
+          <div>
+            <label className="text-sm font-medium mb-1.5 block">1ª parcela em</label>
+            <Input type="date" value={firstInstallment} onChange={(e) => setFirstInstallment(e.target.value)} />
           </div>
           {installmentAmount > 0 && (
             <p className="text-xs text-muted-foreground text-center">

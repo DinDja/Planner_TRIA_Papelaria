@@ -24,7 +24,7 @@ export const DEFAULT_MODULES: ModuleDef[] = [
   { id: 'rotina',          href: '/rotina',         label: 'Rotina',         enabled: true },
   { id: 'calendario',      href: '/calendario',     label: 'Calendário',    enabled: true },
   { id: 'financas',        href: '/financas',       label: 'Finanças',       enabled: true },
-  { id: 'metas',           href: '/metas',          label: 'Metas',          enabled: true },
+  { id: 'aniversarios',    href: '/aniversarios',   label: 'Aniversários',   enabled: true },
   { id: 'habitos',         href: '/habitos',        label: 'Hábitos',        enabled: true },
   { id: 'retrospectiva',   href: '/retrospectiva', label: 'Retrospectiva',  enabled: true },
   { id: 'templates',       href: '/templates',     label: 'Templates',      enabled: true },
@@ -65,23 +65,33 @@ export const useMenuStore = create<MenuState>()(
     }),
     {
       name: 'plannerhub-menu',
-      version: 2,
+      version: 3,
       // Antes da v2, cada item levava `icon: 'BookHeart'` etc (nome Lucide).
       // O ícone virou derivado de `id` (ver components/icons/modules). Aqui
       // descartamos o campo legado ao reidratar do localStorage.
+      //
+      // v3: a aba "Metas" duplicava as metas financeiras de Finanças e foi
+      // removida; "Aniversários" foi adicionada como módulo novo — reentra
+      // para quem já tinha o menu persistido.
       //
       // `migrate` (não `merge`) é o lugar correto: roda só quando a `version`
       // muda, recebe o estado velho, e devolve apenas os campos persistidos.
       // As actions ficam de fora — o zustand recria-as ao montar a store.
       migrate: (persisted, _fromVersion) => {
-        const p = (persisted as { modules?: ModuleDef[]; [k: string]: unknown }) | undefined
-        if (!p || !Array.isArray(p.modules)) {
+        const raw = persisted as { modules?: ModuleDef[] }
+        if (!raw || !Array.isArray(raw.modules)) {
           return { modules: DEFAULT_MODULES }
         }
-        const cleaned = p.modules.map((m) => {
-          const { icon: _drop, ...rest } = m as ModuleDef & { icon?: string }
-          return rest as ModuleDef
-        })
+        const cleaned = raw.modules
+          .map((m) => {
+            const { icon: _drop, ...rest } = m as ModuleDef & { icon?: string }
+            return rest as ModuleDef
+          })
+          .filter((m) => m.href !== '/metas')
+        if (!cleaned.some((m) => m.id === 'aniversarios')) {
+          const item = DEFAULT_MODULES.find((m) => m.id === 'aniversarios')
+          if (item) cleaned.push(item)
+        }
         return { modules: cleaned }
       },
       partialize: (s) => ({ modules: s.modules }),

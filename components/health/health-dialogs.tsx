@@ -17,24 +17,10 @@ const dayStr = (): string => {
   return `${y}-${m}-${day}`
 }
 
-const SPECIALTY_GROUPS: { area: string; items: string[] }[] = [
-  { area: 'Clínica médica', items: ['Clínico Geral', 'Geriatra', 'Pediatra'] },
-  { area: 'Cardiologia', items: ['Cardiologista'] },
-  { area: 'Dermatologia', items: ['Dermatologista'] },
-  { area: 'Endocrinologia', items: ['Endocrinologista'] },
-  { area: 'Gastroenterologia', items: ['Gastroenterologista'] },
-  { area: 'Ginecologia e Obstetrícia', items: ['Ginecologista', 'Obstetra'] },
-  { area: 'Hematologia', items: ['Hematologista'] },
-  { area: 'Neurologia', items: ['Neurologista'] },
-  { area: 'Nutrição', items: ['Nutricionista'] },
-  { area: 'Oftalmologia', items: ['Oftalmologista'] },
-  { area: 'Oncologia', items: ['Oncologista'] },
-  { area: 'Ortopedia', items: ['Ortopedista'] },
-  { area: 'Otorrinolaringologia', items: ['Otorrinolaringologista'] },
-  { area: 'Pneumologia', items: ['Pneumologista'] },
-  { area: 'Psiquiatria', items: ['Psiquiatra'] },
-  { area: 'Reumatologia', items: ['Reumatologista'] },
-  { area: 'Urologia', items: ['Urologista'] },
+const SPECIALTIES = [
+  'Ginecologista', 'Clínico Geral', 'Dentista', 'Dermatologista',
+  'Nutricionista', 'Psicólogo', 'Psiquiatra', 'Endocrinologista',
+  'Oftalmologista', 'Outros',
 ]
 
 const CUSTOM_OPTION = '__custom__'
@@ -151,7 +137,7 @@ function SpecialtyPicker({
     )
   }
 
-  const allItems = SPECIALTY_GROUPS.flatMap((g) => g.items)
+  const allItems = SPECIALTIES
   return (
     <select
       className={selectClass}
@@ -165,14 +151,8 @@ function SpecialtyPicker({
       }}
     >
       <option value="">Selecione a especialidade</option>
-      {SPECIALTY_GROUPS.map((g) => (
-        <optgroup key={g.area} label={g.area}>
-          {g.items.map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-        </optgroup>
+      {SPECIALTIES.map((s) => (
+        <option key={s} value={s}>{s}</option>
       ))}
       <option value={CUSTOM_OPTION}>✎ Outra (digitar)</option>
     </select>
@@ -190,11 +170,16 @@ export function AddWeightDialog({ open, onClose }: { open: boolean; onClose: () 
   const [weight, setWeight] = useState('')
   const [notes, setNotes] = useState('')
 
+  // Após o cadastro inicial, a altura fica fixa (vem do perfil) — exibida antes do peso.
+  const fixedHeight = height > 0
+
   const handleSave = () => {
     const w = parseFloat(weight.replace(',', '.'))
     if (!w || w <= 0) { toast({ title: 'Digite um peso válido', variant: 'error' }); return }
-    const h = parseInt(heightInput)
-    if (h >= 100 && h <= 250 && h !== height) setHeight(h)
+    if (!fixedHeight) {
+      const h = parseInt(heightInput)
+      if (h >= 100 && h <= 250) setHeight(h)
+    }
     addWeight({ date, weight: w, notes: notes.trim() || undefined })
     toast({ title: 'Peso registrado!', variant: 'success' })
     setWeight(''); setNotes(''); onClose()
@@ -204,19 +189,25 @@ export function AddWeightDialog({ open, onClose }: { open: boolean; onClose: () 
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent title="Registrar peso">
         <div className="flex flex-col gap-4">
+          <div>
+            <label className="text-sm font-medium mb-1.5 block">Data</label>
+            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-sm font-medium mb-1.5 block">Data</label>
-              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+              <label className="text-sm font-medium mb-1.5 block">Altura (cm)</label>
+              {fixedHeight ? (
+                <div className="flex h-9 items-center rounded-xl border border-border bg-muted/40 px-3 text-sm font-medium text-muted-foreground">
+                  {height} cm
+                </div>
+              ) : (
+                <Input type="number" step="1" min="100" max="250" value={heightInput} onChange={(e) => setHeightInput(e.target.value)} placeholder="170" />
+              )}
             </div>
             <div>
-              <label className="text-sm font-medium mb-1.5 block">Altura (cm)</label>
-              <Input type="number" step="1" min="100" max="250" value={heightInput} onChange={(e) => setHeightInput(e.target.value)} placeholder="170" />
+              <label className="text-sm font-medium mb-1.5 block">Peso (kg)</label>
+              <Input type="number" step="0.1" min="0" value={weight} onChange={(e) => setWeight(e.target.value)} placeholder="Ex: 70,5" autoFocus />
             </div>
-          </div>
-          <div>
-            <label className="text-sm font-medium mb-1.5 block">Peso (kg)</label>
-            <Input type="number" step="0.1" min="0" value={weight} onChange={(e) => setWeight(e.target.value)} placeholder="Ex: 70,5" autoFocus />
           </div>
           <div>
             <label className="text-sm font-medium mb-1.5 block">Observação</label>

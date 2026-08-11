@@ -146,6 +146,13 @@ const PLAN: Array<{ match: RegExp; plan: RouteCollectionPlan }> = [
     },
   },
   {
+    match: /^\/aniversarios$/,
+    plan: {
+      collections: ['birthdays'],
+      rootFields: ['theme'],
+    },
+  },
+  {
     match: /^\/metas$/,
     plan: {
       collections: ['financialGoals', 'goalDeposits', 'savingsBoxes'],

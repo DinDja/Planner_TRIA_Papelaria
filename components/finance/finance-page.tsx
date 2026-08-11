@@ -134,7 +134,6 @@ export function FinancePage() {
             else if (tab === 'contas') setAddBillOpen(true)
             else if (tab === 'assinaturas') setAddSubOpen(true)
             else if (tab === 'cartoes') setAddCardOpen(true)
-            else if (tab === 'parcelamentos') setAddInstOpen(true)
             else if (tab === 'metas') openNewGoal()
             else if (tab === 'caixinhas') openNewBox()
             else setAddTxOpen(true)
@@ -146,7 +145,6 @@ export function FinancePage() {
           {tab === 'contas' && 'Nova conta fixa'}
           {tab === 'assinaturas' && 'Nova assinatura'}
           {tab === 'cartoes' && 'Novo cartão'}
-          {tab === 'parcelamentos' && 'Novo parcelamento'}
           {tab === 'metas' && 'Nova meta'}
           {tab === 'caixinhas' && 'Nova caixinha'}
         </Button>
@@ -160,7 +158,6 @@ export function FinancePage() {
             <Tab value="contas">Contas Fixas</Tab>
             <Tab value="assinaturas">Assinaturas</Tab>
             <Tab value="cartoes">Cartões</Tab>
-            <Tab value="parcelamentos">Parcelamentos</Tab>
             <Tab value="metas">Metas</Tab>
             <Tab value="caixinhas">Caixinhas</Tab>
           </TabList>
@@ -266,7 +263,16 @@ export function FinancePage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{t.title}</p>
-                    <p className="text-[11px] text-muted-foreground">{t.category} · {new Date(t.date + 'T12:00:00').toLocaleDateString('pt-BR')}</p>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <p className="text-[11px] text-muted-foreground">
+                        {t.category}
+                        {t.paymentMethod ? ` · ${t.paymentMethod}` : ''}
+                        {' · '}{new Date(t.date + 'T12:00:00').toLocaleDateString('pt-BR')}
+                      </p>
+                      {t.status === 'pending' && (
+                        <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wide">Pendente</span>
+                      )}
+                    </div>
                   </div>
                   <span className={cn('text-sm font-semibold tabular-nums', t.type === 'income' ? 'text-emerald-600 dark:text-emerald-400' : '')}>
                     {t.type === 'income' ? '+' : '-'}{formatBRL(t.amount)}
@@ -351,6 +357,7 @@ export function FinancePage() {
                 <CreditCard size={16} className="text-primary" />
                 Cartões de crédito
               </CardTitle>
+              <span className="text-[11px] text-muted-foreground tabular-nums">{cards.length}</span>
             </CardHeader>
             <div className="px-3 py-3 space-y-0.5">
               {cards.length > 0 ? cards.map((c) => {
@@ -363,16 +370,20 @@ export function FinancePage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium">{c.name}</p>
-                      <p className="text-[11px] text-muted-foreground">fecha dia {c.closingDay} · vence dia {c.dueDay}</p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {c.brand}{c.brand ? ' · ' : ''}{c.lastDigits ? `•••• ${c.lastDigits} · ` : ''}fecha dia {c.closingDay} · vence dia {c.dueDay}
+                      </p>
                     </div>
                     <div className="text-right">
                       <p className="text-xs tabular-nums">
                         <span className="font-semibold">{formatBRL(used)}</span>
-                        <span className="text-muted-foreground"> / {formatBRL(c.limit)}</span>
+                        {c.limit > 0 && <span className="text-muted-foreground"> / {formatBRL(c.limit)}</span>}
                       </p>
-                      <div className="h-1.5 w-20 rounded-full bg-muted/80 mt-1 ml-auto overflow-hidden">
-                        <div className="h-full rounded-full" style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: pct > 80 ? '#e05b6d' : c.color }} />
-                      </div>
+                      {c.limit > 0 && (
+                        <div className="h-1.5 w-20 rounded-full bg-muted/80 mt-1 ml-auto overflow-hidden">
+                          <div className="h-full rounded-full" style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: pct > 80 ? '#e05b6d' : c.color }} />
+                        </div>
+                      )}
                     </div>
                     <DeleteButton onClick={() => deleteCard(c.id)} />
                   </div>
@@ -383,40 +394,17 @@ export function FinancePage() {
             </div>
           </Card>
 
-          {/* Parcelas ativas num card */}
-          {installments.filter((i) => cards.some((c) => c.id === i.cardId)).length > 0 && (
-            <Card glass className="mt-4">
-              <CardHeader className="flex-row items-center justify-between pb-0">
-                <CardTitle className="text-base">Parcelas em aberto</CardTitle>
-              </CardHeader>
-              <div className="px-3 py-3 space-y-0.5">
-                {installments.filter((i) => cards.some((c) => c.id === i.cardId)).map((inst) => {
-                  const card = cards.find((c) => c.id === inst.cardId)
-                  return (
-                    <div key={inst.id} className="flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-muted/40 transition-colors">
-                      <div className="flex size-9 shrink-0 items-center justify-center rounded-xl text-[10px] font-bold tabular-nums" style={{ backgroundColor: (card?.color ?? '#5b8dbf') + '18', color: card?.color }}>
-                        {inst.currentInstallment}/{inst.totalInstallments}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{inst.title}</p>
-                        <p className="text-[11px] text-muted-foreground">{card?.name} · {formatBRL(inst.installmentAmount)}/mês</p>
-                      </div>
-                      <span className="text-xs text-muted-foreground tabular-nums">{formatBRL(inst.installmentAmount * (inst.totalInstallments - inst.currentInstallment + 1))} restante</span>
-                      <DeleteButton onClick={() => deleteInstallment(inst.id)} />
-                    </div>
-                  )
-                })}
-              </div>
-            </Card>
-          )}
-        </TabPanel>
-
-        {/* ── Parcelamentos ──────────────────────────────────── */}
-        <TabPanel value="parcelamentos">
-          <Card glass>
+          {/* Parcelamentos por cartão */}
+          <Card glass className="mt-4">
             <CardHeader className="flex-row items-center justify-between pb-0">
-              <CardTitle className="text-base">Parcelamentos</CardTitle>
-              <span className="text-[11px] text-muted-foreground tabular-nums">{installments.length}</span>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Repeat size={16} className="text-primary" />
+                Parcelamentos
+              </CardTitle>
+              <Button variant="outline" size="sm" className="rounded-xl gap-1 text-xs" onClick={() => setAddInstOpen(true)}>
+                <Plus size={13} />
+                Novo parcelamento
+              </Button>
             </CardHeader>
             <div className="px-3 py-3 space-y-0.5">
               {installments.length > 0 ? installments.map((inst) => {
@@ -428,7 +416,10 @@ export function FinancePage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{inst.title}</p>
-                      <p className="text-[11px] text-muted-foreground">{card?.name ?? 'Sem cartão'} · {inst.category} · {formatBRL(inst.installmentAmount)}/mês</p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {card?.name ?? 'Sem cartão'} · {inst.category} · {formatBRL(inst.installmentAmount)}/mês
+                        {inst.firstInstallment ? ` · desde ${new Date(inst.firstInstallment + 'T12:00:00').toLocaleDateString('pt-BR')}` : ''}
+                      </p>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-muted-foreground tabular-nums">{formatBRL(inst.totalAmount)}</span>

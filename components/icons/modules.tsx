@@ -338,6 +338,14 @@ export function ModuloIcon({
   size = 20,
   ...props
 }: { name: ModuloId } & P) {
-  const C = MODULO_ICONS[name]
+  const C = MODULO_ICONS[name] ?? FallbackIcon
   return <C size={size} {...props} />
+}
+
+function FallbackIcon({ size, ...p }: P) {
+  return (
+    <svg {...svgProps(size)} {...p}>
+      <circle cx="10" cy="10" r="6" />
+    </svg>
+  )
 }

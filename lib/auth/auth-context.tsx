@@ -114,12 +114,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signUp = async (name: string, email: string, password: string) => {
     const cred = await createUserWithEmailAndPassword(auth, email, password)
     await updateProfile(cred.user, { displayName: name })
-    await seedUserDoc(cred.user, { name })
-    await writeUserManifest(cred.user, {
-      email: cred.user.email ?? email,
-      name,
-    })
-    markSeeded(cred.user.uid)
+    // Seeding/manifest são best-effort: a conta Auth já foi criada acima.
+    // Se o Firestore falhar (race com onAuthStateChanged, regra transitória,
+    // etc.), o onAuthStateChanged retentará o seed no próximo ciclo (ele
+    // também envolve seedUserDoc/writeUserManifest em try/catch). Não
+    // bloqueamos o cadastro nem mostramos erro ao usuário — espelha o
+    // padrão já usado em signInWithGoogle.
+    try {
+      await seedUserDoc(cred.user, { name })
+      await writeUserManifest(cred.user, {
+        email: cred.user.email ?? email,
+        name,
+      })
+      markSeeded(cred.user.uid)
+    } catch {}
     // Define a role imediatamente após cadastro.
     const r = roleFromEmail(email)
     useSubscriptionStore.getState().setSubscription({ role: r })

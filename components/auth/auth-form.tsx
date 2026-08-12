@@ -122,9 +122,15 @@ function friendlyError(codeOrMsg: string): string {
   if (codeOrMsg.includes('auth/email-already-in-use')) return 'Este e-mail já está cadastrado.'
   if (codeOrMsg.includes('auth/invalid-email')) return 'E-mail inválido.'
   if (codeOrMsg.includes('auth/weak-password')) return 'Senha muito fraca (mín. 6 caracteres).'
+  if (codeOrMsg.includes('auth/missing-password')) return 'Informe uma senha.'
+  if (codeOrMsg.includes('auth/missing-email')) return 'Informe um e-mail.'
   if (codeOrMsg.includes('auth/too-many-requests')) return 'Muitas tentativas. Tente mais tarde.'
   if (codeOrMsg.includes('auth/popup-closed')) return 'Janela do Google fechada.'
-  return codeOrMsg.replace('auth/', '').replace(/-/g, ' ')
+  if (codeOrMsg.includes('auth/operation-not-allowed')) return 'Cadastro por e-mail e senha não está ativado. Contate o suporte.'
+  if (codeOrMsg.includes('auth/network-request-failed')) return 'Falha de conexão. Verifique sua internet.'
+  if (codeOrMsg.includes('auth/internal-error')) return 'Erro interno do servidor de autenticação. Tente novamente.'
+  // Mantém o código original visível para diagnóstico — não mascara o erro.
+  return codeOrMsg
 }
 
 function ErrorBanner({ error }: { error: string | null }) {

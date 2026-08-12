@@ -82,15 +82,20 @@ export const useMenuStore = create<MenuState>()(
         if (!raw || !Array.isArray(raw.modules)) {
           return { modules: DEFAULT_MODULES }
         }
+        const validIds = new Set(DEFAULT_MODULES.map((m) => m.id))
         const cleaned = raw.modules
           .map((m) => {
             const { icon: _drop, ...rest } = m as ModuleDef & { icon?: string }
             return rest as ModuleDef
           })
           .filter((m) => m.href !== '/metas')
-        if (!cleaned.some((m) => m.id === 'aniversarios')) {
-          const item = DEFAULT_MODULES.find((m) => m.id === 'aniversarios')
-          if (item) cleaned.push(item)
+          .filter((m) => validIds.has(m.id))
+        // Garante que todo módulo padrão exista (reentrada para quem tinha
+        // menu persistido antes de um módulo novo ser adicionado).
+        for (const def of DEFAULT_MODULES) {
+          if (!cleaned.some((m) => m.id === def.id)) {
+            cleaned.push(def)
+          }
         }
         return { modules: cleaned }
       },

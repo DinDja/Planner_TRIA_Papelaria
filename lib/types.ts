@@ -19,6 +19,10 @@ export type ToolType =
   | 'brush'
   | 'marker'
   | 'highlighter'
+  | 'calligraphy'
+  | 'hatch'
+  | 'stipple'
+  | 'ink'
   | 'eraser'
   | 'fill'
   | 'ruler'
@@ -33,8 +37,17 @@ export type ToolType =
   | 'hand'
   | 'eyedropper'
 
-/** Quelle fonte uma ferramenta de traço usa — `perfect-freehand` variants. */
-export type BrushStyle = 'pen' | 'pencil' | 'brush' | 'marker' | 'highlighter'
+/** Quelle fonte uma ferramenta de traço usa — `perfect-freehand` variants + estilos sketch. */
+export type BrushStyle =
+  | 'pen'
+  | 'pencil'
+  | 'brush'
+  | 'marker'
+  | 'highlighter'
+  | 'calligraphy'
+  | 'hatch'
+  | 'stipple'
+  | 'ink'
 
 export interface StrokePoint {
   x: number

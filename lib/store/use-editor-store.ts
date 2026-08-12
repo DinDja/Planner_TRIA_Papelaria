@@ -34,6 +34,20 @@ interface EditorState {
   fillColor: string
   eraserSize: number
 
+  /** Estilos sketchbook (4 novos pincéis). */
+  calligraphyColor: string
+  calligraphySize: number
+  calligraphyOpacity: number
+  hatchColor: string
+  hatchSize: number
+  hatchOpacity: number
+  stippleColor: string
+  stippleSize: number
+  stippleOpacity: number
+  inkColor: string
+  inkSize: number
+  inkOpacity: number
+
   setPenColor: (c: string) => void
   setPenSize: (n: number) => void
   setPenOpacity: (n: number) => void
@@ -52,6 +66,18 @@ interface EditorState {
   setRulerColor: (c: string) => void
   setRulerSize: (n: number) => void
   setRulerOpacity: (n: number) => void
+  setCalligraphyColor: (c: string) => void
+  setCalligraphySize: (n: number) => void
+  setCalligraphyOpacity: (n: number) => void
+  setHatchColor: (c: string) => void
+  setHatchSize: (n: number) => void
+  setHatchOpacity: (n: number) => void
+  setStippleColor: (c: string) => void
+  setStippleSize: (n: number) => void
+  setStippleOpacity: (n: number) => void
+  setInkColor: (c: string) => void
+  setInkSize: (n: number) => void
+  setInkOpacity: (n: number) => void
   setTextColor: (c: string) => void
   setTextFontSize: (n: number) => void
   setTextFontFamily: (f: 'sans' | 'serif' | 'hand') => void
@@ -152,6 +178,20 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
   shapeStrokeWidth: 3,
   fillColor: '#7bb686',
   eraserSize: 20,
+
+  // Estilos sketchbook — valores iniciais tinta nanquim / aquarela
+  calligraphyColor: '#1a1a1a',
+  calligraphySize: 4,
+  calligraphyOpacity: 1,
+  hatchColor: '#1a1a1a',
+  hatchSize: 6,
+  hatchOpacity: 0.85,
+  stippleColor: '#1a1a1a',
+  stippleSize: 4,
+  stippleOpacity: 0.9,
+  inkColor: '#1a1a1a',
+  inkSize: 2.5,
+  inkOpacity: 1,
 
   setActiveTool: (t) => set({ activeTool: t }),
 

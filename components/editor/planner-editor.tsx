@@ -270,6 +270,7 @@ function ToolSettings({
   const editor = useToolSettingsEditor()
   const activeTool = editor.activeTool
   const setTool = editor.setActiveTool
+  const [localOpen, setLocalOpen] = useState(false)
 
   const color = editor.getToolColor()
   const size = editor.getToolSize()
@@ -306,9 +307,25 @@ function ToolSettings({
 
   const isShapeTool = SHAPE_TOOLS.includes(activeTool)
 
+  const close = useCallback(() => {
+    setShowToolSettingsFromRadial(false)
+    setLocalOpen(false)
+  }, [setShowToolSettingsFromRadial])
+
   const content = (
     <>
-      <p className="text-xs font-semibold mb-3">Configurações</p>
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-xs font-semibold">Configurações</p>
+        {!mobile && (
+          <button
+            onClick={close}
+            aria-label="Fechar configurações"
+            className="size-6 inline-flex items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+          >
+            <X size={14} />
+          </button>
+        )}
+      </div>
       {setterColor && (
         <div className="mb-3">
           <ColorPalette

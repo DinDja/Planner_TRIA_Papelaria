@@ -122,6 +122,10 @@ interface EditorState {
   getToolColor: () => string
   getToolSize: () => number
   getToolOpacity: () => number
+  /** Variantes parametrizadas (aceitam tool) — usadas pelo FloatingDock p/ preview de cada pincel. */
+  getToolColorFor: (tool: ToolType) => string
+  getToolSizeFor: (tool: ToolType) => number
+  getToolOpacityFor: (tool: ToolType) => number
 
   // View
   zoom: number
@@ -213,6 +217,18 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
   setRulerColor: (c) => set({ rulerColor: c }),
   setRulerSize: (n) => set({ rulerSize: n }),
   setRulerOpacity: (n) => set({ rulerOpacity: n }),
+  setCalligraphyColor: (c) => set({ calligraphyColor: c }),
+  setCalligraphySize: (n) => set({ calligraphySize: n }),
+  setCalligraphyOpacity: (n) => set({ calligraphyOpacity: n }),
+  setHatchColor: (c) => set({ hatchColor: c }),
+  setHatchSize: (n) => set({ hatchSize: n }),
+  setHatchOpacity: (n) => set({ hatchOpacity: n }),
+  setStippleColor: (c) => set({ stippleColor: c }),
+  setStippleSize: (n) => set({ stippleSize: n }),
+  setStippleOpacity: (n) => set({ stippleOpacity: n }),
+  setInkColor: (c) => set({ inkColor: c }),
+  setInkSize: (n) => set({ inkSize: n }),
+  setInkOpacity: (n) => set({ inkOpacity: n }),
   setTextColor: (c) => set({ textColor: c }),
   setTextFontSize: (n) => set({ textFontSize: n }),
   setTextFontFamily: (f) => set({ textFontFamily: f }),
@@ -257,6 +273,14 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
         return s.markerColor
       case 'highlighter':
         return s.highlighterColor
+      case 'calligraphy':
+        return s.calligraphyColor
+      case 'hatch':
+        return s.hatchColor
+      case 'stipple':
+        return s.stippleColor
+      case 'ink':
+        return s.inkColor
       case 'ruler':
         return s.rulerColor
       case 'text':
@@ -288,6 +312,14 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
         return s.markerSize
       case 'highlighter':
         return s.highlighterSize
+      case 'calligraphy':
+        return s.calligraphySize
+      case 'hatch':
+        return s.hatchSize
+      case 'stipple':
+        return s.stippleSize
+      case 'ink':
+        return s.inkSize
       case 'ruler':
         return s.rulerSize
       case 'eraser':
@@ -310,10 +342,79 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
         return s.markerOpacity
       case 'highlighter':
         return s.highlighterOpacity
+      case 'calligraphy':
+        return s.calligraphyOpacity
+      case 'hatch':
+        return s.hatchOpacity
+      case 'stipple':
+        return s.stippleOpacity
+      case 'ink':
+        return s.inkOpacity
       case 'ruler':
         return s.rulerOpacity
       default:
         return 1
+    }
+  },
+
+  getToolColorFor: (tool) => {
+    const s = get()
+    switch (tool) {
+      case 'pen': return s.penColor
+      case 'pencil': return s.pencilColor
+      case 'brush': return s.brushColor
+      case 'marker': return s.markerColor
+      case 'highlighter': return s.highlighterColor
+      case 'calligraphy': return s.calligraphyColor
+      case 'hatch': return s.hatchColor
+      case 'stipple': return s.stippleColor
+      case 'ink': return s.inkColor
+      case 'ruler': return s.rulerColor
+      case 'text': return s.textColor
+      case 'rectangle':
+      case 'ellipse':
+      case 'line':
+      case 'arrow': return s.shapeColor
+      case 'fill': return s.fillColor
+      case 'eraser': return '#888'
+      default: return '#000000'
+    }
+  },
+  getToolSizeFor: (tool) => {
+    const s = get()
+    switch (tool) {
+      case 'pen': return s.penSize
+      case 'pencil': return s.pencilSize
+      case 'brush': return s.brushSize
+      case 'marker': return s.markerSize
+      case 'highlighter': return s.highlighterSize
+      case 'calligraphy': return s.calligraphySize
+      case 'hatch': return s.hatchSize
+      case 'stipple': return s.stippleSize
+      case 'ink': return s.inkSize
+      case 'ruler': return s.rulerSize
+      case 'eraser': return s.eraserSize
+      case 'rectangle':
+      case 'ellipse':
+      case 'line':
+      case 'arrow': return s.shapeStrokeWidth
+      default: return 3
+    }
+  },
+  getToolOpacityFor: (tool) => {
+    const s = get()
+    switch (tool) {
+      case 'pen': return s.penOpacity
+      case 'pencil': return s.pencilOpacity
+      case 'brush': return s.brushOpacity
+      case 'marker': return s.markerOpacity
+      case 'highlighter': return s.highlighterOpacity
+      case 'calligraphy': return s.calligraphyOpacity
+      case 'hatch': return s.hatchOpacity
+      case 'stipple': return s.stippleOpacity
+      case 'ink': return s.inkOpacity
+      case 'ruler': return s.rulerOpacity
+      default: return 1
     }
   },
 
@@ -394,12 +495,21 @@ export function toolToBrushStyle(tool: ToolType): BrushStyle | null {
       return 'marker'
     case 'highlighter':
       return 'highlighter'
+    case 'calligraphy':
+      return 'calligraphy'
+    case 'hatch':
+      return 'hatch'
+    case 'stipple':
+      return 'stipple'
+    case 'ink':
+      return 'ink'
     default:
       return null
   }
 }
 
-/** Parametros perfect-freehand por estilo de pincel. */
+/** Parametros perfect-freehand por estilo de pincel. Estilos procedurais
+ *  (hatch, stipple) usam estes parâmetros como base para seu próprio rendering. */
 export function brushStyleOptions(
   style: BrushStyle,
   baseSize: number,
@@ -415,6 +525,20 @@ export function brushStyleOptions(
       return { size: baseSize, thinning: 0.1, smoothing: 0.85, streamline: 0.7, simulatePressure: false }
     case 'highlighter':
       return { size: baseSize * 1.5, thinning: 0.2, smoothing: 0.6, streamline: 0.4, simulatePressure: false }
+    case 'calligraphy':
+      // Bico-de-pena: thinning forte + smoothing baixo p/ preservar diagonais
+      return { size: baseSize * 1.4, thinning: 1.6, smoothing: 0.35, streamline: 0.25, simulatePressure: true }
+    case 'hatch':
+      // Hatch base: stroke fino mas com "hachuras" paralelas geradas no render.
+      return { size: baseSize * 0.55, thinning: 0.3, smoothing: 0.6, streamline: 0.4, simulatePressure: false }
+    case 'stipple':
+      // Não desenha stroke contínuo — pontos. A base é só a densidade.
+      return { size: baseSize, thinning: 0, smoothing: 0.9, streamline: 0.9, simulatePressure: false }
+    case 'ink':
+      // Esferográfica: sem thinning quase, leve flow constante, leve jitter.
+      return { size: baseSize, thinning: 0.15, smoothing: 0.75, streamline: 0.7, simulatePressure: true }
+    default:
+      return { size: baseSize, thinning: 0.5, smoothing: 0.6, streamline: 0.4, simulatePressure: true }
   }
 }
 

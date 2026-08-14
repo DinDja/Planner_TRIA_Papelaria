@@ -76,7 +76,6 @@ import {
   FileText,
   Download,
   PlusCircle,
-  GripHorizontal,
   Check,
   BringToFront,
   SendToBack,
@@ -85,8 +84,11 @@ import {
   Settings,
   CircleDot,
   MoreVertical,
+  Feather,
+  Rows3,
+  Grip,
+  Droplet,
 } from 'lucide-react'
-
 import { ALL_STICKERS, STICKER_CATEGORIES, stickerToDataUrl } from '@/lib/stickers'
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
@@ -96,7 +98,11 @@ import { BottomSheet } from './bottom-sheet'
 import { RadialMenu, type RadialItem } from './radial-menu'
 import { ColorPalette } from './color-palette'
 import { SelectionOverlay } from './selection-overlay'
+import { FloatingDock } from './floating-dock'
+import { CanvasToolControls } from './canvas-tool-controls'
 import { useIsMobile } from '@/lib/hooks/use-media-query'
+import type { BrushStyle } from '@/lib/types'
+import { brushStyleOptions, toolToBrushStyle } from '@/lib/store/use-editor-store'
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -118,6 +124,10 @@ const toolbarItems = (): { id: ToolType; icon: typeof Pen; label: string; shortc
   { id: 'brush', icon: Paintbrush, label: 'Pincel', shortcut: '3' },
   { id: 'marker', icon: PaintBucket, label: 'Marcador', shortcut: '4' },
   { id: 'highlighter', icon: Highlighter, label: 'Marca-texto', shortcut: '5' },
+  { id: 'calligraphy', icon: Feather, label: 'Caligrafia', shortcut: 'Q' },
+  { id: 'hatch', icon: Rows3, label: 'Hachura', shortcut: 'W' },
+  { id: 'stipple', icon: Grip, label: 'Pontilhado', shortcut: 'E' },
+  { id: 'ink', icon: Droplet, label: 'Nanquim', shortcut: 'T' },
   { id: 'eraser', icon: Eraser, label: 'Borracha', shortcut: '6' },
   { id: 'fill', icon: PaintBucket, label: 'Balde', shortcut: '7' },
   { id: 'lasso', icon: Lasso, label: 'Seleção', shortcut: '8' },
@@ -133,51 +143,197 @@ const toolbarItems = (): { id: ToolType; icon: typeof Pen; label: string; shortc
 ]
 
 /** Itens primários exibidos na dock mobile (máximo 6 por largura). */
-const MOBILE_PRIMARY_TOOLS: ToolType[] = ['pen', 'pencil', 'highlighter', 'eraser', 'lasso', 'text']
+/** Ferramentas de pincel primárias — show 9 brushes com preview real, sempre visíveis na dock.
+ *  Concepts-style: o usuário vê a forma de cada pincel, escolhe em 1 toque. */
+const MOBILE_PRIMARY_TOOLS: ToolType[] = [
+  'pen', 'pencil', 'brush', 'marker', 'highlighter',
+  'calligraphy', 'hatch', 'stipple', 'ink',
+]
+
+/** Tools auxiliares acessíveis via botão "mais" na dock. */
+const MOBILE_SECONDARY_TOOLS: ToolType[] = [
+  'eraser', 'lasso', 'text', 'sticker',
+  'rectangle', 'ellipse', 'line', 'arrow',
+  'ruler', 'fill', 'hand', 'eyedropper',
+]
+
+/** Mapeamento estático nome→ícone p/ ferramentas auxiliares (sem preview). */
+const TOOL_ICON: Record<ToolType, typeof Pen> = {
+  pen: Pen, pencil: Pencil, brush: Paintbrush, marker: PaintBucket,
+  highlighter: Highlighter, eraser: Eraser, fill: PaintBucket,
+  ruler: Ruler, lasso: Lasso, text: Type, sticker: Star,
+  rectangle: Square, ellipse: Circle, line: Minus, arrow: ArrowRight,
+  hand: Hand, eyedropper: Pipette,
+  calligraphy: Feather, hatch: Rows3, stipple: Grip, ink: Droplet,
+}
+
+const TOOL_LABEL: Record<ToolType, string> = {
+  pen: 'Caneta', pencil: 'Lápis', brush: 'Pincel', marker: 'Marcador',
+  highlighter: 'Marca-texto', eraser: 'Borracha', fill: 'Balde',
+  ruler: 'Régua', lasso: 'Seleção', text: 'Texto', sticker: 'Sticker',
+  rectangle: 'Retângulo', ellipse: 'Círculo', line: 'Linha', arrow: 'Seta',
+  hand: 'Mover', eyedropper: 'Conta-gotas',
+  calligraphy: 'Caligrafia', hatch: 'Hachura', stipple: 'Pontilhado', ink: 'Nanquim',
+}
+
+/** Tools que renderizam pincel — usam preview de traço em vez de ícone Lucide. */
+const STROKE_TOOLS: ToolType[] = [
+  'pen', 'pencil', 'brush', 'marker', 'highlighter',
+  'calligraphy', 'hatch', 'stipple', 'ink',
+]
 
 // ─── Memoized SVG components ────────────────────────────────────────────────
 
 const StrokePath = memo(function StrokePath({ s }: { s: Stroke }) {
   try {
-    const tool = s.tool as 'pen' | 'pencil' | 'brush' | 'marker' | 'highlighter' | 'ruler'
-    const usePressure = s.pressureSensitive && (tool === 'pen' || tool === 'brush' || tool === 'pencil')
-    const strokeInput = usePressure
-      ? s.points
-      : s.points.map((p) => ({ x: p.x, y: p.y })) // strip pressure -> constante
+    const brush = (s.tool === 'ruler'
+      ? 'pen'
+      : toolToBrushStyle(s.tool as ToolType)) as BrushStyle | null
+    if (!brush) return null
 
-    const baseSize = tool === 'highlighter' ? s.size * 1.5 : tool === 'brush' ? s.size * 1.8 : s.size
-    const thinning =
-      tool === 'pencil' ? 0.8 :
-      tool === 'brush' ? 1.2 :
-      tool === 'highlighter' ? 0.2 :
-      tool === 'marker' ? 0.1 :
-      0.5
-    const simulatePressure = !usePressure && tool !== 'marker' && tool !== 'highlighter'
+    // ─── Brush substantivo: calligraphy / ink → perfect-freehand ───
+    if (brush === 'pen' || brush === 'pencil' || brush === 'brush' ||
+        brush === 'marker' || brush === 'highlighter' ||
+        brush === 'calligraphy' || brush === 'ink') {
+      const usePressure = s.pressureSensitive && (brush === 'pen' || brush === 'brush' ||
+        brush === 'pencil' || brush === 'calligraphy' || brush === 'ink')
+      const strokeInput = usePressure
+        ? s.points
+        : s.points.map((p) => ({ x: p.x, y: p.y }))
 
-    const pathD = vecToSvgPath(getStroke(strokeInput, {
-      size: baseSize,
-      thinning,
-      smoothing: 0.6,
-      streamline: 0.4,
-      simulatePressure,
-    }))
-    return (
-      <g>
-        {tool === 'highlighter' ? (
-          <path
-            d={pathD}
-            fill={s.color}
-            opacity={s.opacity * 0.7}
-            style={{ mixBlendMode: 'multiply' }}
-          />
-        ) : (
-          <path d={pathD} fill={s.color} opacity={s.opacity} />
-        )}
-      </g>
-    )
+      const opts = brushStyleOptions(brush, s.size)
+      const pathD = vecToSvgPath(getStroke(strokeInput, {
+        size: opts.size,
+        thinning: opts.thinning,
+        smoothing: opts.smoothing,
+        streamline: opts.streamline,
+        simulatePressure: !usePressure && brush !== 'marker' && brush !== 'highlighter',
+      }))
+
+      const isHighlighter = brush === 'highlighter'
+      const fillOpacity = isHighlighter ? s.opacity * 0.7 : s.opacity
+
+      return (
+        <path
+          d={pathD}
+          fill={s.color}
+          opacity={fillOpacity}
+          style={isHighlighter ? { mixBlendMode: 'multiply' as const } : undefined}
+        />
+      )
+    }
+
+    // ─── Hatch: linhas paralelas perpendiculares ao flow do traço ───
+    if (brush === 'hatch') {
+      return <HatchStroke s={s} />
+    }
+
+    // ─── Stipple: pontos aleatórios ao longo do path, densidade = pressão ──
+    if (brush === 'stipple') {
+      return <StippleStroke s={s} />
+    }
+
+    return null
   } catch {
     return null
   }
+})
+
+/** Hatch: ao longo do stroke, desenha linhas perpendiculares com
+ *  espaçamento regular. Densidade aumenta c/ a pressão. Simula nanquim
+ *  riscado estilo cross-hatching. */
+const HatchStroke = memo(function HatchStroke({ s }: { s: Stroke }) {
+  if (s.points.length < 2) return null
+  const dotSize = s.size
+  const spacing = Math.max(3, dotSize * 1.6)
+  const hatchLen = dotSize * 1.5
+
+  const lines: { x1: number; y1: number; x2: number; y2: number; o: number }[] = []
+  let totalDist = 0
+  let nextMark = 0
+  for (let i = 1; i < s.points.length; i++) {
+    const p0 = s.points[i - 1]
+    const p1 = s.points[i]
+    const dx = p1.x - p0.x
+    const dy = p1.y - p0.y
+    const segLen = Math.hypot(dx, dy)
+    if (segLen === 0) continue
+    const nx = dx / segLen
+    const ny = dy / segLen
+    const perpX = -ny
+    const perpY = nx
+    while (totalDist + segLen >= nextMark) {
+      const t = (nextMark - (totalDist - segLen)) / segLen
+      const tt = Math.max(0, Math.min(1, t))
+      const cx = p0.x + dx * tt
+      const cy = p0.y + dy * tt
+      const op = (0.6 + (s.points[i].pressure ?? 0.5) * 0.4) * s.opacity
+      lines.push({
+        x1: cx - perpX * hatchLen / 2,
+        y1: cy - perpY * hatchLen / 2,
+        x2: cx + perpX * hatchLen / 2,
+        y2: cy + perpY * hatchLen / 2,
+        o: op,
+      })
+      nextMark += spacing
+    }
+    totalDist += segLen
+  }
+
+  return (
+    <g stroke={s.color} strokeWidth={Math.max(0.6, dotSize * 0.35)} strokeLinecap="round">
+      {lines.map((ln, i) => (
+        <line key={i} x1={ln.x1} y1={ln.y1} x2={ln.x2} y2={ln.y2} opacity={ln.o} />
+      ))}
+    </g>
+  )
+})
+
+/** Stipple: pontos aleatórios a cada intervalo, tamanho da pressão.
+ *  Pseudo-aleatório determinístico p/ estável entre renders. */
+const StippleStroke = memo(function StippleStroke({ s }: { s: Stroke }) {
+  if (s.points.length < 2) return null
+  const baseSize = s.size
+  const interval = Math.max(2, baseSize * 0.8)
+
+  let seed = 0
+  for (const p of s.points) seed += Math.round(p.x) * 7 + Math.round(p.y) * 13
+  const rand = () => {
+    seed = (seed * 9301 + 49297) % 233280
+    return seed / 233280
+  }
+
+  const dots: { cx: number; cy: number; r: number; o: number }[] = []
+  let totalDist = 0
+  let nextMark = 0
+  for (let i = 1; i < s.points.length; i++) {
+    const p0 = s.points[i - 1]
+    const p1 = s.points[i]
+    const dx = p1.x - p0.x
+    const dy = p1.y - p0.y
+    const segLen = Math.hypot(dx, dy)
+    if (segLen === 0) continue
+    while (totalDist + segLen >= nextMark) {
+      const t = (nextMark - (totalDist - segLen)) / segLen
+      const tt = Math.max(0, Math.min(1, t))
+      const cx = p0.x + dx * tt + (rand() - 0.5) * baseSize * 0.6
+      const cy = p0.y + dy * tt + (rand() - 0.5) * baseSize * 0.6
+      const pressure = s.points[i].pressure ?? 0.5
+      const r = Math.max(0.3, baseSize * 0.25 * (0.6 + pressure * 0.8))
+      const o = (0.5 + pressure * 0.5) * s.opacity
+      dots.push({ cx, cy, r, o })
+      nextMark += interval * (1.1 - pressure * 0.5)
+    }
+    totalDist += segLen
+  }
+
+  return (
+    <g fill={s.color}>
+      {dots.map((d, i) => (
+        <circle key={i} cx={d.cx} cy={d.cy} r={d.r} opacity={d.o} />
+      ))}
+    </g>
+  )
 })
 
 const ShapeRenderer = memo(function ShapeRenderer({ shape }: { shape: ShapeItem }) {
@@ -254,6 +410,81 @@ type EditorState = ReturnType<typeof useEditorStore.getState>
 
 const SHAPE_TOOLS: ToolType[] = ['rectangle', 'ellipse', 'line', 'arrow']
 
+/** Mapeia a tool ativa p/ setters/valores de size e opacity (CanvasToolControls). */
+function pickSizeSetter(editor: EditorState, tool: ToolType): ((n: number) => void) | null {
+  switch (tool) {
+    case 'pen': return editor.setPenSize
+    case 'pencil': return editor.setPencilSize
+    case 'brush': return editor.setBrushSize
+    case 'marker': return editor.setMarkerSize
+    case 'highlighter': return editor.setHighlighterSize
+    case 'calligraphy': return editor.setCalligraphySize
+    case 'hatch': return editor.setHatchSize
+    case 'stipple': return editor.setStippleSize
+    case 'ink': return editor.setInkSize
+    case 'ruler': return editor.setRulerSize
+    case 'eraser': return editor.setEraserSize
+    case 'rectangle':
+    case 'ellipse':
+    case 'line':
+    case 'arrow': return editor.setShapeStrokeWidth
+    default: return null
+  }
+}
+
+function pickOpacitySetter(editor: EditorState, tool: ToolType): ((n: number) => void) | null {
+  switch (tool) {
+    case 'pen': return editor.setPenOpacity
+    case 'pencil': return editor.setPencilOpacity
+    case 'brush': return editor.setBrushOpacity
+    case 'marker': return editor.setMarkerOpacity
+    case 'highlighter': return editor.setHighlighterOpacity
+    case 'calligraphy': return editor.setCalligraphyOpacity
+    case 'hatch': return editor.setHatchOpacity
+    case 'stipple': return editor.setStippleOpacity
+    case 'ink': return editor.setInkOpacity
+    case 'ruler': return editor.setRulerOpacity
+    default: return null
+  }
+}
+
+function pickCurrentSize(editor: EditorState, tool: ToolType): number {
+  switch (tool) {
+    case 'pen': return editor.penSize
+    case 'pencil': return editor.pencilSize
+    case 'brush': return editor.brushSize
+    case 'marker': return editor.markerSize
+    case 'highlighter': return editor.highlighterSize
+    case 'calligraphy': return editor.calligraphySize
+    case 'hatch': return editor.hatchSize
+    case 'stipple': return editor.stippleSize
+    case 'ink': return editor.inkSize
+    case 'ruler': return editor.rulerSize
+    case 'eraser': return editor.eraserSize
+    case 'rectangle':
+    case 'ellipse':
+    case 'line':
+    case 'arrow': return editor.shapeStrokeWidth
+    default: return 3
+  }
+}
+
+function pickCurrentOpacity(editor: EditorState, tool: ToolType): number {
+  switch (tool) {
+    case 'pen': return editor.penOpacity
+    case 'pencil': return editor.pencilOpacity
+    case 'brush': return editor.brushOpacity
+    case 'marker': return editor.markerOpacity
+    case 'highlighter': return editor.highlighterOpacity
+    case 'calligraphy': return editor.calligraphyOpacity
+    case 'hatch': return editor.hatchOpacity
+    case 'stipple': return editor.stippleOpacity
+    case 'ink': return editor.inkOpacity
+    case 'ruler': return editor.rulerOpacity
+    default: return 1
+  }
+}
+
 function useToolSettingsEditor() {
   return useEditorStore()
 }
@@ -282,6 +513,10 @@ function ToolSettings({
     activeTool === 'brush' ? editor.setBrushColor :
     activeTool === 'marker' ? editor.setMarkerColor :
     activeTool === 'highlighter' ? editor.setHighlighterColor :
+    activeTool === 'calligraphy' ? editor.setCalligraphyColor :
+    activeTool === 'hatch' ? editor.setHatchColor :
+    activeTool === 'stipple' ? editor.setStippleColor :
+    activeTool === 'ink' ? editor.setInkColor :
     activeTool === 'ruler' ? editor.setRulerColor :
     activeTool === 'text' ? editor.setTextColor :
     SHAPE_TOOLS.includes(activeTool) ? editor.setShapeColor :
@@ -294,6 +529,10 @@ function ToolSettings({
     activeTool === 'brush' ? editor.setBrushSize :
     activeTool === 'marker' ? editor.setMarkerSize :
     activeTool === 'highlighter' ? editor.setHighlighterSize :
+    activeTool === 'calligraphy' ? editor.setCalligraphySize :
+    activeTool === 'hatch' ? editor.setHatchSize :
+    activeTool === 'stipple' ? editor.setStippleSize :
+    activeTool === 'ink' ? editor.setInkSize :
     activeTool === 'ruler' ? editor.setRulerSize :
     activeTool === 'eraser' ? editor.setEraserSize : null
 
@@ -303,7 +542,18 @@ function ToolSettings({
     activeTool === 'brush' ? editor.setBrushOpacity :
     activeTool === 'marker' ? editor.setMarkerOpacity :
     activeTool === 'highlighter' ? editor.setHighlighterOpacity :
+    activeTool === 'calligraphy' ? editor.setCalligraphyOpacity :
+    activeTool === 'hatch' ? editor.setHatchOpacity :
+    activeTool === 'stipple' ? editor.setStippleOpacity :
+    activeTool === 'ink' ? editor.setInkOpacity :
     activeTool === 'ruler' ? editor.setRulerOpacity : null
+
+  // Slider espessura max depende do brush
+  const sizeMax =
+    activeTool === 'highlighter' ? 30 :
+    activeTool === 'brush' ? 24 :
+    activeTool === 'stipple' ? 20 :
+    activeTool === 'eraser' ? 80 : 12
 
   const isShapeTool = SHAPE_TOOLS.includes(activeTool)
 
@@ -348,7 +598,7 @@ function ToolSettings({
           <input
             type="range"
             min={0.5}
-            max={activeTool === 'highlighter' ? 30 : activeTool === 'brush' ? 24 : 12}
+            max={sizeMax}
             step={0.5}
             value={size}
             onChange={(e) => setterSize?.(Number(e.target.value))}
@@ -372,7 +622,7 @@ function ToolSettings({
           />
         </>
       )}
-      {(activeTool === 'pen' || activeTool === 'pencil' || activeTool === 'brush') && (
+      {(activeTool === 'pen' || activeTool === 'pencil' || activeTool === 'brush' || activeTool === 'calligraphy' || activeTool === 'ink') && (
         <label className="flex items-center gap-2 mt-3 cursor-pointer">
           <input
             type="checkbox"
@@ -483,9 +733,13 @@ function ToolSettings({
   }
 
   return (
-    <Popover open={triggerFromRadial ? true : undefined} onOpenChange={(open) => {
-      if (!open) setShowToolSettingsFromRadial(false)
-    }}>
+    <Popover
+      open={localOpen || !!triggerFromRadial}
+      onOpenChange={(open) => {
+        setLocalOpen(open)
+        if (!open) setShowToolSettingsFromRadial(false)
+      }}
+    >
       <PopoverTrigger className="rounded-xl p-1.5 hover:bg-muted transition-colors">
         <div className="size-4 rounded-full border border-border" style={{ backgroundColor: color }} />
       </PopoverTrigger>
@@ -514,6 +768,28 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
   const activeTool = editor.activeTool
   const setTool = editor.setActiveTool
 
+  // ─── FloatingDock: metadados c/ preview real de pincel ───
+  const primaryMetas = useMemo(() =>
+    MOBILE_PRIMARY_TOOLS.map((id) => ({
+      id,
+      icon: TOOL_ICON[id],
+      label: TOOL_LABEL[id],
+      color: editor.getToolColorFor(id),
+      size: editor.getToolSizeFor(id),
+      opacity: editor.getToolOpacityFor(id),
+      hasStrokePreview: STROKE_TOOLS.includes(id),
+    })),
+    [editor],
+  )
+  const secondaryMetas = useMemo(() =>
+    MOBILE_SECONDARY_TOOLS.map((id) => ({
+      id,
+      label: TOOL_LABEL[id],
+      icon: TOOL_ICON[id],
+    })),
+    [],
+  )
+
   const zoom = editor.zoom || 1
   const displayWidth = (PAGE_WIDTH * zoom) / 1.5
   const displayHeight = (PAGE_HEIGHT * zoom) / 1.5
@@ -536,6 +812,11 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
   const [radialMenuOpen, setRadialMenuOpen] = useState(false)
   const [radialMenu, setRadialMenu] = useState<{ x: number; y: number } | null>(null)
   const [showToolSettingsFromRadial, setShowToolSettingsFromRadial] = useState(false)
+  /** Quando verdadeiro, o FloatingDock recolhe totalmente.
+   *  Verdade quando desenhando OU quando um pointer está no canvas.
+   *  Resetado depois de 600ms inativo p/ sempre voltar à vista. */
+  const [pointerInCanvas, setPointerInCanvas] = useState(false)
+  const pointerInCanvasTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [ctxMenu, setCtxMenu] = useState<{
     x: number
     y: number
@@ -1152,16 +1433,18 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
   const renderStrokes = () => {
     const allStrokes = [...data.strokes]
     if (isDrawing && currentPoints.length > 0 && activeTool !== 'eraser' && activeTool !== 'ruler' && activeTool !== 'lasso' && !shapeDraft) {
-      const tool = activeTool as 'pen' | 'pencil' | 'brush' | 'marker' | 'highlighter'
-      allStrokes.push({
-        id: 'preview',
-        tool,
-        color: editor.getToolColor(),
-        size: editor.getToolSize(),
-        opacity: editor.getToolOpacity(),
-        pressureSensitive: editor.pressureSensitive && (tool === 'pen' || tool === 'brush' || tool === 'pencil'),
-        points: currentPoints,
-      })
+      const brush = toolToBrushStyle(activeTool)
+      if (brush) {
+        allStrokes.push({
+          id: 'preview',
+          tool: brush,
+          color: editor.getToolColor(),
+          size: editor.getToolSize(),
+          opacity: editor.getToolOpacity(),
+          pressureSensitive: editor.pressureSensitive && (brush === 'pen' || brush === 'brush' || brush === 'pencil' || brush === 'calligraphy' || brush === 'ink'),
+          points: currentPoints,
+        })
+      }
     }
     return allStrokes.map((s) => <StrokePath key={s.id} s={s} />)
   }
@@ -1961,10 +2244,13 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
                       'crosshair',
                   }}
                   onContextMenu={handleContextMenu}
-                  onPointerDown={handlePointerDown}
+                  onPointerDown={(e) => {
+                    handlePointerDown(e)
+                    if (pointerInCanvasTimerRef.current) clearTimeout(pointerInCanvasTimerRef.current)
+                    setPointerInCanvas(true)
+                  }}
                   onPointerMove={(e) => {
                     handlePointerMove(e)
-                    // Update eraser cursor position
                     if (activeTool === 'eraser' && eraserCursorRef.current) {
                       const el = eraserCursorRef.current
                       el.style.opacity = '1'
@@ -1973,11 +2259,21 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
                       el.style.top = `${e.clientY - el.offsetHeight / 2}px`
                     }
                   }}
-                  onPointerUp={handlePointerUp}
-                  onPointerCancel={handlePointerCancel}
+                  onPointerUp={(e) => {
+                    handlePointerUp(e)
+                    if (pointerInCanvasTimerRef.current) clearTimeout(pointerInCanvasTimerRef.current)
+                    pointerInCanvasTimerRef.current = setTimeout(() => setPointerInCanvas(false), 600)
+                  }}
+                  onPointerCancel={(e) => {
+                    handlePointerCancel(e)
+                    if (pointerInCanvasTimerRef.current) clearTimeout(pointerInCanvasTimerRef.current)
+                    pointerInCanvasTimerRef.current = setTimeout(() => setPointerInCanvas(false), 400)
+                  }}
                   onPointerLeave={(e) => {
                     handlePointerCancel(e)
                     if (eraserCursorRef.current) eraserCursorRef.current.style.opacity = '0'
+                    if (pointerInCanvasTimerRef.current) clearTimeout(pointerInCanvasTimerRef.current)
+                    pointerInCanvasTimerRef.current = setTimeout(() => setPointerInCanvas(false), 400)
                   }}
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={(e) => {
@@ -2805,128 +3101,93 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
         </BottomSheet>
       </div>
 
-      {/* Mobile dock flutuante */}
-      <div className="md:hidden fixed bottom-3 inset-x-3 z-40 flex items-center justify-center flex-wrap gap-0.5 gap-y-1 px-2 py-1.5 rounded-full bg-background/95 backdrop-blur-lg border border-border/40 shadow-xl safe-area-bottom">
-        {MOBILE_PRIMARY_TOOLS.map((toolId) => {
-          const tool = toolbarItems().find((t) => t.id === toolId)
-          if (!tool) return null
-          return (
+      {/* CanvasToolControls — slider de espessura/opacidade no canvas */}
+      <CanvasToolControls
+        tool={activeTool}
+        size={pickCurrentSize(editor, activeTool)}
+        opacity={pickCurrentOpacity(editor, activeTool)}
+        color={editor.getToolColor()}
+        suppressed={isDrawing || pointerInCanvas}
+        touchPlaced={isMobile}
+        onSizeChange={(n) => { pickSizeSetter(editor, activeTool)?.(n) }}
+        onOpacityChange={(n) => { pickOpacitySetter(editor, activeTool)?.(n) }}
+      />
+
+      {/* FloatingDock — dock mobile contextual estilo Concepts (sempre visivel, c/ preview de pincel) */}
+      <FloatingDock
+        primary={primaryMetas}
+        secondary={secondaryMetas}
+        activeTool={activeTool}
+        currentColor={editor.getToolColor()}
+        suppressed={isDrawing || pointerInCanvas}
+        onSelectTool={(t) => {
+          setTool(t)
+          if (t === 'sticker') setShowStickerPanel(true)
+        }}
+        onOpenMore={() => setShowMoreMenu(true)}
+        onOpenSettings={() => setShowToolSettingsFromRadial(true)}
+      />
+      <ToolSettings triggerFromRadial={showToolSettingsFromRadial} setShowToolSettingsFromRadial={setShowToolSettingsFromRadial} mobile />
+
+      {/* BottomSheet "mais ferramentas" — aberto pelo FloatingDock em mobile */}
+      <BottomSheet
+        open={showMoreMenu}
+        onClose={() => setShowMoreMenu(false)}
+        title="Mais ferramentas"
+        maxHeight="60vh"
+        desktopSidePanel={false}
+      >
+        <div className="p-4">
+          <div className="grid grid-cols-4 gap-2">
+            {secondaryMetas.map((tool) => {
+              const Icon = TOOL_ICON[tool.id]
+              return (
+                <button
+                  key={tool.id}
+                  className={cn(
+                    'aspect-square rounded-2xl transition-all inline-flex flex-col items-center justify-center gap-1.5',
+                    'border border-border/40 active:scale-95 cursor-pointer',
+                    activeTool === tool.id
+                      ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                      : 'bg-muted/40 text-muted-foreground hover:bg-muted hover:text-foreground',
+                  )}
+                  onClick={() => {
+                    setTool(tool.id)
+                    setShowMoreMenu(false)
+                    if (tool.id === 'sticker') setShowStickerPanel(true)
+                  }}
+                >
+                  <Icon size={20} />
+                  <span className="text-[10px] leading-none font-medium">{tool.label}</span>
+                </button>
+              )
+            })}
+          </div>
+          <div className="h-px bg-border/40 my-3" />
+          <div className="grid grid-cols-2 gap-2">
             <button
-              key={tool.id}
-              className={cn(
-                'size-10 rounded-full transition-all inline-flex items-center justify-center',
-                activeTool === tool.id
-                  ? 'bg-primary text-primary-foreground shadow-sm scale-110'
-                  : 'hover:bg-muted text-muted-foreground hover:text-foreground active:scale-95',
-              )}
+              className="aspect-[2/1] rounded-2xl inline-flex items-center justify-center gap-2 bg-muted/40 text-muted-foreground hover:bg-muted transition-colors active:scale-95 cursor-pointer"
               onClick={() => {
-                setTool(tool.id)
-                if (tool.id === 'sticker') setShowStickerPanel(true)
+                setShowOcrPanel(true)
+                setShowMoreMenu(false)
               }}
             >
-              <tool.icon size={18} />
+              <ScanText size={18} />
+              <span className="text-xs font-medium">OCR</span>
             </button>
-          )
-        })}
-        <div className="w-px h-5 bg-border/40 mx-1" />
-        {/* More menu */}
-        <Popover open={showMoreMenu} onOpenChange={setShowMoreMenu}>
-          <PopoverTrigger className="size-10 rounded-full transition-all inline-flex items-center justify-center hover:bg-muted text-muted-foreground hover:text-foreground active:scale-95">
-            <GripHorizontal size={18} />
-          </PopoverTrigger>
-          <PopoverContent align="center" className="w-auto p-2 mb-2">
-            <div className="grid grid-cols-5 gap-1">
-              {toolbarItems()
-                .filter((t) => !MOBILE_PRIMARY_TOOLS.includes(t.id))
-                .map((tool) => (
-                  <button
-                    key={tool.id}
-                    className={cn(
-                      'size-10 rounded-xl transition-all inline-flex items-center justify-center flex-col gap-0.5',
-                      activeTool === tool.id
-                        ? 'bg-primary text-primary-foreground shadow-sm'
-                        : 'hover:bg-muted text-muted-foreground hover:text-foreground',
-                    )}
-                    onClick={() => {
-                      setTool(tool.id)
-                      setShowMoreMenu(false)
-                      if (tool.id === 'sticker') setShowStickerPanel(true)
-                    }}
-                  >
-                    <tool.icon size={16} />
-                    <span className="text-[8px] leading-none">{tool.label}</span>
-                  </button>
-                ))}
-              <button
-                className={cn(
-                  'size-10 rounded-xl transition-all inline-flex items-center justify-center flex-col gap-0.5',
-                  'hover:bg-muted text-muted-foreground hover:text-foreground',
-                )}
-                onClick={() => {
-                  setShowOcrPanel(true)
-                  setShowMoreMenu(false)
-                }}
-              >
-                <ScanText size={16} />
-                <span className="text-[8px] leading-none">OCR</span>
-              </button>
-              <button
-                className={cn(
-                  'size-10 rounded-xl transition-all inline-flex items-center justify-center flex-col gap-0.5',
-                  'hover:bg-muted text-muted-foreground hover:text-foreground',
-                )}
-                onClick={() => {
-                  setShowStickerPanel(true)
-                  setShowMoreMenu(false)
-                }}
-              >
-                <Star size={16} />
-                <span className="text-[8px] leading-none">Stickers</span>
-              </button>
-            </div>
-          </PopoverContent>
-        </Popover>
-        {/* Radial menu trigger */}
-        <Button
-          ref={radialTriggerRef}
-          variant="ghost"
-          size="icon-sm"
-          className={cn(
-            'rounded-full size-10',
-            radialMenuOpen && 'bg-primary text-primary-foreground',
-          )}
-          onClick={() => setRadialMenuOpen(!radialMenuOpen)}
-        >
-          <CircleDot size={16} />
-        </Button>
-        {/* Undo / Redo mobile */}
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          className="rounded-full size-10"
-          onClick={handleUndo}
-          disabled={!(currentPage && (editor.undoStack[currentPage.id]?.length ?? 0) > 0)}
-        >
-          <Undo2 size={16} />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          className="rounded-full size-10"
-          onClick={handleRedo}
-          disabled={!(currentPage && (editor.redoStack[currentPage.id]?.length ?? 0) > 0)}
-        >
-          <Redo2 size={16} />
-        </Button>
-        {/* Color / settings button */}
-        <button
-          className="size-10 rounded-full transition-all inline-flex items-center justify-center hover:bg-muted active:scale-95"
-          onClick={() => setShowToolSettingsFromRadial(true)}
-        >
-          <div className="size-4 rounded-full border border-border" style={{ backgroundColor: editor.getToolColor() }} />
-        </button>
-        <ToolSettings triggerFromRadial={showToolSettingsFromRadial} setShowToolSettingsFromRadial={setShowToolSettingsFromRadial} mobile />
-      </div>
+            <button
+              className="aspect-[2/1] rounded-2xl inline-flex items-center justify-center gap-2 bg-muted/40 text-muted-foreground hover:bg-muted transition-colors active:scale-95 cursor-pointer"
+              onClick={() => {
+                setShowStickerPanel(true)
+                setShowMoreMenu(false)
+              }}
+            >
+              <Star size={18} />
+              <span className="text-xs font-medium">Stickers</span>
+            </button>
+          </div>
+        </div>
+      </BottomSheet>
     </div>
   )
 }

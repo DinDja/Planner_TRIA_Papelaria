@@ -7,7 +7,7 @@ import {
   bbox,
   pathLength,
   resampleSpacing,
-  smoothEMA,
+  smoothGaussian,
   type BBox,
   type Pt,
 } from './geometry'
@@ -49,8 +49,11 @@ export function cleanStrokes(strokes: Stroke[]): CleanStroke[] {
       // Ponto isolado (ex.: pingo do "i") — vira micro-segmento para ter direção.
       pts = [pts[0], { x: pts[0].x + 0.01, y: pts[0].y + 0.01 }]
     }
-    pts = smoothEMA(pts, 0.4)
+    // Ordem importa: reamostra primeiro (densifica), suaviza depois.
+    // EMA diretamente sobre pontos esparsos colapsa o traço (lag acumulado);
+    // o Gaussiano FIR preserva a forma e mata o jitter de alta frequência.
     pts = resampleSpacing(pts, 2.5)
+    pts = smoothGaussian(pts)
 
     out.push({
       id: s.id,

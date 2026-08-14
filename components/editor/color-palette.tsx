@@ -1,8 +1,11 @@
 'use client'
 
+import { useState } from 'react'
 import { cn } from '@/lib/utils'
-import { Pipette, RotateCcw } from 'lucide-react'
+import { Pipette, RotateCcw, Palette } from 'lucide-react'
 import { Button } from '../ui/button'
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/overlays'
+import { ColorWheel } from './color-wheel'
 
 interface ColorPaletteProps {
   /** Cor atual selecionada. */
@@ -29,6 +32,7 @@ const DEFAULT_FIXED = [
  *  - Cores recentes (últimas 8)
  *  - Paleta fixa padrão
  *  - Botão eyedropper para capturar cor do canvas
+ *  - Botão "avançado" que abre a ColorWheel (roda HSL profissional)
  * Touch-friendly: swatches de 32px em mobile.
  */
 export function ColorPalette({
@@ -41,6 +45,7 @@ export function ColorPalette({
   compact = false,
   className,
 }: ColorPaletteProps) {
+  const [wheelOpen, setWheelOpen] = useState(false)
   const fixedToShow = compact ? fixed.slice(0, 8) : fixed
 
   return (
@@ -97,22 +102,23 @@ export function ColorPalette({
               title={c}
             />
           ))}
-          {/* Custom color picker */}
-          <label
-            className={cn(
-              'size-8 md:size-7 rounded-full border-2 border-dashed border-border/60 cursor-pointer',
-              'flex items-center justify-center hover:border-foreground/60 active:scale-95 transition-all',
-              'bg-gradient-to-br from-red-500 via-yellow-500 to-blue-500',
-            )}
-            title="Cor personalizada"
-          >
-            <input
-              type="color"
-              value={color}
-              onChange={(e) => onPick(e.target.value)}
-              className="opacity-0 size-0 absolute"
-            />
-          </label>
+          {/* Color wheel — botão "avançado". Mantém escolha rápida nas
+              swatches, abre a roda HSL só quando o usuário precisa de
+              uma cor exata fora dos presets. */}
+          <Popover open={wheelOpen} onOpenChange={setWheelOpen}>
+            <PopoverTrigger
+              className={cn(
+                'size-8 md:size-7 rounded-full border-2 border-dashed border-border/60 cursor-pointer',
+                'inline-flex items-center justify-center hover:border-foreground/60 active:scale-95 transition-all',
+                'bg-[conic-gradient(from_0deg,red,orange,yellow,lime,cyan,blue,magenta,red)]',
+              )}
+            >
+              <Palette size={12} className="text-white mix-blend-difference" />
+            </PopoverTrigger>
+            <PopoverContent className="w-[230px] p-3" align="center">
+              <ColorWheel color={color} onChange={onPick} />
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
 

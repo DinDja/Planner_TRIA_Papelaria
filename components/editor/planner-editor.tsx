@@ -93,6 +93,7 @@ import { ALL_STICKERS, STICKER_CATEGORIES, stickerToDataUrl } from '@/lib/sticke
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
 import { useCanvasPointer } from './hooks/use-canvas-pointer'
+import { useTouchGestures } from './hooks/use-touch-gestures'
 import { ContextMenu, type ContextMenuAction } from './context-menu'
 import { BottomSheet } from './bottom-sheet'
 import { RadialMenu, type RadialItem } from './radial-menu'
@@ -117,6 +118,27 @@ function vecToSvgPath(points: [number, number][]): string {
 }
 
 import type { ToolType } from '@/lib/types'
+import type { PaperTextureId } from '@/lib/types'
+
+// ─── Paper texture preset ────────────────────────────────────────────────────
+//
+// Toda mudança de textura afeta a sensação táctil do caderno inteiro.
+// Mapeamos cada id p/ sua utilidade CSS e um nome humano curto.
+const PAPER_TEXTURES: { id: PaperTextureId; label: string; hint: string }[] = [
+  { id: 'plain', label: 'Liso', hint: 'Papel sem textura' },
+  { id: 'cold-press', label: 'Prensado a frio', hint: 'Grão médio — papel de aquarela clássico' },
+  { id: 'hot-press', label: 'Prensado a quente', hint: 'Fibra fina — superfície lisa sedosa' },
+  { id: 'watercolor', label: 'Aquarela', hint: 'Grão grosso — absorve pigmento' },
+  { id: 'kraft', label: 'Kraft', hint: 'Marrom rústico — fibra visível' },
+]
+
+const PAPER_TEXTURE_CLASS: Record<PaperTextureId, string> = {
+  plain: '',
+  'cold-press': 'paper-cold-press',
+  'hot-press': 'paper-hot-press',
+  watercolor: 'paper-watercolor',
+  kraft: 'paper-kraft',
+}
 
 const toolbarItems = (): { id: ToolType; icon: typeof Pen; label: string; shortcut: string }[] => [
   { id: 'pen', icon: Pen, label: 'Caneta', shortcut: '1' },
@@ -163,7 +185,7 @@ const TOOL_ICON: Record<ToolType, typeof Pen> = {
   highlighter: Highlighter, eraser: Eraser, fill: PaintBucket,
   ruler: Ruler, lasso: Lasso, text: Type, sticker: Star,
   rectangle: Square, ellipse: Circle, line: Minus, arrow: ArrowRight,
-  hand: Hand, eyedropper: Pipette,
+  hand: Hand, pan: Hand, eyedropper: Pipette,
   calligraphy: Feather, hatch: Rows3, stipple: Grip, ink: Droplet,
 }
 
@@ -172,7 +194,7 @@ const TOOL_LABEL: Record<ToolType, string> = {
   highlighter: 'Marca-texto', eraser: 'Borracha', fill: 'Balde',
   ruler: 'Régua', lasso: 'Seleção', text: 'Texto', sticker: 'Sticker',
   rectangle: 'Retângulo', ellipse: 'Círculo', line: 'Linha', arrow: 'Seta',
-  hand: 'Mover', eyedropper: 'Conta-gotas',
+  hand: 'Mover', pan: 'Mover', eyedropper: 'Conta-gotas',
   calligraphy: 'Caligrafia', hatch: 'Hachura', stipple: 'Pontilhado', ink: 'Nanquim',
 }
 
@@ -862,6 +884,15 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
     updatePageTemplate(planner.id, currentPage.id, tpl)
   }
 
+  // Texture de papel — só reescreve o data.paperTexture, sem tocar mais nada.
+  const handleSetPaperTexture = (tex: PaperTextureId) => {
+    if (!currentPage) return
+    const newData: CanvasData = { ...data, paperTexture: tex }
+    // Kraft sobrepuja bgColor se não definido (tem seu próprio tom marrom).
+    if (tex === 'kraft' && !data.bgColor) newData.bgColor = undefined
+    updatePageData(planner.id, currentPage.id, newData)
+  }
+
   // Undo/Redo with current data
   const handleUndo = () => {
     if (!currentPage) return
@@ -874,6 +905,25 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
     const next = editor.redo(currentPage.id, data)
     if (next) updatePageData(planner.id, currentPage.id, next)
   }
+
+  // ─── Touch gestures (Etapa 5) ──────────────────────────────────────────────
+  //
+  // Alternar pen ↔ eraser com duplo-toque é a troca mais requisitada em
+  // canvas mobile (Procreate, Concepts, GoodNotes). Guardamos "última
+  // ferramenta" para restaurar quando o usuário sair da borracha —
+  // mesma convenção das referências citadas.
+  const lastToolBeforeEraserRef = useRef<ToolType | null>(null)
+
+  const togglePenEraser = useCallback(() => {
+    const cur = useEditorStore.getState().activeTool
+    if (cur === 'eraser') {
+      const prev = lastToolBeforeEraserRef.current ?? 'pen'
+      useEditorStore.getState().setActiveTool(prev)
+    } else {
+      lastToolBeforeEraserRef.current = cur
+      useEditorStore.getState().setActiveTool('eraser')
+    }
+  }, [])
 
   // ─── Canvas refs & pointer hook ────────────────────────────────────────────
 
@@ -922,6 +972,46 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
     currentPageId: currentPage?.id ?? null,
     data,
     canvasRef,
+  })
+
+  // ─── Touch gestures (Etapa 5) ─ multimão ────────────────────────────────────
+  //
+  // Long-press touch → apaga traços cujo centróide caia numa área ~32px
+  // ao redor do toque (feedback imediato: a mão não precisa sair do canvas).
+  const handleLongPressErase = useCallback((x: number, y: number) => {
+    const canvas = canvasRef.current
+    if (!canvas || !currentPage) return
+    const rect = canvas.getBoundingClientRect()
+    const px = (x - rect.left) * (PAGE_WIDTH / rect.width)
+    const py = (y - rect.top) * (PAGE_HEIGHT / rect.height)
+    const R = 32
+    const newData = JSON.parse(JSON.stringify(data)) as CanvasData
+    let touched = false
+    newData.strokes = newData.strokes.filter((s) => {
+      if (s.points.length === 0) return false
+      let cx = 0
+      let cy = 0
+      for (const p of s.points) { cx += p.x; cy += p.y }
+      cx /= s.points.length
+      cy /= s.points.length
+      const hit = Math.hypot(cx - px, cy - py) < R
+      if (hit) touched = true
+      return !hit
+    })
+    if (touched) {
+      commit(newData)
+      toast({ title: 'Traço removido', description: 'Toque longo' })
+    }
+  }, [canvasRef, currentPage, data, commit])
+
+  // 2 dedos → undo; 3 dedos → redo. Procreate-style: a mão não precisa
+  // acertar um botão na barra superior.
+  useTouchGestures({
+    onTwoFingerTap: handleUndo,
+    onThreeFingerTap: handleRedo,
+    onDoubleTap: togglePenEraser,
+    onPenDoubleTap: togglePenEraser,
+    onLongPress: handleLongPressErase,
   })
 
   // ─── OCR ────────────────────────────────────────────────────────────────────
@@ -1701,10 +1791,50 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
                   })}
                 </div>
               </ScrollArea>
+              {/* Textura do papel — presets de caderno. Trocar afeta o
+                  caráter táctil da página inteira (aquarela, kraft, etc.). */}
+              <div className="mt-3 pt-3 border-t border-border/40">
+                <p className="text-xs font-semibold mb-1.5">Textura do papel</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {PAPER_TEXTURES.map((tex) => {
+                    const active = (data.paperTexture ?? 'plain') === tex.id
+                    return (
+                      <button
+                        key={tex.id}
+                        onClick={() => handleSetPaperTexture(tex.id)}
+                        title={tex.hint}
+                        className={cn(
+                          'group relative overflow-hidden rounded-lg border transition-all cursor-pointer',
+                          'w-12 h-12 shrink-0',
+                          'flex items-end justify-start p-1',
+                          active
+                            ? 'border-primary ring-2 ring-primary/30'
+                            : 'border-border/60 hover:border-foreground/40',
+                          PAPER_TEXTURE_CLASS[tex.id],
+                        )}
+                        style={
+                          tex.id === 'plain'
+                            ? { backgroundColor: 'var(--paper)' }
+                            : undefined
+                        }
+                      >
+                        <span
+                          className={cn(
+                            'text-[9px] font-medium leading-none',
+                            tex.id === 'kraft'
+                              ? 'text-white'
+                              : 'text-muted-foreground',
+                          )}
+                        >
+                          {tex.label}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
             </PopoverContent>
           </Popover>
-
-          {/* Insert menu */}
           <Popover open={showInsertMenu} onOpenChange={setShowInsertMenu}>
             <PopoverTrigger className="rounded-xl p-1.5 hover:bg-muted transition-colors">
               <PlusCircle size={16} />
@@ -2226,7 +2356,10 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
 
                 <div
                   ref={canvasRef}
-                  className="relative overflow-hidden rounded-[6px] shadow-paper ring-1 ring-black/[0.07] dark:ring-white/[0.08] bg-[color:light-dark(#ffffff,#2a2a28)]"
+                  className={cn(
+                    'relative overflow-hidden rounded-[6px] shadow-paper ring-1 ring-black/[0.07] dark:ring-white/[0.08] bg-[color:light-dark(#ffffff,#2a2a28)]',
+                    PAPER_TEXTURE_CLASS[data.paperTexture ?? 'plain'],
+                  )}
                   style={{
                     width: '100%',
                     height: '100%',
@@ -2728,7 +2861,30 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
                       />
                     )
                   })()}
-                  <div className="absolute inset-0 pointer-events-none paper-grain opacity-[0.05] mix-blend-overlay z-10" />
+                  <div className="absolute inset-0 pointer-events-none paper-grain opacity-[0.05] mix-blend-overlay z-10" data-paper-grain />
+                  {/* Indicador de lado do caderno (esq/dir) — sutil, como
+                      a numeração/curva de costura interna da página. */}
+                  {(() => {
+                    const isRight = currentPageIdx % 2 === 1
+                    return (
+                      <div
+                        className={cn(
+                          'absolute z-20 pointer-events-none select-none top-2.5',
+                          isRight ? 'right-3' : 'left-3',
+                        )}
+                        aria-hidden
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className="h-8 w-px rounded-full bg-gradient-to-b from-border/70 via-border/30 to-transparent"
+                          />
+                          <span className="text-[9px] uppercase tracking-[0.18em] font-semibold text-muted-foreground/55 leading-none pt-1">
+                            {isRight ? 'Dir' : 'Esq'}
+                          </span>
+                        </div>
+                      </div>
+                    )
+                  })()}
                 </div>
               </div>
             </div>
@@ -2877,6 +3033,46 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
                   </button>
                 )
               })}
+            </div>
+            <div className="mt-5 pt-4 border-t border-border/40">
+              <p className="text-xs font-semibold mb-2">Textura do papel</p>
+              <div className="flex flex-wrap gap-2">
+                {PAPER_TEXTURES.map((tex) => {
+                  const active = (data.paperTexture ?? 'plain') === tex.id
+                  return (
+                    <button
+                      key={tex.id}
+                      onClick={() => handleSetPaperTexture(tex.id)}
+                      title={tex.hint}
+                      className={cn(
+                        'group relative overflow-hidden rounded-xl border transition-all cursor-pointer',
+                        'w-14 h-14 shrink-0',
+                        'flex items-end justify-start p-1.5',
+                        active
+                          ? 'border-primary ring-2 ring-primary/30'
+                          : 'border-border/60 active:ring-primary/40',
+                        PAPER_TEXTURE_CLASS[tex.id],
+                      )}
+                      style={
+                        tex.id === 'plain'
+                          ? { backgroundColor: 'var(--paper)' }
+                          : undefined
+                      }
+                    >
+                      <span
+                        className={cn(
+                          'text-[9px] font-medium leading-none',
+                          tex.id === 'kraft'
+                            ? 'text-white'
+                            : 'text-muted-foreground',
+                        )}
+                      >
+                        {tex.label}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
             </div>
           </div>
         </BottomSheet>
@@ -3040,7 +3236,7 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
                       />
                     </div>
                     <p className="text-[10px] text-muted-foreground text-center">
-                      {ocr.progressText || `Carregando modelo (${ocr.progress}%)…`}
+                      Reconhecimento 100% no dispositivo — nada sai do seu aparelho
                     </p>
                   </div>
                 )}

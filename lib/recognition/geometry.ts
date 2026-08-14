@@ -108,6 +108,48 @@ export function smoothEMA(pts: Pt[], alpha: number): Pt[] {
   return out
 }
 
+/**
+ * Suavização exponencial bidirecional (zero-lag) — passa o EMA para frente e
+ * depois para trás. Remove jitter de alta frequência preservando pontas e
+ * extremidades do traço (o EMA unidirecional "come" o fim de traços curtos,
+ * destruindo a geometria de pernas/curvas — crítico para HTR).
+ */
+export function smoothBoth(pts: Pt[], alpha: number): Pt[] {
+  if (pts.length < 4) return pts.slice()
+  const fwd = smoothEMA(pts, alpha)
+  const rev = smoothEMA([...fwd].reverse(), alpha)
+  return rev.reverse()
+}
+
+/** Kernel Gaussiano 1D (σ=1) — normalizado, sem viés de posição. */
+const GAUSS_KERNEL = [0.061, 0.242, 0.383, 0.242, 0.061]
+
+/**
+ * Blur Gaussiano ao longo da polilinha (janela ±2 pontos). Atenua jitter de
+ * alta frequência SEM colapsar o traço (filtro FIR, sem lag acumulado — ao
+ * contrário do EMA, que destrói pontas e extremos em traços curtos).
+ */
+export function smoothGaussian(pts: Pt[]): Pt[] {
+  const n = pts.length
+  if (n < 5) return pts.slice()
+  const out: Pt[] = new Array(n)
+  for (let i = 0; i < n; i++) {
+    let wx = 0
+    let wy = 0
+    let wsum = 0
+    for (let k = -2; k <= 2; k++) {
+      const j = i + k
+      if (j < 0 || j >= n) continue
+      const w = GAUSS_KERNEL[k + 2]
+      wx += w * pts[j].x
+      wy += w * pts[j].y
+      wsum += w
+    }
+    out[i] = { x: wx / wsum, y: wy / wsum }
+  }
+  return out
+}
+
 export function rotate(pts: Pt[], angle: number, center: Pt): Pt[] {
   const c = Math.cos(angle)
   const s = Math.sin(angle)

@@ -19,7 +19,7 @@ const PT_WORDS = [
   'teu', 'tua', 'seu', 'sua', 'nosso', 'nossa', 'dele', 'dela', 'este', 'esta',
   'esse', 'essa', 'aquele', 'aquela', 'isto', 'isso', 'aquilo', 'aqui', 'ali', 'lá',
   'cá', 'agora', 'depois', 'antes', 'hoje', 'ontem', 'amanhã', 'sempre', 'nunca',
-  'talvez', 'sim', 'não', 'ao', 'aos', 'à', 'às', 'lá', 'cujo', 'cuja',
+  'talvez', 'sim', 'não', 'oi', 'olá', 'ao', 'aos', 'à', 'às', 'lá', 'cujo', 'cuja',
   // Verbos frequentes
   'ser', 'estar', 'ter', 'fazer', 'ir', 'ver', 'dar', 'saber', 'querer', 'poder',
   'dizer', 'falar', 'ficar', 'haver', 'vir', 'passar', 'deixar', 'parecer', 'seguir',
@@ -118,6 +118,11 @@ const EN_WORDS = [
 ]
 
 // ─── Normalização e índices ──────────────────────────────────────────────────
+
+/** Palavras do léxico (formas acentuadas) — usado pelo modelo de bigramas. */
+export function getLexiconWords(lang: LexLang): string[] {
+  return lang === 'por' ? PT_WORDS : lang === 'eng' ? EN_WORDS : [...PT_WORDS, ...EN_WORDS]
+}
 
 /** minúsculas, sem acentos (NFD strip), sem pontuação final */
 export function normalizeWord(w: string): string {

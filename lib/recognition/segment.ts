@@ -80,6 +80,62 @@ export function segmentLines(strokes: CleanStroke[]): SegLine[] {
   return groups.map((g) => buildLine(g.strokes))
 }
 
+// ─── Estimativa robusta de métricas da linha ─────────────────────────────────
+
+/**
+ * Altura-x pela moda da distribuição das alturas dos traços.
+ * A mediana ingênua é envenenada por pingos/acentos (pequenos) e
+ * ascendentes/descendentes (grandes): com "hoje", por exemplo, a mediana
+ * cai para ~26px quando o x-height real é 40px — e o fatiamento de
+ * palavras (gap ∝ xHeight) passa a cortar letras no meio da palavra.
+ * Solução: histograma adaptativo → bin mais denso (corpo das minúsculas) →
+ * refinamento com vizinhança ±25%.
+ */
+export function estimateXHeight(strokes: CleanStroke[]): number {
+  if (strokes.length === 0) return 8
+  const heights = strokes.map((s) => s.box.h)
+  const maxH = Math.max(...heights)
+  if (maxH < 8) return 8
+  // Descarta pingos/acentos/jitter (≤30% do maior traço)
+  const core = heights.filter((h) => h >= 0.3 * maxH)
+  if (core.length === 0) return Math.max(maxH, 8)
+
+  const minC = Math.min(...core)
+  const maxC = Math.max(...core)
+  const binW = Math.max((maxC - minC) / 8, 2)
+  const nbins = Math.max(1, Math.floor((maxC - minC) / binW) + 1)
+
+  const counts = new Array<number>(nbins).fill(0)
+  for (const h of core) {
+    const b = Math.min(nbins - 1, Math.floor((h - minC) / binW))
+    counts[b]++
+  }
+  let bestBin = 0
+  for (let b = 1; b < nbins; b++) if (counts[b] > counts[bestBin]) bestBin = b
+
+  const binLo = minC + bestBin * binW
+  const binHi = binLo + binW
+  let mode = median(core.filter((h) => h >= binLo && h < binHi))
+
+  // Refinamento: mediana da vizinhança ±25% da moda inicial
+  mode = Math.max(mode, 2)
+  const neighbors = core.filter((h) => h >= 0.75 * mode && h <= 1.25 * mode)
+  if (neighbors.length > 0) mode = median(neighbors)
+  return Math.max(mode, 8)
+}
+
+/**
+ * Baseline pela mediana das bases dos traços de "corpo" (altura entre 30% e
+ * 170% do x-height). Pingos e descendentes não participam — com a mediana
+ * ingênua, o pingo do "i" puxa a baseline para cima e o "j" para baixo.
+ */
+export function estimateBaseline(strokes: CleanStroke[], xHeight: number): number {
+  if (strokes.length === 0) return 0
+  const body = strokes.filter((s) => s.box.h >= 0.3 * xHeight && s.box.h <= 1.7 * xHeight)
+  const bases = (body.length >= 2 ? body : strokes).map((s) => s.box.y + s.box.h)
+  return median(bases)
+}
+
 /** Deskew por regressão dos centroides + estimativa de baseline e altura-x. */
 function buildLine(lineStrokes: CleanStroke[]): SegLine {
   // Regressão y ~ x dos centroides ponderada pelo comprimento do traço
@@ -105,10 +161,10 @@ function buildLine(lineStrokes: CleanStroke[]): SegLine {
   const pivot = centroid(allPts)
   const rotated = angle !== 0 ? lineStrokes.map((s) => remapStroke(s, rotate(s.pts, -angle, pivot))) : lineStrokes
 
-  // Altura-x: mediana das alturas dos traços (robusta a ascendentes/descendentes)
-  const xHeight = Math.max(median(rotated.map((s) => s.box.h)), 8)
-  // Baseline: mediana das bases dos traços
-  const baselineY = median(rotated.map((s) => s.box.y + s.box.h))
+  // Altura-x: moda da distribuição de alturas (robusta a ascendentes/descendentes)
+  const xHeight = estimateXHeight(rotated)
+  // Baseline: mediana das bases dos traços de corpo
+  const baselineY = estimateBaseline(rotated, xHeight)
 
   const box = rotated.map((s) => s.box).reduce(bboxUnion)
   const words = segmentWords(rotated, xHeight, baselineY)

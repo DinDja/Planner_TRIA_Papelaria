@@ -8,6 +8,7 @@ import {
   bbox,
   bboxCy,
   bboxUnion,
+  centroid,
   pathLength,
   resampleCount,
   selfIntersections,
@@ -46,6 +47,10 @@ export interface GlyphFeat {
   dotBelow: boolean
   barAcross: boolean
   zone: Zone
+  /** Centro de massa vertical do glifo na caixa (0..1) — separa "p" (massa embaixo) de "D"/"b". */
+  centerY: number
+  /** Y normalizado (0..1) do centro do(s) loop(s), ou -1 se não há loop. */
+  loopY: number
 }
 
 /** Concatena traços normalizados em N pontos, distribuídos por comprimento. */
@@ -84,13 +89,38 @@ export function strokesToFrames(strokes: Pt[][], n: number = GLYPH_N): Frame[] {
   return frames
 }
 
+/** Nº de loops: auto-interseções + "quase-fechamentos" (fim perto do início). */
 function countLoops(strokes: Pt[][]): number {
   let loops = 0
   for (const st of strokes) {
     const r = resampleCount(st, 40)
     loops += selfIntersections(r, 4)
+    // OVAL não se fecha exatamente — mas fim próximo do início = loop (o, p, d, b, a, e)
+    if (r.length >= 2) {
+      const d = Math.hypot(r[0].x - r[r.length - 1].x, r[0].y - r[r.length - 1].y)
+      if (d < pathLength(r) * 0.3) loops += 1
+    }
   }
   return loops
+}
+
+/** Centro de massa vertical (0..1) — separa "p" (massa embaixo) de "D"/"b". */
+function centerOfMassY(strokes: Pt[][], box: BBox): number {
+  let sy = 0
+  let n = 0
+  for (const st of strokes) for (const p of st) { sy += p.y; n++ }
+  return n > 0 ? (sy / n - box.y) / Math.max(box.h, 1e-6) : 0.5
+}
+
+/** Y (0..1) do centro do loop, ou -1 se não há loop. */
+function loopCenterY(strokes: Pt[][], box: BBox): number {
+  for (const st of strokes) {
+    if (countLoops([st]) > 0) {
+      const c = centroid(st)
+      return (c.y - box.y) / Math.max(box.h, 1e-6)
+    }
+  }
+  return -1
 }
 
 export interface GlyphContext {
@@ -144,6 +174,8 @@ export function featurizeGlyph(
       top: (box.y - bandTop) / ctx.xHeight,
       bot: (box.y + box.h - bandTop) / ctx.xHeight,
     },
+    centerY: centerOfMassY(normUnified, { x: 0, y: 0, w: 1, h: 1 }),
+    loopY: loopCenterY(normUnified, { x: 0, y: 0, w: 1, h: 1 }),
   }
 }
 
@@ -171,5 +203,7 @@ export function featurizePrototype(
     dotBelow: flags?.dotBelow ?? false,
     barAcross: flags?.barAcross ?? false,
     zone,
+    centerY: centerOfMassY(norm, { x: 0, y: 0, w: 1, h: 1 }),
+    loopY: loopCenterY(norm, { x: 0, y: 0, w: 1, h: 1 }),
   }
 }

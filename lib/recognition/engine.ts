@@ -21,6 +21,7 @@ import {
   suggest,
   type LexLang,
 } from './lexicon'
+import { bigramCost } from './bigrams'
 import { cleanStrokes, type CleanStroke } from './preprocess'
 import { getPrototypes } from './prototypes'
 import { segmentLines, type SegLine, type SegWord } from './segment'
@@ -89,6 +90,12 @@ export function classifyGlyph(feat: GlyphFeat): CharMatch[] {
       0.3 *
       (clamp(Math.abs(feat.zone.top - p.feat.zone.top), 0, 1.5) +
         clamp(Math.abs(feat.zone.bot - p.feat.zone.bot), 0, 1.5))
+    // Posição vertical da massa — separa "p" (massa embaixo) de "b"/"D" (no meio)
+    pen += 0.8 * Math.abs(feat.centerY - p.feat.centerY)
+    // Posição vertical do loop — separa "p"/"g" (loop embaixo) de "d"/"b" (loop no alto)
+    if (feat.loopY >= 0 && p.feat.loopY >= 0) {
+      pen += 0.9 * Math.abs(feat.loopY - p.feat.loopY)
+    }
 
     const score = Math.exp(-3.0 * (base + pen))
     matches.push({ ch: p.ch, score })
@@ -245,31 +252,59 @@ function buildHypotheses(word: SegWord, line: SegLine): Hypo[][] {
   return lattice
 }
 
-// ─── Busca DP no lattice ─────────────────────────────────────────────────────
+// ─── Busca DP no lattice com bigramas + beam ─────────────────────────────────
+// O custo de emitir um caractere combina a verossimilhança do classificador
+// (−log score do glifo) com o modelo de linguagem de caracteres
+// (−λ·log P(c | anterior)). O beam mantém as N melhores hipóteses por
+// posição — sem bigramas, o DP não tem como preferir "oi" (2 caracteres) a
+// "à" (1 glifo): os traços são literalmente os mesmos.
+
+/** Peso do modelo de linguagem de caracteres no DP. */
+const LM_WEIGHT = 0.18
+/** Largura do beam (hipóteses mantidas por posição). */
+const BEAM = 6
+/** Nº de hipóteses finais usadas no re-scoring lexical. */
+const NBEST = 5
 
 interface DpNode {
   cost: number
   chars: CharMatch[]
 }
 
-/** Melhor sequência de caracteres consumindo todos os traços do corpo. */
-function solveWord(lattice: Hypo[][], bodyLen: number): { chars: CharMatch[] } | null {
-  const dp: (DpNode | null)[] = new Array(bodyLen + 1).fill(null)
-  dp[0] = { cost: 0, chars: [] }
+/** Melhores sequências de caracteres consumindo todos os traços do corpo. */
+function solveWord(lattice: Hypo[][], bodyLen: number, lang: LexLang): DpNode[] {
+  const dp: DpNode[][] = Array.from({ length: bodyLen + 1 }, () => [])
+  dp[0] = [{ cost: 0, chars: [] }]
 
   for (let i = 0; i < bodyLen; i++) {
     const cur = dp[i]
-    if (!cur) continue
+    if (cur.length === 0) continue
     for (const h of lattice[i]) {
       const j = i + h.take
-      const cost = cur.cost + h.seq.reduce((acc, c) => acc - Math.log(Math.max(c.score, 1e-6)), 0)
-      if (!dp[j] || cost < dp[j]!.cost) {
-        dp[j] = { cost, chars: [...cur.chars, ...h.seq] }
+      for (const curNode of cur) {
+        // Custo de cada caractere da aresta: emissão + bigrama com o anterior
+        const seq = h.seq
+        let add = 0
+        let prev = curNode.chars.length > 0 ? curNode.chars[curNode.chars.length - 1].ch : '^'
+        for (let k = 0; k < seq.length; k++) {
+          add += -Math.log(Math.max(seq[k].score, 1e-6))
+          add += LM_WEIGHT * bigramCost(prev, seq[k].ch, lang)
+          prev = seq[k].ch
+        }
+        const cost = curNode.cost + add
+        const chars = [...curNode.chars, ...seq]
+        const cell = dp[j]
+        if (cell.length < BEAM) {
+          cell.push({ cost, chars })
+          cell.sort((a, b) => a.cost - b.cost)
+        } else if (cost < cell[cell.length - 1].cost) {
+          cell[cell.length - 1] = { cost, chars }
+          cell.sort((a, b) => a.cost - b.cost)
+        }
       }
     }
   }
-  const end = dp[bodyLen]
-  return end ? { chars: end.chars } : null
+  return dp[bodyLen].slice(0, NBEST)
 }
 
 // ─── Reconhecimento de palavra ───────────────────────────────────────────────
@@ -279,26 +314,42 @@ function recognizeWord(word: SegWord, line: SegLine, lang: LexLang): RecognizedW
   if (body.length === 0) return null
 
   const lattice = buildHypotheses(word, line)
-  const solved = solveWord(lattice, body.length)
-  if (!solved || solved.chars.length === 0) return null
+  const hypos = solveWord(lattice, body.length, lang)
+  if (hypos.length === 0 || hypos[0].chars.length === 0) return null
 
-  const raw = solved.chars.map((c) => c.ch).join('')
-  const charConf = Math.exp(
-    solved.chars.reduce((acc, c) => acc + Math.log(Math.max(c.score, 1e-6)), 0) /
-      solved.chars.length,
+  // ── Re-scoring: pondera a verossimilhança do caminho com o léxico ──
+  interface Hypo { raw: string; charConf: number; lex: number; cost: number }
+  const scored: Hypo[] = hypos.map((h) => {
+    const raw = h.chars.map((c) => c.ch).join('')
+    const pathScore = Math.exp(-h.cost)
+    const charConf = Math.exp(
+      h.chars.reduce((acc, c) => acc + Math.log(Math.max(c.score, 1e-6)), 0) / h.chars.length,
+    )
+    const isWord = /[a-zA-Zà-ÿ]{2,}/.test(raw)
+    return { raw, charConf, lex: isWord ? lexiconScore(raw, lang) : 0.5, cost: h.cost }
+  })
+  scored.sort(
+    (a, b) =>
+      0.65 * (b.charConf - a.charConf) +
+      0.2 * (b.lex - a.lex) +
+      0.25 * (Math.exp(-b.cost) - Math.exp(-a.cost)),
   )
+
+  const best = scored[0]
+  const raw = best.raw
+  let lex = best.lex
+  const charConf = best.charConf
 
   // ── Pós-processamento lexical ──
   let text = raw
-  let lex = lexiconScore(raw, lang)
   const isWord = /[a-zA-Zà-ÿ]{2,}/.test(raw)
   if (isWord && lex < 1) {
     const cands = suggest(raw, lang, 2, 3)
     if (cands.length > 0 && (charConf < 0.6 || lex < 0.5)) {
-      const best = cands[0]
-      const bestScore = lexiconScore(best.word, lang)
+      const sugg = cands[0]
+      const bestScore = lexiconScore(sugg.word, lang)
       if (bestScore > lex + 0.2) {
-        text = best.word
+        text = sugg.word
         lex = bestScore
       }
     }

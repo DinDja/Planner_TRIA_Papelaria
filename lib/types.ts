@@ -152,6 +152,16 @@ export interface CanvasItemRef {
   id: string
 }
 
+/** Textura de papel aplicada sobre a página inteira.
+ *  Cada preset simula um tipo diferente de caderno — grão da fibra,
+ *  espessura do papel, e como a tinta "assenta". */
+export type PaperTextureId =
+  | 'plain'      // liso — sem textura visível
+  | 'cold-press' // prensado a frio: grão médio, comum p/ aquarela
+  | 'hot-press'  // prensado a quente: superfície lisa mas sedosa
+  | 'watercolor' // grão grosso p/ absorção de pigmentos
+  | 'kraft'      // marrom rústico, fibra visível
+
 export interface CanvasData {
   strokes: Stroke[]
   stickers: StickerInstance[]
@@ -160,6 +170,8 @@ export interface CanvasData {
   stickyNotes: StickyNote[]
   /** Cor de fundo da página (opcional). */
   bgColor?: string
+  /** Textura de papel aplicada (overlay). Padrão: plain. */
+  paperTexture?: PaperTextureId
 }
 
 export const EMPTY_CANVAS: CanvasData = {
@@ -603,7 +615,7 @@ export type JournalEmotion =
 
 export type JournalTimeOfDay = 'morning' | 'afternoon' | 'evening' | 'night'
 
-export type PromptCategory = 'gratitude' | 'reflection' | 'creativity' | 'goals' | 'emotions' | 'memory'
+export type PromptCategory = 'gratitude' | 'reflection' | 'creativity' | 'goals' | 'emotions' | 'memory' | 'inspiration'
 
 export interface JournalPrompt {
   id: string

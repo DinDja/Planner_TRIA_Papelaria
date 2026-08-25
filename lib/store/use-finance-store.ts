@@ -90,7 +90,7 @@ interface FinanceState {
   deleteTransaction: (id: string) => void
 
   // Contas fixas
-  addFixedBill: (data: { title: string; amount: number; category: string; dayOfMonth: number; notes?: string }) => void
+  addFixedBill: (data: { title: string; amount: number; category: string; paymentMethod?: string; dayOfMonth: number; notes?: string }) => void
   updateFixedBill: (id: string, patch: Partial<FixedBill>) => void
   deleteFixedBill: (id: string) => void
 

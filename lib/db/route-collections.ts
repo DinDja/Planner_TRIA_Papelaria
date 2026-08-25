@@ -60,7 +60,7 @@ const PLAN: Array<{ match: RegExp; plan: RouteCollectionPlan }> = [
   {
     match: /^\/listas$/,
     plan: {
-      collections: ['shoppingLists'],
+      collections: ['shoppingLists', 'shoppingListPresets'],
       rootFields: ['theme'],
     },
   },

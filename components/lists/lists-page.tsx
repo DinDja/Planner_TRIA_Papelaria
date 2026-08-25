@@ -9,7 +9,6 @@ import {
   CheckCircle2,
   Circle,
   List,
-  Luggage,
   Plus,
   ShoppingCart,
   Trash2,
@@ -29,20 +28,20 @@ function ListCard({
   onDelete,
   onAddItem,
   onToggleItem,
-  onTogglePacked,
+  onSelectItem,
   onDeleteItem,
 }: {
   list: ShoppingList
   onDelete: (id: string) => void
   onAddItem: (listId: string) => void
   onToggleItem: (listId: string, itemId: string) => void
-  onTogglePacked: (listId: string, itemId: string) => void
+  onSelectItem: (listId: string, itemId: string) => void
   onDeleteItem: (listId: string, itemId: string) => void
 }) {
-  const checked = list.items.filter((i) => i.checked).length
+  const isMala = getListKindMeta(list.kind).kind === 'mala'
+  const checked = list.items.filter((i) => (isMala ? i.packed : i.checked)).length
   const total = list.items.length
   const progress = total > 0 ? Math.round((checked / total) * 100) : 0
-  const isMala = getListKindMeta(list.kind).kind === 'mala'
 
   const grouped = list.items.reduce<Record<string, ShoppingItem[]>>((acc, item) => {
     const cat = item.category ?? 'Outros'
@@ -125,10 +124,12 @@ function ListCard({
                     className="group flex items-center gap-3 rounded-xl px-2 py-1.5 hover:bg-muted/40 transition-colors"
                   >
                     <button
-                      onClick={() => onToggleItem(list.id, item.id)}
+                      onClick={() => (isMala
+                        ? onSelectItem(list.id, item.id)
+                        : onToggleItem(list.id, item.id))}
                       className="shrink-0 text-muted-foreground hover:text-primary transition-colors cursor-pointer"
                     >
-                      {item.checked ? (
+                      {(isMala ? item.packed : item.checked) ? (
                         <CheckCircle2 size={18} className="text-emerald-500" />
                       ) : (
                         <Circle size={18} />
@@ -138,7 +139,7 @@ function ListCard({
                       <span
                         className={cn(
                           'text-sm',
-                          item.checked && 'line-through text-muted-foreground',
+                          (isMala ? item.packed : item.checked) && 'line-through text-muted-foreground',
                         )}
                       >
                         {item.name}
@@ -159,20 +160,10 @@ function ListCard({
                         </p>
                       )}
                     </div>
-                    {isMala && (
-                      <button
-                        onClick={() => onTogglePacked(list.id, item.id)}
-                        className={cn(
-                          'shrink-0 rounded-md p-1 transition-all cursor-pointer',
-                          item.packed
-                            ? 'text-emerald-500'
-                            : 'text-muted-foreground/30 opacity-0 group-hover:opacity-100 hover:text-foreground',
-                        )}
-                        title={item.packed ? 'Está na mala' : 'Já colocou na mala?'}
-                        aria-label={item.packed ? 'Marcar como fora da mala' : 'Marcar como colocado na mala'}
-                      >
-                        <Luggage size={13} />
-                      </button>
+                    {isMala && item.packed && (
+                      <span className="shrink-0 text-[10px] font-medium text-emerald-600">
+                        Na mala
+                      </span>
                     )}
                     <button
                       onClick={() => onDeleteItem(list.id, item.id)}
@@ -205,7 +196,7 @@ export function ListsPage() {
   const lists = useListsStore((s) => s.lists)
   const deleteList = useListsStore((s) => s.deleteList)
   const toggleItem = useListsStore((s) => s.toggleItem)
-  const togglePacked = useListsStore((s) => s.togglePacked)
+  const updateItem = useListsStore((s) => s.updateItem)
   const deleteItem = useListsStore((s) => s.deleteItem)
 
   const [tab, setTab] = useState('all')
@@ -213,6 +204,11 @@ export function ListsPage() {
   const [addItemOpen, setAddItemOpen] = useState(false)
   const [addItemListId, setAddItemListId] = useState<string | null>(null)
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
+  const [malaSelection, setMalaSelection] = useState<{
+    listId: string
+    itemId: string
+    itemName: string
+  } | null>(null)
 
   const handleAddItem = (listId: string) => {
     setAddItemListId(listId)
@@ -221,6 +217,19 @@ export function ListsPage() {
 
   const handleDeleteList = (id: string) => {
     setDeleteConfirmId(id)
+  }
+
+  const handleSelectItem = (listId: string, itemId: string) => {
+    const list = lists.find((item) => item.id === listId)
+    const item = list?.items.find((entry) => entry.id === itemId)
+    if (!list || !item || getListKindMeta(list.kind).kind !== 'mala') return
+    setMalaSelection({ listId, itemId, itemName: item.name })
+  }
+
+  const answerMalaSelection = (packed: boolean) => {
+    if (!malaSelection) return
+    updateItem(malaSelection.listId, malaSelection.itemId, { packed })
+    setMalaSelection(null)
   }
 
   const confirmDeleteList = () => {
@@ -233,7 +242,10 @@ export function ListsPage() {
   const listBeingDeleted = deleteConfirmId ? lists.find((l) => l.id === deleteConfirmId) : null
 
   const totalItems = lists.reduce((acc, l) => acc + l.items.length, 0)
-  const checkedItems = lists.reduce((acc, l) => acc + l.items.filter((i) => i.checked).length, 0)
+  const checkedItems = lists.reduce(
+    (acc, l) => acc + l.items.filter((i) => (getListKindMeta(l.kind).kind === 'mala' ? i.packed : i.checked)).length,
+    0,
+  )
 
   return (
     <div className="p-6 lg:p-8 max-w-[1200px] mx-auto">
@@ -280,7 +292,7 @@ export function ListsPage() {
               onDelete={handleDeleteList}
               onAddItem={handleAddItem}
               onToggleItem={toggleItem}
-              onTogglePacked={togglePacked}
+              onSelectItem={handleSelectItem}
               onDeleteItem={deleteItem}
             />
           ))}
@@ -322,6 +334,24 @@ export function ListsPage() {
               <Button variant="destructive" onClick={confirmDeleteList} className="rounded-xl gap-1.5">
                 <Trash2 size={14} />
                 Excluir
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={malaSelection !== null} onOpenChange={(open) => !open && setMalaSelection(null)}>
+        <DialogContent title="Já colocou na mala?" description={malaSelection?.itemName}>
+          <div className="flex flex-col gap-4">
+            <p className="text-sm text-muted-foreground">
+              Marque o que já foi colocado ou mantenha o item nesta lista para lembrar depois.
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              <Button onClick={() => answerMalaSelection(true)} className="rounded-xl">
+                Sim
+              </Button>
+              <Button variant="outline" onClick={() => answerMalaSelection(false)} className="rounded-xl">
+                Não
               </Button>
             </div>
           </div>

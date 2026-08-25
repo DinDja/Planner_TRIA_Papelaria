@@ -85,6 +85,7 @@ const COL_BINDINGS: ColBinding[] = [
   { store: useNotesStore as unknown as StoreLike, field: 'notes', collection: 'notes', read: true, write: true },
   { store: useNotesStore as unknown as StoreLike, field: 'folders', collection: 'noteFolders', read: false, write: false },
   { store: useListsStore as unknown as StoreLike, field: 'lists', collection: 'shoppingLists', read: true, write: true },
+  { store: useListsStore as unknown as StoreLike, field: 'presets', collection: 'shoppingListPresets', read: true, write: true },
   { store: useChecklistsStore as unknown as StoreLike, field: 'checklists', collection: 'checklists', read: true, write: true },
   { store: useQuotesStore as unknown as StoreLike, field: 'quotes', collection: 'quotes', read: true, write: true },
   { store: useMemoriesStore as unknown as StoreLike, field: 'entries', collection: 'memories', read: true, write: true },

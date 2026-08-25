@@ -84,7 +84,7 @@ export function AddListDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent title="Nova lista" description="Compras, tarefas, viagem ou o que precisar.">
         <div className="flex flex-col gap-4">
           <div>
@@ -138,7 +138,7 @@ export function AddListDialog({
           </div>
         </div>
       </DialogContent>
-    </Dialog>
+      </Dialog>
   )
 }
 
@@ -153,6 +153,9 @@ export function AddItemDialog({
 }) {
   const list = useListsStore((s) => s.lists.find((l) => l.id === listId))
   const addItem = useListsStore((s) => s.addItem)
+  const addPresetFromList = useListsStore((s) => s.addPresetFromList)
+  const presets = useListsStore((s) => s.presets)
+  const deletePreset = useListsStore((s) => s.deletePreset)
   const getAllCategories = useListsStore((s) => s.getAllCategories)
   const [name, setName] = useState('')
   const [quantity, setQuantity] = useState('')
@@ -160,10 +163,16 @@ export function AddItemDialog({
   const [dosage, setDosage] = useState('')
   const [packed, setPacked] = useState(false)
   const [notes, setNotes] = useState('')
+  const [pendingMalaSelection, setPendingMalaSelection] = useState<{
+    label: string
+    items: PresetItem[]
+  } | null>(null)
 
   const kindMeta = getListKindMeta(list?.kind)
   const isFarmacia = kindMeta.kind === 'farmacia'
   const isMala = kindMeta.kind === 'mala'
+  const isUserPresetCategory = kindMeta.kind === 'supermercado' || kindMeta.kind === 'mala'
+  const userPresets = presets.filter((preset) => preset.kind === kindMeta.kind)
   const existingCategories = getAllCategories()
   const categorySuggestions = [...new Set([...kindMeta.presetCategories, ...existingCategories])]
 
@@ -187,6 +196,10 @@ export function AddItemDialog({
   }
 
   const handleAddPreset = (preset: PresetItem) => {
+    if (isMala) {
+      setPendingMalaSelection({ label: preset.name, items: [preset] })
+      return
+    }
     addItem(listId, {
       name: preset.name,
       quantity: preset.quantity,
@@ -197,6 +210,11 @@ export function AddItemDialog({
   }
 
   const handleAddCombo = (combo: PresetCombo) => {
+    if (isMala) {
+      const missing = combo.items.filter((p) => !existingNames.has(p.name.trim().toLowerCase()))
+      if (missing.length > 0) setPendingMalaSelection({ label: combo.label, items: missing })
+      return
+    }
     const missing = combo.items.filter((p) => !existingNames.has(p.name.trim().toLowerCase()))
     if (missing.length === 0) return
     missing.forEach((p) =>
@@ -211,6 +229,33 @@ export function AddItemDialog({
       title: `${combo.label}: ${missing.length} itens adicionados!`,
       variant: 'success',
     })
+  }
+
+  const handleAddUserPreset = (presetId: string) => {
+    const preset = userPresets.find((item) => item.id === presetId)
+    if (!preset) return
+    const existingNames = new Set((list?.items ?? []).map((item) => item.name.trim().toLowerCase()))
+    const missing = preset.items.filter((item) => !existingNames.has(item.name.trim().toLowerCase()))
+    if (missing.length === 0) {
+      toast({ title: 'Todos os produtos já estão nesta lista.', variant: 'error' })
+      return
+    }
+    missing.forEach((item) =>
+      addItem(listId, {
+        ...item,
+        packed: isMala ? false : undefined,
+      }),
+    )
+    toast({ title: `${missing.length} produtos adicionados à lista!`, variant: 'success' })
+  }
+
+  const handleSaveAsPreset = () => {
+    if (!list || list.items.length === 0) {
+      toast({ title: 'Adicione produtos antes de salvar a lista pronta.', variant: 'error' })
+      return
+    }
+    addPresetFromList(listId)
+    toast({ title: 'Lista salva como pronta para usar!', variant: 'success' })
   }
 
   const handleCreate = () => {
@@ -232,13 +277,14 @@ export function AddItemDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+    <>
+      <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent title="Novo item" description={kindMeta.description}>
         <div className="flex flex-col gap-4">
-          {(presetGroups.size > 0 || kindMeta.combos.length > 0) && (
+          {!isUserPresetCategory && (presetGroups.size > 0 || kindMeta.combos.length > 0) && (
             <div>
               <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                Prontos para usar
+                Prontos para Usar
               </p>
               <div className="max-h-56 overflow-y-auto rounded-xl border border-border/50 p-2.5 space-y-3">
                 {kindMeta.combos.length > 0 && (
@@ -313,6 +359,55 @@ export function AddItemDialog({
                   </div>
                 )}
               </div>
+            </div>
+          )}
+          {isUserPresetCategory && (
+            <div className="rounded-2xl border border-border/60 bg-muted/20 p-3">
+              <div className="mb-2">
+                <p className="text-sm font-medium">Prontos para Usar</p>
+                <p className="text-[11px] text-muted-foreground">
+                  Monte uma lista uma vez e reutilize quando precisar.
+                </p>
+              </div>
+              {userPresets.length > 0 && (
+                <div className="mb-3 space-y-1.5">
+                  {userPresets.map((preset) => (
+                    <div key={preset.id} className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleAddUserPreset(preset.id)}
+                        className="flex min-w-0 flex-1 items-center justify-between rounded-xl border border-border/60 px-3 py-2 text-left text-xs transition-all cursor-pointer hover:border-primary/40 hover:bg-primary/5"
+                      >
+                        <span className="truncate font-medium">{preset.name}</span>
+                        <span className="ml-2 shrink-0 text-[10px] text-muted-foreground">
+                          {preset.items.length} itens
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => deletePreset(preset.id)}
+                        className="shrink-0 rounded-lg px-2 py-1 text-[10px] text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                      >
+                        Remover
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {userPresets.length === 0 && (
+                <p className="mb-3 text-xs text-muted-foreground">
+                  Ainda não há listas salvas. Adicione produtos e salve a sua primeira lista pronta.
+                </p>
+              )}
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleSaveAsPreset}
+                disabled={!list || list.items.length === 0}
+                className="w-full rounded-xl text-xs"
+              >
+                Salvar lista atual como pronta
+              </Button>
             </div>
           )}
           <div className="border-t border-border/50 pt-4">
@@ -408,6 +503,59 @@ export function AddItemDialog({
           </div>
         </div>
       </DialogContent>
-    </Dialog>
+      </Dialog>
+
+      <Dialog
+      open={pendingMalaSelection !== null}
+      onOpenChange={(open) => !open && setPendingMalaSelection(null)}
+    >
+      <DialogContent title="Já colocou na mala?" description={pendingMalaSelection?.label}>
+        <div className="flex flex-col gap-3">
+          <p className="text-sm text-muted-foreground">
+            Escolha uma opção para registrar o que falta antes da viagem.
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              onClick={() => {
+                pendingMalaSelection?.items.forEach((item) =>
+                  addItem(listId, {
+                    name: item.name,
+                    quantity: item.quantity,
+                    category: item.category,
+                    dosage: item.dosage,
+                    packed: true,
+                  }),
+                )
+                setPendingMalaSelection(null)
+                toast({ title: 'Item marcado como colocado na mala!', variant: 'success' })
+              }}
+              className="rounded-xl"
+            >
+              Sim
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                pendingMalaSelection?.items.forEach((item) =>
+                  addItem(listId, {
+                    name: item.name,
+                    quantity: item.quantity,
+                    category: item.category,
+                    dosage: item.dosage,
+                    packed: false,
+                  }),
+                )
+                setPendingMalaSelection(null)
+                toast({ title: 'Item adicionado à lista para lembrar depois.', variant: 'success' })
+              }}
+              className="rounded-xl"
+            >
+              Não
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+      </Dialog>
+    </>
   )
 }

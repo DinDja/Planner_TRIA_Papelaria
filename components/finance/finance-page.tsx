@@ -302,7 +302,9 @@ export function FinancePage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className={cn('text-sm font-medium truncate', !b.active && 'line-through text-muted-foreground')}>{b.title}</p>
-                    <p className="text-[11px] text-muted-foreground">{b.category} · dia {b.dayOfMonth}</p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {b.category} · dia {b.dayOfMonth}{b.paymentMethod ? ` · ${b.paymentMethod}` : ''}
+                    </p>
                   </div>
                   <span className="text-sm font-semibold tabular-nums">{formatBRL(b.amount)}</span>
                   <Switch checked={b.active} onCheckedChange={() => useFinanceStore.getState().updateFixedBill(b.id, { active: !b.active })} />

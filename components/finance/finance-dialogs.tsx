@@ -6,6 +6,7 @@ import {
   EXPENSE_CATEGORIES,
   INCOME_CATEGORIES,
   PAYMENT_METHODS,
+  SUBSCRIPTION_CATEGORIES,
   TRANSACTION_RECURRENCE,
 } from '@/lib/types'
 import type { Subscription, Transaction } from '@/lib/types'
@@ -137,15 +138,17 @@ export function AddTransactionDialog({
             </div>
           </div>
           <div>
-            <label className="text-sm font-medium mb-2 block">Categoria</label>
-            <div className="flex flex-wrap gap-1.5">
+            <label className="text-sm font-medium mb-1.5 block">Categoria</label>
+            <select
+              className={selectClass}
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+            >
+              <option value="">Selecione uma categoria</option>
               {cats.map((c) => (
-                <button key={c} onClick={() => setCategory(c)}
-                  className={cn('rounded-full border px-3 py-1 text-xs font-medium transition-all cursor-pointer',
-                    category === c ? 'border-primary/50 bg-primary/10 text-primary' : 'border-border/60 text-muted-foreground hover:bg-muted/50',
-                  )}>{c}</button>
+                <option key={c} value={c}>{c}</option>
               ))}
-            </div>
+            </select>
           </div>
 
           {type === 'income' && (
@@ -234,11 +237,12 @@ export function AddFixedBillDialog({ open, onClose }: { open: boolean; onClose: 
   const [title, setTitle] = useState('')
   const [amount, setAmount] = useState(0)
   const [category, setCategory] = useState('Moradia')
+  const [paymentMethod, setPaymentMethod] = useState('')
   const [dayOfMonth, setDayOfMonth] = useState(5)
 
   const handleSave = () => {
     if (!title.trim() || amount <= 0) { toast({ title: 'Preencha título e valor', variant: 'error' }); return }
-    addFixedBill({ title: title.trim(), amount, category, dayOfMonth })
+    addFixedBill({ title: title.trim(), amount, category, paymentMethod: paymentMethod || undefined, dayOfMonth })
     toast({ title: 'Conta fixa adicionada!', variant: 'success' }); onClose()
   }
 
@@ -264,14 +268,16 @@ export function AddFixedBillDialog({ open, onClose }: { open: boolean; onClose: 
           </div>
           <div>
             <label className="text-sm font-medium mb-2 block">Categoria</label>
-            <div className="flex flex-wrap gap-1.5">
-              {EXPENSE_CATEGORIES.map((c) => (
-                <button key={c} onClick={() => setCategory(c)}
-                  className={cn('rounded-full border px-3 py-1 text-xs font-medium transition-all cursor-pointer',
-                    category === c ? 'border-primary/50 bg-primary/10 text-primary' : 'border-border/60 text-muted-foreground hover:bg-muted/50',
-                  )}>{c}</button>
-              ))}
-            </div>
+            <select className={selectClass} value={category} onChange={(e) => setCategory(e.target.value)}>
+              {EXPENSE_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="text-sm font-medium mb-1.5 block">Forma de Pagamento</label>
+            <select className={selectClass} value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>
+              <option value="">Selecione</option>
+              {PAYMENT_METHODS.map((method) => <option key={method} value={method}>{method}</option>)}
+            </select>
           </div>
           <div className="flex justify-end gap-2 pt-1">
             <Button variant="outline" onClick={onClose} className="rounded-xl">Cancelar</Button>
@@ -290,10 +296,10 @@ export function AddSubscriptionDialog({ open, onClose }: { open: boolean; onClos
   const [name, setName] = useState('')
   const [amount, setAmount] = useState(0)
   const [billingCycle, setBillingCycle] = useState<Subscription['billingCycle']>('monthly')
-  const [category, setCategory] = useState('Lazer')
+  const [category, setCategory] = useState('')
 
   const handleSave = () => {
-    if (!name.trim() || amount <= 0) { toast({ title: 'Preencha nome e valor', variant: 'error' }); return }
+    if (!name.trim() || amount <= 0 || !category) { toast({ title: 'Preencha nome, valor e categoria', variant: 'error' }); return }
     addSubscription({ name: name.trim(), amount, billingCycle, category })
     toast({ title: 'Assinatura adicionada!', variant: 'success' }); onClose()
   }
@@ -303,7 +309,7 @@ export function AddSubscriptionDialog({ open, onClose }: { open: boolean; onClos
       <DialogContent title="Nova assinatura" description="Serviço recorrente (Netflix, Spotify, etc).">
         <div className="flex flex-col gap-4">
           <div>
-            <label className="text-sm font-medium mb-1.5 block">Nome</label>
+            <label className="text-sm font-medium mb-1.5 block">Nome da assinatura</label>
             <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Netflix..."
               onKeyDown={(e) => e.key === 'Enter' && handleSave()} autoFocus />
           </div>
@@ -325,15 +331,11 @@ export function AddSubscriptionDialog({ open, onClose }: { open: boolean; onClos
             </div>
           </div>
           <div>
-            <label className="text-sm font-medium mb-2 block">Categoria</label>
-            <div className="flex flex-wrap gap-1.5">
-              {EXPENSE_CATEGORIES.map((c) => (
-                <button key={c} onClick={() => setCategory(c)}
-                  className={cn('rounded-full border px-3 py-1 text-xs font-medium transition-all cursor-pointer',
-                    category === c ? 'border-primary/50 bg-primary/10 text-primary' : 'border-border/60 text-muted-foreground hover:bg-muted/50',
-                  )}>{c}</button>
-              ))}
-            </div>
+            <label className="text-sm font-medium mb-1.5 block">Categoria</label>
+            <select className={selectClass} value={category} onChange={(e) => setCategory(e.target.value)}>
+              <option value="">Selecione uma categoria</option>
+              {SUBSCRIPTION_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
           </div>
           <div className="flex justify-end gap-2 pt-1">
             <Button variant="outline" onClick={onClose} className="rounded-xl">Cancelar</Button>

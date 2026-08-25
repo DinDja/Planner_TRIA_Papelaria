@@ -114,6 +114,13 @@ interface HealthState {
   /** Indica se o onboarding inicial já foi feito. */
   onboarded: boolean
   setSex: (sex: 'male' | 'female') => void
+  saveHealthProfile: (data: {
+    sex?: 'male' | 'female'
+    weight?: number
+    height?: number
+    date: string
+    mode: 'initial' | 'edit'
+  }) => void
   /** Marca o onboarding como concluído. */
   completeOnboarding: () => void
   /** Reseta o onboarding (usado para testar/alterar perfil). */
@@ -195,6 +202,38 @@ export const useHealthStore = create<HealthState>()(
         set((s) => ({ exams: s.exams.filter((e) => e.id !== id) })),
 
       setSex: (sex) => set({ sex }),
+      saveHealthProfile: ({ sex, weight, height, date, mode }) =>
+        set((s) => {
+          let weights = s.weights
+
+          if (typeof weight === 'number' && weight > 0) {
+            const onboardingIndex = weights.findIndex((record) => record.source === 'health-onboarding')
+            const targetIndex = onboardingIndex >= 0
+              ? onboardingIndex
+              : mode === 'edit' && weights.length > 0
+                ? weights.reduce((latestIndex, record, index, records) => (
+                    record.date > records[latestIndex].date ? index : latestIndex
+                  ), 0)
+                : -1
+
+            if (targetIndex >= 0) {
+              weights = weights.map((record, index) => (
+                index === targetIndex
+                  ? { ...record, date, weight, source: 'health-onboarding' as const }
+                  : record
+              ))
+            } else {
+              weights = [{ id: `w-${uid()}`, date, weight, source: 'health-onboarding', createdAt: nowISO() }, ...weights]
+            }
+          }
+
+          return {
+            onboarded: true,
+            ...(sex ? { sex } : {}),
+            ...(typeof height === 'number' && height > 0 ? { height } : {}),
+            weights,
+          }
+        }),
       completeOnboarding: () => set({ onboarded: true }),
       resetOnboarding: () => set({ onboarded: false, sex: null }),
     }),

@@ -1,4 +1,4 @@
-rules_version = '3';
+rules_version = '2';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PlannerHub — Firestore Security Rules
@@ -182,6 +182,12 @@ service cloud.firestore {
         allow read, write: if owns(uid);
       }
 
+      // /users/{uid}/shoppingListPresets/{presetId}
+      //   id, name, kind: 'supermercado'|'mala', items: list<map>, createdAt, updatedAt
+      match /shoppingListPresets/{presetId} {
+        allow read, write: if owns(uid);
+      }
+
       // ─── Checklists (useChecklistsStore) ─ items embutidos ─────────────
       // /users/{uid}/checklists/{checklistId}
       //   id, title, color, items: list<map { id, text, checked, createdAt }>,
@@ -336,7 +342,7 @@ service cloud.firestore {
         allow read, write: if owns(uid);
       }
       // /users/{uid}/fixedBills/{billId}
-      //   id, title, amount, category, dayOfMonth: int 1..31,
+      //   id, title, amount, category, paymentMethod?, dayOfMonth: int 1..31,
       //   notes?, active: bool, createdAt
       match /fixedBills/{billId} {
         allow read, write: if owns(uid);

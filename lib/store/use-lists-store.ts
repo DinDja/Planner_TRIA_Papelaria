@@ -1,7 +1,12 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { getListKindMeta } from '../lists'
-import type { ShoppingItem, ShoppingList, ShoppingListKind } from '../types'
+import type {
+  ShoppingItem,
+  ShoppingList,
+  ShoppingListKind,
+  ShoppingListPreset,
+} from '../types'
 
 const uid = () => Math.random().toString(36).slice(2, 10)
 const nowISO = () => new Date().toISOString()
@@ -76,8 +81,11 @@ const seedLists: ShoppingList[] = [
 
 interface ListsState {
   lists: ShoppingList[]
+  presets: ShoppingListPreset[]
 
   addList: (data: { name: string; color?: string; kind?: ShoppingListKind }) => void
+  addPresetFromList: (listId: string) => void
+  deletePreset: (id: string) => void
   updateList: (id: string, patch: Partial<ShoppingList>) => void
   deleteList: (id: string) => void
 
@@ -95,6 +103,7 @@ export const useListsStore = create<ListsState>()(
   persist(
     (set, get) => ({
       lists: [],
+      presets: [],
 
       addList: ({ color, kind = 'custom', ...data }) => {
         const meta = getListKindMeta(kind)
@@ -107,6 +116,32 @@ export const useListsStore = create<ListsState>()(
           ],
         }))
       },
+
+      addPresetFromList: (listId) => {
+        const list = get().lists.find((item) => item.id === listId)
+        if (
+          !list ||
+          (list.kind !== 'supermercado' && list.kind !== 'mala') ||
+          list.items.length === 0
+        ) return
+        const now = nowISO()
+        const preset: ShoppingListPreset = {
+          id: `preset-${uid()}`,
+          name: list.name,
+          kind: list.kind,
+          items: list.items.map(({ name, quantity, category, dosage, notes }) =>
+            ({ name, quantity, category, dosage, notes }),
+          ),
+          createdAt: now,
+          updatedAt: now,
+        }
+        set((s) => ({
+          presets: [...s.presets.filter((item) => item.name !== preset.name), preset],
+        }))
+      },
+
+      deletePreset: (id) =>
+        set((s) => ({ presets: s.presets.filter((item) => item.id !== id) })),
 
       updateList: (id, patch) =>
         set((s) => ({

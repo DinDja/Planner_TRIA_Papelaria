@@ -427,6 +427,11 @@ export const EXPENSE_CATEGORIES = [
   'Moradia', 'Outros', 'Pets', 'Presentes', 'Restaurantes',
 ] as const
 
+export const SUBSCRIPTION_CATEGORIES = [
+  'Streaming de filmes e séries', 'Música', 'Jogos', 'Armazenamento em nuvem',
+  'Software', 'Educação', 'Notícias', 'Academia', 'Outros',
+] as const
+
 /** Recorrência de receitas — ausente = avulsa. */
 export const TRANSACTION_RECURRENCE = ['monthly', 'weekly', 'biweekly', 'yearly'] as const
 export type TransactionRecurrence = (typeof TRANSACTION_RECURRENCE)[number]
@@ -468,6 +473,7 @@ export interface FixedBill {
   title: string
   amount: number /** em centavos */
   category: string
+  paymentMethod?: string
   dayOfMonth: number /** 1–31 */
   notes?: string
   active: boolean
@@ -735,6 +741,23 @@ export interface ShoppingList {
   updatedAt: string
 }
 
+export interface ShoppingListPresetItem {
+  name: string
+  quantity?: string
+  category?: string
+  dosage?: string
+  notes?: string
+}
+
+export interface ShoppingListPreset {
+  id: string
+  name: string
+  kind: 'supermercado' | 'mala'
+  items: ShoppingListPresetItem[]
+  createdAt: string
+  updatedAt: string
+}
+
 // ─── Módulo de Wishlist ───────────────────────────────────────────────────────
 
 export interface WishlistItem {
@@ -821,6 +844,7 @@ export interface WeightRecord {
   /** Peso em kg */
   weight: number
   notes?: string
+  source?: 'health-onboarding'
   createdAt: string
 }
 

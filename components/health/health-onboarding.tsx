@@ -31,12 +31,22 @@ const STEPS = [
   { id: 'weight', label: 'Peso e altura', icon: Weight },
 ] as const
 
-export function HealthOnboarding() {
-  const store = useHealthStore()
+export function HealthOnboarding({
+  mode = 'initial',
+  onComplete,
+}: {
+  mode?: 'initial' | 'edit'
+  onComplete?: () => void
+}) {
+  const saveHealthProfile = useHealthStore((s) => s.saveHealthProfile)
+  const storedSex = useHealthStore((s) => s.sex)
+  const storedHeight = useHealthStore((s) => s.height)
+  const weights = useHealthStore((s) => s.weights)
+  const latestWeight = [...weights].sort((a, b) => b.date.localeCompare(a.date))[0]
   const [step, setStep] = useState(0)
-  const [sex, setSex] = useState<'male' | 'female' | null>(null)
-  const [weight, setWeight] = useState('')
-  const [height, setHeight] = useState('')
+  const [sex, setSex] = useState<'male' | 'female' | null>(mode === 'edit' ? storedSex : null)
+  const [weight, setWeight] = useState(mode === 'edit' && latestWeight ? String(latestWeight.weight) : '')
+  const [height, setHeight] = useState(mode === 'edit' && storedHeight > 0 ? String(storedHeight) : '')
 
   const pickSex = (s: 'male' | 'female') => setSex(s)
 
@@ -48,19 +58,18 @@ export function HealthOnboarding() {
       toast({ title: 'Selecione seu sexo biológico', variant: 'error' })
       return
     }
-    if (step === 1) {
-      const w = parseFloat(weight.replace(',', '.'))
-      if (w && w > 0) {
-        store.addWeight({ date: dayStr(), weight: w })
-      }
-      const h = parseInt(height)
-      if (h && h > 0) store.setHeight(h)
-    }
-
     if (isLast) {
-      if (sex) store.setSex(sex)
-      store.completeOnboarding()
-      toast({ title: 'Perfil de saúde configurado!', variant: 'success' })
+      const w = parseFloat(weight.replace(',', '.'))
+      const h = parseInt(height)
+      saveHealthProfile({
+        date: dayStr(),
+        mode,
+        ...(sex ? { sex } : {}),
+        ...(w > 0 ? { weight: w } : {}),
+        ...(h > 0 ? { height: h } : {}),
+      })
+      toast({ title: mode === 'edit' ? 'Perfil atualizado' : 'Perfil configurado', variant: 'success' })
+      onComplete?.()
     } else {
       setStep((s) => s + 1)
     }
@@ -69,8 +78,8 @@ export function HealthOnboarding() {
   const handleBack = () => setStep((s) => Math.max(0, s - 1))
   const handleSkip = () => {
     if (isLast) {
-      if (sex) store.setSex(sex)
-      store.completeOnboarding()
+      saveHealthProfile({ date: dayStr(), mode, ...(sex ? { sex } : {}) })
+      onComplete?.()
     } else {
       setStep((s) => s + 1)
     }
@@ -86,7 +95,7 @@ export function HealthOnboarding() {
           <div className="flex items-center gap-2 mb-2">
             <HeartPulse size={18} className="text-primary" />
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Configuração do perfil · {step + 1}/{totalSteps}
+              {mode === 'edit' ? 'Editar perfil' : 'Configuração do perfil'} · {step + 1}/{totalSteps}
             </span>
           </div>
           <CardTitle className="text-lg flex items-center gap-2">
@@ -189,7 +198,7 @@ export function HealthOnboarding() {
                 {isLast ? (
                   <>
                     <CheckCircle2 size={14} />
-                    Concluir
+                    {mode === 'edit' ? 'Salvar alterações' : 'Concluir'}
                   </>
                 ) : (
                   <>

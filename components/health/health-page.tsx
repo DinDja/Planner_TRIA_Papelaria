@@ -1,6 +1,7 @@
 'use client'
 
 import { useHealthStore } from '@/lib/store/use-health-store'
+import type { BodyMeasurement } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import {
   Activity,
@@ -10,8 +11,8 @@ import {
   ClipboardCheck,
   HeartPulse,
   Pill,
+  Pencil,
   Plus,
-  RefreshCw,
   Stethoscope,
   Target,
   Trash2,
@@ -115,6 +116,75 @@ function WeightChart({ weights }: { weights: { date: string; weight: number }[] 
           cy={yScale(s.weight)}
           r="3"
           fill={`hsl(var(--primary))`}
+          stroke="var(--card)"
+          strokeWidth="1.5"
+        />
+      ))}
+    </svg>
+  )
+}
+
+type MeasurementMetric = keyof Pick<BodyMeasurement, 'bust' | 'waist' | 'abdomen' | 'hips' | 'arm' | 'thigh' | 'calf'>
+
+const measurementMetrics: { key: MeasurementMetric; label: string }[] = [
+  { key: 'waist', label: 'Cintura' },
+  { key: 'abdomen', label: 'Abdômen' },
+  { key: 'bust', label: 'Busto' },
+  { key: 'hips', label: 'Quadris' },
+  { key: 'arm', label: 'Braço' },
+  { key: 'thigh', label: 'Coxa' },
+  { key: 'calf', label: 'Panturrilha' },
+]
+
+function MeasurementChart({ measurements, metric }: { measurements: BodyMeasurement[]; metric: MeasurementMetric }) {
+  const sorted = measurements
+    .filter((measurement) => typeof measurement[metric] === 'number')
+    .sort((a, b) => a.date.localeCompare(b.date))
+
+  if (sorted.length < 2) {
+    return (
+      <p className="py-8 text-center text-xs text-muted-foreground">
+        Registre ao menos duas medições de {measurementMetrics.find((item) => item.key === metric)?.label.toLowerCase()} para ver o histórico.
+      </p>
+    )
+  }
+
+  const w = 340
+  const h = 140
+  const pad = { top: 12, right: 10, bottom: 20, left: 36 }
+  const values = sorted.map((measurement) => measurement[metric] as number)
+  const minValue = Math.min(...values) - 2
+  const maxValue = Math.max(...values) + 2
+  const range = maxValue - minValue || 1
+  const xScale = (index: number) => pad.left + (index / (sorted.length - 1)) * (w - pad.left - pad.right)
+  const yScale = (value: number) => pad.top + ((maxValue - value) / range) * (h - pad.top - pad.bottom)
+  const points = values.map((value, index) => `${xScale(index)},${yScale(value)}`).join(' ')
+  const yLabels = Array.from({ length: 5 }, (_, index) => minValue + (range / 4) * index)
+  const label = measurementMetrics.find((item) => item.key === metric)?.label ?? 'Medida'
+
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-auto" role="img" aria-label={`Gráfico histórico de ${label.toLowerCase()}`}>
+      {yLabels.map((value) => (
+        <g key={value}>
+          <line x1={pad.left} y1={yScale(value)} x2={w - pad.right} y2={yScale(value)} stroke="var(--border)" strokeWidth="0.5" />
+          <text x={pad.left - 4} y={yScale(value) + 3} textAnchor="end" fill="var(--muted-foreground)" fontSize="8">
+            {value.toFixed(1)}
+          </text>
+        </g>
+      ))}
+      <polygon
+        points={`${xScale(0)},${h - pad.bottom} ${points} ${xScale(sorted.length - 1)},${h - pad.bottom}`}
+        fill="var(--primary)"
+        fillOpacity="0.08"
+      />
+      <polyline points={points} fill="none" stroke="var(--primary)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+      {values.map((value, index) => (
+        <circle
+          key={`${sorted[index].id}-${metric}`}
+          cx={xScale(index)}
+          cy={yScale(value)}
+          r="3"
+          fill="hsl(var(--primary))"
           stroke="var(--card)"
           strokeWidth="1.5"
         />
@@ -656,12 +726,18 @@ function ExamsTab() {
 
 export function HealthPage() {
   const [tab, setTab] = useState('peso')
+  const [editingProfile, setEditingProfile] = useState(false)
+  const [onboardingCompletedThisSession, setOnboardingCompletedThisSession] = useState(false)
   const onboarded = useHealthStore((s) => s.onboarded)
-  const resetOnboarding = useHealthStore((s) => s.resetOnboarding)
   const sex = useHealthStore((s) => s.sex)
+  const weights = useHealthStore((s) => s.weights)
 
-  if (!onboarded) {
-    return <HealthOnboarding />
+  if (!onboarded && !onboardingCompletedThisSession && sex === null && weights.length === 0) {
+    return <HealthOnboarding onComplete={() => setOnboardingCompletedThisSession(true)} />
+  }
+
+  if (editingProfile) {
+    return <HealthOnboarding mode="edit" onComplete={() => setEditingProfile(false)} />
   }
 
   return (
@@ -682,10 +758,10 @@ export function HealthPage() {
           variant="ghost"
           size="sm"
           className="rounded-xl text-xs text-muted-foreground"
-          onClick={resetOnboarding}
+          onClick={() => setEditingProfile(true)}
         >
-          <RefreshCw size={13} className="mr-1.5" />
-          Refazer perfil
+          <Pencil size={13} className="mr-1.5" />
+          Editar meus dados
         </Button>
       </div>
 
@@ -722,8 +798,16 @@ function MeasurementsTab() {
   const measurements = useHealthStore((s) => s.measurements)
   const deleteMeasurement = useHealthStore((s) => s.deleteMeasurement)
   const [addOpen, setAddOpen] = useState(false)
+  const [selectedMetric, setSelectedMetric] = useState<MeasurementMetric>('waist')
 
   const sorted = [...measurements].sort((a, b) => b.date.localeCompare(a.date))
+  const availableMetrics = useMemo(
+    () => measurementMetrics.filter(({ key }) => measurements.some((measurement) => typeof measurement[key] === 'number')),
+    [measurements],
+  )
+  const activeMetric = availableMetrics.some(({ key }) => key === selectedMetric)
+    ? selectedMetric
+    : availableMetrics[0]?.key
 
   return (
     <div>
@@ -733,6 +817,32 @@ function MeasurementsTab() {
           <Plus size={14} /> Nova medida
         </Button>
       </div>
+      <Card glass className="mb-4">
+        <CardHeader className="pb-1">
+          <div className="flex items-center justify-between gap-3">
+            <CardTitle className="text-sm">Histórico de medidas</CardTitle>
+            {availableMetrics.length > 0 && (
+              <select
+                value={activeMetric}
+                onChange={(event) => setSelectedMetric(event.target.value as MeasurementMetric)}
+                className="h-8 rounded-lg border border-border/60 bg-background px-2 text-xs outline-none focus:ring-2 focus:ring-primary/30"
+                aria-label="Escolha a medida do gráfico"
+              >
+                {availableMetrics.map(({ key, label }) => <option key={key} value={key}>{label}</option>)}
+              </select>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent className="pt-1">
+          {activeMetric ? (
+            <MeasurementChart measurements={measurements} metric={activeMetric} />
+          ) : (
+            <p className="py-8 text-center text-xs text-muted-foreground">
+              Registre uma medida corporal para começar o histórico.
+            </p>
+          )}
+        </CardContent>
+      </Card>
       {sorted.length > 0 ? (
         <div className="space-y-1">
           {sorted.map((m) => (

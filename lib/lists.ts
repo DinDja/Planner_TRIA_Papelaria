@@ -399,5 +399,9 @@ export const LIST_KINDS: ListKindMeta[] = [
 ]
 
 export function getListKindMeta(kind?: string): ListKindMeta {
-  return LIST_KINDS.find((k) => k.kind === kind) ?? LIST_KINDS[3]
+  const meta = LIST_KINDS.find((k) => k.kind === kind) ?? LIST_KINDS[3]
+  if (meta.kind === 'supermercado' || meta.kind === 'mala') {
+    return { ...meta, presetItems: [], combos: [] }
+  }
+  return meta
 }

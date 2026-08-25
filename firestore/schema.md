@@ -182,6 +182,20 @@ users/{uid}/shoppingLists/{listId} {
 }
 ```
 
+### Listas prontas do usuário
+
+```text
+users/{uid}/shoppingListPresets/{presetId} {
+  id, name, kind: 'supermercado'|'mala',
+  items: list<map { name, quantity?, category?, dosage?, notes? }>,
+  createdAt, updatedAt
+}
+```
+
+As listas prontas são particulares de cada usuária. Supermercado e mala de
+viagem não oferecem mais itens ou combinações fixas; cada preset é criado a
+partir de uma lista montada pela própria pessoa.
+
 ### Checklists (items embutidos)
 
 ```
@@ -232,7 +246,7 @@ users/{uid}/wishlist/{itemId} {
 ### Saúde (8 subcollections)
 
 ```
-weights/{id}            { id, date, weight: number (kg), notes?, createdAt }
+weights/{id}            { id, date, weight: number (kg), notes?, source?: 'health-onboarding', createdAt }
 bodyMeasurements/{id}  { id, date, bust?, waist?, abdomen?, hips?, arm?, thigh?, calf?, notes?, createdAt }
 symptomLogs/{id}       { id, date, symptom, time?: 'HH:mm', possibleCause?, severity: int 1..5, notes?, createdAt }
 medications/{id}       { id, name, dosage, frequency, times?: list<string>, startDate, endDate?, reason?, notes?, color, createdAt }
@@ -268,7 +282,7 @@ calendarEvents/{id} { id, title, date, startTime, endTime?, allDay?: bool, color
 
 ```
 transactions/{id}    { id, title, amount: int (centavos), type: 'income'|'expense', date, category, notes?, fixedBillId?, createdAt }
-fixedBills/{id}      { id, title, amount, category, dayOfMonth: int 1..31, notes?, active: bool, createdAt }
+fixedBills/{id}      { id, title, amount, category, paymentMethod?, dayOfMonth: int 1..31, notes?, active: bool, createdAt }
 subscriptions/{id}   { id, name, amount, billingCycle: 'monthly'|'yearly'|'weekly', category, nextBilling: date, active: bool, notes?, createdAt }
 creditCards/{id}     { id, name, limit: int, closingDay, dueDay, color, createdAt }
 installments/{id}    { id, title, totalAmount, installmentAmount, totalInstallments: int, currentInstallment: int, cardId, category, notes?, createdAt }

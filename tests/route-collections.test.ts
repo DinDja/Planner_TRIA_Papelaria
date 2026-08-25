@@ -9,7 +9,7 @@ describe('route-collections — pathname resolve plano de coleções', () => {
     // agora cada página só carrega o que precisa.
     expect(plan('/diario').collections).toEqual(['diarios'])
     expect(plan('/checklists').collections).toEqual(['checklists'])
-    expect(plan('/listas').collections).toEqual(['shoppingLists'])
+    expect(plan('/listas').collections).toEqual(['shoppingLists', 'shoppingListPresets'])
     expect(plan('/wishlist').collections).toEqual(['wishlist'])
     expect(plan('/frases').collections).toEqual(['quotes'])
     expect(plan('/memorias').collections).toEqual(['memories'])

@@ -20,7 +20,7 @@ import { cn } from '@/lib/utils'
 import { Calendar, FolderOpen, NotebookPen, Star, Target } from 'lucide-react'
 import Link from 'next/link'
 import { Card, CardHeader, CardTitle } from '../ui/card'
-import { TemplateThumbnail } from '../templates-page/template-thumbnail'
+import { TemplateThumbnail } from '../planner-template-thumbnail'
 
 // Cliente pediu fonte mais retinha (ela achou a cursiva "feminina demais").
 // Aproveitamos o token --font-geist (mesma sans do app) para mudar SÓ o
@@ -238,12 +238,6 @@ export function DashboardPage() {
           <Card glass className={enter} style={stagger(5)}>
             <CardHeader className="flex-row items-center justify-between pb-0">
               <CardTitle className="text-base">Planners recentes</CardTitle>
-              <Link
-                href="/templates"
-                className="text-xs text-primary hover:underline flex items-center gap-1 transition-colors"
-              >
-                Explorar templates →
-              </Link>
             </CardHeader>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-5 pt-3">
               {recents.slice(0, 6).map((planner) => {

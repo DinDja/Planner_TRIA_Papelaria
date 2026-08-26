@@ -51,13 +51,10 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
     { id: 'cofre',         label: 'Senhas',              iconId: 'cofre',         href: '/cofre',         section: 'Navegação' },
     { id: 'saude',         label: 'Saúde',                 iconId: 'saude',         href: '/saude',         section: 'Navegação' },
     { id: 'wishlist',     label: 'Wishlist',              iconId: 'wishlist',      href: '/wishlist',      section: 'Navegação' },
-    { id: 'rotina',        label: 'Rotina',                iconId: 'rotina',        href: '/rotina',        section: 'Navegação' },
-    { id: 'calendario',    label: 'Calendário',            iconId: 'calendario',    href: '/calendario',    section: 'Navegação' },
+    { id: 'agenda',    label: 'Agenda',                 iconId: 'calendario',    href: '/agenda',    section: 'Navegação' },
     { id: 'financas',      label: 'Finanças',              iconId: 'financas',      href: '/financas',      section: 'Navegação' },
     { id: 'aniversarios',  label: 'Aniversários',          iconId: 'aniversarios',  href: '/aniversarios',  section: 'Navegação' },
     { id: 'habitos',       label: 'Hábitos',               iconId: 'habitos',       href: '/habitos',       section: 'Navegação' },
-    { id: 'retrospectiva', label: 'Retrospectiva',         iconId: 'retrospectiva', href: '/retrospectiva', section: 'Navegação' },
-    { id: 'templates',     label: 'Galeria de templates',  iconId: 'templates',     href: '/templates',     section: 'Navegação' },
     { id: 'plans',         label: 'Planos',                iconId: 'plans',         href: '/plans',         section: 'Navegação' },
     { id: 'menu',          label: 'Personalizar Menu',     iconId: 'admin',         href: '/menu',          section: 'Sistema' },
     { id: 'conta',         label: 'Conta e Admin',         iconId: 'perfil',        href: '/conta',         section: 'Sistema' },
@@ -158,7 +155,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
               setSelectedIdx(0)
             }}
             onKeyDown={onKeyDown}
-            placeholder="Buscar planners, páginas, templates..."
+            placeholder="Buscar planners e páginas..."
             className="flex-1 bg-transparent text-[15px] outline-none placeholder:text-muted-foreground/60"
           />
           <kbd className="inline-flex items-center gap-0.5 rounded-lg border border-border bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">

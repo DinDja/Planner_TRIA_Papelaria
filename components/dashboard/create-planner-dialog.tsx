@@ -20,7 +20,7 @@ import { Button } from '../ui/button'
 import { Input } from '../ui/primitives'
 import { Dialog, DialogContent } from '../ui/overlays'
 import { toast } from '../ui/toaster'
-import { TemplateThumbnail } from '../templates-page/template-thumbnail'
+import { TemplateThumbnail } from '../planner-template-thumbnail'
 
 interface Props {
   open: boolean

@@ -583,34 +583,6 @@ export interface HabitLog {
   createdAt: string
 }
 
-// ─── Módulo de Retrospectiva ──────────────────────────────────────────────────
-
-export type RetrospectiveType = 'daily' | 'weekly' | 'monthly'
-
-export type RetrospectiveMood = 'great' | 'good' | 'neutral' | 'bad' | 'tough'
-
-export interface RetroAction {
-  id: string
-  text: string
-  done: boolean
-  createdAt: string
-}
-
-export interface RetrospectiveEntry {
-  id: string
-  type: RetrospectiveType
-  /** ISO date (YYYY-MM-DD) — dia inicial do período */
-  date: string
-  /** ISO date — data final para weekly/monthly */
-  endDate?: string
-  mood: RetrospectiveMood
-  wentWell: string[]
-  toImprove: string[]
-  actions: RetroAction[]
-  notes?: string
-  createdAt: string
-}
-
 // ─── Módulo de Diário Digital ─────────────────────────────────────────────────
 
 export type JournalEmotion =

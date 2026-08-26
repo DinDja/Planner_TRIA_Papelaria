@@ -41,8 +41,6 @@ export type ModuloId =
   | 'financas'
   | 'aniversarios'
   | 'habitos'
-  | 'retrospectiva'
-  | 'templates'
   | 'plans'
   | 'admin'
   | 'perfil'
@@ -235,28 +233,6 @@ export function HabitosIcon({ size, ...p }: P) {
   )
 }
 
-export function RetrospectivaIcon({ size, ...p }: P) {
-  // Seta curva que quase completa o círculo + ponto no fim (olhar p/ trás).
-  return (
-    <svg {...svgProps(size)} {...p}>
-      <path d="M15.5 10 A5.5 5.5 0 1 1 8.5 4.7" />
-      <path d="M8.5 2.5 L8.5 4.7 L10.7 4.7" />
-      <circle cx="15.5" cy="10" r="0.8" fill="currentColor" stroke="none" />
-    </svg>
-  )
-}
-
-export function TemplatesIcon({ size, ...p }: P) {
-  // Três retângulos offset em pilha.
-  return (
-    <svg {...svgProps(size)} {...p}>
-      <path d="M6 6 L15 6 L15 16 L6 16 Z" />
-      <path d="M7 4 L16 4 L16 14" />
-      <path d="M8 2 L17 2 L17 12" />
-    </svg>
-  )
-}
-
 export function PlansIcon({ size, ...p }: P) {
   // Etiqueta/cartão com símbolo de preço (R$ abreviado).
   return (
@@ -326,8 +302,6 @@ export const MODULO_ICONS: Record<ModuloId, (p: P) => JSX.Element> = {
   financas: FinancasIcon,
   aniversarios: AniversariosIcon,
   habitos: HabitosIcon,
-  retrospectiva: RetrospectivaIcon,
-  templates: TemplatesIcon,
   plans: PlansIcon,
   admin: AdminIcon,
   perfil: PerfilIcon,

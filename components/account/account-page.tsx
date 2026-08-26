@@ -20,7 +20,6 @@ const enter = 'animate-in fade-in slide-in-from-bottom-3 duration-500 fill-mode-
 
 const FAQS = [
   { q: 'Como criar um novo planner?', a: 'Clique em "Novo planner" no menu lateral ou use o atalho Ctrl+K para abrir a paleta de comandos.' },
-  { q: 'Onde ficam os templates?', a: 'Acesse "Galeria de templates" pelo menu lateral ou pela paleta de comandos.' },
   { q: 'Como faço backup dos meus dados?', a: 'Todos os dados são salvos automaticamente no navegador. Você pode exportar seus planners pela opção "Exportar" no menu de cada planner.' },
   { q: 'Os dados ficam salvos em nuvem?', a: 'Atualmente, todos os dados são armazenados localmente no navegador (localStorage).' },
   { q: 'Como apagar um planner?', a: 'No dashboard, clique no ⋮ (mais opções) do planner e selecione "Excluir".' },

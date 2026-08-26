@@ -7,7 +7,7 @@ import { Plus, Star, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 import { CreatePlannerDialog } from '../dashboard/create-planner-dialog'
-import { TemplateThumbnail } from '../templates-page/template-thumbnail'
+import { TemplateThumbnail } from '../planner-template-thumbnail'
 import { Button } from '../ui/button'
 import { DeletePlannerDialog } from './delete-planner-dialog'
 

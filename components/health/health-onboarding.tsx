@@ -144,13 +144,7 @@ export function HealthOnboarding({
                   <Mars size={28} />
                   Masculino
                 </button>
-              </div>
-              {sex === 'male' && (
-                <p className="text-[11px] text-muted-foreground mt-3 flex items-center gap-1.5">
-                  <CheckCircle2 size={11} className="text-emerald-500" />
-                  A aba de ciclo menstrual será ocultada para usuários do sexo masculino.
-                </p>
-              )}
+              </div>             
             </div>
           )}
 

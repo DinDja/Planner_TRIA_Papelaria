@@ -13,10 +13,10 @@ import type { User } from 'firebase/auth'
 
 import { useAppStore } from '@/lib/store/use-app-store'
 import { useProfileStore } from '@/lib/store/use-profile-store'
-import { useMenuStore } from '@/lib/store/use-menu-store'
+import { sanitizeModules, useMenuStore } from '@/lib/store/use-menu-store'
+import type { ModuleDef } from '@/lib/store/use-menu-store'
 import { useDiarioStore } from '@/lib/diario/use-diario-store'
 import { useJournalStore } from '@/lib/store/use-journal-store'
-import { useRetroStore } from '@/lib/store/use-retro-store'
 import { useNotesStore } from '@/lib/store/use-notes-store'
 import { useListsStore } from '@/lib/store/use-lists-store'
 import { useChecklistsStore } from '@/lib/store/use-checklists-store'
@@ -28,6 +28,7 @@ import { useHealthStore } from '@/lib/store/use-health-store'
 import { useHabitsStore } from '@/lib/store/use-habits-store'
 import { useRoutineStore } from '@/lib/store/use-routine-store'
 import { useCalendarStore } from '@/lib/store/use-calendar-store'
+import { useCalendarPlannerStore } from '@/lib/store/use-calendar-planner-store'
 import { useFinanceStore } from '@/lib/store/use-finance-store'
 import { useBirthdaysStore } from '@/lib/store/use-birthdays-store'
 import { useTrashStore } from '@/lib/store/use-trash-store'
@@ -63,6 +64,7 @@ const ROOT_BINDINGS: RootBinding[] = [
   { store: useProfileStore as unknown as StoreLike, field: 'avatar', rootKey: 'avatar', read: true, write: true },
   { store: useProfileStore as unknown as StoreLike, field: 'email', rootKey: 'email', read: true, write: true },
   { store: useMenuStore as unknown as StoreLike, field: 'modules', rootKey: 'modules', read: true, write: true },
+  { store: useCalendarPlannerStore as unknown as StoreLike, field: 'weeks', rootKey: 'calendarPlanner', read: true, write: true },
   { store: useHealthStore as unknown as StoreLike, field: 'height', rootKey: 'height', read: true, write: true },
   { store: useHealthStore as unknown as StoreLike, field: 'goalWeight', rootKey: 'goalWeight', read: true, write: true },
   { store: useHealthStore as unknown as StoreLike, field: 'sex', rootKey: 'sex', read: true, write: true },
@@ -81,7 +83,6 @@ const COL_BINDINGS: ColBinding[] = [
   { store: useAppStore as unknown as StoreLike, field: 'planners', collection: 'planners', read: true, write: false },
   { store: useDiarioStore as unknown as StoreLike, field: 'registros', collection: 'diarios', read: true, write: true },
   { store: useJournalStore as unknown as StoreLike, field: 'entries', collection: 'journalEntries', read: true, write: true },
-  { store: useRetroStore as unknown as StoreLike, field: 'entries', collection: 'retroEntries', read: true, write: true },
   { store: useNotesStore as unknown as StoreLike, field: 'notes', collection: 'notes', read: true, write: true },
   { store: useNotesStore as unknown as StoreLike, field: 'folders', collection: 'noteFolders', read: false, write: false },
   { store: useListsStore as unknown as StoreLike, field: 'lists', collection: 'shoppingLists', read: true, write: true },
@@ -209,10 +210,14 @@ export function StoreSyncProvider({ children, editorMode = false }: StoreSyncPro
         if (wantRootKeys.size > 0 && !wantRootKeys.has(b.rootKey)) continue
         const value = readRootField(d, b.rootKey)
         if (value === undefined) continue
+        const normalizedValue =
+          b.field === 'modules' && Array.isArray(value)
+            ? sanitizeModules(value as ModuleDef[])
+            : value
         // Corte do loop: se este campo é eco de uma escrita nossa recente,
         // ignora o setState — o write-through já atualizou a store.
-        if (isOwnRootFieldSnapshot(user.uid, b.rootKey, value)) continue
-        ;(b.store as any).setState({ [b.field]: value })
+        if (isOwnRootFieldSnapshot(user.uid, b.rootKey, normalizedValue)) continue
+        ;(b.store as any).setState({ [b.field]: normalizedValue })
       }
     })
     unsubs.push(unsubRoot)

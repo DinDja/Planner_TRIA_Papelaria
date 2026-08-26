@@ -36,7 +36,9 @@ export function AppSidebar({
   const folders = useAppStore((s) => s.folders)
   const tags = useAppStore((s) => s.tags)
   const menuModules = useMenuStore((s) => s.modules)
-  const enabledModules = menuModules.filter((m) => m.enabled)
+  const enabledModules = menuModules
+    .filter((m) => m.enabled)
+    .map((m) => m.id === 'calendario' ? { ...m, label: 'Agenda' } : m)
 
   const sidebarContent = (
     <div className="flex h-full flex-col">

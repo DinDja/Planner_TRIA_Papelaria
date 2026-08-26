@@ -4,7 +4,7 @@ import { drawTemplate, getTemplateColors } from '@/lib/templates'
 import type { PageTemplateId } from '@/lib/types'
 import { PAGE_HEIGHT, PAGE_WIDTH } from '@/lib/types'
 import { useEffect, useRef } from 'react'
-import { useTheme } from '../providers/theme-provider'
+import { useTheme } from './providers/theme-provider'
 
 interface TemplateThumbnailProps {
   template: PageTemplateId

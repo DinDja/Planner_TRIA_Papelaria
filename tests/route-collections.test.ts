@@ -14,7 +14,9 @@ describe('route-collections — pathname resolve plano de coleções', () => {
     expect(plan('/frases').collections).toEqual(['quotes'])
     expect(plan('/memorias').collections).toEqual(['memories'])
     expect(plan('/notas').collections).toEqual(['notes'])
-    expect(plan('/calendario').collections).toEqual(['calendarEvents'])
+    expect(plan('/calendario').collections.sort()).toEqual(
+      ['calendarEvents', 'tasks', 'recurringTasks', 'pendingItems', 'routineSlots'].sort(),
+    )
   })
 
   it('rota de saúde carrega as 8 coleções de saúde', () => {
@@ -49,15 +51,13 @@ describe('route-collections — pathname resolve plano de coleções', () => {
     expect(plan('/habitos').collections.sort()).toEqual(['habits', 'habitLogs'].sort())
   })
 
-  it('/retrospectiva carrega retroEntries + journalEntries', () => {
-    expect(plan('/retrospectiva').collections.sort()).toEqual(
-      ['retroEntries', 'journalEntries'].sort(),
-    )
-  })
-
   it('/cofre carrega passwords e pede masterPin do root', () => {
     expect(plan('/cofre').collections).toEqual(['passwords'])
     expect(plan('/cofre').rootFields).toContain('masterPin')
+  })
+
+  it('/calendario carrega o planner semanal salvo no root', () => {
+    expect(plan('/calendario').rootFields).toContain('calendarPlanner')
   })
 
   it('dashboard agrega 4 coleções de 3 módulos diferentes', () => {

@@ -451,7 +451,7 @@ export function AddItemDialog({
               </div>
               {isFarmacia && (
                 <div>
-                  <label className="text-sm font-medium mb-1.5 block">Dosagem / posologia</label>
+                  <label className="text-sm font-medium mb-1.5 block">Dosagem</label>
                   <Input
                     value={dosage}
                     onChange={(e) => setDosage(e.target.value)}

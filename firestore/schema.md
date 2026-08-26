@@ -46,6 +46,7 @@
 | `useHabitsStore`                       | `users/{uid}/habits` + `users/{uid}/habitLogs` |       |
 | `useRoutineStore`                      | `tasks`, `recurringTasks`, `pendingItems`, `routineSlots` | 4 subcollections |
 | `useCalendarStore`                     | `users/{uid}/calendarEvents`              |       |
+| `useCalendarPlannerStore`               | `users/{uid}` (`calendarPlanner`)         | notas diárias, objetivos e gratidão agrupados pela semana |
 | `useFinanceStore`                      | `transactions`, `fixedBills`, `subscriptions`, `creditCards`, `installments`, `financialGoals`, `goalDeposits`, `savingsBoxes` | 8 subcollections |
 | `useBirthdaysStore`                    | `users/{uid}/birthdays`                   |       |
 | `useTrashStore`                        | `users/{uid}/trashItems`                   | capped 100 no cliente |

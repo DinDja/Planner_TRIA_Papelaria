@@ -378,7 +378,7 @@ function IndiceMes({
         href="/calendario"
         className="mt-1 self-start text-[0.7rem] uppercase tracking-[0.22em] text-muted-foreground/45 transition-colors hover:text-foreground"
       >
-        ver o mês inteiro →
+        ver a agenda inteira →
       </Link>
     </nav>
   )

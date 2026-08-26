@@ -125,8 +125,8 @@ const PLAN: Array<{ match: RegExp; plan: RouteCollectionPlan }> = [
   {
     match: /^\/calendario$/,
     plan: {
-      collections: ['calendarEvents'],
-      rootFields: ['theme'],
+      collections: ['calendarEvents', 'tasks', 'recurringTasks', 'pendingItems', 'routineSlots'],
+      rootFields: ['theme', 'calendarPlanner'],
     },
   },
   {
@@ -164,21 +164,6 @@ const PLAN: Array<{ match: RegExp; plan: RouteCollectionPlan }> = [
     plan: {
       collections: ['habits', 'habitLogs'],
       rootFields: ['theme'],
-    },
-  },
-  {
-    match: /^\/retrospectiva$/,
-    plan: {
-      collections: ['retroEntries', 'journalEntries'],
-      rootFields: ['theme'],
-    },
-  },
-  // Templates lista planners (write:false no sync, mas precisa do read).
-  {
-    match: /^\/templates$/,
-    plan: {
-      collections: ['planners'],
-      rootFields: ['theme', 'folders'],
     },
   },
   // Plans/admin usam só o root doc (subscription.*) e coleções globais fora do provider.

@@ -10,6 +10,14 @@ export interface ModuleDef {
   enabled: boolean
 }
 
+const REMOVED_MODULE_IDS = new Set(['retrospectiva', 'templates', 'rotina'])
+
+export function sanitizeModules(modules: ModuleDef[]): ModuleDef[] {
+  return modules
+    .filter((module) => !REMOVED_MODULE_IDS.has(module.id))
+    .map((module) => module.id === 'calendario' ? { ...module, label: 'Agenda', href: '/calendario' } : module)
+}
+
 export const DEFAULT_MODULES: ModuleDef[] = [
   { id: 'dashboard',       href: '/',              label: 'Dashboard',      enabled: true },
   { id: 'diario',          href: '/diario',        label: 'Diário',         enabled: true },
@@ -21,13 +29,10 @@ export const DEFAULT_MODULES: ModuleDef[] = [
   { id: 'memorias',        href: '/memorias',       label: 'Memórias',      enabled: true },
   { id: 'cofre',           href: '/cofre',          label: 'Senhas',         enabled: true },
   { id: 'saude',           href: '/saude',          label: 'Saúde',          enabled: true },
-  { id: 'rotina',          href: '/rotina',         label: 'Rotina',         enabled: true },
-  { id: 'calendario',      href: '/calendario',     label: 'Calendário',    enabled: true },
+  { id: 'calendario',      href: '/calendario',     label: 'Agenda',         enabled: true },
   { id: 'financas',        href: '/financas',       label: 'Finanças',       enabled: true },
   { id: 'aniversarios',    href: '/aniversarios',   label: 'Aniversários',   enabled: true },
   { id: 'habitos',         href: '/habitos',        label: 'Hábitos',        enabled: true },
-  { id: 'retrospectiva',   href: '/retrospectiva', label: 'Retrospectiva',  enabled: true },
-  { id: 'templates',       href: '/templates',     label: 'Templates',      enabled: true },
   { id: 'plans',           href: '/plans',          label: 'Planos',         enabled: true },
   { id: 'admin',           href: '/admin',          label: 'Admin',          enabled: true },
   { id: 'perfil',          href: '/perfil',         label: 'Perfil',         enabled: true },
@@ -65,7 +70,7 @@ export const useMenuStore = create<MenuState>()(
     }),
     {
       name: 'plannerhub-menu',
-      version: 3,
+      version: 5,
       // Antes da v2, cada item levava `icon: 'BookHeart'` etc (nome Lucide).
       // O ícone virou derivado de `id` (ver components/icons/modules). Aqui
       // descartamos o campo legado ao reidratar do localStorage.
@@ -73,6 +78,8 @@ export const useMenuStore = create<MenuState>()(
       // v3: a aba "Metas" duplicava as metas financeiras de Finanças e foi
       // removida; "Aniversários" foi adicionada como módulo novo — reentra
       // para quem já tinha o menu persistido.
+      // v4: Retrospectiva e Templates deixaram de ser módulos do menu.
+      // v5: Rotina foi incorporada à Agenda e deixou de ser item separado.
       //
       // `migrate` (não `merge`) é o lugar correto: roda só quando a `version`
       // muda, recebe o estado velho, e devolve apenas os campos persistidos.
@@ -83,13 +90,13 @@ export const useMenuStore = create<MenuState>()(
           return { modules: DEFAULT_MODULES }
         }
         const validIds = new Set(DEFAULT_MODULES.map((m) => m.id))
-        const cleaned = raw.modules
+        const cleaned = sanitizeModules(raw.modules
           .map((m) => {
             const { icon: _drop, ...rest } = m as ModuleDef & { icon?: string }
             return rest as ModuleDef
           })
           .filter((m) => m.href !== '/metas')
-          .filter((m) => validIds.has(m.id))
+          .filter((m) => validIds.has(m.id)))
         // Garante que todo módulo padrão exista (reentrada para quem tinha
         // menu persistido antes de um módulo novo ser adicionado).
         for (const def of DEFAULT_MODULES) {

@@ -104,7 +104,6 @@ Abra [http://localhost:3000](http://localhost:3000) para visualizar.
 │   └── providers/           # Theme + Settings providers
 ├── lib/
 │   ├── types.ts             # Tipos centrais (Canvas, Planner, Settings)
-│   ├── mock-data.ts         # Dados mock
 │   ├── planner-templates.ts # 17 planners pré-montados
 │   ├── templates.ts         # Desenho dos 13 templates de página
 │   ├── stickers*.ts         # Bibliotecas de stickers (148)

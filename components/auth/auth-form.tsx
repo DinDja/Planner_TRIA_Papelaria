@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Loader2, ArrowLeft } from 'lucide-react'
@@ -165,6 +166,15 @@ function LoginForm(props: {
   const { onSubmit, onGoogle, isPending, showPassword, onTogglePassword, onSwitchToRegister, onSwitchToForgot, email, password, onEmail, onPassword, error } = props
   return (
     <>
+      <Image
+        src="/Logo.svg"
+        alt="PlannerHub"
+        width={156}
+        height={88}
+        priority
+        className="mx-auto mb-10 h-auto w-[156px] opacity-90"
+      />
+
       <div className="mb-9">
         <p className={eyebrow}>entrada · 001</p>
         <h1 className="font-serif text-[2.3rem] leading-[1.05] text-foreground mt-2">

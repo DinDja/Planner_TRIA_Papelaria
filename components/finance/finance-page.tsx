@@ -1,6 +1,7 @@
 'use client'
 
 import { useFinanceStore } from '@/lib/store/use-finance-store'
+import type { FinancialAccount } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import {
   ArrowDownRight,
@@ -18,7 +19,7 @@ import {
   TrendingUp,
   Wallet,
 } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Button } from '../ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { Badge, Switch } from '../ui/primitives'
@@ -29,6 +30,8 @@ import {
   AddInstallmentDialog,
   AddSubscriptionDialog,
   AddTransactionDialog,
+  AccountsManagerDialog,
+  FinanceAccountsSetup,
   GoalDialog,
   SavingsBoxDialog,
 } from './finance-dialogs'
@@ -57,7 +60,155 @@ function DeleteButton({ onClick }: { onClick: () => void }) {
 
 // ─── Página Principal ─────────────────────────────────────────────────────────
 
+function accountRolesLabel(account: FinancialAccount) {
+  return account.roles.length === 2
+    ? 'recebe e paga'
+    : account.roles[0] === 'receiving'
+      ? 'recebimento'
+      : 'pagamento'
+}
+
+function accountInitials(name: string) {
+  const words = name.trim().split(/\s+/).filter(Boolean)
+  return (words.length > 1 ? `${words[0][0]}${words[words.length - 1][0]}` : words[0]?.slice(0, 2) ?? '??').toUpperCase()
+}
+
+function LegacyAccountSwitcher({
+  accounts,
+  selectedAccountId,
+  onSelect,
+  onManage,
+}: {
+  accounts: FinancialAccount[]
+  selectedAccountId: string
+  onSelect: (id: string) => void
+  onManage: () => void
+}) {
+  const selected = accounts.find((account) => account.id === selectedAccountId)
+
+  return (
+    <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-border/60 bg-muted/20 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex min-w-0 items-center gap-3">
+        <span className="size-2 shrink-0 rounded-full bg-primary" aria-hidden="true" />
+        <div className="min-w-0">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Conta em foco</p>
+          <select
+            value={selectedAccountId}
+            onChange={(event) => onSelect(event.target.value)}
+            className="mt-0.5 max-w-full bg-transparent text-sm font-medium outline-none"
+            aria-label="Selecionar conta em foco"
+          >
+            <option value="all">Todas as contas</option>
+            {accounts.map((account) => (
+              <option key={account.id} value={account.id}>
+                {account.name} — {accountRolesLabel(account)}
+              </option>
+            ))}
+          </select>
+        </div>
+        {selected && (
+          <span className="hidden text-[11px] text-muted-foreground sm:inline">{accountRolesLabel(selected)}</span>
+        )}
+      </div>
+      <button type="button" onClick={onManage} className="self-start text-xs font-medium text-primary hover:underline sm:self-auto">
+        Gerenciar contas
+      </button>
+    </div>
+  )
+}
+
+function AccountSwitcher({
+  accounts,
+  selectedAccountId,
+  onSelect,
+  onManage,
+}: {
+  accounts: FinancialAccount[]
+  selectedAccountId: string
+  onSelect: (id: string) => void
+  onManage: () => void
+}) {
+  const isOverviewSelected = selectedAccountId === 'all'
+
+  return (
+    <section className="mb-6 border-b border-border/60 pb-5" aria-labelledby="account-switcher-title">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Conta em foco</p>
+          <h2 id="account-switcher-title" className="mt-1 text-base font-semibold tracking-tight">Onde você está lançando?</h2>
+          <p className="mt-1 text-xs text-muted-foreground">Escolha uma conta para filtrar o resumo e as movimentações.</p>
+        </div>
+        <button
+          type="button"
+          onClick={onManage}
+          className="rounded-lg px-2 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+        >
+          Gerenciar contas
+        </button>
+      </div>
+
+      <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3" role="group" aria-label="Contas financeiras">
+        <button
+          type="button"
+          aria-pressed={isOverviewSelected}
+          onClick={() => onSelect('all')}
+          className={cn(
+            'group flex min-h-[74px] items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
+            isOverviewSelected
+              ? 'border-primary/60 bg-primary/[0.07] shadow-sm'
+              : 'border-border/60 bg-background/40 hover:border-primary/30 hover:bg-muted/40',
+          )}
+        >
+          <span className={cn(
+            'flex size-10 shrink-0 items-center justify-center rounded-lg text-base font-semibold transition-colors',
+            isOverviewSelected ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground group-hover:text-foreground',
+          )}>
+            <Wallet size={18} aria-hidden="true" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-sm font-semibold">Visão geral</span>
+            <span className="mt-0.5 block text-xs text-muted-foreground">Todas as contas</span>
+          </span>
+          {isOverviewSelected && <span className="text-[10px] font-semibold uppercase tracking-wide text-primary">Ativa</span>}
+        </button>
+
+        {accounts.map((account) => {
+          const isSelected = account.id === selectedAccountId
+
+          return (
+            <button
+              key={account.id}
+              type="button"
+              aria-pressed={isSelected}
+              onClick={() => onSelect(account.id)}
+              className={cn(
+                'group flex min-h-[74px] items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
+                isSelected
+                  ? 'border-primary/60 bg-primary/[0.07] shadow-sm'
+                  : 'border-border/60 bg-background/40 hover:border-primary/30 hover:bg-muted/40',
+              )}
+            >
+              <span className={cn(
+                'flex size-10 shrink-0 items-center justify-center rounded-lg text-[11px] font-bold tracking-wide transition-colors',
+                isSelected ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground group-hover:text-foreground',
+              )}>
+                {accountInitials(account.name)}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-semibold">{account.name}</span>
+                <span className="mt-0.5 block truncate text-xs text-muted-foreground">{accountRolesLabel(account)}</span>
+              </span>
+              {isSelected && <span className="text-[10px] font-semibold uppercase tracking-wide text-primary">Ativa</span>}
+            </button>
+          )
+        })}
+      </div>
+    </section>
+  )
+}
+
 export function FinancePage() {
+  const accounts = useFinanceStore((s) => s.accounts)
   const transactions = useFinanceStore((s) => s.transactions)
   const fixedBills = useFinanceStore((s) => s.fixedBills)
   const subscriptions = useFinanceStore((s) => s.subscriptions)
@@ -85,13 +236,35 @@ export function FinancePage() {
   const [goalEditId, setGoalEditId] = useState<string | undefined>()
   const [boxOpen, setBoxOpen] = useState(false)
   const [boxEditId, setBoxEditId] = useState<string | undefined>()
+  const [accountsOpen, setAccountsOpen] = useState(false)
+  const [selectedAccountId, setSelectedAccountId] = useState('all')
+
+  useEffect(() => {
+    if (accounts.length === 0) {
+      setSelectedAccountId('all')
+    } else if (selectedAccountId !== 'all' && !accounts.some((account) => account.id === selectedAccountId)) {
+      setSelectedAccountId('all')
+    }
+  }, [accounts, selectedAccountId])
+
+  if (accounts.length === 0) {
+    return <FinanceAccountsSetup onComplete={(ids) => setSelectedAccountId(ids[0] ?? 'all')} />
+  }
+
+  const selectedAccount = accounts.find((account) => account.id === selectedAccountId)
+  const visibleTransactions = selectedAccountId === 'all' || !selectedAccount
+    ? transactions
+    : transactions.filter((transaction) =>
+        transaction.accountId === selectedAccountId ||
+        (!transaction.accountId && transaction.account === selectedAccount.name),
+      )
 
   // Derivados do Resumo
   const currMonth = currentMonthStr()
-  const monthIncome = transactions
+  const monthIncome = visibleTransactions
     .filter((t) => t.type === 'income' && t.date.startsWith(currMonth))
     .reduce((acc, t) => acc + t.amount, 0)
-  const monthExpense = transactions
+  const monthExpense = visibleTransactions
     .filter((t) => t.type === 'expense' && t.date.startsWith(currMonth))
     .reduce((acc, t) => acc + t.amount, 0)
   const totalBoxes = savingsBoxes.reduce((acc, b) => acc + b.currentAmount, 0)
@@ -105,7 +278,7 @@ export function FinancePage() {
     .sort((a, b) => a.dayOfMonth - b.dayOfMonth)
     .slice(0, 5)
 
-  const sortedTx = [...transactions].sort((a, b) => b.date.localeCompare(a.date))
+  const sortedTx = [...visibleTransactions].sort((a, b) => b.date.localeCompare(a.date))
 
   const openNewGoal = () => { setGoalEditId(undefined); setGoalOpen(true) }
   const openEditGoal = (id: string) => { setGoalEditId(id); setGoalOpen(true) }
@@ -124,7 +297,7 @@ export function FinancePage() {
             Finanças
           </h1>
           <p className="text-muted-foreground mt-2">
-            {transactions.length} transações · {cards.length} cartões · {goals.length} metas
+            {visibleTransactions.length} transações · {cards.length} cartões · {goals.length} metas
           </p>
         </div>
         <Button
@@ -149,6 +322,13 @@ export function FinancePage() {
           {tab === 'caixinhas' && 'Nova caixinha'}
         </Button>
       </div>
+
+      <AccountSwitcher
+        accounts={accounts}
+        selectedAccountId={selectedAccountId}
+        onSelect={setSelectedAccountId}
+        onManage={() => setAccountsOpen(true)}
+      />
 
       <Tabs value={tab} onValueChange={setTab} className={enter}>
         <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
@@ -252,7 +432,7 @@ export function FinancePage() {
           <Card glass>
             <CardHeader className="flex-row items-center justify-between pb-0">
               <CardTitle className="text-base">Todas as transações</CardTitle>
-              <span className="text-[11px] text-muted-foreground tabular-nums">{transactions.length} registros</span>
+              <span className="text-[11px] text-muted-foreground tabular-nums">{visibleTransactions.length} registros</span>
             </CardHeader>
             <div className="px-3 py-3 space-y-0.5">
               {sortedTx.length > 0 ? sortedTx.map((t) => (
@@ -267,6 +447,7 @@ export function FinancePage() {
                       <p className="text-[11px] text-muted-foreground">
                         {t.category}
                         {t.paymentMethod ? ` · ${t.paymentMethod}` : ''}
+                        {t.account ? ` · ${t.type === 'income' ? 'recebimento' : 'pagamento'}: ${t.account}` : ''}
                         {' · '}{new Date(t.date + 'T12:00:00').toLocaleDateString('pt-BR')}
                       </p>
                       {t.status === 'pending' && (
@@ -524,7 +705,12 @@ export function FinancePage() {
       </Tabs>
 
       {/* Dialogs */}
-      <AddTransactionDialog open={addTxOpen} onClose={() => setAddTxOpen(false)} />
+      <AddTransactionDialog
+        open={addTxOpen}
+        onClose={() => setAddTxOpen(false)}
+        defaultAccountId={selectedAccountId === 'all' ? undefined : selectedAccountId}
+      />
+      <AccountsManagerDialog open={accountsOpen} onClose={() => setAccountsOpen(false)} />
       <AddFixedBillDialog open={addBillOpen} onClose={() => setAddBillOpen(false)} />
       <AddSubscriptionDialog open={addSubOpen} onClose={() => setAddSubOpen(false)} />
       <AddCardDialog open={addCardOpen} onClose={() => setAddCardOpen(false)} />

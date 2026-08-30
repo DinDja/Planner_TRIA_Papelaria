@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { getListKindMeta } from '../lists'
-import type { ShoppingItem, ShoppingList, ShoppingListKind } from '../types'
+import type { ShoppingItem, ShoppingList, ShoppingListKind, UserListPreset } from '../types'
 
 const uid = () => Math.random().toString(36).slice(2, 10)
 const nowISO = () => new Date().toISOString()
@@ -76,6 +76,13 @@ const seedLists: ShoppingList[] = [
 
 interface ListsState {
   lists: ShoppingList[]
+  /** Itens "prontos para usar" cadastrados pelo usuário (coleção listPresets) */
+  userPresets: UserListPreset[]
+
+  addPreset: (data: { kind: ShoppingListKind; name: string; quantity?: string; category?: string; dosage?: string }) => void
+  deletePreset: (presetId: string) => void
+
+  addList: (data: { name: string; color?: string; kind?: ShoppingListKind }) => string
 
   addList: (data: { name: string; color?: string; kind?: ShoppingListKind }) => void
   updateList: (id: string, patch: Partial<ShoppingList>) => void
@@ -95,17 +102,30 @@ export const useListsStore = create<ListsState>()(
   persist(
     (set, get) => ({
       lists: [],
+      userPresets: [],
+
+      addPreset: (data) =>
+        set((s) => ({
+          userPresets: [...s.userPresets, { ...clean(data), id: `preset-${uid()}` } as UserListPreset],
+        })),
+
+      deletePreset: (presetId) =>
+        set((s) => ({
+          userPresets: s.userPresets.filter((p) => p.id !== presetId),
+        })),
 
       addList: ({ color, kind = 'custom', ...data }) => {
         const meta = getListKindMeta(kind)
         const defaultColor =
           meta.defaultColor ?? LIST_COLORS[Math.floor(Math.random() * LIST_COLORS.length)]
-        return set((s) => ({
+        const id = `list-${uid()}`
+        set((s) => ({
           lists: [
             ...s.lists,
-            { id: `list-${uid()}`, ...data, kind, color: color ?? defaultColor, items: [], createdAt: nowISO(), updatedAt: nowISO() },
+            { id, ...data, kind, color: color ?? defaultColor, items: [], createdAt: nowISO(), updatedAt: nowISO() },
           ],
         }))
+        return id
       },
 
       updateList: (id, patch) =>

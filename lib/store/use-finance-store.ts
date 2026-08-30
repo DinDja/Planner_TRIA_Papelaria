@@ -5,6 +5,8 @@ import type {
   FinancialGoal,
   FixedBill,
   GoalDeposit,
+  FinancialAccount,
+  FinancialAccountRole,
   Installment,
   SavingsBox,
   Subscription,
@@ -72,6 +74,7 @@ const seedBoxes: SavingsBox[] = [
 // ─── Store ────────────────────────────────────────────────────────────────────
 
 interface FinanceState {
+  accounts: FinancialAccount[]
   transactions: Transaction[]
   fixedBills: FixedBill[]
   subscriptions: Subscription[]
@@ -82,9 +85,12 @@ interface FinanceState {
   savingsBoxes: SavingsBox[]
 
   // Transações
+  addAccount: (data: { name: string; roles: FinancialAccountRole[] }) => string
+  updateAccount: (id: string, patch: Partial<Pick<FinancialAccount, 'name' | 'roles'>>) => void
+  deleteAccount: (id: string) => void
   addTransaction: (data: {
     title: string; amount: number; type: Transaction['type']; date: string; category: string;
-    recurrence?: Transaction['recurrence']; paymentMethod?: string; account?: string;
+    recurrence?: Transaction['recurrence']; paymentMethod?: string; account?: string; accountId?: string;
     status?: Transaction['status']; notes?: string; fixedBillId?: string;
   }) => void
   deleteTransaction: (id: string) => void
@@ -129,6 +135,7 @@ interface FinanceState {
 export const useFinanceStore = create<FinanceState>()(
   persist(
     (set, get) => ({
+      accounts: [],
       transactions: [],
       fixedBills: [],
       subscriptions: [],
@@ -139,6 +146,40 @@ export const useFinanceStore = create<FinanceState>()(
       savingsBoxes: [],
 
       // ── Transações ──────────────────────────────────────────────────
+      addAccount: ({ name, roles }) => {
+        const id = `account-${uid()}`
+        const now = nowISO()
+        set((s) => ({
+          accounts: [
+            ...s.accounts,
+            { id, name: name.trim(), roles: [...new Set(roles)], createdAt: now, updatedAt: now },
+          ],
+        }))
+        return id
+      },
+      updateAccount: (id, patch) =>
+        set((s) => ({
+          accounts: s.accounts.map((account) =>
+            account.id === id
+              ? {
+                  ...account,
+                  ...patch,
+                  name: patch.name?.trim() || account.name,
+                  roles: patch.roles ? [...new Set(patch.roles)] : account.roles,
+                  updatedAt: nowISO(),
+                }
+              : account,
+          ),
+        })),
+      deleteAccount: (id) =>
+        set((s) => ({
+          accounts: s.accounts.filter((account) => account.id !== id),
+          transactions: s.transactions.map((transaction) =>
+            transaction.accountId === id
+              ? { ...transaction, accountId: undefined }
+              : transaction,
+          ),
+        })),
       addTransaction: ({ fixedBillId, ...data }) =>
         set((s) => ({
           transactions: [

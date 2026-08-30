@@ -5,13 +5,13 @@ import { getAuth, type Auth } from 'firebase/auth'
 import { getFirestore, type Firestore } from 'firebase/firestore'
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBzfaZR-cBJDUhV7x9DKv1tyTdtPEqd3n0",
-  authDomain: "tria-2-ae5dd.firebaseapp.com",
-  projectId: "tria-2-ae5dd",
-  storageBucket: "tria-2-ae5dd.firebasestorage.app",
-  messagingSenderId: "921159215537",
-  appId: "1:921159215537:web:083cc545e558e788603590",
-  measurementId: "G-0KJWLF5DBC"
+  apiKey: "AIzaSyAAkQLkIjA9a3UKACGzZJBeYtUzOI8fops",
+  authDomain: "teste-3637d.firebaseapp.com",
+  projectId: "teste-3637d",
+  storageBucket: "teste-3637d.firebasestorage.app",
+  messagingSenderId: "735967297653",
+  appId: "1:735967297653:web:5331f1088d316e1c1af83c",
+  measurementId: "G-2PX1FBV36Y"
 };
 
 let app: FirebaseApp

@@ -417,6 +417,16 @@ export interface RoutineSlot {
 
 export type TransactionType = 'income' | 'expense'
 
+export type FinancialAccountRole = 'receiving' | 'payment'
+
+export interface FinancialAccount {
+  id: string
+  name: string
+  roles: FinancialAccountRole[]
+  createdAt: string
+  updatedAt: string
+}
+
 export const INCOME_CATEGORIES = [
   'Aluguel recebido', 'Clientes', 'Comissão', 'Extra', 'Investimentos',
   'Outros', 'Presente', 'Pró-labore', 'Reembolso', 'Salário', 'Vendas',
@@ -454,8 +464,10 @@ export interface Transaction {
   recurrence?: TransactionRecurrence
   /** Pix, Transferência, Dinheiro, Débito... */
   paymentMethod?: string
-  /** Conta de recebimento (receitas) */
+  /** Nome da conta, mantido para compatibilidade com registros antigos. */
   account?: string
+  /** Conta cadastrada usada nesta movimentação. */
+  accountId?: string
   /** received (receita), paid (despesa) ou pending (pendente) */
   status?: TransactionStatus
   notes?: string
@@ -723,6 +735,16 @@ export interface ShoppingItem {
   packed?: boolean
   notes?: string
   createdAt: string
+}
+
+/** Item "pronto para usar" cadastrado pelo próprio usuário (por tipo de lista) */
+export interface UserListPreset {
+  id: string
+  kind: ShoppingListKind
+  name: string
+  quantity?: string
+  category?: string
+  dosage?: string
 }
 
 export interface ShoppingList {

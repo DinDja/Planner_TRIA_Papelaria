@@ -118,8 +118,12 @@ const seedRegistros: Registro[] = [
 
 interface EstadoDiario {
   registros: Registro[]
+  senhaHash: string | null
   /** Datas que o usuário já "abriu" pelo calendário-índice. */
   ultimaVista: string
+
+  // Acesso
+  definirSenha: (hash: string) => void
 
   // Escrita
   adicionar: (dados: EntradaCriar) => string
@@ -160,7 +164,10 @@ export const useDiarioStore = create<EstadoDiario>()(
   persist(
     (set, get) => ({
       registros: [],
+      senhaHash: null,
       ultimaVista: isoDia(),
+
+      definirSenha: (hash) => set({ senhaHash: hash }),
 
       adicionar: (dados) => {
         const id = `d-${uid()}`
@@ -265,7 +272,7 @@ export const useDiarioStore = create<EstadoDiario>()(
     }),
     {
       name: 'plannerhub-diario',
-      partialize: (s) => ({ registros: s.registros }),
+      partialize: (s) => ({ registros: s.registros, senhaHash: s.senhaHash }),
     },
   ),
 )

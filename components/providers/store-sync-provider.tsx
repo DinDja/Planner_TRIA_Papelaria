@@ -63,6 +63,7 @@ const ROOT_BINDINGS: RootBinding[] = [
   { store: useProfileStore as unknown as StoreLike, field: 'avatar', rootKey: 'avatar', read: true, write: true },
   { store: useProfileStore as unknown as StoreLike, field: 'email', rootKey: 'email', read: true, write: true },
   { store: useMenuStore as unknown as StoreLike, field: 'modules', rootKey: 'modules', read: true, write: true },
+  { store: useDiarioStore as unknown as StoreLike, field: 'senhaHash', rootKey: 'diarioPasswordHash', read: true, write: true },
   { store: useHealthStore as unknown as StoreLike, field: 'height', rootKey: 'height', read: true, write: true },
   { store: useHealthStore as unknown as StoreLike, field: 'goalWeight', rootKey: 'goalWeight', read: true, write: true },
   { store: useHealthStore as unknown as StoreLike, field: 'sex', rootKey: 'sex', read: true, write: true },
@@ -85,6 +86,11 @@ const COL_BINDINGS: ColBinding[] = [
   { store: useNotesStore as unknown as StoreLike, field: 'notes', collection: 'notes', read: true, write: true },
   { store: useNotesStore as unknown as StoreLike, field: 'folders', collection: 'noteFolders', read: false, write: false },
   { store: useListsStore as unknown as StoreLike, field: 'lists', collection: 'shoppingLists', read: true, write: true },
+  // listPresets — sync desligado propositalmente até as rules serem publicadas
+  // (aguardando deploy de firestore.rules no projeto teste-3637d; hoje iria
+  // quebrar com "Missing or insufficient permissions" e os presets vivem só
+  // no localStorage via persist). Para reativar: read/write = true.
+  { store: useListsStore as unknown as StoreLike, field: 'userPresets', collection: 'listPresets', read: false, write: false },
   { store: useChecklistsStore as unknown as StoreLike, field: 'checklists', collection: 'checklists', read: true, write: true },
   { store: useQuotesStore as unknown as StoreLike, field: 'quotes', collection: 'quotes', read: true, write: true },
   { store: useMemoriesStore as unknown as StoreLike, field: 'entries', collection: 'memories', read: true, write: true },
@@ -98,6 +104,7 @@ const COL_BINDINGS: ColBinding[] = [
   { store: useRoutineStore as unknown as StoreLike, field: 'recurringTasks', collection: 'recurringTasks', read: true, write: true },
   { store: useRoutineStore as unknown as StoreLike, field: 'pendingItems', collection: 'pendingItems', read: true, write: true },
   { store: useRoutineStore as unknown as StoreLike, field: 'routineSlots', collection: 'routineSlots', read: true, write: true },
+  { store: useFinanceStore as unknown as StoreLike, field: 'accounts', collection: 'financialAccounts', read: true, write: true },
   { store: useFinanceStore as unknown as StoreLike, field: 'transactions', collection: 'transactions', read: true, write: true },
   { store: useFinanceStore as unknown as StoreLike, field: 'fixedBills', collection: 'fixedBills', read: true, write: true },
   { store: useFinanceStore as unknown as StoreLike, field: 'subscriptions', collection: 'subscriptions', read: true, write: true },

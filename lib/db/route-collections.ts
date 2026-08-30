@@ -47,7 +47,7 @@ const PLAN: Array<{ match: RegExp; plan: RouteCollectionPlan }> = [
     match: /^\/diario$/,
     plan: {
       collections: ['diarios'],
-      rootFields: ['theme', 'onboarded'],
+      rootFields: ['theme', 'onboarded', 'diarioPasswordHash'],
     },
   },
   {
@@ -133,6 +133,7 @@ const PLAN: Array<{ match: RegExp; plan: RouteCollectionPlan }> = [
     match: /^\/financas$/,
     plan: {
       collections: [
+        'financialAccounts',
         'transactions',
         'fixedBills',
         'subscriptions',

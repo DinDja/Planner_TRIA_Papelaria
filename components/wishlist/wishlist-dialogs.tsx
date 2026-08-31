@@ -2,7 +2,7 @@
 
 import { useWishlistStore } from '@/lib/store/use-wishlist-store'
 import { cn } from '@/lib/utils'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button } from '../ui/button'
 import { Dialog, DialogContent } from '../ui/overlays'
 import { Input } from '../ui/primitives'
@@ -17,11 +17,15 @@ const PRIORITY_OPTIONS = [
 export function AddWishDialog({
   open,
   onClose,
+  editId,
 }: {
   open: boolean
   onClose: () => void
+  editId?: string
 }) {
   const addItem = useWishlistStore((s) => s.addItem)
+  const updateItem = useWishlistStore((s) => s.updateItem)
+  const existing = useWishlistStore((s) => editId ? s.items.find((i) => i.id === editId) : undefined)
   const getAllCategories = useWishlistStore((s) => s.getAllCategories)
   const [name, setName] = useState('')
   const [store, setStore] = useState('')
@@ -31,6 +35,21 @@ export function AddWishDialog({
   const [category, setCategory] = useState('')
   const [notes, setNotes] = useState('')
   const existingCategories = getAllCategories()
+
+  useEffect(() => {
+    if (!open) return
+    if (existing) {
+      setName(existing.name)
+      setStore(existing.store ?? '')
+      setUrl(existing.url ?? '')
+      setPrice(existing.price == null ? '' : String(existing.price / 100))
+      setPriority(existing.priority)
+      setCategory(existing.category ?? '')
+      setNotes(existing.notes ?? '')
+    } else if (!editId) {
+      reset()
+    }
+  }, [open, editId, existing])
 
   const reset = () => {
     setName('')
@@ -47,7 +66,7 @@ export function AddWishDialog({
       toast({ title: 'Digite o nome do desejo', variant: 'error' })
       return
     }
-    addItem({
+    const data = {
       name: name.trim(),
       store: store.trim() || undefined,
       url: url.trim() || undefined,
@@ -55,15 +74,21 @@ export function AddWishDialog({
       priority,
       category: category.trim() || undefined,
       notes: notes.trim() || undefined,
-    })
-    toast({ title: 'Desejo adicionado!', variant: 'success' })
+    }
+    if (editId) {
+      updateItem(editId, data)
+      toast({ title: 'Desejo atualizado!', variant: 'success' })
+    } else {
+      addItem(data)
+      toast({ title: 'Desejo adicionado!', variant: 'success' })
+    }
     reset()
     onClose()
   }
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent title="Novo desejo" description="Adicione algo que você deseja.">
+      <DialogContent title={editId ? 'Editar desejo' : 'Novo desejo'} description="Adicione algo que você deseja.">
         <div className="flex flex-col gap-4">
           <div>
             <label className="text-sm font-medium mb-1.5 block">Nome</label>
@@ -151,7 +176,7 @@ export function AddWishDialog({
               Cancelar
             </Button>
             <Button onClick={handleCreate} className="rounded-xl shadow-md">
-              Adicionar
+              {editId ? 'Salvar alterações' : 'Adicionar'}
             </Button>
           </div>
         </div>

@@ -11,7 +11,7 @@ import {
   GraduationCap,
   NotebookPen,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button } from '../ui/button'
 import { Input } from '../ui/primitives'
 import { Dialog, DialogContent } from '../ui/overlays'
@@ -20,10 +20,13 @@ import { toast } from '../ui/toaster'
 interface Props {
   open: boolean
   onClose: () => void
+  editId?: string
 }
 
-function CreatePlannerDialog({ open, onClose }: Props) {
+function CreatePlannerDialog({ open, onClose, editId }: Props) {
   const addPlanner = useAppStore((s) => s.addPlanner)
+  const updatePlanner = useAppStore((s) => s.updatePlanner)
+  const existing = useAppStore((s) => s.planners.find((planner) => planner.id === editId))
   const [name, setName] = useState('')
   const [category, setCategory] = useState<PlannerCategory>('diario')
   const [color, setColor] = useState('#e05b6d')
@@ -39,26 +42,35 @@ function CreatePlannerDialog({ open, onClose }: Props) {
 
   const colors = ['#e05b6d', '#e8a0a0', '#f0b429', '#7bb686', '#5b8dbf', '#a5c8e4', '#c9b6e4', '#d4b070', '#b0a090', '#8b7aaa']
 
+  useEffect(() => {
+    if (!open) return
+    if (editId && existing) {
+      setName(existing.name); setCategory(existing.category); setColor(existing.color)
+    } else if (!editId) {
+      setName(''); setCategory('diario'); setColor('#e05b6d')
+    }
+  }, [open, editId, existing])
+
   const handleCreate = () => {
     if (!name.trim()) {
       toast({ title: 'Digite um nome para o planner', variant: 'error' })
       return
     }
     const cat = categories.find((c) => c.id === category)!
-    addPlanner({
-      name: name.trim(),
-      category,
-      color,
-      icon: cat.icon.displayName ?? 'NotebookPen',
-    })
-    toast({ title: 'Planner criado!', variant: 'success' })
+    if (editId) {
+      updatePlanner(editId, { name: name.trim(), category, color, icon: cat.icon.displayName ?? 'NotebookPen' })
+      toast({ title: 'Planner atualizado!', variant: 'success' })
+    } else {
+      addPlanner({ name: name.trim(), category, color, icon: cat.icon.displayName ?? 'NotebookPen' })
+      toast({ title: 'Planner criado!', variant: 'success' })
+    }
     setName('')
     onClose()
   }
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent title="Novo planner" description="Escolha o tipo, cor e nome para começar.">
+      <DialogContent title={editId ? 'Editar planner' : 'Novo planner'} description="Escolha o tipo, cor e nome para começar.">
         <div className="flex flex-col gap-5">
           {/* Nome */}
           <div>
@@ -138,7 +150,7 @@ function CreatePlannerDialog({ open, onClose }: Props) {
               Cancelar
             </Button>
             <Button onClick={handleCreate} className="rounded-xl">
-              Criar planner
+              {editId ? 'Salvar alterações' : 'Criar planner'}
             </Button>
           </div>
         </div>

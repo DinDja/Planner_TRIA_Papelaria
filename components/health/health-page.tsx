@@ -201,6 +201,7 @@ function WeightTab() {
   const setHeight = useHealthStore((s) => s.setHeight)
   const setGoalWeight = useHealthStore((s) => s.setGoalWeight)
   const [addOpen, setAddOpen] = useState(false)
+  const [editId, setEditId] = useState<string | undefined>()
   const [editingHeight, setEditingHeight] = useState(false)
   const [editingGoal, setEditingGoal] = useState(false)
   const [heightInput, setHeightInput] = useState(String(height))
@@ -410,14 +411,17 @@ function WeightTab() {
                 </span>
               )}
               {w.notes && <span className="text-xs text-muted-foreground/70 truncate">{w.notes}</span>}
-              <button onClick={() => deleteWeight(w.id)} className="ml-auto rounded-md p-1 text-muted-foreground/30 opacity-0 group-hover:opacity-100 hover:text-destructive cursor-pointer">
+              <button onClick={() => { setEditId(w.id); setAddOpen(true) }} className="ml-auto rounded-md p-1 text-muted-foreground/50 opacity-0 group-hover:opacity-100 hover:text-primary cursor-pointer" aria-label="Editar peso">
+                <Pencil size={12} />
+              </button>
+              <button onClick={() => deleteWeight(w.id)} className="rounded-md p-1 text-muted-foreground/30 opacity-0 group-hover:opacity-100 hover:text-destructive cursor-pointer" aria-label="Excluir peso">
                 <Trash2 size={12} />
               </button>
             </div>
           )
         })}
       </div>
-      <AddWeightDialog open={addOpen} onClose={() => setAddOpen(false)} />
+      <AddWeightDialog open={addOpen} editId={editId} onClose={() => { setAddOpen(false); setEditId(undefined) }} />
     </div>
   )
 }
@@ -426,6 +430,7 @@ function SymptomsTab() {
   const symptoms = useHealthStore((s) => s.symptoms)
   const deleteSymptom = useHealthStore((s) => s.deleteSymptom)
   const [addOpen, setAddOpen] = useState(false)
+  const [editId, setEditId] = useState<string | undefined>()
 
   const sorted = [...symptoms].sort((a, b) => b.date.localeCompare(a.date))
 
@@ -452,13 +457,16 @@ function SymptomsTab() {
               )}
             </div>
             {s.notes && <span className="text-xs text-muted-foreground/70 truncate max-w-[200px]">{s.notes}</span>}
-            <button onClick={() => deleteSymptom(s.id)} className="rounded-md p-1 text-muted-foreground/30 opacity-0 group-hover:opacity-100 hover:text-destructive cursor-pointer">
+            <button onClick={() => { setEditId(s.id); setAddOpen(true) }} className="rounded-md p-1 text-muted-foreground/50 opacity-0 group-hover:opacity-100 hover:text-primary cursor-pointer" aria-label="Editar sintoma">
+              <Pencil size={12} />
+            </button>
+            <button onClick={() => deleteSymptom(s.id)} className="rounded-md p-1 text-muted-foreground/30 opacity-0 group-hover:opacity-100 hover:text-destructive cursor-pointer" aria-label="Excluir sintoma">
               <Trash2 size={12} />
             </button>
           </div>
         ))}
       </div>
-      <AddSymptomDialog open={addOpen} onClose={() => setAddOpen(false)} />
+      <AddSymptomDialog open={addOpen} editId={editId} onClose={() => { setAddOpen(false); setEditId(undefined) }} />
     </div>
   )
 }
@@ -467,6 +475,7 @@ function MedicationsTab() {
   const medications = useHealthStore((s) => s.medications)
   const deleteMedication = useHealthStore((s) => s.deleteMedication)
   const [addOpen, setAddOpen] = useState(false)
+  const [editId, setEditId] = useState<string | undefined>()
 
   return (
     <div>
@@ -485,9 +494,14 @@ function MedicationsTab() {
                   <CardTitle className="text-sm">{m.name}</CardTitle>
                   <p className="text-xs text-muted-foreground">{m.dosage} · {m.frequency}</p>
                 </div>
-                <button onClick={() => deleteMedication(m.id)} className="rounded-lg p-1 text-muted-foreground/30 opacity-0 group-hover:opacity-100 hover:text-destructive transition-all cursor-pointer">
+                <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button onClick={() => { setEditId(m.id); setAddOpen(true) }} className="rounded-lg p-1 text-muted-foreground/50 hover:text-primary transition-all cursor-pointer" aria-label="Editar medicamento">
+                  <Pencil size={13} />
+                </button>
+                <button onClick={() => deleteMedication(m.id)} className="rounded-lg p-1 text-muted-foreground/30 hover:text-destructive transition-all cursor-pointer" aria-label="Excluir medicamento">
                   <Trash2 size={13} />
                 </button>
+                </div>
               </div>
             </CardHeader>
             <CardContent className="pt-1">
@@ -505,7 +519,7 @@ function MedicationsTab() {
           </Card>
         ))}
       </div>
-      <AddMedicationDialog open={addOpen} onClose={() => setAddOpen(false)} />
+      <AddMedicationDialog open={addOpen} editId={editId} onClose={() => { setAddOpen(false); setEditId(undefined) }} />
     </div>
   )
 }
@@ -514,6 +528,7 @@ function CyclesTab() {
   const cycles = useHealthStore((s) => s.cycles)
   const deleteCycle = useHealthStore((s) => s.deleteCycle)
   const [addOpen, setAddOpen] = useState(false)
+  const [editId, setEditId] = useState<string | undefined>()
 
   const sorted = [...cycles].sort((a, b) => b.startDate.localeCompare(a.startDate))
 
@@ -546,13 +561,16 @@ function CyclesTab() {
               </div>
               {c.notes && <p className="text-xs text-muted-foreground/70 mt-1">{c.notes}</p>}
             </div>
-            <button onClick={() => deleteCycle(c.id)} className="rounded-md p-1 text-muted-foreground/30 opacity-0 group-hover:opacity-100 hover:text-destructive cursor-pointer">
+            <button onClick={() => { setEditId(c.id); setAddOpen(true) }} className="rounded-md p-1 text-muted-foreground/50 opacity-0 group-hover:opacity-100 hover:text-primary cursor-pointer" aria-label="Editar ciclo">
+              <Pencil size={12} />
+            </button>
+            <button onClick={() => deleteCycle(c.id)} className="rounded-md p-1 text-muted-foreground/30 opacity-0 group-hover:opacity-100 hover:text-destructive cursor-pointer" aria-label="Excluir ciclo">
               <Trash2 size={12} />
             </button>
           </div>
         ))}
       </div>
-      <AddCycleDialog open={addOpen} onClose={() => setAddOpen(false)} />
+      <AddCycleDialog open={addOpen} editId={editId} onClose={() => { setAddOpen(false); setEditId(undefined) }} />
     </div>
   )
 }
@@ -561,6 +579,7 @@ function DoctorsTab() {
   const doctors = useHealthStore((s) => s.doctors)
   const deleteDoctor = useHealthStore((s) => s.deleteDoctor)
   const [addOpen, setAddOpen] = useState(false)
+  const [editId, setEditId] = useState<string | undefined>()
 
   return (
     <div>
@@ -584,9 +603,14 @@ function DoctorsTab() {
                     <p className="text-xs text-muted-foreground">{d.specialty}</p>
                   </div>
                 </div>
-                <button onClick={() => deleteDoctor(d.id)} className="rounded-lg p-1 text-muted-foreground/30 opacity-0 group-hover:opacity-100 hover:text-destructive transition-all cursor-pointer">
+                <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button onClick={() => { setEditId(d.id); setAddOpen(true) }} className="rounded-lg p-1 text-muted-foreground/50 hover:text-primary transition-all cursor-pointer" aria-label="Editar médico">
+                  <Pencil size={13} />
+                </button>
+                <button onClick={() => deleteDoctor(d.id)} className="rounded-lg p-1 text-muted-foreground/30 hover:text-destructive transition-all cursor-pointer" aria-label="Excluir médico">
                   <Trash2 size={13} />
                 </button>
+                </div>
               </div>
             </CardHeader>
             <CardContent className="pt-1 space-y-0.5 text-xs text-muted-foreground/80">
@@ -598,7 +622,7 @@ function DoctorsTab() {
           </Card>
         ))}
       </div>
-      <AddDoctorDialog open={addOpen} onClose={() => setAddOpen(false)} />
+      <AddDoctorDialog open={addOpen} editId={editId} onClose={() => { setAddOpen(false); setEditId(undefined) }} />
     </div>
   )
 }
@@ -608,6 +632,7 @@ function AppointmentsTab() {
   const updateAppointment = useHealthStore((s) => s.updateAppointment)
   const deleteAppointment = useHealthStore((s) => s.deleteAppointment)
   const [addOpen, setAddOpen] = useState(false)
+  const [editId, setEditId] = useState<string | undefined>()
 
   const sorted = [...appointments].sort((a, b) => a.date.localeCompare(b.date))
   const statusColor = { scheduled: '#5b8dbf', done: '#7bb686', cancelled: '#e8a0a0' }
@@ -649,14 +674,17 @@ function AppointmentsTab() {
                   <ClipboardCheck size={14} />
                 </button>
               )}
-              <button onClick={() => deleteAppointment(a.id)} className="rounded-lg p-1 text-muted-foreground/30 hover:text-destructive transition-colors cursor-pointer">
+              <button onClick={() => { setEditId(a.id); setAddOpen(true) }} className="rounded-lg p-1 text-muted-foreground/50 hover:text-primary transition-colors cursor-pointer" aria-label="Editar consulta">
+                <Pencil size={13} />
+              </button>
+              <button onClick={() => deleteAppointment(a.id)} className="rounded-lg p-1 text-muted-foreground/30 hover:text-destructive transition-colors cursor-pointer" aria-label="Excluir consulta">
                 <Trash2 size={13} />
               </button>
             </div>
           </div>
         ))}
       </div>
-      <AddAppointmentDialog open={addOpen} onClose={() => setAddOpen(false)} doctors={[]} />
+      <AddAppointmentDialog open={addOpen} editId={editId} onClose={() => { setAddOpen(false); setEditId(undefined) }} doctors={[]} />
       {/* doctors prop deprecated: dialog reads from store internally */}
     </div>
   )
@@ -667,6 +695,7 @@ function ExamsTab() {
   const updateExam = useHealthStore((s) => s.updateExam)
   const deleteExam = useHealthStore((s) => s.deleteExam)
   const [addOpen, setAddOpen] = useState(false)
+  const [editId, setEditId] = useState<string | undefined>()
 
   const sorted = [...exams].sort((a, b) => b.date.localeCompare(a.date))
   const statusColor = { pending: '#f0b429', done: '#5b8dbf', reviewed: '#7bb686' }
@@ -700,7 +729,10 @@ function ExamsTab() {
                       <ClipboardCheck size={13} />
                     </button>
                   )}
-                  <button onClick={() => deleteExam(e.id)} className="rounded-lg p-1 text-muted-foreground/30 hover:text-destructive transition-colors cursor-pointer">
+                  <button onClick={() => { setEditId(e.id); setAddOpen(true) }} className="rounded-lg p-1 text-muted-foreground/50 hover:text-primary transition-colors cursor-pointer" aria-label="Editar exame">
+                    <Pencil size={13} />
+                  </button>
+                  <button onClick={() => deleteExam(e.id)} className="rounded-lg p-1 text-muted-foreground/30 hover:text-destructive transition-colors cursor-pointer" aria-label="Excluir exame">
                     <Trash2 size={13} />
                   </button>
                 </div>
@@ -719,7 +751,7 @@ function ExamsTab() {
           </Card>
         ))}
       </div>
-      <AddExamDialog open={addOpen} onClose={() => setAddOpen(false)} />
+      <AddExamDialog open={addOpen} editId={editId} onClose={() => { setAddOpen(false); setEditId(undefined) }} />
     </div>
   )
 }
@@ -798,6 +830,7 @@ function MeasurementsTab() {
   const measurements = useHealthStore((s) => s.measurements)
   const deleteMeasurement = useHealthStore((s) => s.deleteMeasurement)
   const [addOpen, setAddOpen] = useState(false)
+  const [editId, setEditId] = useState<string | undefined>()
   const [selectedMetric, setSelectedMetric] = useState<MeasurementMetric>('waist')
 
   const sorted = [...measurements].sort((a, b) => b.date.localeCompare(a.date))
@@ -858,7 +891,10 @@ function MeasurementsTab() {
                 {m.calf && <span>Panturrilha: <strong>{m.calf}cm</strong></span>}
               </div>
               {m.notes && <span className="text-xs text-muted-foreground/70 truncate">{m.notes}</span>}
-              <button onClick={() => deleteMeasurement(m.id)} className="ml-auto rounded-md p-1 text-muted-foreground/30 opacity-0 group-hover:opacity-100 hover:text-destructive cursor-pointer">
+              <button onClick={() => { setEditId(m.id); setAddOpen(true) }} className="ml-auto rounded-md p-1 text-muted-foreground/50 opacity-0 group-hover:opacity-100 hover:text-primary cursor-pointer" aria-label="Editar medidas">
+                <Pencil size={12} />
+              </button>
+              <button onClick={() => deleteMeasurement(m.id)} className="rounded-md p-1 text-muted-foreground/30 opacity-0 group-hover:opacity-100 hover:text-destructive cursor-pointer" aria-label="Excluir medidas">
                 <Trash2 size={12} />
               </button>
             </div>
@@ -867,7 +903,7 @@ function MeasurementsTab() {
       ) : (
         <p className="text-sm text-muted-foreground text-center py-8">Nenhuma medida corporal registrada ainda.</p>
       )}
-      <AddMeasurementDialog open={addOpen} onClose={() => setAddOpen(false)} />
+      <AddMeasurementDialog open={addOpen} editId={editId} onClose={() => { setAddOpen(false); setEditId(undefined) }} />
     </div>
   )
 }

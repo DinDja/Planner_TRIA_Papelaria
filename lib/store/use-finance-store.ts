@@ -5,6 +5,8 @@ import type {
   FinancialGoal,
   FixedBill,
   GoalDeposit,
+  FinancialAccount,
+  FinancialAccountRole,
   Installment,
   SavingsBox,
   Subscription,
@@ -72,6 +74,7 @@ const seedBoxes: SavingsBox[] = [
 // ─── Store ────────────────────────────────────────────────────────────────────
 
 interface FinanceState {
+  accounts: FinancialAccount[]
   transactions: Transaction[]
   fixedBills: FixedBill[]
   subscriptions: Subscription[]
@@ -82,11 +85,15 @@ interface FinanceState {
   savingsBoxes: SavingsBox[]
 
   // Transações
+  addAccount: (data: { name: string; roles: FinancialAccountRole[] }) => string
+  updateAccount: (id: string, patch: Partial<Pick<FinancialAccount, 'name' | 'roles'>>) => void
+  deleteAccount: (id: string) => void
   addTransaction: (data: {
     title: string; amount: number; type: Transaction['type']; date: string; category: string;
-    recurrence?: Transaction['recurrence']; paymentMethod?: string; account?: string;
+    recurrence?: Transaction['recurrence']; paymentMethod?: string; account?: string; accountId?: string;
     status?: Transaction['status']; notes?: string; fixedBillId?: string;
   }) => void
+  updateTransaction: (id: string, patch: Partial<Transaction>) => void
   deleteTransaction: (id: string) => void
 
   // Contas fixas
@@ -96,6 +103,7 @@ interface FinanceState {
 
   // Assinaturas
   addSubscription: (data: { name: string; amount: number; billingCycle: Subscription['billingCycle']; category: string; notes?: string }) => void
+  updateSubscription: (id: string, patch: Partial<Subscription>) => void
   toggleSubscription: (id: string) => void
   deleteSubscription: (id: string) => void
 
@@ -103,6 +111,7 @@ interface FinanceState {
   addCard: (data: {
     bank: string; brand: string; lastDigits?: string; closingDay: number; dueDay: number; color?: string;
   }) => void
+  updateCard: (id: string, patch: Partial<CreditCard>) => void
   deleteCard: (id: string) => void
 
   // Parcelamentos
@@ -110,6 +119,7 @@ interface FinanceState {
     title: string; totalAmount: number; installmentAmount: number; totalInstallments: number;
     cardId: string; category: string; firstInstallment?: string; notes?: string;
   }) => void
+  updateInstallment: (id: string, patch: Partial<Installment>) => void
   advanceInstallment: (id: string) => void
   deleteInstallment: (id: string) => void
 
@@ -118,6 +128,8 @@ interface FinanceState {
   updateGoal: (id: string, patch: Partial<FinancialGoal>) => void
   deleteGoal: (id: string) => void
   addGoalDeposit: (data: { goalId: string; amount: number; date?: string; notes?: string }) => void
+  updateGoalDeposit: (id: string, patch: Partial<GoalDeposit>) => void
+  deleteGoalDeposit: (id: string) => void
   getGoalDeposits: (goalId: string) => GoalDeposit[]
 
   // Caixinhas
@@ -129,6 +141,7 @@ interface FinanceState {
 export const useFinanceStore = create<FinanceState>()(
   persist(
     (set, get) => ({
+      accounts: [],
       transactions: [],
       fixedBills: [],
       subscriptions: [],
@@ -139,6 +152,40 @@ export const useFinanceStore = create<FinanceState>()(
       savingsBoxes: [],
 
       // ── Transações ──────────────────────────────────────────────────
+      addAccount: ({ name, roles }) => {
+        const id = `account-${uid()}`
+        const now = nowISO()
+        set((s) => ({
+          accounts: [
+            ...s.accounts,
+            { id, name: name.trim(), roles: [...new Set(roles)], createdAt: now, updatedAt: now },
+          ],
+        }))
+        return id
+      },
+      updateAccount: (id, patch) =>
+        set((s) => ({
+          accounts: s.accounts.map((account) =>
+            account.id === id
+              ? {
+                  ...account,
+                  ...patch,
+                  name: patch.name?.trim() || account.name,
+                  roles: patch.roles ? [...new Set(patch.roles)] : account.roles,
+                  updatedAt: nowISO(),
+                }
+              : account,
+          ),
+        })),
+      deleteAccount: (id) =>
+        set((s) => ({
+          accounts: s.accounts.filter((account) => account.id !== id),
+          transactions: s.transactions.map((transaction) =>
+            transaction.accountId === id
+              ? { ...transaction, accountId: undefined }
+              : transaction,
+          ),
+        })),
       addTransaction: ({ fixedBillId, ...data }) =>
         set((s) => ({
           transactions: [
@@ -146,6 +193,8 @@ export const useFinanceStore = create<FinanceState>()(
             { id: `tx-${uid()}`, ...data, fixedBillId, createdAt: nowISO() },
           ],
         })),
+      updateTransaction: (id, patch) =>
+        set((s) => ({ transactions: s.transactions.map((t) => (t.id === id ? { ...t, ...patch } : t)) })),
       deleteTransaction: (id) =>
         set((s) => ({ transactions: s.transactions.filter((t) => t.id !== id) })),
 
@@ -178,6 +227,8 @@ export const useFinanceStore = create<FinanceState>()(
             },
           ],
         })),
+      updateSubscription: (id, patch) =>
+        set((s) => ({ subscriptions: s.subscriptions.map((sub) => (sub.id === id ? { ...sub, ...patch } : sub)) })),
       toggleSubscription: (id) =>
         set((s) => ({
           subscriptions: s.subscriptions.map((sub) =>
@@ -197,6 +248,8 @@ export const useFinanceStore = create<FinanceState>()(
             { id: `card-${uid()}`, ...data, name: data.bank, limit: 0, color, createdAt: nowISO() },
           ],
         })),
+      updateCard: (id, patch) =>
+        set((s) => ({ cards: s.cards.map((c) => (c.id === id ? { ...c, ...patch } : c)) })),
       deleteCard: (id) =>
         set((s) => ({
           cards: s.cards.filter((c) => c.id !== id),
@@ -211,6 +264,8 @@ export const useFinanceStore = create<FinanceState>()(
             { id: `inst-${uid()}`, ...data, currentInstallment: 1, createdAt: nowISO() },
           ],
         })),
+      updateInstallment: (id, patch) =>
+        set((s) => ({ installments: s.installments.map((inst) => (inst.id === id ? { ...inst, ...patch } : inst)) })),
       advanceInstallment: (id) =>
         set((s) => ({
           installments: s.installments.map((inst) =>
@@ -261,6 +316,30 @@ export const useFinanceStore = create<FinanceState>()(
             goals: s.goals.map((g) =>
               g.id === goalId ? { ...g, currentAmount: g.currentAmount + amount } : g,
             ),
+          }
+        }),
+      updateGoalDeposit: (id, patch) =>
+        set((s) => {
+          const current = s.goalDeposits.find((deposit) => deposit.id === id)
+          if (!current) return s
+          const nextAmount = typeof patch.amount === 'number' ? patch.amount : current.amount
+          const difference = nextAmount - current.amount
+          return {
+            goalDeposits: s.goalDeposits.map((deposit) => (deposit.id === id ? { ...deposit, ...patch } : deposit)),
+            goals: difference === 0 ? s.goals : s.goals.map((goal) => (
+              goal.id === current.goalId ? { ...goal, currentAmount: goal.currentAmount + difference } : goal
+            )),
+          }
+        }),
+      deleteGoalDeposit: (id) =>
+        set((s) => {
+          const current = s.goalDeposits.find((deposit) => deposit.id === id)
+          if (!current) return s
+          return {
+            goalDeposits: s.goalDeposits.filter((deposit) => deposit.id !== id),
+            goals: s.goals.map((goal) => (
+              goal.id === current.goalId ? { ...goal, currentAmount: goal.currentAmount - current.amount } : goal
+            )),
           }
         }),
       getGoalDeposits: (goalId) => get().goalDeposits.filter((d) => d.goalId === goalId),

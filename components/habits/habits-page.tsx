@@ -7,6 +7,7 @@ import {
   ArchiveRestore,
   CheckCircle2,
   Flame,
+  Pencil,
   Plus,
   Target,
   Trash2,
@@ -76,8 +77,10 @@ function MiniHeatmap({ habitId }: { habitId: string }) {
 
 function HabitCard({
   habit,
+  onEdit,
 }: {
   habit: { id: string; name: string; color: string; frequency: string; archived: boolean }
+  onEdit: (id: string) => void
 }) {
   const toggleLog = useHabitsStore((s) => s.toggleLog)
   const isCompleted = useHabitsStore((s) => s.isCompleted)
@@ -162,6 +165,13 @@ function HabitCard({
         {/* Actions */}
         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
+            onClick={() => onEdit(habit.id)}
+            className="rounded-lg p-1.5 text-muted-foreground/50 hover:text-primary hover:bg-primary/10 transition-all cursor-pointer"
+            aria-label="Editar hábito"
+          >
+            <Pencil size={14} />
+          </button>
+          <button
             onClick={() => {
               archiveHabit(habit.id)
               toast({ title: habit.archived ? 'Hábito ativado' : 'Hábito arquivado', variant: 'success' })
@@ -206,6 +216,7 @@ export function HabitsPage() {
   const getStreak = useHabitsStore((s) => s.getStreak)
 
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [editId, setEditId] = useState<string | undefined>()
   const [filter, setFilter] = useState<'all' | 'active' | 'archived'>('active')
 
   const today = todayStr()
@@ -280,7 +291,11 @@ export function HabitsPage() {
       {/* Grid de hábitos */}
       <div className={cn('grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4', enter)}>
         {displayed.length > 0 ? displayed.map((habit) => (
-          <HabitCard key={habit.id} habit={habit} />
+          <HabitCard
+            key={habit.id}
+            habit={habit}
+            onEdit={(id) => { setEditId(id); setDialogOpen(true) }}
+          />
         )) : (
           <div className="col-span-full">
             <Card glass>
@@ -292,7 +307,11 @@ export function HabitsPage() {
         )}
       </div>
 
-      <AddHabitDialog open={dialogOpen} onClose={() => setDialogOpen(false)} />
+      <AddHabitDialog
+        open={dialogOpen}
+        editId={editId}
+        onClose={() => { setDialogOpen(false); setEditId(undefined) }}
+      />
     </div>
   )
 }

@@ -252,16 +252,16 @@ export function AppSidebar({
         )}
       </ScrollArea>
 
-      {/* Bottom — ferramentas. Lucide só para transiente (Menu/Theme/panel). */}
+      {/* Bottom — ferramentas. Apenas ícones. */}
       <div className={cn('p-3 flex items-center gap-1', collapsed && 'flex-col')}>
         <Button
           variant="ghost"
-          size={collapsed ? 'icon' : 'sm'}
+          size="icon-sm"
           onClick={toggle}
-          className={cn('rounded-xl flex-1 justify-start gap-2', collapsed && 'flex-none')}
+          className="rounded-xl"
+          aria-label={theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
         >
           {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
-          {!collapsed && (theme === 'dark' ? 'Modo claro' : 'Modo escuro')}
         </Button>
         <Button
           variant="ghost"

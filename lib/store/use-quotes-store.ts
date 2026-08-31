@@ -54,6 +54,7 @@ interface QuotesState {
   quotes: FavoriteQuote[]
 
   addQuote: (data: { text: string; author?: string; tags?: string[]; color?: string }) => void
+  updateQuote: (id: string, patch: Partial<FavoriteQuote>) => void
   deleteQuote: (id: string) => void
   getRandomQuote: () => FavoriteQuote | undefined
   getAllTags: () => string[]
@@ -76,6 +77,11 @@ export const useQuotesStore = create<QuotesState>()(
             },
             ...s.quotes,
           ],
+        })),
+
+      updateQuote: (id, patch) =>
+        set((s) => ({
+          quotes: s.quotes.map((q) => (q.id === id ? { ...q, ...patch } : q)),
         })),
 
       deleteQuote: (id) =>

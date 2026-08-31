@@ -10,6 +10,7 @@ import {
   FolderPlus,
   Pin,
   PinOff,
+  Pencil,
   Plus,
   Search,
   Trash2,
@@ -28,6 +29,7 @@ function NoteCard({
   note,
   index,
   folderName,
+  onEdit,
   onDelete,
   onTogglePin,
   onMove,
@@ -38,6 +40,7 @@ function NoteCard({
   onDelete: (id: string) => void
   onTogglePin: (id: string) => void
   onMove: (id: string) => void
+  onEdit: (id: string) => void
 }) {
   const lines = note.content.split('\n').filter(Boolean)
   const preview = lines.slice(0, 4).join('\n')
@@ -102,6 +105,13 @@ function NoteCard({
               title="Mover para pasta"
             >
               <FolderInput size={13} />
+            </button>
+            <button
+              onClick={() => onEdit(note.id)}
+              className="rounded-lg p-1 text-muted-foreground/60 hover:text-primary transition-colors cursor-pointer"
+              aria-label="Editar nota"
+            >
+              <Pencil size={13} />
             </button>
             <button
               onClick={() => onDelete(note.id)}
@@ -176,7 +186,9 @@ export function NotesPage() {
 
   const [tab, setTab] = useState('all')
   const [addNoteOpen, setAddNoteOpen] = useState(false)
+  const [editNoteId, setEditNoteId] = useState<string | undefined>()
   const [addFolderOpen, setAddFolderOpen] = useState(false)
+  const [editFolderId, setEditFolderId] = useState<string | undefined>()
   const [search, setSearch] = useState('')
   const [moveNoteId, setMoveNoteId] = useState<string | null>(null)
 
@@ -282,6 +294,13 @@ export function NotesPage() {
                     <span className="size-2.5 rounded-md shrink-0" style={{ backgroundColor: f.color }} />
                     <span className="truncate">{f.name}</span>
                     <span className="ml-auto text-xs text-muted-foreground/60">{count}</span>
+                  </button>
+                  <button
+                    onClick={() => { setEditFolderId(f.id); setAddFolderOpen(true) }}
+                    className="shrink-0 rounded-lg p-1.5 text-muted-foreground/30 opacity-0 group-hover:opacity-100 hover:text-primary transition-all cursor-pointer"
+                    aria-label={`Editar pasta ${f.name}`}
+                  >
+                    <Pencil size={12} />
                   </button>
                   <button
                     onClick={() => deleteFolder(f.id)}
@@ -397,6 +416,7 @@ export function NotesPage() {
                 index={i}
                 folderName={folderMap.get(n.folderId ?? '')}
                 onDelete={deleteNote}
+                onEdit={(id) => { setEditNoteId(id); setAddNoteOpen(true) }}
                 onTogglePin={togglePinNote}
                 onMove={setMoveNoteId}
               />
@@ -420,10 +440,15 @@ export function NotesPage() {
 
       <AddNoteDialog
         open={addNoteOpen}
-        onClose={() => setAddNoteOpen(false)}
+        editId={editNoteId}
+        onClose={() => { setAddNoteOpen(false); setEditNoteId(undefined) }}
         defaultFolderId={tab.startsWith('folder-') ? tab.replace('folder-', '') : null}
       />
-      <AddFolderDialog open={addFolderOpen} onClose={() => setAddFolderOpen(false)} />
+      <AddFolderDialog
+        open={addFolderOpen}
+        editId={editFolderId}
+        onClose={() => { setAddFolderOpen(false); setEditFolderId(undefined) }}
+      />
 
       <Dialog open={moveNoteId !== null} onOpenChange={(o) => !o && setMoveNoteId(null)}>
         <DialogContent title="Mover nota" description={moveNote ? `Reorganize «${moveNote.title}» em outra pasta.` : undefined}>

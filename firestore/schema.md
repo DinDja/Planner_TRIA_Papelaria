@@ -31,7 +31,7 @@
 | `useAppStore` (planners/folders/tags) | `users/{uid}` (folders/tags no doc-raiz) + `users/{uid}/planners` + `planners/{pid}/pages` | folders e tags viram arrays no doc-raiz (pequenos, single-ownership) |
 | `useProfileStore`                      | `users/{uid}` (name, avatar, email)       |       |
 | `useSettingsStore`                     | `users/{uid}` (settings map)              | theme fica no doc-raiz também |
-| `useDiarioStore` (V2)                  | `users/{uid}/diarios`                     | unifica Journal + Retro |
+| `useDiarioStore` (V2)                  | `users/{uid}/diarios` + `users/{uid}`     | registros; `diarioPasswordHash` no doc-raiz |
 | `useJournalStore` (legado)             | `users/{uid}/journalEntries`              | mantido p/ migração gradativa |
 | `useRetroStore` (legado)               | `users/{uid}/retroEntries`                | mantido p/ migração gradativa |
 | `useNotesStore`                        | `users/{uid}/notes`                       | folders no doc-raiz (`noteFolders`) |
@@ -47,7 +47,7 @@
 | `useRoutineStore`                      | `tasks`, `recurringTasks`, `pendingItems`, `routineSlots` | 4 subcollections |
 | `useCalendarStore`                     | `users/{uid}/calendarEvents`              |       |
 | `useCalendarPlannerStore`               | `users/{uid}` (`calendarPlanner`)         | notas diárias, objetivos e gratidão agrupados pela semana |
-| `useFinanceStore`                      | `transactions`, `fixedBills`, `subscriptions`, `creditCards`, `installments`, `financialGoals`, `goalDeposits`, `savingsBoxes` | 8 subcollections |
+| `useFinanceStore`                      | `financialAccounts`, `transactions`, `fixedBills`, `subscriptions`, `creditCards`, `installments`, `financialGoals`, `goalDeposits`, `savingsBoxes` | 9 subcollections |
 | `useBirthdaysStore`                    | `users/{uid}/birthdays`                   |       |
 | `useTrashStore`                        | `users/{uid}/trashItems`                   | capped 100 no cliente |
 
@@ -279,11 +279,12 @@ routineSlots/{id}    { id, time, endTime?, title, weekdays: list<int>, color? }
 calendarEvents/{id} { id, title, date, startTime, endTime?, allDay?: bool, color, notes?, taskId?, plannerId?, createdAt }
 ```
 
-### Finanças (8 subcollections)
+### Finanças (9 subcollections)
 
 ```
-transactions/{id}    { id, title, amount: int (centavos), type: 'income'|'expense', date, category, notes?, fixedBillId?, createdAt }
-fixedBills/{id}      { id, title, amount, category, paymentMethod?, dayOfMonth: int 1..31, notes?, active: bool, createdAt }
+financialAccounts/{id} { id, name, roles: list<'receiving'|'payment'>, createdAt, updatedAt }
+transactions/{id}    { id, title, amount: int (centavos), type: 'income'|'expense', date, category, accountId?, account?, notes?, fixedBillId?, createdAt }
+fixedBills/{id}      { id, title, amount, category, dayOfMonth: int 1..31, notes?, active: bool, createdAt }
 subscriptions/{id}   { id, name, amount, billingCycle: 'monthly'|'yearly'|'weekly', category, nextBilling: date, active: bool, notes?, createdAt }
 creditCards/{id}     { id, name, limit: int, closingDay, dueDay, color, createdAt }
 installments/{id}    { id, title, totalAmount, installmentAmount, totalInstallments: int, currentInstallment: int, cardId, category, notes?, createdAt }

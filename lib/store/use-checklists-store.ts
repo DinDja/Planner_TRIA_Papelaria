@@ -60,6 +60,7 @@ interface ChecklistsState {
   deleteChecklist: (id: string) => void
 
   addItem: (checklistId: string, text: string) => void
+  updateItem: (checklistId: string, itemId: string, patch: Partial<ChecklistItem>) => void
   toggleItem: (checklistId: string, itemId: string) => void
   deleteItem: (checklistId: string, itemId: string) => void
   reorderItems: (checklistId: string, fromIdx: number, toIdx: number) => void
@@ -104,6 +105,15 @@ export const useChecklistsStore = create<ChecklistsState>()(
                     { id: `cli-${uid()}`, text, checked: false, createdAt: nowISO() },
                   ],
                 }
+              : c,
+          ),
+        })),
+
+      updateItem: (checklistId, itemId, patch) =>
+        set((s) => ({
+          checklists: s.checklists.map((c) =>
+            c.id === checklistId
+              ? { ...c, updatedAt: nowISO(), items: c.items.map((i) => i.id === itemId ? { ...i, ...patch } : i) }
               : c,
           ),
         })),

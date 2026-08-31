@@ -6,7 +6,7 @@ import {
   ArrowDown,
   ArrowUp,
   Calendar,
-  ChevronRight,
+  Pencil,
   Plus,
   Target,
   Trash2,
@@ -34,15 +34,20 @@ function DepositDialog({
   onClose,
   goalId,
   goalTitle,
+  editId,
 }: {
   open: boolean
   onClose: () => void
   goalId: string
   goalTitle: string
+  editId?: string
 }) {
   const addGoalDeposit = useFinanceStore((s) => s.addGoalDeposit)
+  const updateGoalDeposit = useFinanceStore((s) => s.updateGoalDeposit)
+  const existing = useFinanceStore((s) => s.goalDeposits.find((deposit) => deposit.id === editId))
   const [type, setType] = useState<'deposit' | 'withdraw'>('deposit')
   const [amount, setAmount] = useState('')
+  const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
   const [notes, setNotes] = useState('')
 
   // Reset sempre que o dialog reabre / troca de meta
@@ -50,9 +55,16 @@ function DepositDialog({
     if (open) {
       setType('deposit')
       setAmount('')
+      setDate(new Date().toISOString().slice(0, 10))
       setNotes('')
+      if (editId && existing) {
+        setType(existing.amount < 0 ? 'withdraw' : 'deposit')
+        setAmount((Math.abs(existing.amount) / 100).toFixed(2))
+        setDate(existing.date)
+        setNotes(existing.notes ?? '')
+      }
     }
-  }, [open, goalId])
+  }, [open, goalId, editId, existing])
 
   const parsedAmount = Math.round((Number(amount.replace(',', '.')) || 0) * 100)
   const signed = type === 'withdraw' ? -parsedAmount : parsedAmount
@@ -62,7 +74,12 @@ function DepositDialog({
       toast({ title: 'Digite um valor válido', variant: 'error' })
       return
     }
-    addGoalDeposit({ goalId, amount: signed, notes: notes.trim() || undefined })
+    const data = { goalId, amount: signed, date, notes: notes.trim() || undefined }
+    if (editId) {
+      updateGoalDeposit(editId, data)
+    } else {
+      addGoalDeposit(data)
+    }
     toast({
       title: type === 'withdraw' ? 'Retirada registrada!' : 'Aporte registrado!',
       variant: 'success',
@@ -74,7 +91,7 @@ function DepositDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent title={goalTitle} description="Registrar aporte ou retirada">
+      <DialogContent title={editId ? `Editar movimentação · ${goalTitle}` : goalTitle} description="Registrar aporte ou retirada">
         <div className="flex flex-col gap-4">
           {/* Seleção de tipo */}
           <div>
@@ -107,6 +124,10 @@ function DepositDialog({
                 Retirada
               </button>
             </div>
+          </div>
+          <div>
+            <label className="text-sm font-medium mb-1.5 block">Data</label>
+            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
           </div>
 
           <div>
@@ -146,7 +167,7 @@ function DepositDialog({
               className="rounded-xl shadow-md"
               style={{ backgroundColor: type === 'withdraw' ? '#e05b6d' : '#7bb686' }}
             >
-              {type === 'withdraw' ? 'Registrar retirada' : 'Adicionar aporte'}
+              {editId ? 'Salvar alterações' : type === 'withdraw' ? 'Registrar retirada' : 'Adicionar aporte'}
             </Button>
           </div>
         </div>
@@ -162,11 +183,15 @@ function GoalCard({
   onDeposit,
   onEdit,
   onDelete,
+  onEditDeposit,
+  onDeleteDeposit,
 }: {
   goal: { id: string; title: string; targetAmount: number; currentAmount: number; deadline?: string; color: string }
   onDeposit: (id: string) => void
   onEdit: (id: string) => void
   onDelete: (id: string) => void
+  onEditDeposit: (goalId: string, depositId: string) => void
+  onDeleteDeposit: (id: string) => void
 }) {
   const pct = Math.round((goal.currentAmount / goal.targetAmount) * 100)
   const remaining = goal.targetAmount - goal.currentAmount
@@ -197,7 +222,15 @@ function GoalCard({
             </p>
           </div>
           <button
+            onClick={(e) => { e.stopPropagation(); onEdit(goal.id) }}
+            aria-label="Editar meta"
+            className="rounded-lg p-1.5 text-muted-foreground/60 opacity-0 group-hover:opacity-100 hover:bg-primary/10 hover:text-primary transition-all cursor-pointer"
+          >
+            <Pencil size={14} />
+          </button>
+          <button
             onClick={(e) => { e.stopPropagation(); onDelete(goal.id) }}
+            aria-label="Excluir meta"
             className="rounded-lg p-1.5 text-muted-foreground/50 opacity-0 group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive transition-all cursor-pointer"
           >
             <Trash2 size={14} />
@@ -268,6 +301,11 @@ function GoalCard({
             </div>
           </div>
         )}
+        <DepositTimeline
+          goalId={goal.id}
+          onEdit={(depositId) => onEditDeposit(goal.id, depositId)}
+          onDelete={onDeleteDeposit}
+        />
       </CardContent>
     </Card>
   )
@@ -275,7 +313,7 @@ function GoalCard({
 
 // ─── Timeline de aportes ──────────────────────────────────────────────────────
 
-function DepositTimeline({ goalId }: { goalId: string }) {
+function DepositTimeline({ goalId, onEdit, onDelete }: { goalId: string; onEdit: (id: string) => void; onDelete: (id: string) => void }) {
   const getGoalDeposits = useFinanceStore((s) => s.getGoalDeposits)
   const deposits = getGoalDeposits(goalId)
 
@@ -286,7 +324,7 @@ function DepositTimeline({ goalId }: { goalId: string }) {
   return (
     <div className="space-y-1">
       {sorted.slice(0, 5).map((dep) => (
-        <div key={dep.id} className="flex items-center gap-3 rounded-lg px-2 py-1.5">
+        <div key={dep.id} className="group flex items-center gap-3 rounded-lg px-2 py-1.5">
           <div
             className={cn(
               'flex size-7 shrink-0 items-center justify-center rounded-lg',
@@ -313,6 +351,14 @@ function DepositTimeline({ goalId }: { goalId: string }) {
               {new Date(dep.date + 'T12:00:00').toLocaleDateString('pt-BR')}
             </p>
           </div>
+          <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button type="button" onClick={(event) => { event.stopPropagation(); onEdit(dep.id) }} className="rounded-md p-1 text-muted-foreground/60 hover:text-primary cursor-pointer" aria-label="Editar movimentação">
+              <Pencil size={12} />
+            </button>
+            <button type="button" onClick={(event) => { event.stopPropagation(); onDelete(dep.id) }} className="rounded-md p-1 text-muted-foreground/50 hover:text-destructive cursor-pointer" aria-label="Excluir movimentação">
+              <Trash2 size={12} />
+            </button>
+          </div>
         </div>
       ))}
     </div>
@@ -325,10 +371,12 @@ export function MetasPage() {
   const goals = useFinanceStore((s) => s.goals)
   const savingsBoxes = useFinanceStore((s) => s.savingsBoxes)
   const deleteGoal = useFinanceStore((s) => s.deleteGoal)
+  const deleteGoalDeposit = useFinanceStore((s) => s.deleteGoalDeposit)
 
   const [goalDialogOpen, setGoalDialogOpen] = useState(false)
   const [goalEditId, setGoalEditId] = useState<string | undefined>()
   const [depositGoalId, setDepositGoalId] = useState<string | null>(null)
+  const [depositEditId, setDepositEditId] = useState<string | undefined>()
 
   const totalSaved = goals.reduce((acc, g) => acc + g.currentAmount, 0)
   const totalTarget = goals.reduce((acc, g) => acc + g.targetAmount, 0)
@@ -362,7 +410,13 @@ export function MetasPage() {
   }
 
   const handleDeposit = (id: string) => {
+    setDepositEditId(undefined)
     setDepositGoalId(id)
+  }
+
+  const handleEditDeposit = (goalId: string, depositId: string) => {
+    setDepositGoalId(goalId)
+    setDepositEditId(depositId)
   }
 
   const selectedGoal = depositGoalId ? goals.find((g) => g.id === depositGoalId) : null
@@ -458,6 +512,11 @@ export function MetasPage() {
               deleteGoal(id)
               toast({ title: 'Meta excluída', variant: 'success' })
             }}
+            onEditDeposit={handleEditDeposit}
+            onDeleteDeposit={(id) => {
+              deleteGoalDeposit(id)
+              toast({ title: 'Movimentação excluída', variant: 'success' })
+            }}
           />
         ))}
 
@@ -485,9 +544,10 @@ export function MetasPage() {
       {selectedGoal && (
         <DepositDialog
           open={depositGoalId !== null}
-          onClose={() => setDepositGoalId(null)}
+          onClose={() => { setDepositGoalId(null); setDepositEditId(undefined) }}
           goalId={selectedGoal.id}
           goalTitle={selectedGoal.title}
+          editId={depositEditId}
         />
       )}
     </div>

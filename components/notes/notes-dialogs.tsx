@@ -3,7 +3,7 @@
 import { useNotesStore } from '@/lib/store/use-notes-store'
 import { cn } from '@/lib/utils'
 import { Check, X } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button } from '../ui/button'
 import { Dialog, DialogContent } from '../ui/overlays'
 import { Input } from '../ui/primitives'
@@ -49,19 +49,37 @@ export function AddNoteDialog({
   open,
   onClose,
   defaultFolderId,
+  editId,
 }: {
   open: boolean
   onClose: () => void
   defaultFolderId?: string | null
+  editId?: string
 }) {
   const addNote = useNotesStore((s) => s.addNote)
+  const updateNote = useNotesStore((s) => s.updateNote)
   const folders = useNotesStore((s) => s.folders)
+  const existing = useNotesStore((s) => editId ? s.notes.find((n) => n.id === editId) : undefined)
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [folderId, setFolderId] = useState<string | null>(defaultFolderId ?? null)
   const [tags, setTags] = useState<string[]>([])
   const [tagInput, setTagInput] = useState('')
   const [color, setColor] = useState(NOTE_COLORS[Math.floor(Math.random() * NOTE_COLORS.length)])
+
+  useEffect(() => {
+    if (!open) return
+    if (existing) {
+      setTitle(existing.title)
+      setContent(existing.content)
+      setFolderId(existing.folderId)
+      setTags(existing.tags)
+      setTagInput('')
+      setColor(existing.color)
+    } else if (!editId) {
+      reset()
+    }
+  }, [open, editId, existing, defaultFolderId])
 
   const reset = () => {
     setTitle('')
@@ -84,15 +102,21 @@ export function AddNoteDialog({
       toast({ title: 'Digite um título para a nota', variant: 'error' })
       return
     }
-    addNote({ title: title.trim(), content: content.trim(), folderId, tags, color })
-    toast({ title: 'Nota criada!', variant: 'success' })
+    const data = { title: title.trim(), content: content.trim(), folderId, tags, color }
+    if (editId) {
+      updateNote(editId, data)
+      toast({ title: 'Nota atualizada!', variant: 'success' })
+    } else {
+      addNote(data)
+      toast({ title: 'Nota criada!', variant: 'success' })
+    }
     reset()
     onClose()
   }
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent title="Nova nota" description="Crie uma nota para não esquecer.">
+      <DialogContent title={editId ? 'Editar nota' : 'Nova nota'} description="Crie uma nota para não esquecer.">
         <div className="flex flex-col gap-4">
           <div>
             <label className="text-sm font-medium mb-1.5 block">Título</label>
@@ -200,7 +224,7 @@ export function AddNoteDialog({
               Cancelar
             </Button>
             <Button onClick={handleCreate} className="rounded-xl shadow-md">
-              Criar nota
+              {editId ? 'Salvar alterações' : 'Criar nota'}
             </Button>
           </div>
         </div>
@@ -212,13 +236,27 @@ export function AddNoteDialog({
 export function AddFolderDialog({
   open,
   onClose,
+  editId,
 }: {
   open: boolean
   onClose: () => void
+  editId?: string
 }) {
   const addFolder = useNotesStore((s) => s.addFolder)
+  const updateFolder = useNotesStore((s) => s.updateFolder)
+  const existing = useNotesStore((s) => editId ? s.folders.find((f) => f.id === editId) : undefined)
   const [name, setName] = useState('')
   const [color, setColor] = useState(FOLDER_COLORS[3])
+
+  useEffect(() => {
+    if (!open) return
+    if (existing) {
+      setName(existing.name)
+      setColor(existing.color)
+    } else if (!editId) {
+      reset()
+    }
+  }, [open, editId, existing])
 
   const reset = () => {
     setName('')
@@ -230,15 +268,20 @@ export function AddFolderDialog({
       toast({ title: 'Digite um nome para a pasta', variant: 'error' })
       return
     }
-    addFolder({ name: name.trim(), color })
-    toast({ title: 'Pasta criada!', variant: 'success' })
+    if (editId) {
+      updateFolder(editId, { name: name.trim(), color })
+      toast({ title: 'Pasta atualizada!', variant: 'success' })
+    } else {
+      addFolder({ name: name.trim(), color })
+      toast({ title: 'Pasta criada!', variant: 'success' })
+    }
     reset()
     onClose()
   }
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent title="Nova pasta" description="Organize suas notas em pastas.">
+      <DialogContent title={editId ? 'Editar pasta' : 'Nova pasta'} description="Organize suas notas em pastas.">
         <div className="flex flex-col gap-4">
           <div>
             <label className="text-sm font-medium mb-1.5 block">Nome</label>
@@ -259,7 +302,7 @@ export function AddFolderDialog({
               Cancelar
             </Button>
             <Button onClick={handleCreate} className="rounded-xl shadow-md">
-              Criar pasta
+              {editId ? 'Salvar alterações' : 'Criar pasta'}
             </Button>
           </div>
         </div>

@@ -3,7 +3,7 @@
 import { useAppStore } from '@/lib/store/use-app-store'
 import type { Planner } from '@/lib/types'
 import { cn } from '@/lib/utils'
-import { Plus, Star, Trash2 } from 'lucide-react'
+import { Pencil, Plus, Star, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 import { CreatePlannerDialog } from '../dashboard/create-planner-dialog'
@@ -27,6 +27,7 @@ export function PlannersPage() {
   const folders = useAppStore((s) => s.folders)
   const [deleteTarget, setDeleteTarget] = useState<Planner | null>(null)
   const [createOpen, setCreateOpen] = useState(false)
+  const [editTarget, setEditTarget] = useState<Planner | null>(null)
 
   const folderName = (id: string | null) => folders.find((f) => f.id === id)?.name
 
@@ -87,6 +88,18 @@ export function PlannersPage() {
                   onClick={(e) => {
                     e.preventDefault()
                     e.stopPropagation()
+                    setEditTarget(planner)
+                    setCreateOpen(true)
+                  }}
+                  aria-label={`Editar ${planner.name}`}
+                  className="absolute right-11 top-2 z-10 flex size-8 items-center justify-center rounded-xl bg-black/45 text-white opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100 hover:bg-primary focus-visible:opacity-100 cursor-pointer"
+                >
+                  <Pencil size={14} />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
                     setDeleteTarget(planner)
                   }}
                   aria-label={`Excluir ${planner.name}`}
@@ -128,7 +141,11 @@ export function PlannersPage() {
       )}
 
       <DeletePlannerDialog planner={deleteTarget} onClose={() => setDeleteTarget(null)} />
-      <CreatePlannerDialog open={createOpen} onClose={() => setCreateOpen(false)} />
+      <CreatePlannerDialog
+        open={createOpen}
+        editId={editTarget?.id}
+        onClose={() => { setCreateOpen(false); setEditTarget(null) }}
+      />
     </div>
   )
 }

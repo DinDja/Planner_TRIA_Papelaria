@@ -4,18 +4,32 @@ import { useBirthdaysStore } from '@/lib/store/use-birthdays-store'
 import { BIRTHDAY_COLORS } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import { Check } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button } from '../ui/button'
 import { Dialog, DialogContent } from '../ui/overlays'
 import { Input } from '../ui/primitives'
 import { toast } from '../ui/toaster'
 
-export function AddBirthdayDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function AddBirthdayDialog({ open, onClose, editId }: { open: boolean; onClose: () => void; editId?: string }) {
   const addEntry = useBirthdaysStore((s) => s.addEntry)
+  const updateEntry = useBirthdaysStore((s) => s.updateEntry)
+  const existing = useBirthdaysStore((s) => editId ? s.entries.find((e) => e.id === editId) : undefined)
   const [name, setName] = useState('')
   const [date, setDate] = useState('')
   const [notes, setNotes] = useState('')
   const [color, setColor] = useState(BIRTHDAY_COLORS[0])
+
+  useEffect(() => {
+    if (!open) return
+    if (existing) {
+      setName(existing.name)
+      setDate(existing.date)
+      setNotes(existing.notes ?? '')
+      setColor(existing.color)
+    } else if (!editId) {
+      reset()
+    }
+  }, [open, editId, existing])
 
   const reset = () => {
     setName('')
@@ -33,15 +47,21 @@ export function AddBirthdayDialog({ open, onClose }: { open: boolean; onClose: (
       toast({ title: 'Informe a data de aniversário', variant: 'error' })
       return
     }
-    addEntry({ name: name.trim(), date, notes: notes.trim() || undefined, color })
-    toast({ title: 'Aniversário adicionado!', variant: 'success' })
+    const data = { name: name.trim(), date, notes: notes.trim() || undefined, color }
+    if (editId) {
+      updateEntry(editId, data)
+      toast({ title: 'Aniversário atualizado!', variant: 'success' })
+    } else {
+      addEntry(data)
+      toast({ title: 'Aniversário adicionado!', variant: 'success' })
+    }
     reset()
     onClose()
   }
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent title="Novo aniversário" description="Não deixe passar a data de quem você gosta.">
+      <DialogContent title={editId ? 'Editar aniversário' : 'Novo aniversário'} description="Não deixe passar a data de quem você gosta.">
         <div className="flex flex-col gap-4">
           <div>
             <label className="text-sm font-medium mb-1.5 block">Nome</label>

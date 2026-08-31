@@ -12,6 +12,7 @@ import {
 import { Folha } from './folha'
 import { EscreverDialog } from './escrever-dialog'
 import { cn } from '@/lib/utils'
+import { DiarioGate } from './diario-gate'
 
 const FONT_HAND = 'var(--font-caveat), "Segoe Script", cursive'
 const FONT_SERIF = 'var(--font-instrument), Georgia, serif'
@@ -20,6 +21,14 @@ const FONT_MONO = 'var(--font-geist), system-ui, sans-serif'
 // ─── Página ───────────────────────────────────────────────────────────────────
 
 export function DiarioPage() {
+  return (
+    <DiarioGate>
+      <DiarioNotebook />
+    </DiarioGate>
+  )
+}
+
+function DiarioNotebook() {
   const registros = useDiarioStore((s) => s.registros)
   const linhaDoTempo = useDiarioStore((s) => s.linhaDoTempo)
   const fixar = useDiarioStore((s) => s.fixar)

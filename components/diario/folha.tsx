@@ -3,6 +3,7 @@
 import { getStroke } from 'perfect-freehand'
 import type { Stroke } from '@/lib/types'
 import type { Registro } from '@/lib/diario/types'
+import { Pencil } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
   AnoNumero,
@@ -243,6 +244,15 @@ export function Folha({
 
         {/* Ações — discretas, só no hover/foco. Não são "botões de card". */}
         <div className="pointer-events-none absolute right-0 top-3 flex translate-y-0 items-center gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100">
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onAbrir?.(r) }}
+            aria-label="Editar registro"
+            title="Editar"
+            className="pointer-events-auto flex size-7 items-center justify-center rounded-md border border-border/50 bg-background/70 text-muted-foreground hover:border-primary/50 hover:text-primary transition-colors"
+          >
+            <Pencil size={13} />
+          </button>
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); onFixar?.(r) }}

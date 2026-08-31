@@ -3,8 +3,8 @@
 import { useRoutineStore } from '@/lib/store/use-routine-store'
 import type { RecurrenceFrequency, RecurringTask, Task, TaskPriority, Weekday } from '@/lib/types'
 import { cn } from '@/lib/utils'
-import { Check, CheckCircle2, Circle, Repeat, Trash2 } from 'lucide-react'
-import { useState } from 'react'
+import { Check, CheckCircle2, Circle, Pencil, Repeat, Trash2 } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { Button } from '../ui/button'
 import { Dialog, DialogContent } from '../ui/overlays'
 import { Input } from '../ui/primitives'
@@ -66,13 +66,17 @@ export function AddTaskDialog({
   open,
   onClose,
   defaultDate,
+  editId,
 }: {
   open: boolean
   onClose: () => void
   defaultDate?: string
+  editId?: string
 }) {
   const addTask = useRoutineStore((s) => s.addTask)
   const addRecurring = useRoutineStore((s) => s.addRecurring)
+  const updateTask = useRoutineStore((s) => s.updateTask)
+  const existingTask = useRoutineStore((s) => s.tasks.find((task) => task.id === editId))
   const [title, setTitle] = useState('')
   const [date, setDate] = useState(defaultDate ?? todayStr())
   const [time, setTime] = useState('')
@@ -81,6 +85,20 @@ export function AddTaskDialog({
   const [dayOfMonth, setDayOfMonth] = useState(1)
   const [notes, setNotes] = useState('')
   const [priority, setPriority] = useState<TaskPriority>('medium')
+
+  useEffect(() => {
+    if (!open) return
+    if (editId && existingTask) {
+      setTitle(existingTask.title)
+      setDate(existingTask.date)
+      setTime(existingTask.time ?? '')
+      setFrequency('once')
+      setNotes(existingTask.notes ?? '')
+      setPriority(existingTask.priority)
+    } else if (!editId) {
+      reset()
+    }
+  }, [open, editId, existingTask])
 
   const toggleWeekday = (d: Weekday) =>
     setWeekdays((cur) =>
@@ -113,7 +131,10 @@ export function AddTaskDialog({
       notes: notes.trim() || undefined,
       priority,
     }
-    if (frequency === 'once') {
+    if (editId) {
+      updateTask(editId, { title: common.title, date, time: common.time, notes: common.notes, priority })
+      toast({ title: 'Tarefa atualizada!', variant: 'success' })
+    } else if (frequency === 'once') {
       addTask({ ...common, date })
       toast({ title: 'Tarefa criada!', variant: 'success' })
     } else {
@@ -131,7 +152,7 @@ export function AddTaskDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent title="Nova tarefa" description="Uma tarefa única ou recorrente.">
+      <DialogContent title={editId ? 'Editar tarefa' : 'Nova tarefa'} description="Uma tarefa única ou recorrente.">
         <div className="flex flex-col gap-4">
           <div>
             <label className="text-sm font-medium mb-1.5 block">Título</label>
@@ -144,7 +165,7 @@ export function AddTaskDialog({
             />
           </div>
 
-          <div>
+          {!editId && <div>
             <label className="text-sm font-medium mb-2 block">Frequência</label>
             <div className="flex gap-2 flex-wrap">
               {(['once', 'daily', 'weekly', 'monthly'] as const).map((f) => (
@@ -163,7 +184,7 @@ export function AddTaskDialog({
                 </button>
               ))}
             </div>
-          </div>
+          </div>}
 
           {frequency === 'once' && (
             <div>
@@ -237,7 +258,7 @@ export function AddTaskDialog({
               Cancelar
             </Button>
             <Button onClick={handleCreate} className="rounded-xl shadow-md">
-              Criar tarefa
+              {editId ? 'Salvar alterações' : 'Criar tarefa'}
             </Button>
           </div>
         </div>
@@ -246,12 +267,20 @@ export function AddTaskDialog({
   )
 }
 
-function TodayTaskRow({ task }: { task: Task }) {
+function TodayTaskRow({ task, onEdit }: { task: Task; onEdit?: (id: string) => void }) {
   const toggleTask = useRoutineStore((s) => s.toggleTask)
   const deleteTask = useRoutineStore((s) => s.deleteTask)
 
   return (
     <div className={cn('group flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-muted/40', task.done && 'opacity-60')}>
+      {onEdit && <button
+        type="button"
+        onClick={() => onEdit(task.id)}
+        className="shrink-0 rounded-lg p-1.5 text-muted-foreground/50 opacity-0 transition-all hover:bg-primary/10 hover:text-primary group-hover:opacity-100 cursor-pointer"
+        aria-label="Editar tarefa"
+      >
+        <Pencil size={14} />
+      </button>}
       <button
         type="button"
         onClick={() => toggleTask(task.id)}
@@ -288,12 +317,20 @@ function TodayTaskRow({ task }: { task: Task }) {
   )
 }
 
-function TodayRecurringRow({ task }: { task: RecurringTask }) {
+function TodayRecurringRow({ task, onEdit }: { task: RecurringTask; onEdit?: (id: string) => void }) {
   const completeRecurring = useRoutineStore((s) => s.completeRecurring)
   const deleteRecurring = useRoutineStore((s) => s.deleteRecurring)
 
   return (
     <div className="group flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-muted/40">
+      {onEdit && <button
+        type="button"
+        onClick={() => onEdit(task.id)}
+        className="shrink-0 rounded-lg p-1.5 text-muted-foreground/50 opacity-0 transition-all hover:bg-primary/10 hover:text-primary group-hover:opacity-100 cursor-pointer"
+        aria-label="Editar recorrência"
+      >
+        <Pencil size={14} />
+      </button>}
       <button
         type="button"
         onClick={() => completeRecurring(task.id)}
@@ -332,10 +369,14 @@ export function RoutineTodayDialog({
   open,
   onClose,
   onAddTask,
+  onEditTask,
+  onEditRecurring,
 }: {
   open: boolean
   onClose: () => void
   onAddTask: () => void
+  onEditTask?: (id: string) => void
+  onEditRecurring?: (id: string) => void
 }) {
   const tasks = useRoutineStore((s) => s.tasks)
   const recurringTasks = useRoutineStore((s) => s.recurringTasks)
@@ -361,7 +402,7 @@ export function RoutineTodayDialog({
             </div>
             <div className="space-y-0.5">
               {todayTasks.length > 0 ? (
-                todayTasks.map((task) => <TodayTaskRow key={task.id} task={task} />)
+                todayTasks.map((task) => <TodayTaskRow key={task.id} task={task} onEdit={onEditTask} />)
               ) : (
                 <p className="px-3 py-5 text-center text-sm text-muted-foreground">
                   Nenhuma tarefa marcada para hoje.
@@ -377,7 +418,7 @@ export function RoutineTodayDialog({
             </div>
             <div className="space-y-0.5">
               {dueRecurring.length > 0 ? (
-                dueRecurring.map((task) => <TodayRecurringRow key={task.id} task={task} />)
+                dueRecurring.map((task) => <TodayRecurringRow key={task.id} task={task} onEdit={onEditRecurring} />)
               ) : (
                 <p className="px-3 py-3 text-center text-sm text-muted-foreground">
                   Nenhuma recorrência pendente hoje.
@@ -411,16 +452,33 @@ const FREQUENCY_LABELS: Record<RecurrenceFrequency, string> = {
 export function AddRecurringDialog({
   open,
   onClose,
+  editId,
 }: {
   open: boolean
   onClose: () => void
+  editId?: string
 }) {
   const addRecurring = useRoutineStore((s) => s.addRecurring)
+  const updateRecurring = useRoutineStore((s) => s.updateRecurring)
+  const existingTask = useRoutineStore((s) => s.recurringTasks.find((task) => task.id === editId))
   const [title, setTitle] = useState('')
   const [frequency, setFrequency] = useState<RecurrenceFrequency>('daily')
   const [weekdays, setWeekdays] = useState<Weekday[]>([0, 1, 2, 3, 4])
   const [dayOfMonth, setDayOfMonth] = useState(1)
   const [priority, setPriority] = useState<TaskPriority>('medium')
+
+  useEffect(() => {
+    if (!open) return
+    if (editId && existingTask) {
+      setTitle(existingTask.title)
+      setFrequency(existingTask.frequency)
+      setWeekdays(existingTask.weekdays ?? [0, 1, 2, 3, 4])
+      setDayOfMonth(existingTask.dayOfMonth ?? 1)
+      setPriority(existingTask.priority)
+    } else if (!editId) {
+      reset()
+    }
+  }, [open, editId, existingTask])
 
   const toggleWeekday = (d: Weekday) =>
     setWeekdays((cur) =>
@@ -444,14 +502,20 @@ export function AddRecurringDialog({
       toast({ title: 'Escolha ao menos um dia da semana', variant: 'error' })
       return
     }
-    addRecurring({
+    const data = {
       title: title.trim(),
       frequency,
       weekdays: frequency === 'weekly' ? weekdays : undefined,
       dayOfMonth: frequency === 'monthly' ? dayOfMonth : undefined,
       priority,
-    })
-    toast({ title: 'Tarefa recorrente criada!', variant: 'success' })
+    }
+    if (editId) {
+      updateRecurring(editId, data)
+      toast({ title: 'Recorrência atualizada!', variant: 'success' })
+    } else {
+      addRecurring(data)
+      toast({ title: 'Tarefa recorrente criada!', variant: 'success' })
+    }
     reset()
     onClose()
   }
@@ -459,7 +523,7 @@ export function AddRecurringDialog({
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent
-        title="Nova tarefa recorrente"
+        title={editId ? 'Editar tarefa recorrente' : 'Nova tarefa recorrente'}
         description="Repete automaticamente: diária, semanal ou mensal."
       >
         <div className="flex flex-col gap-4">
@@ -546,7 +610,7 @@ export function AddRecurringDialog({
               Cancelar
             </Button>
             <Button onClick={handleCreate} className="rounded-xl shadow-md">
-              Criar recorrência
+              {editId ? 'Salvar alterações' : 'Criar recorrência'}
             </Button>
           </div>
         </div>
@@ -560,17 +624,34 @@ export function AddRecurringDialog({
 export function AddPendingDialog({
   open,
   onClose,
+  editId,
 }: {
   open: boolean
   onClose: () => void
+  editId?: string
 }) {
   const addPending = useRoutineStore((s) => s.addPending)
+  const updatePending = useRoutineStore((s) => s.updatePending)
+  const existingItem = useRoutineStore((s) => s.pendingItems.find((item) => item.id === editId))
   const [title, setTitle] = useState('')
   const [priority, setPriority] = useState<TaskPriority>('medium')
+  const [notes, setNotes] = useState('')
+
+  useEffect(() => {
+    if (!open) return
+    if (editId && existingItem) {
+      setTitle(existingItem.title)
+      setPriority(existingItem.priority)
+      setNotes(existingItem.notes ?? '')
+    } else if (!editId) {
+      reset()
+    }
+  }, [open, editId, existingItem])
 
   const reset = () => {
     setTitle('')
     setPriority('medium')
+    setNotes('')
   }
 
   const handleCreate = () => {
@@ -578,8 +659,14 @@ export function AddPendingDialog({
       toast({ title: 'Digite um título', variant: 'error' })
       return
     }
-    addPending({ title: title.trim(), priority })
-    toast({ title: 'Pendência adicionada!', variant: 'success' })
+    const data = { title: title.trim(), priority, notes: notes.trim() || undefined }
+    if (editId) {
+      updatePending(editId, data)
+      toast({ title: 'Pendência atualizada!', variant: 'success' })
+    } else {
+      addPending(data)
+      toast({ title: 'Pendência adicionada!', variant: 'success' })
+    }
     reset()
     onClose()
   }
@@ -587,7 +674,7 @@ export function AddPendingDialog({
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent
-        title="Nova pendência"
+        title={editId ? 'Editar pendência' : 'Nova pendência'}
         description="Item avulso sem data — anote agora, agende depois."
       >
         <div className="flex flex-col gap-4">
@@ -605,12 +692,16 @@ export function AddPendingDialog({
             <label className="text-sm font-medium mb-2 block">Prioridade</label>
             <PriorityPicker value={priority} onChange={setPriority} />
           </div>
+          <div>
+            <label className="text-sm font-medium mb-1.5 block">Observações</label>
+            <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Detalhes da pendência..." />
+          </div>
           <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end">
             <Button variant="outline" onClick={onClose} className="rounded-xl">
               Cancelar
             </Button>
             <Button onClick={handleCreate} className="rounded-xl shadow-md">
-              Adicionar
+              {editId ? 'Salvar alterações' : 'Adicionar'}
             </Button>
           </div>
         </div>
@@ -626,16 +717,33 @@ const SLOT_COLORS = ['#e05b6d', '#f0b429', '#7bb686', '#5b8dbf', '#c9b6e4', '#e8
 export function AddSlotDialog({
   open,
   onClose,
+  editId,
 }: {
   open: boolean
   onClose: () => void
+  editId?: string
 }) {
   const addRoutineSlot = useRoutineStore((s) => s.addRoutineSlot)
+  const updateRoutineSlot = useRoutineStore((s) => s.updateRoutineSlot)
+  const existingSlot = useRoutineStore((s) => s.routineSlots.find((slot) => slot.id === editId))
   const [title, setTitle] = useState('')
   const [time, setTime] = useState('08:00')
   const [endTime, setEndTime] = useState('08:30')
   const [weekdays, setWeekdays] = useState<Weekday[]>([0, 1, 2, 3, 4])
   const [color, setColor] = useState(SLOT_COLORS[2])
+
+  useEffect(() => {
+    if (!open) return
+    if (editId && existingSlot) {
+      setTitle(existingSlot.title)
+      setTime(existingSlot.time)
+      setEndTime(existingSlot.endTime ?? '')
+      setWeekdays(existingSlot.weekdays)
+      setColor(existingSlot.color ?? SLOT_COLORS[2])
+    } else if (!editId) {
+      reset()
+    }
+  }, [open, editId, existingSlot])
 
   const toggleWeekday = (d: Weekday) =>
     setWeekdays((cur) =>
@@ -659,14 +767,20 @@ export function AddSlotDialog({
       toast({ title: 'Escolha ao menos um dia', variant: 'error' })
       return
     }
-    addRoutineSlot({
+    const data = {
       title: title.trim(),
       time,
       endTime,
       weekdays: [...weekdays].sort(),
       color,
-    })
-    toast({ title: 'Bloco adicionado à rotina ideal!', variant: 'success' })
+    }
+    if (editId) {
+      updateRoutineSlot(editId, data)
+      toast({ title: 'Bloco atualizado!', variant: 'success' })
+    } else {
+      addRoutineSlot(data)
+      toast({ title: 'Bloco adicionado à rotina ideal!', variant: 'success' })
+    }
     reset()
     onClose()
   }
@@ -674,7 +788,7 @@ export function AddSlotDialog({
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent
-        title="Novo bloco de rotina"
+        title={editId ? 'Editar bloco de rotina' : 'Novo bloco de rotina'}
         description="Um horário fixo do seu dia ideal, ex: 07:00 Academia."
       >
         <div className="flex flex-col gap-4">
@@ -757,7 +871,7 @@ export function AddSlotDialog({
               Cancelar
             </Button>
             <Button onClick={handleCreate} className="rounded-xl shadow-md">
-              Adicionar bloco
+              {editId ? 'Salvar alterações' : 'Adicionar bloco'}
             </Button>
           </div>
         </div>

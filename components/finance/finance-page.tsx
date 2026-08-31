@@ -1,15 +1,16 @@
 'use client'
 
 import { useFinanceStore } from '@/lib/store/use-finance-store'
+import type { FinancialAccount } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import {
   ArrowDownRight,
   ArrowUpRight,
   Banknote,
-  ChevronRight,
   CreditCard,
   Gift,
   PiggyBank,
+  Pencil,
   Plus,
   Repeat,
   Target,
@@ -18,7 +19,7 @@ import {
   TrendingUp,
   Wallet,
 } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Button } from '../ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { Badge, Switch } from '../ui/primitives'
@@ -29,6 +30,8 @@ import {
   AddInstallmentDialog,
   AddSubscriptionDialog,
   AddTransactionDialog,
+  AccountsManagerDialog,
+  FinanceAccountsSetup,
   GoalDialog,
   SavingsBoxDialog,
 } from './finance-dialogs'
@@ -45,19 +48,176 @@ const currentMonthStr = () => {
 
 // ─── Componentes de linha compartilhados ──────────────────────────────────────
 
-function DeleteButton({ onClick }: { onClick: () => void }) {
+function DeleteButton({ onClick, onEdit }: { onClick: () => void; onEdit?: () => void }) {
   return (
-    <button onClick={onClick}
-      className="shrink-0 rounded-lg p-1.5 text-muted-foreground/50 opacity-0 group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive transition-all cursor-pointer"
-      aria-label="Excluir">
-      <Trash2 size={14} />
-    </button>
+    <div className="flex shrink-0 items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+      {onEdit && (
+        <button onClick={(event) => { event.stopPropagation(); onEdit() }}
+          className="rounded-lg p-1.5 text-muted-foreground/60 hover:bg-primary/10 hover:text-primary transition-colors cursor-pointer"
+          aria-label="Editar">
+          <Pencil size={14} />
+        </button>
+      )}
+      <button onClick={(event) => { event.stopPropagation(); onClick() }}
+        className="rounded-lg p-1.5 text-muted-foreground/50 hover:bg-destructive/10 hover:text-destructive transition-colors cursor-pointer"
+        aria-label="Excluir">
+        <Trash2 size={14} />
+      </button>
+    </div>
   )
 }
 
 // ─── Página Principal ─────────────────────────────────────────────────────────
 
+function accountRolesLabel(account: FinancialAccount) {
+  return account.roles.length === 2
+    ? 'recebe e paga'
+    : account.roles[0] === 'receiving'
+      ? 'recebimento'
+      : 'pagamento'
+}
+
+function accountInitials(name: string) {
+  const words = name.trim().split(/\s+/).filter(Boolean)
+  return (words.length > 1 ? `${words[0][0]}${words[words.length - 1][0]}` : words[0]?.slice(0, 2) ?? '??').toUpperCase()
+}
+
+function LegacyAccountSwitcher({
+  accounts,
+  selectedAccountId,
+  onSelect,
+  onManage,
+}: {
+  accounts: FinancialAccount[]
+  selectedAccountId: string
+  onSelect: (id: string) => void
+  onManage: () => void
+}) {
+  const selected = accounts.find((account) => account.id === selectedAccountId)
+
+  return (
+    <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-border/60 bg-muted/20 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex min-w-0 items-center gap-3">
+        <span className="size-2 shrink-0 rounded-full bg-primary" aria-hidden="true" />
+        <div className="min-w-0">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Conta em foco</p>
+          <select
+            value={selectedAccountId}
+            onChange={(event) => onSelect(event.target.value)}
+            className="mt-0.5 max-w-full bg-transparent text-sm font-medium outline-none"
+            aria-label="Selecionar conta em foco"
+          >
+            <option value="all">Todas as contas</option>
+            {accounts.map((account) => (
+              <option key={account.id} value={account.id}>
+                {account.name} — {accountRolesLabel(account)}
+              </option>
+            ))}
+          </select>
+        </div>
+        {selected && (
+          <span className="hidden text-[11px] text-muted-foreground sm:inline">{accountRolesLabel(selected)}</span>
+        )}
+      </div>
+      <button type="button" onClick={onManage} className="self-start text-xs font-medium text-primary hover:underline sm:self-auto">
+        Gerenciar contas
+      </button>
+    </div>
+  )
+}
+
+function AccountSwitcher({
+  accounts,
+  selectedAccountId,
+  onSelect,
+  onManage,
+}: {
+  accounts: FinancialAccount[]
+  selectedAccountId: string
+  onSelect: (id: string) => void
+  onManage: () => void
+}) {
+  const isOverviewSelected = selectedAccountId === 'all'
+
+  return (
+    <section className="mb-6 border-b border-border/60 pb-5" aria-labelledby="account-switcher-title">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Conta em foco</p>
+          <h2 id="account-switcher-title" className="mt-1 text-base font-semibold tracking-tight">Onde você está lançando?</h2>
+          <p className="mt-1 text-xs text-muted-foreground">Escolha uma conta para filtrar o resumo e as movimentações.</p>
+        </div>
+        <button
+          type="button"
+          onClick={onManage}
+          className="rounded-lg px-2 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+        >
+          Gerenciar contas
+        </button>
+      </div>
+
+      <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3" role="group" aria-label="Contas financeiras">
+        <button
+          type="button"
+          aria-pressed={isOverviewSelected}
+          onClick={() => onSelect('all')}
+          className={cn(
+            'group flex min-h-[74px] items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
+            isOverviewSelected
+              ? 'border-primary/60 bg-primary/[0.07] shadow-sm'
+              : 'border-border/60 bg-background/40 hover:border-primary/30 hover:bg-muted/40',
+          )}
+        >
+          <span className={cn(
+            'flex size-10 shrink-0 items-center justify-center rounded-lg text-base font-semibold transition-colors',
+            isOverviewSelected ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground group-hover:text-foreground',
+          )}>
+            <Wallet size={18} aria-hidden="true" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-sm font-semibold">Visão geral</span>
+            <span className="mt-0.5 block text-xs text-muted-foreground">Todas as contas</span>
+          </span>
+          {isOverviewSelected && <span className="text-[10px] font-semibold uppercase tracking-wide text-primary">Ativa</span>}
+        </button>
+
+        {accounts.map((account) => {
+          const isSelected = account.id === selectedAccountId
+
+          return (
+            <button
+              key={account.id}
+              type="button"
+              aria-pressed={isSelected}
+              onClick={() => onSelect(account.id)}
+              className={cn(
+                'group flex min-h-[74px] items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
+                isSelected
+                  ? 'border-primary/60 bg-primary/[0.07] shadow-sm'
+                  : 'border-border/60 bg-background/40 hover:border-primary/30 hover:bg-muted/40',
+              )}
+            >
+              <span className={cn(
+                'flex size-10 shrink-0 items-center justify-center rounded-lg text-[11px] font-bold tracking-wide transition-colors',
+                isSelected ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground group-hover:text-foreground',
+              )}>
+                {accountInitials(account.name)}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-semibold">{account.name}</span>
+                <span className="mt-0.5 block truncate text-xs text-muted-foreground">{accountRolesLabel(account)}</span>
+              </span>
+              {isSelected && <span className="text-[10px] font-semibold uppercase tracking-wide text-primary">Ativa</span>}
+            </button>
+          )
+        })}
+      </div>
+    </section>
+  )
+}
+
 export function FinancePage() {
+  const accounts = useFinanceStore((s) => s.accounts)
   const transactions = useFinanceStore((s) => s.transactions)
   const fixedBills = useFinanceStore((s) => s.fixedBills)
   const subscriptions = useFinanceStore((s) => s.subscriptions)
@@ -81,17 +241,44 @@ export function FinancePage() {
   const [addSubOpen, setAddSubOpen] = useState(false)
   const [addCardOpen, setAddCardOpen] = useState(false)
   const [addInstOpen, setAddInstOpen] = useState(false)
+  const [editTransactionId, setEditTransactionId] = useState<string | undefined>()
+  const [editBillId, setEditBillId] = useState<string | undefined>()
+  const [editSubscriptionId, setEditSubscriptionId] = useState<string | undefined>()
+  const [editCardId, setEditCardId] = useState<string | undefined>()
+  const [editInstallmentId, setEditInstallmentId] = useState<string | undefined>()
   const [goalOpen, setGoalOpen] = useState(false)
   const [goalEditId, setGoalEditId] = useState<string | undefined>()
   const [boxOpen, setBoxOpen] = useState(false)
   const [boxEditId, setBoxEditId] = useState<string | undefined>()
+  const [accountsOpen, setAccountsOpen] = useState(false)
+  const [selectedAccountId, setSelectedAccountId] = useState('all')
+
+  useEffect(() => {
+    if (accounts.length === 0) {
+      setSelectedAccountId('all')
+    } else if (selectedAccountId !== 'all' && !accounts.some((account) => account.id === selectedAccountId)) {
+      setSelectedAccountId('all')
+    }
+  }, [accounts, selectedAccountId])
+
+  if (accounts.length === 0) {
+    return <FinanceAccountsSetup onComplete={(ids) => setSelectedAccountId(ids[0] ?? 'all')} />
+  }
+
+  const selectedAccount = accounts.find((account) => account.id === selectedAccountId)
+  const visibleTransactions = selectedAccountId === 'all' || !selectedAccount
+    ? transactions
+    : transactions.filter((transaction) =>
+        transaction.accountId === selectedAccountId ||
+        (!transaction.accountId && transaction.account === selectedAccount.name),
+      )
 
   // Derivados do Resumo
   const currMonth = currentMonthStr()
-  const monthIncome = transactions
+  const monthIncome = visibleTransactions
     .filter((t) => t.type === 'income' && t.date.startsWith(currMonth))
     .reduce((acc, t) => acc + t.amount, 0)
-  const monthExpense = transactions
+  const monthExpense = visibleTransactions
     .filter((t) => t.type === 'expense' && t.date.startsWith(currMonth))
     .reduce((acc, t) => acc + t.amount, 0)
   const totalBoxes = savingsBoxes.reduce((acc, b) => acc + b.currentAmount, 0)
@@ -105,7 +292,7 @@ export function FinancePage() {
     .sort((a, b) => a.dayOfMonth - b.dayOfMonth)
     .slice(0, 5)
 
-  const sortedTx = [...transactions].sort((a, b) => b.date.localeCompare(a.date))
+  const sortedTx = [...visibleTransactions].sort((a, b) => b.date.localeCompare(a.date))
 
   const openNewGoal = () => { setGoalEditId(undefined); setGoalOpen(true) }
   const openEditGoal = (id: string) => { setGoalEditId(id); setGoalOpen(true) }
@@ -124,7 +311,7 @@ export function FinancePage() {
             Finanças
           </h1>
           <p className="text-muted-foreground mt-2">
-            {transactions.length} transações · {cards.length} cartões · {goals.length} metas
+            {visibleTransactions.length} transações · {cards.length} cartões · {goals.length} metas
           </p>
         </div>
         <Button
@@ -149,6 +336,13 @@ export function FinancePage() {
           {tab === 'caixinhas' && 'Nova caixinha'}
         </Button>
       </div>
+
+      <AccountSwitcher
+        accounts={accounts}
+        selectedAccountId={selectedAccountId}
+        onSelect={setSelectedAccountId}
+        onManage={() => setAccountsOpen(true)}
+      />
 
       <Tabs value={tab} onValueChange={setTab} className={enter}>
         <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
@@ -252,7 +446,7 @@ export function FinancePage() {
           <Card glass>
             <CardHeader className="flex-row items-center justify-between pb-0">
               <CardTitle className="text-base">Todas as transações</CardTitle>
-              <span className="text-[11px] text-muted-foreground tabular-nums">{transactions.length} registros</span>
+              <span className="text-[11px] text-muted-foreground tabular-nums">{visibleTransactions.length} registros</span>
             </CardHeader>
             <div className="px-3 py-3 space-y-0.5">
               {sortedTx.length > 0 ? sortedTx.map((t) => (
@@ -267,6 +461,7 @@ export function FinancePage() {
                       <p className="text-[11px] text-muted-foreground">
                         {t.category}
                         {t.paymentMethod ? ` · ${t.paymentMethod}` : ''}
+                        {t.account ? ` · ${t.type === 'income' ? 'recebimento' : 'pagamento'}: ${t.account}` : ''}
                         {' · '}{new Date(t.date + 'T12:00:00').toLocaleDateString('pt-BR')}
                       </p>
                       {t.status === 'pending' && (
@@ -277,7 +472,7 @@ export function FinancePage() {
                   <span className={cn('text-sm font-semibold tabular-nums', t.type === 'income' ? 'text-emerald-600 dark:text-emerald-400' : '')}>
                     {t.type === 'income' ? '+' : '-'}{formatBRL(t.amount)}
                   </span>
-                  <DeleteButton onClick={() => deleteTransaction(t.id)} />
+                  <DeleteButton onEdit={() => { setEditTransactionId(t.id); setAddTxOpen(true) }} onClick={() => deleteTransaction(t.id)} />
                 </div>
               )) : (
                 <p className="text-sm text-muted-foreground text-center py-6">Nenhuma transação ainda.</p>
@@ -308,7 +503,7 @@ export function FinancePage() {
                   </div>
                   <span className="text-sm font-semibold tabular-nums">{formatBRL(b.amount)}</span>
                   <Switch checked={b.active} onCheckedChange={() => useFinanceStore.getState().updateFixedBill(b.id, { active: !b.active })} />
-                  <DeleteButton onClick={() => deleteFixedBill(b.id)} />
+                  <DeleteButton onEdit={() => { setEditBillId(b.id); setAddBillOpen(true) }} onClick={() => deleteFixedBill(b.id)} />
                 </div>
               )) : (
                 <p className="text-sm text-muted-foreground text-center py-6">Nenhuma conta fixa cadastrada.</p>
@@ -342,7 +537,7 @@ export function FinancePage() {
                   </div>
                   <span className="text-sm font-semibold tabular-nums">{formatBRL(s.amount)}</span>
                   <Switch checked={s.active} onCheckedChange={() => toggleSubscription(s.id)} />
-                  <DeleteButton onClick={() => deleteSubscription(s.id)} />
+                  <DeleteButton onEdit={() => { setEditSubscriptionId(s.id); setAddSubOpen(true) }} onClick={() => deleteSubscription(s.id)} />
                 </div>
               )) : (
                 <p className="text-sm text-muted-foreground text-center py-6">Nenhuma assinatura.</p>
@@ -387,7 +582,7 @@ export function FinancePage() {
                         </div>
                       )}
                     </div>
-                    <DeleteButton onClick={() => deleteCard(c.id)} />
+                    <DeleteButton onEdit={() => { setEditCardId(c.id); setAddCardOpen(true) }} onClick={() => deleteCard(c.id)} />
                   </div>
                 )
               }) : (
@@ -432,7 +627,7 @@ export function FinancePage() {
                           +1
                         </button>
                       )}
-                      <DeleteButton onClick={() => deleteInstallment(inst.id)} />
+                      <DeleteButton onEdit={() => { setEditInstallmentId(inst.id); setAddInstOpen(true) }} onClick={() => deleteInstallment(inst.id)} />
                     </div>
                   </div>
                 )
@@ -476,7 +671,7 @@ export function FinancePage() {
                         {g.deadline && <span className="text-[10px] text-muted-foreground">prazo: {new Date(g.deadline + 'T12:00:00').toLocaleDateString('pt-BR')}</span>}
                       </div>
                     </div>
-                    <ChevronRight size={15} className="text-muted-foreground/50 opacity-0 group-hover:opacity-100" />
+                    <DeleteButton onEdit={() => openEditGoal(g.id)} onClick={() => deleteGoal(g.id)} />
                   </div>
                 )
               }) : (
@@ -492,7 +687,7 @@ export function FinancePage() {
             {savingsBoxes.length > 0 ? savingsBoxes.map((b) => {
               const pct = Math.round((b.currentAmount / b.targetAmount) * 100)
               return (
-                <Card key={b.id} glass hover className="cursor-pointer" onClick={() => openEditBox(b.id)}>
+                <Card key={b.id} glass hover className="group cursor-pointer" onClick={() => openEditBox(b.id)}>
                   <CardContent className="pt-5">
                     <div className="flex items-center gap-3 mb-3">
                       <div className="flex size-10 shrink-0 items-center justify-center rounded-xl" style={{ backgroundColor: b.color + '18' }}>
@@ -502,6 +697,7 @@ export function FinancePage() {
                         <p className="text-sm font-semibold truncate">{b.name}</p>
                         {b.deadline && <p className="text-[10px] text-muted-foreground">prazo: {new Date(b.deadline + 'T12:00:00').toLocaleDateString('pt-BR')}</p>}
                       </div>
+                      <DeleteButton onEdit={() => openEditBox(b.id)} onClick={() => deleteBox(b.id)} />
                     </div>
                     <div className="flex items-end justify-between mb-2">
                       <p className="text-2xl font-bold tabular-nums">{formatBRL(b.currentAmount)}</p>
@@ -526,11 +722,17 @@ export function FinancePage() {
       </Tabs>
 
       {/* Dialogs */}
-      <AddTransactionDialog open={addTxOpen} onClose={() => setAddTxOpen(false)} />
-      <AddFixedBillDialog open={addBillOpen} onClose={() => setAddBillOpen(false)} />
-      <AddSubscriptionDialog open={addSubOpen} onClose={() => setAddSubOpen(false)} />
-      <AddCardDialog open={addCardOpen} onClose={() => setAddCardOpen(false)} />
-      <AddInstallmentDialog open={addInstOpen} onClose={() => setAddInstOpen(false)} />
+      <AddTransactionDialog
+        open={addTxOpen}
+        editId={editTransactionId}
+        onClose={() => { setAddTxOpen(false); setEditTransactionId(undefined) }}
+        defaultAccountId={selectedAccountId === 'all' ? undefined : selectedAccountId}
+      />
+      <AccountsManagerDialog open={accountsOpen} onClose={() => setAccountsOpen(false)} />
+      <AddFixedBillDialog open={addBillOpen} editId={editBillId} onClose={() => { setAddBillOpen(false); setEditBillId(undefined) }} />
+      <AddSubscriptionDialog open={addSubOpen} editId={editSubscriptionId} onClose={() => { setAddSubOpen(false); setEditSubscriptionId(undefined) }} />
+      <AddCardDialog open={addCardOpen} editId={editCardId} onClose={() => { setAddCardOpen(false); setEditCardId(undefined) }} />
+      <AddInstallmentDialog open={addInstOpen} editId={editInstallmentId} onClose={() => { setAddInstOpen(false); setEditInstallmentId(undefined) }} />
       <GoalDialog open={goalOpen} onClose={() => { setGoalOpen(false); setGoalEditId(undefined) }} editId={goalEditId} />
       <SavingsBoxDialog open={boxOpen} onClose={() => { setBoxOpen(false); setBoxEditId(undefined) }} editId={boxEditId} />
     </div>

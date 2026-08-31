@@ -12,6 +12,7 @@ import {
   Hash,
   Heart,
   Moon,
+  Pencil,
   Pin,
   Plus,
   Search,
@@ -206,6 +207,13 @@ function EntryCard({ entry, onDelete, onView, index = 0 }: {
               </div>
             </div>
 
+            <button
+              onClick={(e) => { e.stopPropagation(); onView(entry) }}
+              className="shrink-0 rounded-lg p-1.5 text-muted-foreground/40 hover:bg-primary/10 hover:text-primary transition-all cursor-pointer"
+              aria-label="Editar entrada"
+            >
+              <Pencil size={14} />
+            </button>
             <button
               onClick={(e) => { e.stopPropagation(); onDelete(entry.id) }}
               className="shrink-0 rounded-lg p-1.5 text-muted-foreground/0 group-hover:text-muted-foreground/40 hover:bg-destructive/10 hover:text-destructive transition-all cursor-pointer"

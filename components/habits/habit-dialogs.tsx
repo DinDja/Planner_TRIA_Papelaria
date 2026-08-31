@@ -4,7 +4,7 @@ import { useHabitsStore } from '@/lib/store/use-habits-store'
 import type { HabitFrequency, Weekday } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import { Check } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button } from '../ui/button'
 import { Dialog, DialogContent } from '../ui/overlays'
 import { Input } from '../ui/primitives'
@@ -13,13 +13,32 @@ import { toast } from '../ui/toaster'
 const COLORS = ['#e05b6d', '#f0b429', '#7bb686', '#5b8dbf', '#c9b6e4', '#e8a0a0', '#d4b070']
 const WEEKDAY_SHORT: Record<Weekday, string> = { 0: 'Seg', 1: 'Ter', 2: 'Qua', 3: 'Qui', 4: 'Sex', 5: 'Sáb', 6: 'Dom' }
 
-export function AddHabitDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function AddHabitDialog({ open, onClose, editId }: { open: boolean; onClose: () => void; editId?: string }) {
   const addHabit = useHabitsStore((s) => s.addHabit)
+  const updateHabit = useHabitsStore((s) => s.updateHabit)
+  const existing = useHabitsStore((s) => editId ? s.habits.find((h) => h.id === editId) : undefined)
   const [name, setName] = useState('')
   const [frequency, setFrequency] = useState<HabitFrequency>('daily')
   const [weekdays, setWeekdays] = useState<Weekday[]>([0, 1, 2, 3, 4])
   const [dayOfMonth, setDayOfMonth] = useState(1)
   const [color, setColor] = useState(COLORS[2])
+
+  useEffect(() => {
+    if (!open) return
+    if (existing) {
+      setName(existing.name)
+      setFrequency(existing.frequency)
+      setWeekdays(existing.weekdays ?? [0, 1, 2, 3, 4])
+      setDayOfMonth(existing.dayOfMonth ?? 1)
+      setColor(existing.color)
+    } else if (!editId) {
+      setName('')
+      setFrequency('daily')
+      setWeekdays([0, 1, 2, 3, 4])
+      setDayOfMonth(1)
+      setColor(COLORS[2])
+    }
+  }, [open, editId, existing])
 
   const toggleWeekday = (d: Weekday) =>
     setWeekdays((cur) => (cur.includes(d) ? cur.filter((x) => x !== d) : [...cur, d].sort()))
@@ -33,14 +52,20 @@ export function AddHabitDialog({ open, onClose }: { open: boolean; onClose: () =
       toast({ title: 'Escolha ao menos um dia da semana', variant: 'error' })
       return
     }
-    addHabit({
+    const data = {
       name: name.trim(),
       frequency,
       weekdays: frequency === 'weekly' ? weekdays : undefined,
       dayOfMonth: frequency === 'monthly' ? dayOfMonth : undefined,
       color,
-    })
-    toast({ title: 'Hábito criado!', variant: 'success' })
+    }
+    if (editId) {
+      updateHabit(editId, data)
+      toast({ title: 'Hábito atualizado!', variant: 'success' })
+    } else {
+      addHabit(data)
+      toast({ title: 'Hábito criado!', variant: 'success' })
+    }
     setName('')
     setFrequency('daily')
     setWeekdays([0, 1, 2, 3, 4])
@@ -51,7 +76,7 @@ export function AddHabitDialog({ open, onClose }: { open: boolean; onClose: () =
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent title="Novo hábito" description="Defina um hábito para acompanhar diariamente.">
+      <DialogContent title={editId ? 'Editar hábito' : 'Novo hábito'} description="Defina um hábito para acompanhar diariamente.">
         <div className="flex flex-col gap-4">
           <div>
             <label className="text-sm font-medium mb-1.5 block">Nome</label>
@@ -111,7 +136,7 @@ export function AddHabitDialog({ open, onClose }: { open: boolean; onClose: () =
 
           <div className="flex justify-end gap-2 pt-1">
             <Button variant="outline" onClick={onClose} className="rounded-xl">Cancelar</Button>
-            <Button onClick={handleSave} className="rounded-xl shadow-md">Criar hábito</Button>
+            <Button onClick={handleSave} className="rounded-xl shadow-md">{editId ? 'Salvar alterações' : 'Criar hábito'}</Button>
           </div>
         </div>
       </DialogContent>

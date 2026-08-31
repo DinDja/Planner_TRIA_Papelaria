@@ -10,6 +10,7 @@ import {
   Circle,
   ClipboardList,
   Inbox,
+  Pencil,
   Plus,
   Repeat,
   Sparkles,
@@ -41,7 +42,7 @@ const enter = 'animate-in fade-in slide-in-from-bottom-3 duration-500 fill-mode-
 
 // ─── Item de tarefa única ─────────────────────────────────────────────────────
 
-function TaskRow({ task }: { task: Task }) {
+function TaskRow({ task, onEdit }: { task: Task; onEdit: (id: string) => void }) {
   const toggleTask = useRoutineStore((s) => s.toggleTask)
   const deleteTask = useRoutineStore((s) => s.deleteTask)
 
@@ -87,20 +88,29 @@ function TaskRow({ task }: { task: Task }) {
       >
         {PRIORITY_LABELS[task.priority]}
       </Badge>
-      <button
-        onClick={() => deleteTask(task.id)}
-        className="shrink-0 rounded-lg p-1.5 text-muted-foreground/50 opacity-0 group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive transition-all cursor-pointer"
-        aria-label="Excluir tarefa"
-      >
-        <Trash2 size={14} />
-      </button>
+      <div className="flex shrink-0 items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+        <button
+          onClick={() => onEdit(task.id)}
+          className="rounded-lg p-1.5 text-muted-foreground/60 hover:bg-primary/10 hover:text-primary transition-colors cursor-pointer"
+          aria-label="Editar tarefa"
+        >
+          <Pencil size={14} />
+        </button>
+        <button
+          onClick={() => deleteTask(task.id)}
+          className="rounded-lg p-1.5 text-muted-foreground/50 hover:bg-destructive/10 hover:text-destructive transition-colors cursor-pointer"
+          aria-label="Excluir tarefa"
+        >
+          <Trash2 size={14} />
+        </button>
+      </div>
     </div>
   )
 }
 
 // ─── Item de tarefa recorrente ────────────────────────────────────────────────
 
-function RecurringRow({ task, compact }: { task: RecurringTask; compact?: boolean }) {
+function RecurringRow({ task, compact, onEdit }: { task: RecurringTask; compact?: boolean; onEdit: (id: string) => void }) {
   const completeRecurring = useRoutineStore((s) => s.completeRecurring)
   const toggleRecurringActive = useRoutineStore((s) => s.toggleRecurringActive)
   const deleteRecurring = useRoutineStore((s) => s.deleteRecurring)
@@ -183,13 +193,31 @@ function RecurringRow({ task, compact }: { task: RecurringTask; compact?: boolea
         )}
       </div>
       {compact ? (
-        <Badge
-          variant="outline"
-          className="shrink-0 text-[10px]"
-          style={{ color: PRIORITY_COLORS[task.priority], borderColor: PRIORITY_COLORS[task.priority] + '50' }}
-        >
-          {PRIORITY_LABELS[task.priority]}
-        </Badge>
+        <>
+          <Badge
+            variant="outline"
+            className="shrink-0 text-[10px]"
+            style={{ color: PRIORITY_COLORS[task.priority], borderColor: PRIORITY_COLORS[task.priority] + '50' }}
+          >
+            {PRIORITY_LABELS[task.priority]}
+          </Badge>
+          <div className="flex shrink-0 items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button
+              onClick={() => onEdit(task.id)}
+              className="rounded-lg p-1.5 text-muted-foreground/60 hover:bg-primary/10 hover:text-primary transition-colors cursor-pointer"
+              aria-label="Editar recorrência"
+            >
+              <Pencil size={14} />
+            </button>
+            <button
+              onClick={() => deleteRecurring(task.id)}
+              className="rounded-lg p-1.5 text-muted-foreground/50 hover:bg-destructive/10 hover:text-destructive transition-colors cursor-pointer"
+              aria-label="Excluir recorrência"
+            >
+              <Trash2 size={14} />
+            </button>
+          </div>
+        </>
       ) : (
         <>
           <Switch
@@ -197,13 +225,22 @@ function RecurringRow({ task, compact }: { task: RecurringTask; compact?: boolea
             onCheckedChange={() => toggleRecurringActive(task.id)}
             aria-label={task.active ? 'Pausar recorrência' : 'Ativar recorrência'}
           />
-          <button
-            onClick={() => deleteRecurring(task.id)}
-            className="shrink-0 rounded-lg p-1.5 text-muted-foreground/50 opacity-0 group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive transition-all cursor-pointer"
-            aria-label="Excluir recorrência"
-          >
-            <Trash2 size={14} />
-          </button>
+          <div className="flex shrink-0 items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button
+              onClick={() => onEdit(task.id)}
+              className="rounded-lg p-1.5 text-muted-foreground/60 hover:bg-primary/10 hover:text-primary transition-colors cursor-pointer"
+              aria-label="Editar recorrência"
+            >
+              <Pencil size={14} />
+            </button>
+            <button
+              onClick={() => deleteRecurring(task.id)}
+              className="rounded-lg p-1.5 text-muted-foreground/50 hover:bg-destructive/10 hover:text-destructive transition-colors cursor-pointer"
+              aria-label="Excluir recorrência"
+            >
+              <Trash2 size={14} />
+            </button>
+          </div>
         </>
       )}
     </div>
@@ -212,7 +249,7 @@ function RecurringRow({ task, compact }: { task: RecurringTask; compact?: boolea
 
 // ─── Item de pendência ────────────────────────────────────────────────────────
 
-function PendingRow({ item, onSchedule }: { item: PendingItem; onSchedule: (id: string) => void }) {
+function PendingRow({ item, onSchedule, onEdit }: { item: PendingItem; onSchedule: (id: string) => void; onEdit: (id: string) => void }) {
   const deletePending = useRoutineStore((s) => s.deletePending)
 
   return (
@@ -237,6 +274,13 @@ function PendingRow({ item, onSchedule }: { item: PendingItem; onSchedule: (id: 
       >
         Agendar <ArrowRight size={12} />
       </Button>
+      <button
+        onClick={() => onEdit(item.id)}
+        className="shrink-0 rounded-lg p-1.5 text-muted-foreground/60 opacity-0 group-hover:opacity-100 hover:bg-primary/10 hover:text-primary transition-all cursor-pointer"
+        aria-label="Editar pendência"
+      >
+        <Pencil size={14} />
+      </button>
       <button
         onClick={() => deletePending(item.id)}
         className="shrink-0 rounded-lg p-1.5 text-muted-foreground/50 opacity-0 group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive transition-all cursor-pointer"
@@ -263,6 +307,10 @@ export function RoutinePage() {
   const [addRecurringOpen, setAddRecurringOpen] = useState(false)
   const [addPendingOpen, setAddPendingOpen] = useState(false)
   const [addSlotOpen, setAddSlotOpen] = useState(false)
+  const [editTaskId, setEditTaskId] = useState<string | undefined>()
+  const [editRecurringId, setEditRecurringId] = useState<string | undefined>()
+  const [editPendingId, setEditPendingId] = useState<string | undefined>()
+  const [editSlotId, setEditSlotId] = useState<string | undefined>()
 
   const today = todayStr()
   const weekday = todayWeekday()
@@ -284,6 +332,11 @@ export function RoutinePage() {
   const handleSchedule = (id: string) => {
     convertPendingToTask(id, today)
   }
+
+  const handleEditTask = (id: string) => { setEditTaskId(id); setAddTaskOpen(true) }
+  const handleEditRecurring = (id: string) => { setEditRecurringId(id); setAddRecurringOpen(true) }
+  const handleEditPending = (id: string) => { setEditPendingId(id); setAddPendingOpen(true) }
+  const handleEditSlot = (id: string) => { setEditSlotId(id); setAddSlotOpen(true) }
 
   return (
     <div className="p-6 lg:p-8 max-w-[1200px] mx-auto">
@@ -385,7 +438,7 @@ export function RoutinePage() {
                   </CardHeader>
                   <div className="px-3 py-3 space-y-0.5">
                     {overdueTasks.map((t) => (
-                      <TaskRow key={t.id} task={t} />
+                      <TaskRow key={t.id} task={t} onEdit={handleEditTask} />
                     ))}
                   </div>
                 </Card>
@@ -401,7 +454,7 @@ export function RoutinePage() {
                 </CardHeader>
                 <div className="px-3 py-3 space-y-0.5">
                   {todayTasks.length > 0 ? (
-                    todayTasks.map((t) => <TaskRow key={t.id} task={t} />)
+                    todayTasks.map((t) => <TaskRow key={t.id} task={t} onEdit={handleEditTask} />)
                   ) : (
                     <p className="text-sm text-muted-foreground text-center py-6">
                       Nenhuma tarefa para hoje. Aproveite o dia! 🎉
@@ -423,7 +476,7 @@ export function RoutinePage() {
                 </CardHeader>
                 <div className="px-3 py-3 space-y-0.5">
                   {dueRecurring.length > 0 ? (
-                    dueRecurring.map((t) => <RecurringRow key={t.id} task={t} compact />)
+                    dueRecurring.map((t) => <RecurringRow key={t.id} task={t} compact onEdit={handleEditRecurring} />)
                   ) : (
                     <p className="text-sm text-muted-foreground text-center py-6">
                       Nenhuma recorrência pendente hoje.
@@ -443,7 +496,7 @@ export function RoutinePage() {
                   </CardHeader>
                   <div className="px-3 py-3 space-y-0.5">
                     {upcomingTasks.slice(0, 5).map((t) => (
-                      <TaskRow key={t.id} task={t} />
+                      <TaskRow key={t.id} task={t} onEdit={handleEditTask} />
                     ))}
                   </div>
                 </Card>
@@ -506,7 +559,7 @@ export function RoutinePage() {
             </CardHeader>
             <div className="px-3 py-3 space-y-0.5">
               {recurringTasks.length > 0 ? (
-                recurringTasks.map((t) => <RecurringRow key={t.id} task={t} />)
+                recurringTasks.map((t) => <RecurringRow key={t.id} task={t} onEdit={handleEditRecurring} />)
               ) : (
                 <p className="text-sm text-muted-foreground text-center py-6">
                   Nenhuma tarefa recorrente ainda.
@@ -531,7 +584,7 @@ export function RoutinePage() {
             <div className="px-3 py-3 space-y-0.5">
               {pendingItems.length > 0 ? (
                 pendingItems.map((p) => (
-                  <PendingRow key={p.id} item={p} onSchedule={handleSchedule} />
+                  <PendingRow key={p.id} item={p} onSchedule={handleSchedule} onEdit={handleEditPending} />
                 ))
               ) : (
                 <p className="text-sm text-muted-foreground text-center py-6">
@@ -583,6 +636,13 @@ export function RoutinePage() {
                         </p>
                       </div>
                       <button
+                        onClick={() => handleEditSlot(slot.id)}
+                        className="shrink-0 rounded-lg p-1.5 text-muted-foreground/60 opacity-0 group-hover:opacity-100 hover:bg-primary/10 hover:text-primary transition-all cursor-pointer"
+                        aria-label="Editar bloco"
+                      >
+                        <Pencil size={14} />
+                      </button>
+                      <button
                         onClick={() => deleteRoutineSlot(slot.id)}
                         className="shrink-0 rounded-lg p-1.5 text-muted-foreground/50 opacity-0 group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive transition-all cursor-pointer"
                         aria-label="Excluir bloco"
@@ -602,10 +662,10 @@ export function RoutinePage() {
       </Tabs>
 
       {/* Dialogs */}
-      <AddTaskDialog open={addTaskOpen} onClose={() => setAddTaskOpen(false)} />
-      <AddRecurringDialog open={addRecurringOpen} onClose={() => setAddRecurringOpen(false)} />
-      <AddPendingDialog open={addPendingOpen} onClose={() => setAddPendingOpen(false)} />
-      <AddSlotDialog open={addSlotOpen} onClose={() => setAddSlotOpen(false)} />
+      <AddTaskDialog open={addTaskOpen} editId={editTaskId} onClose={() => { setAddTaskOpen(false); setEditTaskId(undefined) }} />
+      <AddRecurringDialog open={addRecurringOpen} editId={editRecurringId} onClose={() => { setAddRecurringOpen(false); setEditRecurringId(undefined) }} />
+      <AddPendingDialog open={addPendingOpen} editId={editPendingId} onClose={() => { setAddPendingOpen(false); setEditPendingId(undefined) }} />
+      <AddSlotDialog open={addSlotOpen} editId={editSlotId} onClose={() => { setAddSlotOpen(false); setEditSlotId(undefined) }} />
     </div>
   )
 }

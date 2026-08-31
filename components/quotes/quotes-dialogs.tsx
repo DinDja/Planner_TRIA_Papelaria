@@ -3,7 +3,7 @@
 import { useQuotesStore } from '@/lib/store/use-quotes-store'
 import { cn } from '@/lib/utils'
 import { Check, X } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button } from '../ui/button'
 import { Dialog, DialogContent } from '../ui/overlays'
 import { Input } from '../ui/primitives'
@@ -43,16 +43,33 @@ function ColorPicker({
 export function AddQuoteDialog({
   open,
   onClose,
+  editId,
 }: {
   open: boolean
   onClose: () => void
+  editId?: string
 }) {
   const addQuote = useQuotesStore((s) => s.addQuote)
+  const updateQuote = useQuotesStore((s) => s.updateQuote)
+  const existing = useQuotesStore((s) => editId ? s.quotes.find((q) => q.id === editId) : undefined)
   const [text, setText] = useState('')
   const [author, setAuthor] = useState('')
   const [tags, setTags] = useState<string[]>([])
   const [tagInput, setTagInput] = useState('')
   const [color, setColor] = useState(COLORS[Math.floor(Math.random() * COLORS.length)])
+
+  useEffect(() => {
+    if (!open) return
+    if (existing) {
+      setText(existing.text)
+      setAuthor(existing.author ?? '')
+      setTags(existing.tags)
+      setTagInput('')
+      setColor(existing.color)
+    } else if (!editId) {
+      reset()
+    }
+  }, [open, editId, existing])
 
   const reset = () => {
     setText('')
@@ -74,20 +91,26 @@ export function AddQuoteDialog({
       toast({ title: 'Digite uma frase', variant: 'error' })
       return
     }
-    addQuote({
+    const data = {
       text: text.trim(),
       author: author.trim() || undefined,
       tags,
       color,
-    })
-    toast({ title: 'Frase salva!', variant: 'success' })
+    }
+    if (editId) {
+      updateQuote(editId, data)
+      toast({ title: 'Frase atualizada!', variant: 'success' })
+    } else {
+      addQuote(data)
+      toast({ title: 'Frase salva!', variant: 'success' })
+    }
     reset()
     onClose()
   }
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent title="Nova frase" description="Salve uma frase que te inspira.">
+      <DialogContent title={editId ? 'Editar frase' : 'Nova frase'} description="Salve uma frase que te inspira.">
         <div className="flex flex-col gap-4">
           <div>
             <label className="text-sm font-medium mb-1.5 block">Frase</label>

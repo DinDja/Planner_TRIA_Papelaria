@@ -6,11 +6,15 @@ import { cn } from '@/lib/utils'
 import {
   ArrowLeft,
   Folder as FolderIcon,
+  Pencil,
   Tag as TagIcon,
+  Trash2,
 } from 'lucide-react'
 import Link from 'next/link'
-import { forwardRef } from 'react'
+import { forwardRef, useState } from 'react'
 import { Card, CardContent } from '../ui/card'
+import { CreatePlannerDialog } from './create-planner-dialog'
+import { DeletePlannerDialog } from '../planners/delete-planner-dialog'
 
 const enter = 'animate-in fade-in slide-in-from-bottom-3 duration-500 fill-mode-both'
 
@@ -39,6 +43,8 @@ export function FilteredPlannersPage({
   description,
 }: FilteredPlannersPageProps) {
   const planners = useAppStore((s) => s.planners)
+  const [editTarget, setEditTarget] = useState<Planner | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<Planner | null>(null)
 
   const filtered = planners.filter((p) =>
     kind === 'folder' ? p.folderId === id : p.tags.includes(id),
@@ -75,7 +81,13 @@ export function FilteredPlannersPage({
       {filtered.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {filtered.map((planner, i) => (
-            <PlannerMiniCard key={planner.id} planner={planner} index={i} />
+            <PlannerMiniCard
+              key={planner.id}
+              planner={planner}
+              index={i}
+              onEdit={() => setEditTarget(planner)}
+              onDelete={() => setDeleteTarget(planner)}
+            />
           ))}
         </div>
       ) : (
@@ -86,16 +98,30 @@ export function FilteredPlannersPage({
           </p>
         </div>
       )}
+      <CreatePlannerDialog
+        open={editTarget !== null}
+        editId={editTarget?.id}
+        onClose={() => setEditTarget(null)}
+      />
+      <DeletePlannerDialog planner={deleteTarget} onClose={() => setDeleteTarget(null)} />
     </div>
   )
 }
 
 const PlannerMiniCard = forwardRef<
   HTMLAnchorElement,
-  { planner: Planner; index: number }
->(function PlannerMiniCard({ planner, index }, _ref) {
+  { planner: Planner; index: number; onEdit: () => void; onDelete: () => void }
+>(function PlannerMiniCard({ planner, index, onEdit, onDelete }, _ref) {
   return (
-    <Link href={`/planner/${planner.id}`} className="block group" style={{ animationDelay: `${index * 50}ms` }}>
+    <Link href={`/planner/${planner.id}`} className="block group relative" style={{ animationDelay: `${index * 50}ms` }}>
+      <div className="absolute right-2 top-2 z-10 flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+        <button type="button" onClick={(event) => { event.preventDefault(); event.stopPropagation(); onEdit() }} className="rounded-lg bg-background/90 p-1.5 text-muted-foreground shadow-sm hover:text-primary cursor-pointer" aria-label={`Editar ${planner.name}`}>
+          <Pencil size={13} />
+        </button>
+        <button type="button" onClick={(event) => { event.preventDefault(); event.stopPropagation(); onDelete() }} className="rounded-lg bg-background/90 p-1.5 text-muted-foreground shadow-sm hover:text-destructive cursor-pointer" aria-label={`Excluir ${planner.name}`}>
+          <Trash2 size={13} />
+        </button>
+      </div>
       <Card glass hover className="h-full">
         <CardContent className="p-4 flex flex-col gap-2">
           <div

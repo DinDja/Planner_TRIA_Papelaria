@@ -81,20 +81,25 @@ interface HealthState {
   goalWeight: number | null
 
   addWeight: (data: { date: string; weight: number; notes?: string }) => void
+  updateWeight: (id: string, patch: Partial<WeightRecord>) => void
   deleteWeight: (id: string) => void
   setHeight: (cm: number) => void
   setGoalWeight: (kg: number | null) => void
 
   addMeasurement: (data: { date: string; bust?: number; waist?: number; abdomen?: number; hips?: number; arm?: number; thigh?: number; calf?: number; notes?: string }) => void
+  updateMeasurement: (id: string, patch: Partial<BodyMeasurement>) => void
   deleteMeasurement: (id: string) => void
 
   addSymptom: (data: { date: string; symptom: string; time?: string; possibleCause?: string; severity: 1 | 2 | 3 | 4 | 5; notes?: string }) => void
+  updateSymptom: (id: string, patch: Partial<SymptomLog>) => void
   deleteSymptom: (id: string) => void
 
   addMedication: (data: { name: string; dosage: string; frequency: string; times?: string[]; startDate: string; endDate?: string; reason?: string; notes?: string; color?: string }) => void
+  updateMedication: (id: string, patch: Partial<Medication>) => void
   deleteMedication: (id: string) => void
 
   addCycle: (data: { startDate: string; endDate?: string; flow: 'light' | 'medium' | 'heavy'; symptoms?: string[]; notes?: string }) => void
+  updateCycle: (id: string, patch: Partial<CycleRecord>) => void
   deleteCycle: (id: string) => void
 
   addDoctor: (data: { name: string; specialty: string; phone?: string; email?: string; address?: string; notes?: string; color?: string }) => void
@@ -147,6 +152,8 @@ export const useHealthStore = create<HealthState>()(
 
       addWeight: (data) =>
         set((s) => ({ weights: [{ id: `w-${uid()}`, ...data, createdAt: nowISO() }, ...s.weights] })),
+      updateWeight: (id, patch) =>
+        set((s) => ({ weights: s.weights.map((w) => (w.id === id ? { ...w, ...patch } : w)) })),
       deleteWeight: (id) =>
         set((s) => ({ weights: s.weights.filter((w) => w.id !== id) })),
       setHeight: (cm) => set({ height: cm }),
@@ -154,11 +161,15 @@ export const useHealthStore = create<HealthState>()(
 
       addMeasurement: (data) =>
         set((s) => ({ measurements: [{ id: `m-${uid()}`, ...data, createdAt: nowISO() }, ...s.measurements] })),
+      updateMeasurement: (id, patch) =>
+        set((s) => ({ measurements: s.measurements.map((m) => (m.id === id ? { ...m, ...patch } : m)) })),
       deleteMeasurement: (id) =>
         set((s) => ({ measurements: s.measurements.filter((m) => m.id !== id) })),
 
       addSymptom: (data) =>
         set((s) => ({ symptoms: [{ id: `sym-${uid()}`, ...data, createdAt: nowISO() }, ...s.symptoms] })),
+      updateSymptom: (id, patch) =>
+        set((s) => ({ symptoms: s.symptoms.map((sy) => (sy.id === id ? { ...sy, ...patch } : sy)) })),
       deleteSymptom: (id) =>
         set((s) => ({ symptoms: s.symptoms.filter((sy) => sy.id !== id) })),
 
@@ -166,11 +177,15 @@ export const useHealthStore = create<HealthState>()(
         set((s) => ({
           medications: [{ id: `med-${uid()}`, ...data, color: color ?? COLORS[Math.floor(Math.random() * COLORS.length)], createdAt: nowISO() }, ...s.medications],
         })),
+      updateMedication: (id, patch) =>
+        set((s) => ({ medications: s.medications.map((m) => (m.id === id ? { ...m, ...patch } : m)) })),
       deleteMedication: (id) =>
         set((s) => ({ medications: s.medications.filter((m) => m.id !== id) })),
 
       addCycle: (data) =>
         set((s) => ({ cycles: [{ id: `cyc-${uid()}`, ...data, symptoms: data.symptoms ?? [], createdAt: nowISO() }, ...s.cycles] })),
+      updateCycle: (id, patch) =>
+        set((s) => ({ cycles: s.cycles.map((c) => (c.id === id ? { ...c, ...patch } : c)) })),
       deleteCycle: (id) =>
         set((s) => ({ cycles: s.cycles.filter((c) => c.id !== id) })),
 

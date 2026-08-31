@@ -11,7 +11,7 @@ import { ChevronLeft, ChevronRight, ListTodo, Plus } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Button } from '../ui/button'
 import { Card } from '../ui/card'
-import { AddTaskDialog, RoutineTodayDialog } from '../routine/routine-dialogs'
+import { AddRecurringDialog, AddTaskDialog, RoutineTodayDialog } from '../routine/routine-dialogs'
 import { PRIORITY_COLORS } from '../routine/shared'
 import { CalendarEventDialog } from './calendar-dialogs'
 
@@ -596,6 +596,9 @@ export function CalendarPage() {
   const [editId, setEditId] = useState<string | undefined>()
   const [routineTodayOpen, setRoutineTodayOpen] = useState(false)
   const [routineTaskOpen, setRoutineTaskOpen] = useState(false)
+  const [routineRecurringOpen, setRoutineRecurringOpen] = useState(false)
+  const [routineTaskEditId, setRoutineTaskEditId] = useState<string | undefined>()
+  const [routineRecurringEditId, setRoutineRecurringEditId] = useState<string | undefined>()
 
   const today = todayKey()
   const weekDays = useMemo(() => getWeekDays(currentDate), [currentDate])
@@ -816,6 +819,8 @@ export function CalendarPage() {
       <RoutineTodayDialog
         open={routineTodayOpen}
         onClose={() => setRoutineTodayOpen(false)}
+        onEditTask={(id) => { setRoutineTodayOpen(false); setRoutineTaskEditId(id); setRoutineTaskOpen(true) }}
+        onEditRecurring={(id) => { setRoutineTodayOpen(false); setRoutineRecurringEditId(id); setRoutineRecurringOpen(true) }}
         onAddTask={() => {
           setRoutineTodayOpen(false)
           setRoutineTaskOpen(true)
@@ -825,8 +830,14 @@ export function CalendarPage() {
       <AddTaskDialog
         key={toDateKey(currentDate)}
         open={routineTaskOpen}
-        onClose={() => setRoutineTaskOpen(false)}
+        editId={routineTaskEditId}
+        onClose={() => { setRoutineTaskOpen(false); setRoutineTaskEditId(undefined) }}
         defaultDate={toDateKey(currentDate)}
+      />
+      <AddRecurringDialog
+        open={routineRecurringOpen}
+        editId={routineRecurringEditId}
+        onClose={() => { setRoutineRecurringOpen(false); setRoutineRecurringEditId(undefined) }}
       />
     </div>
   )

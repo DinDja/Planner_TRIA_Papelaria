@@ -10,6 +10,7 @@ import {
   KeyRound,
   Lock,
   Plus,
+  Pencil,
   ShieldCheck,
   Trash2,
   Unlock,
@@ -25,11 +26,13 @@ const enter = 'animate-in fade-in slide-in-from-bottom-3 duration-500 fill-mode-
 
 function PasswordCard({
   entry,
+  onEdit,
   onDelete,
   visiblePasswords,
   toggleVisibility,
 }: {
   entry: PasswordEntry
+  onEdit: (id: string) => void
   onDelete: (id: string) => void
   visiblePasswords: Set<string>
   toggleVisibility: (id: string) => void
@@ -42,9 +45,9 @@ function PasswordCard({
   }
 
   return (
-    <Card
-      glass
-      className="overflow-hidden"
+      <Card
+        glass
+        className="group overflow-hidden"
       style={{ borderLeft: `4px solid ${entry.color}` }}
     >
       <CardHeader className="flex-row items-start justify-between gap-3 pb-0">
@@ -68,12 +71,22 @@ function PasswordCard({
             )}
           </div>
         </div>
-        <button
-          onClick={() => onDelete(entry.id)}
-          className="shrink-0 rounded-lg p-1.5 text-muted-foreground/30 opacity-0 group-hover:opacity-100 hover:text-destructive transition-all cursor-pointer"
-        >
-          <Trash2 size={13} />
-        </button>
+        <div className="flex gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button
+            onClick={() => onEdit(entry.id)}
+            className="rounded-lg p-1.5 text-muted-foreground/50 hover:bg-primary/10 hover:text-primary transition-all cursor-pointer"
+            aria-label="Editar senha"
+          >
+            <Pencil size={13} />
+          </button>
+          <button
+            onClick={() => onDelete(entry.id)}
+            className="rounded-lg p-1.5 text-muted-foreground/50 hover:bg-destructive/10 hover:text-destructive transition-all cursor-pointer"
+            aria-label="Excluir senha"
+          >
+            <Trash2 size={13} />
+          </button>
+        </div>
       </CardHeader>
       <CardContent className="pt-3 space-y-2.5">
         {entry.username && (
@@ -139,6 +152,7 @@ export function VaultPage() {
   const verifyMasterPin = usePasswordsStore((s) => s.verifyMasterPin)
 
   const [addOpen, setAddOpen] = useState(false)
+  const [editId, setEditId] = useState<string | undefined>()
   const [locked, setLocked] = useState(masterPin !== '')
   const [pinInput, setPinInput] = useState('')
   const [newPin, setNewPin] = useState('')
@@ -340,6 +354,7 @@ export function VaultPage() {
             <PasswordCard
               key={e.id}
               entry={e}
+              onEdit={(id) => { setEditId(id); setAddOpen(true) }}
               onDelete={deleteEntry}
               visiblePasswords={visiblePasswords}
               toggleVisibility={toggleVisibility}
@@ -357,7 +372,11 @@ export function VaultPage() {
         </div>
       )}
 
-      <AddPasswordDialog open={addOpen} onClose={() => setAddOpen(false)} />
+      <AddPasswordDialog
+        open={addOpen}
+        editId={editId}
+        onClose={() => { setAddOpen(false); setEditId(undefined) }}
+      />
     </div>
   )
 }

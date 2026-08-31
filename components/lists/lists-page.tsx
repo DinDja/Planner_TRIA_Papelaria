@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   Circle,
   List,
+  Pencil,
   Plus,
   ShoppingCart,
   Trash2,
@@ -25,18 +26,22 @@ const enter = 'animate-in fade-in slide-in-from-bottom-3 duration-500 fill-mode-
 
 function ListCard({
   list,
+  onEdit,
   onDelete,
   onAddItem,
   onToggleItem,
   onSelectItem,
   onDeleteItem,
+  onEditItem,
 }: {
   list: ShoppingList
+  onEdit: (id: string) => void
   onDelete: (id: string) => void
   onAddItem: (listId: string) => void
   onToggleItem: (listId: string, itemId: string) => void
   onSelectItem: (listId: string, itemId: string) => void
   onDeleteItem: (listId: string, itemId: string) => void
+  onEditItem: (listId: string, itemId: string) => void
 }) {
   const isMala = getListKindMeta(list.kind).kind === 'mala'
   const checked = list.items.filter((i) => (isMala ? i.packed : i.checked)).length
@@ -84,6 +89,13 @@ function ListCard({
               {progress}%
             </div>
           )}
+          <button
+            onClick={() => onEdit(list.id)}
+            className="rounded-lg p-1.5 text-muted-foreground/50 hover:bg-primary/10 hover:text-primary transition-all cursor-pointer"
+            aria-label="Editar lista"
+          >
+            <Pencil size={14} />
+          </button>
           <button
             onClick={() => onDelete(list.id)}
             className="rounded-lg p-1.5 text-muted-foreground/50 hover:bg-destructive/10 hover:text-destructive transition-all cursor-pointer"
@@ -166,6 +178,13 @@ function ListCard({
                       </span>
                     )}
                     <button
+                      onClick={() => onEditItem(list.id, item.id)}
+                      className="shrink-0 rounded-md p-1 text-muted-foreground/30 opacity-0 group-hover:opacity-100 hover:text-primary transition-all cursor-pointer"
+                      aria-label={`Editar ${item.name}`}
+                    >
+                      <Pencil size={12} />
+                    </button>
+                    <button
                       onClick={() => onDeleteItem(list.id, item.id)}
                       className="shrink-0 rounded-md p-1 text-muted-foreground/30 opacity-0 group-hover:opacity-100 hover:text-destructive transition-all cursor-pointer"
                     >
@@ -201,8 +220,10 @@ export function ListsPage() {
 
   const [tab, setTab] = useState('all')
   const [addListOpen, setAddListOpen] = useState(false)
+  const [editListId, setEditListId] = useState<string | undefined>()
   const [addItemOpen, setAddItemOpen] = useState(false)
   const [addItemListId, setAddItemListId] = useState<string | null>(null)
+  const [editItemId, setEditItemId] = useState<string | undefined>()
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
   const [malaSelection, setMalaSelection] = useState<{
     listId: string
@@ -211,6 +232,13 @@ export function ListsPage() {
   } | null>(null)
 
   const handleAddItem = (listId: string) => {
+    setEditItemId(undefined)
+    setAddItemListId(listId)
+    setAddItemOpen(true)
+  }
+
+  const handleEditItem = (listId: string, itemId: string) => {
+    setEditItemId(itemId)
     setAddItemListId(listId)
     setAddItemOpen(true)
   }
@@ -289,11 +317,13 @@ export function ListsPage() {
             <ListCard
               key={list.id}
               list={list}
+              onEdit={(id) => { setEditListId(id); setAddListOpen(true) }}
               onDelete={handleDeleteList}
               onAddItem={handleAddItem}
               onToggleItem={toggleItem}
               onSelectItem={handleSelectItem}
               onDeleteItem={deleteItem}
+              onEditItem={handleEditItem}
             />
           ))}
         </div>
@@ -308,12 +338,17 @@ export function ListsPage() {
         </div>
       )}
 
-      <AddListDialog open={addListOpen} onClose={() => setAddListOpen(false)} />
+      <AddListDialog
+        open={addListOpen}
+        editId={editListId}
+        onClose={() => { setAddListOpen(false); setEditListId(undefined) }}
+      />
       {addItemListId && (
         <AddItemDialog
           open={addItemOpen}
-          onClose={() => { setAddItemOpen(false); setAddItemListId(null) }}
+          onClose={() => { setAddItemOpen(false); setAddItemListId(null); setEditItemId(undefined) }}
           listId={addItemListId}
+          itemId={editItemId}
         />
       )}
 

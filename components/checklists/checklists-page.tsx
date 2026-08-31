@@ -7,6 +7,7 @@ import {
   Circle,
   ListChecks,
   PartyPopper,
+  Pencil,
   Plus,
   Trash2,
 } from 'lucide-react'
@@ -58,18 +59,23 @@ function CelebrationOverlay() {
 
 function ChecklistCard({
   checklist,
+  onEdit,
   onDelete,
 }: {
   checklist: import('@/lib/types').Checklist
+  onEdit: (id: string) => void
   onDelete: (id: string) => void
 }) {
   const addItem = useChecklistsStore((s) => s.addItem)
   const toggleItem = useChecklistsStore((s) => s.toggleItem)
   const deleteItem = useChecklistsStore((s) => s.deleteItem)
+  const updateItem = useChecklistsStore((s) => s.updateItem)
 
   const [newItemText, setNewItemText] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
   const [celebrate, setCelebrate] = useState(false)
+  const [editingItemId, setEditingItemId] = useState<string | null>(null)
+  const [editingItemText, setEditingItemText] = useState('')
 
   const checked = checklist.items.filter((i) => i.checked).length
   const total = checklist.items.length
@@ -101,6 +107,13 @@ function ChecklistCard({
 
   const handleToggle = (itemId: string) => {
     toggleItem(checklist.id, itemId)
+  }
+
+  const saveItemEdit = () => {
+    const text = editingItemText.trim()
+    if (editingItemId && text) updateItem(checklist.id, editingItemId, { text })
+    setEditingItemId(null)
+    setEditingItemText('')
   }
 
   return (
@@ -162,6 +175,13 @@ function ChecklistCard({
             </span>
           )}
           <button
+            onClick={() => onEdit(checklist.id)}
+            className="rounded-lg p-1.5 text-muted-foreground/50 hover:bg-primary/10 hover:text-primary transition-all cursor-pointer"
+            aria-label="Editar checklist"
+          >
+            <Pencil size={14} />
+          </button>
+          <button
             onClick={() => onDelete(checklist.id)}
             className="rounded-lg p-1.5 text-muted-foreground/50 hover:bg-destructive/10 hover:text-destructive transition-all cursor-pointer"
             aria-label="Excluir checklist"
@@ -211,14 +231,35 @@ function ChecklistCard({
                 )}
               </span>
             </button>
-            <span
-              className={cn(
-                'text-sm flex-1 transition-all duration-300',
-                item.checked && 'line-through text-muted-foreground',
-              )}
+            {editingItemId === item.id ? (
+              <input
+                value={editingItemText}
+                onChange={(e) => setEditingItemText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') saveItemEdit()
+                  if (e.key === 'Escape') setEditingItemId(null)
+                }}
+                onBlur={saveItemEdit}
+                className="h-7 flex-1 min-w-0 rounded-md border border-primary/40 bg-background px-2 text-sm outline-none"
+                autoFocus
+              />
+            ) : (
+              <span
+                className={cn(
+                  'text-sm flex-1 transition-all duration-300',
+                  item.checked && 'line-through text-muted-foreground',
+                )}
+              >
+                {item.text}
+              </span>
+            )}
+            <button
+              onClick={() => { setEditingItemId(item.id); setEditingItemText(item.text) }}
+              className="shrink-0 rounded-md p-1 text-muted-foreground/30 opacity-0 group-hover:opacity-100 hover:text-primary transition-all cursor-pointer"
+              aria-label={`Editar ${item.text}`}
             >
-              {item.text}
-            </span>
+              <Pencil size={12} />
+            </button>
             <button
               onClick={() => deleteItem(checklist.id, item.id)}
               className="shrink-0 rounded-md p-1 text-muted-foreground/30 opacity-0 group-hover:opacity-100 hover:text-destructive transition-all cursor-pointer"
@@ -261,6 +302,7 @@ export function ChecklistsPage() {
   const deleteChecklist = useChecklistsStore((s) => s.deleteChecklist)
 
   const [addOpen, setAddOpen] = useState(false)
+  const [editId, setEditId] = useState<string | undefined>()
 
   const totalItems = checklists.reduce((acc, c) => acc + c.items.length, 0)
   const checkedItems = checklists.reduce(
@@ -307,7 +349,12 @@ export function ChecklistsPage() {
       {checklists.length > 0 ? (
         <div className="space-y-4">
           {checklists.map((cl) => (
-            <ChecklistCard key={cl.id} checklist={cl} onDelete={deleteChecklist} />
+            <ChecklistCard
+              key={cl.id}
+              checklist={cl}
+              onEdit={(id) => { setEditId(id); setAddOpen(true) }}
+              onDelete={deleteChecklist}
+            />
           ))}
         </div>
       ) : (
@@ -321,7 +368,11 @@ export function ChecklistsPage() {
         </div>
       )}
 
-      <AddChecklistDialog open={addOpen} onClose={() => setAddOpen(false)} />
+      <AddChecklistDialog
+        open={addOpen}
+        editId={editId}
+        onClose={() => { setAddOpen(false); setEditId(undefined) }}
+      />
     </div>
   )
 }

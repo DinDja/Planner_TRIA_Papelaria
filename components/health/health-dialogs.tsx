@@ -3,7 +3,7 @@
 import { useHealthStore } from '@/lib/store/use-health-store'
 import { cn } from '@/lib/utils'
 import type { Doctor } from '@/lib/types'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button } from '../ui/button'
 import { Dialog, DialogContent } from '../ui/overlays'
 import { Input } from '../ui/primitives'
@@ -161,14 +161,27 @@ function SpecialtyPicker({
 
 const MED_TIMES = ['Manhã', 'Almoço', 'Tarde', 'Jantar', 'Noite']
 
-export function AddWeightDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function AddWeightDialog({ open, onClose, editId }: { open: boolean; onClose: () => void; editId?: string }) {
   const addWeight = useHealthStore((s) => s.addWeight)
+  const updateWeight = useHealthStore((s) => s.updateWeight)
+  const existing = useHealthStore((s) => s.weights.find((item) => item.id === editId))
   const height = useHealthStore((s) => s.height)
   const setHeight = useHealthStore((s) => s.setHeight)
   const [date, setDate] = useState(dayStr())
   const [heightInput, setHeightInput] = useState(String(height))
   const [weight, setWeight] = useState('')
   const [notes, setNotes] = useState('')
+
+  useEffect(() => {
+    if (!open) return
+    if (editId && existing) {
+      setDate(existing.date)
+      setWeight(String(existing.weight))
+      setNotes(existing.notes ?? '')
+    } else if (!editId) {
+      setDate(dayStr()); setWeight(''); setNotes('')
+    }
+  }, [open, editId, existing])
 
   // Após o cadastro inicial, a altura fica fixa (vem do perfil) — exibida antes do peso.
   const fixedHeight = height > 0
@@ -180,14 +193,20 @@ export function AddWeightDialog({ open, onClose }: { open: boolean; onClose: () 
       const h = parseInt(heightInput)
       if (h >= 100 && h <= 250) setHeight(h)
     }
-    addWeight({ date, weight: w, notes: notes.trim() || undefined })
-    toast({ title: 'Peso registrado!', variant: 'success' })
+    const data = { date, weight: w, notes: notes.trim() || undefined }
+    if (editId) {
+      updateWeight(editId, data)
+      toast({ title: 'Peso atualizado!', variant: 'success' })
+    } else {
+      addWeight(data)
+      toast({ title: 'Peso registrado!', variant: 'success' })
+    }
     setWeight(''); setNotes(''); onClose()
   }
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent title="Registrar peso">
+      <DialogContent title={editId ? 'Editar registro de peso' : 'Registrar peso'}>
         <div className="flex flex-col gap-4">
           <div>
             <label className="text-sm font-medium mb-1.5 block">Data</label>
@@ -223,8 +242,10 @@ export function AddWeightDialog({ open, onClose }: { open: boolean; onClose: () 
   )
 }
 
-export function AddMeasurementDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function AddMeasurementDialog({ open, onClose, editId }: { open: boolean; onClose: () => void; editId?: string }) {
   const addMeasurement = useHealthStore((s) => s.addMeasurement)
+  const updateMeasurement = useHealthStore((s) => s.updateMeasurement)
+  const existing = useHealthStore((s) => s.measurements.find((item) => item.id === editId))
   const [date, setDate] = useState(dayStr())
   const [bust, setBust] = useState('')
   const [waist, setWaist] = useState('')
@@ -235,10 +256,23 @@ export function AddMeasurementDialog({ open, onClose }: { open: boolean; onClose
   const [calf, setCalf] = useState('')
   const [notes, setNotes] = useState('')
 
+  useEffect(() => {
+    if (!open) return
+    if (editId && existing) {
+      setDate(existing.date)
+      setBust(existing.bust?.toString() ?? ''); setWaist(existing.waist?.toString() ?? '')
+      setAbdomen(existing.abdomen?.toString() ?? ''); setHips(existing.hips?.toString() ?? '')
+      setArm(existing.arm?.toString() ?? ''); setThigh(existing.thigh?.toString() ?? '')
+      setCalf(existing.calf?.toString() ?? ''); setNotes(existing.notes ?? '')
+    } else if (!editId) {
+      setDate(dayStr()); setBust(''); setWaist(''); setAbdomen(''); setHips(''); setArm(''); setThigh(''); setCalf(''); setNotes('')
+    }
+  }, [open, editId, existing])
+
   const handleSave = () => {
     const vals = [bust, waist, abdomen, hips, arm, thigh, calf].filter(Boolean)
     if (vals.length === 0) { toast({ title: 'Preencha ao menos uma medida', variant: 'error' }); return }
-    addMeasurement({
+    const data = {
       date,
       bust: bust ? parseFloat(bust) : undefined,
       waist: waist ? parseFloat(waist) : undefined,
@@ -248,15 +282,21 @@ export function AddMeasurementDialog({ open, onClose }: { open: boolean; onClose
       thigh: thigh ? parseFloat(thigh) : undefined,
       calf: calf ? parseFloat(calf) : undefined,
       notes: notes.trim() || undefined,
-    })
-    toast({ title: 'Medidas registradas!', variant: 'success' })
+    }
+    if (editId) {
+      updateMeasurement(editId, data)
+      toast({ title: 'Medidas atualizadas!', variant: 'success' })
+    } else {
+      addMeasurement(data)
+      toast({ title: 'Medidas registradas!', variant: 'success' })
+    }
     setBust(''); setWaist(''); setAbdomen(''); setHips(''); setArm(''); setThigh(''); setCalf(''); setNotes('')
     onClose()
   }
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent title="Novas medidas corporais">
+      <DialogContent title={editId ? 'Editar medidas corporais' : 'Novas medidas corporais'}>
         <div className="flex flex-col gap-4">
           <div>
             <label className="text-sm font-medium mb-1.5 block">Data</label>
@@ -285,24 +325,42 @@ export function AddMeasurementDialog({ open, onClose }: { open: boolean; onClose
   )
 }
 
-export function AddSymptomDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function AddSymptomDialog({ open, onClose, editId }: { open: boolean; onClose: () => void; editId?: string }) {
   const addSymptom = useHealthStore((s) => s.addSymptom)
+  const updateSymptom = useHealthStore((s) => s.updateSymptom)
+  const existing = useHealthStore((s) => s.symptoms.find((item) => item.id === editId))
   const [date, setDate] = useState(dayStr())
   const [symptom, setSymptom] = useState('')
   const [time, setTime] = useState('')
   const [cause, setCause] = useState('')
   const [notes, setNotes] = useState('')
 
+  useEffect(() => {
+    if (!open) return
+    if (editId && existing) {
+      setDate(existing.date); setSymptom(existing.symptom); setTime(existing.time ?? '')
+      setCause(existing.possibleCause ?? ''); setNotes(existing.notes ?? '')
+    } else if (!editId) {
+      setDate(dayStr()); setSymptom(''); setTime(''); setCause(''); setNotes('')
+    }
+  }, [open, editId, existing])
+
   const handleSave = () => {
     if (!symptom.trim()) { toast({ title: 'Digite o sintoma', variant: 'error' }); return }
-    addSymptom({ date, symptom: symptom.trim(), time: time || undefined, possibleCause: cause.trim() || undefined, severity: 3, notes: notes.trim() || undefined })
-    toast({ title: 'Sintoma registrado!', variant: 'success' })
+    const data = { date, symptom: symptom.trim(), time: time || undefined, possibleCause: cause.trim() || undefined, severity: (existing?.severity ?? 3) as 1 | 2 | 3 | 4 | 5, notes: notes.trim() || undefined }
+    if (editId) {
+      updateSymptom(editId, data)
+      toast({ title: 'Sintoma atualizado!', variant: 'success' })
+    } else {
+      addSymptom(data)
+      toast({ title: 'Sintoma registrado!', variant: 'success' })
+    }
     setSymptom(''); setTime(''); setCause(''); setNotes(''); onClose()
   }
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent title="Registrar sintoma">
+      <DialogContent title={editId ? 'Editar sintoma' : 'Registrar sintoma'}>
         <div className="flex flex-col gap-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -336,8 +394,10 @@ export function AddSymptomDialog({ open, onClose }: { open: boolean; onClose: ()
   )
 }
 
-export function AddMedicationDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function AddMedicationDialog({ open, onClose, editId }: { open: boolean; onClose: () => void; editId?: string }) {
   const addMedication = useHealthStore((s) => s.addMedication)
+  const updateMedication = useHealthStore((s) => s.updateMedication)
+  const existing = useHealthStore((s) => s.medications.find((item) => item.id === editId))
   const [name, setName] = useState('')
   const [dosage, setDosage] = useState('')
   const [frequency, setFrequency] = useState('')
@@ -347,6 +407,17 @@ export function AddMedicationDialog({ open, onClose }: { open: boolean; onClose:
   const [reason, setReason] = useState('')
   const [notes, setNotes] = useState('')
 
+  useEffect(() => {
+    if (!open) return
+    if (editId && existing) {
+      setName(existing.name); setDosage(existing.dosage); setFrequency(existing.frequency)
+      setTimes(existing.times ?? []); setStartDate(existing.startDate); setEndDate(existing.endDate ?? '')
+      setReason(existing.reason ?? ''); setNotes(existing.notes ?? '')
+    } else if (!editId) {
+      setName(''); setDosage(''); setFrequency(''); setTimes([]); setStartDate(dayStr()); setEndDate(''); setReason(''); setNotes('')
+    }
+  }, [open, editId, existing])
+
   const toggleTime = (t: string) => {
     setTimes((prev) => (prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]))
   }
@@ -355,7 +426,7 @@ export function AddMedicationDialog({ open, onClose }: { open: boolean; onClose:
     if (!name.trim() || !dosage.trim() || !frequency.trim()) {
       toast({ title: 'Preencha nome, dosagem e frequência', variant: 'error' }); return
     }
-    addMedication({
+    const data = {
       name: name.trim(),
       dosage: dosage.trim(),
       frequency: frequency.trim(),
@@ -364,14 +435,20 @@ export function AddMedicationDialog({ open, onClose }: { open: boolean; onClose:
       endDate: endDate || undefined,
       reason: reason.trim() || undefined,
       notes: notes.trim() || undefined,
-    })
-    toast({ title: 'Medicamento adicionado!', variant: 'success' })
+    }
+    if (editId) {
+      updateMedication(editId, data)
+      toast({ title: 'Medicamento atualizado!', variant: 'success' })
+    } else {
+      addMedication(data)
+      toast({ title: 'Medicamento adicionado!', variant: 'success' })
+    }
     setName(''); setDosage(''); setFrequency(''); setTimes([]); setEndDate(''); setReason(''); setNotes(''); onClose()
   }
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent title="Adicionar medicamento">
+      <DialogContent title={editId ? 'Editar medicamento' : 'Adicionar medicamento'}>
         <div className="flex flex-col gap-4">
           <div className="grid grid-cols-2 gap-3">
             <div><label className="text-sm font-medium mb-1.5 block">Nome</label><Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Vitamina D" autoFocus /></div>
@@ -414,29 +491,47 @@ export function AddMedicationDialog({ open, onClose }: { open: boolean; onClose:
   )
 }
 
-export function AddCycleDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function AddCycleDialog({ open, onClose, editId }: { open: boolean; onClose: () => void; editId?: string }) {
   const addCycle = useHealthStore((s) => s.addCycle)
+  const updateCycle = useHealthStore((s) => s.updateCycle)
+  const existing = useHealthStore((s) => s.cycles.find((item) => item.id === editId))
   const [startDate, setStartDate] = useState(dayStr())
   const [endDate, setEndDate] = useState('')
   const [flow, setFlow] = useState<'light' | 'medium' | 'heavy'>('medium')
   const [cramps, setCramps] = useState(false)
   const [notes, setNotes] = useState('')
 
+  useEffect(() => {
+    if (!open) return
+    if (editId && existing) {
+      setStartDate(existing.startDate); setEndDate(existing.endDate ?? ''); setFlow(existing.flow)
+      setCramps(existing.symptoms?.includes('cólica') ?? false); setNotes(existing.notes ?? '')
+    } else if (!editId) {
+      setStartDate(dayStr()); setEndDate(''); setFlow('medium'); setCramps(false); setNotes('')
+    }
+  }, [open, editId, existing])
+
   const handleSave = () => {
-    addCycle({
+    const data = {
       startDate,
       endDate: endDate || undefined,
       flow,
       symptoms: cramps ? ['cólica'] : [],
       notes: notes.trim() || undefined,
-    })
-    toast({ title: 'Ciclo registrado!', variant: 'success' })
+    }
+    if (editId) {
+      updateCycle(editId, data)
+      toast({ title: 'Ciclo atualizado!', variant: 'success' })
+    } else {
+      addCycle(data)
+      toast({ title: 'Ciclo registrado!', variant: 'success' })
+    }
     setEndDate(''); setCramps(false); setNotes(''); onClose()
   }
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent title="Registrar ciclo menstrual">
+      <DialogContent title={editId ? 'Editar ciclo menstrual' : 'Registrar ciclo menstrual'}>
         <div className="flex flex-col gap-4">
           <div className="grid grid-cols-2 gap-3">
             <div><label className="text-sm font-medium mb-1.5 block">Data de início</label><Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} /></div>
@@ -483,24 +578,42 @@ export function AddCycleDialog({ open, onClose }: { open: boolean; onClose: () =
   )
 }
 
-export function AddDoctorDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function AddDoctorDialog({ open, onClose, editId }: { open: boolean; onClose: () => void; editId?: string }) {
   const addDoctor = useHealthStore((s) => s.addDoctor)
+  const updateDoctor = useHealthStore((s) => s.updateDoctor)
+  const existing = useHealthStore((s) => s.doctors.find((item) => item.id === editId))
   const [name, setName] = useState('')
   const [specialty, setSpecialty] = useState('')
   const [address, setAddress] = useState('')
   const [phone, setPhone] = useState('')
   const [notes, setNotes] = useState('')
 
+  useEffect(() => {
+    if (!open) return
+    if (editId && existing) {
+      setName(existing.name); setSpecialty(existing.specialty); setAddress(existing.address ?? '')
+      setPhone(existing.phone ?? ''); setNotes(existing.notes ?? '')
+    } else if (!editId) {
+      setName(''); setSpecialty(''); setAddress(''); setPhone(''); setNotes('')
+    }
+  }, [open, editId, existing])
+
   const handleSave = () => {
     if (!name.trim() || !specialty.trim()) { toast({ title: 'Preencha nome e especialidade', variant: 'error' }); return }
-    addDoctor({ name: name.trim(), specialty: specialty.trim(), address: address.trim() || undefined, phone: phone.trim() || undefined, notes: notes.trim() || undefined })
-    toast({ title: 'Médico adicionado!', variant: 'success' })
+    const data = { name: name.trim(), specialty: specialty.trim(), address: address.trim() || undefined, phone: phone.trim() || undefined, notes: notes.trim() || undefined }
+    if (editId) {
+      updateDoctor(editId, data)
+      toast({ title: 'Médico atualizado!', variant: 'success' })
+    } else {
+      addDoctor(data)
+      toast({ title: 'Médico adicionado!', variant: 'success' })
+    }
     setName(''); setSpecialty(''); setAddress(''); setPhone(''); setNotes(''); onClose()
   }
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent title="Adicionar médico">
+      <DialogContent title={editId ? 'Editar médico' : 'Adicionar médico'}>
         <div className="flex flex-col gap-4">
           <div>
             <label className="text-sm font-medium mb-1.5 block">Nome</label>
@@ -532,10 +645,12 @@ export function AddDoctorDialog({ open, onClose }: { open: boolean; onClose: () 
   )
 }
 
-export function AddAppointmentDialog({ open, onClose, doctors }: { open: boolean; onClose: () => void; doctors: Doctor[] }) {
+export function AddAppointmentDialog({ open, onClose, doctors, editId }: { open: boolean; onClose: () => void; doctors: Doctor[]; editId?: string }) {
   const addAppointment = useHealthStore((s) => s.addAppointment)
+  const updateAppointment = useHealthStore((s) => s.updateAppointment)
   const healthDoctors = useHealthStore((s) => s.doctors)
   const allDoctors = doctors.length > 0 ? doctors : healthDoctors
+  const existing = useHealthStore((s) => s.appointments.find((item) => item.id === editId))
   const [doctorId, setDoctorId] = useState('')
   const [doctorName, setDoctorName] = useState('')
   const [specialty, setSpecialty] = useState('')
@@ -545,9 +660,21 @@ export function AddAppointmentDialog({ open, onClose, doctors }: { open: boolean
   const [questions, setQuestions] = useState('')
   const [notes, setNotes] = useState('')
 
+  useEffect(() => {
+    if (!open) return
+    if (editId && existing) {
+      setDoctorId(existing.doctorId ?? ''); setDoctorName(existing.doctorName); setSpecialty(existing.specialty)
+      setDate(existing.date); setTime(existing.time); setWhatToBring(existing.whatToBring ?? '')
+      setQuestions(existing.questions ?? ''); setNotes(existing.notes ?? '')
+    } else if (!editId) {
+      setDoctorId(''); setDoctorName(''); setSpecialty(''); setDate(dayStr()); setTime('08:00')
+      setWhatToBring(''); setQuestions(''); setNotes('')
+    }
+  }, [open, editId, existing])
+
   const handleSave = () => {
     if (!doctorName.trim()) { toast({ title: 'Informe o nome do médico ou local', variant: 'error' }); return }
-    addAppointment({
+    const data = {
       doctorId: doctorId || undefined,
       doctorName: doctorName.trim(),
       specialty: specialty.trim() || '—',
@@ -556,14 +683,20 @@ export function AddAppointmentDialog({ open, onClose, doctors }: { open: boolean
       whatToBring: whatToBring.trim() || undefined,
       questions: questions.trim() || undefined,
       notes: notes.trim() || undefined,
-    })
-    toast({ title: 'Consulta agendada!', variant: 'success' })
+    }
+    if (editId) {
+      updateAppointment(editId, data)
+      toast({ title: 'Consulta atualizada!', variant: 'success' })
+    } else {
+      addAppointment(data)
+      toast({ title: 'Consulta agendada!', variant: 'success' })
+    }
     setDoctorId(''); setDoctorName(''); setSpecialty(''); setTime('08:00'); setWhatToBring(''); setQuestions(''); setNotes(''); onClose()
   }
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent title="Agendar consulta">
+      <DialogContent title={editId ? 'Editar consulta' : 'Agendar consulta'}>
         <div className="flex flex-col gap-4">
           <div>
             <label className="text-sm font-medium mb-1.5 block">Médico</label>
@@ -609,9 +742,11 @@ export function AddAppointmentDialog({ open, onClose, doctors }: { open: boolean
   )
 }
 
-export function AddExamDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function AddExamDialog({ open, onClose, editId }: { open: boolean; onClose: () => void; editId?: string }) {
   const addExam = useHealthStore((s) => s.addExam)
+  const updateExam = useHealthStore((s) => s.updateExam)
   const healthDoctors = useHealthStore((s) => s.doctors)
+  const existing = useHealthStore((s) => s.exams.find((item) => item.id === editId))
   const [name, setName] = useState('')
   const [date, setDate] = useState(dayStr())
   const [time, setTime] = useState('')
@@ -620,23 +755,41 @@ export function AddExamDialog({ open, onClose }: { open: boolean; onClose: () =>
   const [address, setAddress] = useState('')
   const [notes, setNotes] = useState('')
 
+  useEffect(() => {
+    if (!open) return
+    if (editId && existing) {
+      setName(existing.name); setDate(existing.date); setTime(existing.time ?? '')
+      setDoctor(existing.doctor ?? ''); setAddress(existing.address ?? ''); setNotes(existing.notes ?? '')
+      const doctorMatch = healthDoctors.find((item) => item.name === existing.doctor)
+      setDoctorId(doctorMatch?.id ?? '')
+    } else if (!editId) {
+      setName(''); setDate(dayStr()); setTime(''); setDoctorId(''); setDoctor(''); setAddress(''); setNotes('')
+    }
+  }, [open, editId, existing, healthDoctors])
+
   const handleSave = () => {
     if (!name.trim()) { toast({ title: 'Digite o nome do exame', variant: 'error' }); return }
-    addExam({
+    const data = {
       name: name.trim(),
       date,
       time: time || undefined,
       doctor: doctor.trim() || undefined,
       address: address.trim() || undefined,
       notes: notes.trim() || undefined,
-    })
-    toast({ title: 'Exame registrado!', variant: 'success' })
+    }
+    if (editId) {
+      updateExam(editId, data)
+      toast({ title: 'Exame atualizado!', variant: 'success' })
+    } else {
+      addExam(data)
+      toast({ title: 'Exame registrado!', variant: 'success' })
+    }
     setName(''); setTime(''); setDoctorId(''); setDoctor(''); setAddress(''); setNotes(''); onClose()
   }
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent title="Novo exame">
+      <DialogContent title={editId ? 'Editar exame' : 'Novo exame'}>
         <div className="flex flex-col gap-4">
           <div>
             <label className="text-sm font-medium mb-1.5 block">Nome do exame</label>
@@ -672,7 +825,7 @@ export function AddExamDialog({ open, onClose }: { open: boolean; onClose: () =>
           </div>
           <div className="flex justify-end gap-2 pt-1">
             <Button variant="outline" onClick={onClose} className="rounded-xl">Cancelar</Button>
-            <Button onClick={handleSave} className="rounded-xl shadow-md">Salvar</Button>
+            <Button onClick={handleSave} className="rounded-xl shadow-md">{editId ? 'Salvar alterações' : 'Salvar'}</Button>
           </div>
         </div>
       </DialogContent>

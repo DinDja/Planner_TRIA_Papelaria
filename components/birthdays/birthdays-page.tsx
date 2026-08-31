@@ -3,7 +3,7 @@
 import { useBirthdaysStore } from '@/lib/store/use-birthdays-store'
 import type { BirthdayRecord } from '@/lib/types'
 import { cn } from '@/lib/utils'
-import { Cake, Gift, Plus, Trash2 } from 'lucide-react'
+import { Cake, Gift, Pencil, Plus, Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Button } from '../ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
@@ -30,15 +30,16 @@ function nextOccurrence(dateStr: string): Date {
 const formatShort = (when: Date) =>
   when.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
 
-function DeleteButton({ onClick }: { onClick: () => void }) {
+function DeleteButton({ onClick, onEdit }: { onClick: () => void; onEdit: () => void }) {
   return (
-    <button
-      onClick={onClick}
-      className="shrink-0 rounded-lg p-1.5 text-muted-foreground/50 opacity-0 group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive transition-all cursor-pointer"
-      aria-label="Excluir"
-    >
-      <Trash2 size={14} />
-    </button>
+    <div className="flex gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+      <button onClick={onEdit} className="rounded-lg p-1.5 text-muted-foreground/50 hover:bg-primary/10 hover:text-primary transition-all cursor-pointer" aria-label="Editar aniversário">
+        <Pencil size={14} />
+      </button>
+      <button onClick={onClick} className="rounded-lg p-1.5 text-muted-foreground/50 hover:bg-destructive/10 hover:text-destructive transition-all cursor-pointer" aria-label="Excluir aniversário">
+        <Trash2 size={14} />
+      </button>
+    </div>
   )
 }
 
@@ -46,6 +47,7 @@ export function BirthdaysPage() {
   const entries = useBirthdaysStore((s) => s.entries)
   const deleteEntry = useBirthdaysStore((s) => s.deleteEntry)
   const [addOpen, setAddOpen] = useState(false)
+  const [editId, setEditId] = useState<string | undefined>()
 
   const next = useMemo(() => {
     if (entries.length === 0) return null
@@ -154,7 +156,10 @@ export function BirthdaysPage() {
                           {e.notes ? ` · ${e.notes}` : ''}
                         </p>
                       </div>
-                      <DeleteButton onClick={() => deleteEntry(e.id)} />
+                      <DeleteButton
+                        onEdit={() => { setEditId(e.id); setAddOpen(true) }}
+                        onClick={() => deleteEntry(e.id)}
+                      />
                     </div>
                   ))}
                 </div>
@@ -164,7 +169,11 @@ export function BirthdaysPage() {
         </div>
       )}
 
-      <AddBirthdayDialog open={addOpen} onClose={() => setAddOpen(false)} />
+      <AddBirthdayDialog
+        open={addOpen}
+        editId={editId}
+        onClose={() => { setAddOpen(false); setEditId(undefined) }}
+      />
     </div>
   )
 }

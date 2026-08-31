@@ -85,6 +85,7 @@ interface MemoriesState {
     tags?: string[]
     color?: string
   }) => void
+  updateEntry: (id: string, patch: Partial<MemoryEntry>) => void
   deleteEntry: (id: string) => void
   getAllTags: () => string[]
 }
@@ -106,6 +107,11 @@ export const useMemoriesStore = create<MemoriesState>()(
             },
             ...s.entries,
           ],
+        })),
+
+      updateEntry: (id, patch) =>
+        set((s) => ({
+          entries: s.entries.map((e) => (e.id === id ? { ...e, ...patch } : e)),
         })),
 
       deleteEntry: (id) =>

@@ -8,6 +8,7 @@ import {
   Gift,
   Heart,
   Plus,
+  Pencil,
   Search,
   ShoppingBag,
   Trash2,
@@ -34,10 +35,12 @@ function formatPrice(cents: number): string {
 function WishCard({
   item,
   onToggle,
+  onEdit,
   onDelete,
 }: {
   item: import('@/lib/types').WishlistItem
   onToggle: (id: string) => void
+  onEdit: (id: string) => void
   onDelete: (id: string) => void
 }) {
   const priority = PRIORITY_CONFIG[item.priority]
@@ -98,6 +101,13 @@ function WishCard({
             aria-label={item.purchased ? 'Marcar como não adquirido' : 'Marcar como adquirido'}
           >
             <CheckCircle2 size={14} />
+          </button>
+          <button
+            onClick={() => onEdit(item.id)}
+            className="rounded-lg p-1 text-muted-foreground/40 hover:text-primary transition-colors cursor-pointer"
+            aria-label="Editar desejo"
+          >
+            <Pencil size={13} />
           </button>
           <button
             onClick={() => onDelete(item.id)}
@@ -161,6 +171,7 @@ export function WishlistPage() {
 
   const [tab, setTab] = useState('all')
   const [addOpen, setAddOpen] = useState(false)
+  const [editId, setEditId] = useState<string | undefined>()
   const [search, setSearch] = useState('')
 
   const allCategories = useMemo(() => {
@@ -304,6 +315,7 @@ export function WishlistPage() {
                   key={item.id}
                   item={item}
                   onToggle={togglePurchased}
+                  onEdit={(id) => { setEditId(id); setAddOpen(true) }}
                   onDelete={deleteItem}
                 />
               ))}
@@ -323,7 +335,11 @@ export function WishlistPage() {
         </TabPanel>
       </Tabs>
 
-      <AddWishDialog open={addOpen} onClose={() => setAddOpen(false)} />
+      <AddWishDialog
+        open={addOpen}
+        editId={editId}
+        onClose={() => { setAddOpen(false); setEditId(undefined) }}
+      />
     </div>
   )
 }

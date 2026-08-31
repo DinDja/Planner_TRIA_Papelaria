@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils'
 import {
   Bookmark,
   Plus,
+  Pencil,
   Quote,
   Shuffle,
   Trash2,
@@ -19,9 +20,11 @@ const enter = 'animate-in fade-in slide-in-from-bottom-3 duration-500 fill-mode-
 
 function QuoteCard({
   quote,
+  onEdit,
   onDelete,
 }: {
   quote: import('@/lib/types').FavoriteQuote
+  onEdit: (id: string) => void
   onDelete: (id: string) => void
 }) {
   return (
@@ -32,13 +35,22 @@ function QuoteCard({
         borderLeft: `4px solid ${quote.color}`,
       }}
     >
-      <button
-        onClick={() => onDelete(quote.id)}
-        className="absolute top-3 right-3 rounded-lg p-1.5 text-muted-foreground/30 opacity-0 group-hover:opacity-100 hover:text-destructive transition-all cursor-pointer"
-        aria-label="Excluir frase"
-      >
-        <Trash2 size={14} />
-      </button>
+      <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <button
+          onClick={() => onEdit(quote.id)}
+          className="rounded-lg p-1.5 text-muted-foreground/50 hover:bg-primary/10 hover:text-primary transition-all cursor-pointer"
+          aria-label="Editar frase"
+        >
+          <Pencil size={14} />
+        </button>
+        <button
+          onClick={() => onDelete(quote.id)}
+          className="rounded-lg p-1.5 text-muted-foreground/50 hover:bg-destructive/10 hover:text-destructive transition-all cursor-pointer"
+          aria-label="Excluir frase"
+        >
+          <Trash2 size={14} />
+        </button>
+      </div>
 
       <Quote size={18} className="mb-3" style={{ color: quote.color }} />
 
@@ -71,6 +83,7 @@ export function QuotesPage() {
   const getRandomQuote = useQuotesStore((s) => s.getRandomQuote)
 
   const [addOpen, setAddOpen] = useState(false)
+  const [editId, setEditId] = useState<string | undefined>()
   const [tab, setTab] = useState('all')
   const [randomQuote, setRandomQuote] = useState<import('@/lib/types').FavoriteQuote | undefined>(undefined)
 
@@ -184,7 +197,12 @@ export function QuotesPage() {
       {filtered.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {filtered.map((q) => (
-            <QuoteCard key={q.id} quote={q} onDelete={deleteQuote} />
+            <QuoteCard
+              key={q.id}
+              quote={q}
+              onEdit={(id) => { setEditId(id); setAddOpen(true) }}
+              onDelete={deleteQuote}
+            />
           ))}
         </div>
       ) : (
@@ -200,7 +218,11 @@ export function QuotesPage() {
         </div>
       )}
 
-      <AddQuoteDialog open={addOpen} onClose={() => setAddOpen(false)} />
+      <AddQuoteDialog
+        open={addOpen}
+        editId={editId}
+        onClose={() => { setAddOpen(false); setEditId(undefined) }}
+      />
     </div>
   )
 }

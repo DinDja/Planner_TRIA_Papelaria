@@ -9,6 +9,7 @@ import {
   Frown,
   Meh,
   Plus,
+  Pencil,
   Smile,
   Sparkles,
   Trash2,
@@ -36,9 +37,11 @@ function formatDate(dateStr: string): string {
 
 function MemoryCard({
   entry,
+  onEdit,
   onDelete,
 }: {
   entry: import('@/lib/types').MemoryEntry
+  onEdit: (id: string) => void
   onDelete: (id: string) => void
 }) {
   const mood = MOOD_CONFIG[entry.mood]
@@ -90,13 +93,22 @@ function MemoryCard({
               </div>
             </div>
           </div>
-          <button
-            onClick={() => onDelete(entry.id)}
-            className="shrink-0 rounded-lg p-1.5 text-muted-foreground/30 opacity-0 group-hover:opacity-100 hover:text-destructive transition-all cursor-pointer"
-            aria-label="Excluir memória"
-          >
-            <Trash2 size={13} />
-          </button>
+          <div className="flex gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button
+              onClick={() => onEdit(entry.id)}
+              className="rounded-lg p-1.5 text-muted-foreground/50 hover:bg-primary/10 hover:text-primary transition-all cursor-pointer"
+              aria-label="Editar memória"
+            >
+              <Pencil size={13} />
+            </button>
+            <button
+              onClick={() => onDelete(entry.id)}
+              className="rounded-lg p-1.5 text-muted-foreground/50 hover:bg-destructive/10 hover:text-destructive transition-all cursor-pointer"
+              aria-label="Excluir memória"
+            >
+              <Trash2 size={13} />
+            </button>
+          </div>
         </div>
 
         <p className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap">
@@ -122,6 +134,7 @@ export function MemoriesPage() {
   const deleteEntry = useMemoriesStore((s) => s.deleteEntry)
 
   const [addOpen, setAddOpen] = useState(false)
+  const [editId, setEditId] = useState<string | undefined>()
   const [tagFilter, setTagFilter] = useState<string | null>(null)
 
   const allTags = useMemo(() => {
@@ -196,7 +209,12 @@ export function MemoriesPage() {
       {filtered.length > 0 ? (
         <div className="max-w-2xl">
           {filtered.map((entry) => (
-            <MemoryCard key={entry.id} entry={entry} onDelete={deleteEntry} />
+            <MemoryCard
+              key={entry.id}
+              entry={entry}
+              onEdit={(id) => { setEditId(id); setAddOpen(true) }}
+              onDelete={deleteEntry}
+            />
           ))}
         </div>
       ) : (
@@ -212,7 +230,11 @@ export function MemoriesPage() {
         </div>
       )}
 
-      <AddMemoryDialog open={addOpen} onClose={() => setAddOpen(false)} />
+      <AddMemoryDialog
+        open={addOpen}
+        editId={editId}
+        onClose={() => { setAddOpen(false); setEditId(undefined) }}
+      />
     </div>
   )
 }

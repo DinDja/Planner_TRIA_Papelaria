@@ -4,7 +4,7 @@ import { useMemoriesStore } from '@/lib/store/use-memories-store'
 import type { MemoryMood } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import { Angry, Frown, Meh, Smile, Sparkles, X } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button } from '../ui/button'
 import { Dialog, DialogContent } from '../ui/overlays'
 import { Input } from '../ui/primitives'
@@ -66,17 +66,35 @@ function MoodPicker({
 export function AddMemoryDialog({
   open,
   onClose,
+  editId,
 }: {
   open: boolean
   onClose: () => void
+  editId?: string
 }) {
   const addEntry = useMemoriesStore((s) => s.addEntry)
+  const updateEntry = useMemoriesStore((s) => s.updateEntry)
+  const existing = useMemoriesStore((s) => editId ? s.entries.find((e) => e.id === editId) : undefined)
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [date, setDate] = useState(dayStr())
   const [mood, setMood] = useState<MemoryMood>('great')
   const [tags, setTags] = useState<string[]>([])
   const [tagInput, setTagInput] = useState('')
+
+  useEffect(() => {
+    if (!open) return
+    if (existing) {
+      setTitle(existing.title)
+      setDescription(existing.description)
+      setDate(existing.date)
+      setMood(existing.mood)
+      setTags(existing.tags)
+      setTagInput('')
+    } else if (!editId) {
+      reset()
+    }
+  }, [open, editId, existing])
 
   const reset = () => {
     setTitle('')
@@ -103,15 +121,21 @@ export function AddMemoryDialog({
       toast({ title: 'Descreva essa memória', variant: 'error' })
       return
     }
-    addEntry({ title: title.trim(), description: description.trim(), date, mood, tags })
-    toast({ title: 'Memória registrada!', variant: 'success' })
+    const data = { title: title.trim(), description: description.trim(), date, mood, tags }
+    if (editId) {
+      updateEntry(editId, data)
+      toast({ title: 'Memória atualizada!', variant: 'success' })
+    } else {
+      addEntry(data)
+      toast({ title: 'Memória registrada!', variant: 'success' })
+    }
     reset()
     onClose()
   }
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent title="Nova memória" description="Registre um momento especial para lembrar sempre.">
+      <DialogContent title={editId ? 'Editar memória' : 'Nova memória'} description="Registre um momento especial para lembrar sempre.">
         <div className="flex flex-col gap-4">
           <div>
             <label className="text-sm font-medium mb-1.5 block">Título</label>

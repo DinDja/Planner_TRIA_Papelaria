@@ -1,7 +1,8 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useAppStore } from '@/lib/store/use-app-store'
+import type { Planner } from '@/lib/types'
 import { useCalendarStore } from '@/lib/store/use-calendar-store'
 import { useFinanceStore } from '@/lib/store/use-finance-store'
 import { isoDia, useDiarioStore } from '@/lib/diario/use-diario-store'
@@ -13,11 +14,17 @@ import {
   Flame,
   FolderOpen,
   NotebookPen,
+  Pencil,
   Star,
   Target,
+  Trash2,
 } from 'lucide-react'
 import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
+import { DeletePlannerDialog } from '../planners/delete-planner-dialog'
+import { CalendarEventDialog } from '../calendar/calendar-dialogs'
+import { GoalDialog } from '../finance/finance-dialogs'
+import { CreatePlannerDialog } from './create-planner-dialog'
 
 const formatBRL = (centavos: number) =>
   (centavos / 100).toLocaleString('pt-BR', {
@@ -28,6 +35,8 @@ const formatBRL = (centavos: number) =>
 
 export function DashboardPage() {
   const planners = useAppStore((s) => s.planners)
+  const [editTarget, setEditTarget] = useState<Planner | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<Planner | null>(null)
   const favorites = planners.filter((p) => p.favorite)
   const recents = [...planners].sort(
     (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
@@ -35,7 +44,11 @@ export function DashboardPage() {
 
   const registros = useDiarioStore((s) => s.registros)
   const calendarEvents = useCalendarStore((s) => s.events)
+  const deleteEvent = useCalendarStore((s) => s.deleteEvent)
   const goals = useFinanceStore((s) => s.goals)
+  const deleteGoal = useFinanceStore((s) => s.deleteGoal)
+  const [eventEditId, setEventEditId] = useState<string | undefined>()
+  const [goalEditId, setGoalEditId] = useState<string | undefined>()
 
   const now = new Date()
   const todayISO = isoDia(now)
@@ -153,8 +166,26 @@ export function DashboardPage() {
                   <Link
                     key={planner.id}
                     href={`/planner/${planner.id}`}
-                    className="group flex flex-col items-start gap-3 rounded-2xl border border-border/60 p-4 hover:shadow-md hover:border-border transition-all duration-200"
+                    className="group relative flex flex-col items-start gap-3 rounded-2xl border border-border/60 p-4 hover:shadow-md hover:border-border transition-all duration-200"
                   >
+                    <div className="absolute right-2 top-2 z-10 flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+                      <button
+                        type="button"
+                        onClick={(event) => { event.preventDefault(); event.stopPropagation(); setEditTarget(planner) }}
+                        className="rounded-lg bg-background/90 p-1.5 text-muted-foreground shadow-sm hover:text-primary cursor-pointer"
+                        aria-label={`Editar ${planner.name}`}
+                      >
+                        <Pencil size={13} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(event) => { event.preventDefault(); event.stopPropagation(); setDeleteTarget(planner) }}
+                        className="rounded-lg bg-background/90 p-1.5 text-muted-foreground shadow-sm hover:text-destructive cursor-pointer"
+                        aria-label={`Excluir ${planner.name}`}
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
                     <div
                       className="flex size-12 items-center justify-center rounded-2xl text-white text-lg font-bold group-hover:scale-105 transition-transform"
                       style={{ backgroundColor: planner.color }}
@@ -191,8 +222,26 @@ export function DashboardPage() {
                   <Link
                     key={planner.id}
                     href={`/planner/${planner.id}`}
-                    className="flex shrink-0 flex-col items-center gap-2 rounded-2xl border border-border/60 p-4 w-28 hover:shadow-md hover:border-border transition-all duration-200"
+                    className="group relative flex shrink-0 flex-col items-center gap-2 rounded-2xl border border-border/60 p-4 w-28 hover:shadow-md hover:border-border transition-all duration-200"
                   >
+                    <div className="absolute right-1.5 top-1.5 z-10 flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+                      <button
+                        type="button"
+                        onClick={(event) => { event.preventDefault(); event.stopPropagation(); setEditTarget(planner) }}
+                        className="rounded-md bg-background/90 p-1 text-muted-foreground shadow-sm hover:text-primary cursor-pointer"
+                        aria-label={`Editar ${planner.name}`}
+                      >
+                        <Pencil size={11} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(event) => { event.preventDefault(); event.stopPropagation(); setDeleteTarget(planner) }}
+                        className="rounded-md bg-background/90 p-1 text-muted-foreground shadow-sm hover:text-destructive cursor-pointer"
+                        aria-label={`Excluir ${planner.name}`}
+                      >
+                        <Trash2 size={11} />
+                      </button>
+                    </div>
                     <div
                       className="flex size-14 items-center justify-center rounded-2xl text-white text-xl font-bold"
                       style={{ backgroundColor: planner.color }}
@@ -291,7 +340,7 @@ export function DashboardPage() {
                   {agenda.map((event) => (
                     <div
                       key={event.id}
-                      className="flex items-center gap-3 rounded-xl p-2.5 hover:bg-muted/40 transition-colors"
+                      className="group flex items-center gap-3 rounded-xl p-2.5 hover:bg-muted/40 transition-colors"
                     >
                       <div className="flex flex-col items-center shrink-0 w-12">
                         <span className="text-xs font-semibold">{event.startTime}</span>
@@ -300,7 +349,25 @@ export function DashboardPage() {
                         </span>
                       </div>
                       <div className="w-0.5 h-8 rounded-full shrink-0" style={{ backgroundColor: event.color }} />
-                      <span className="text-sm">{event.title}</span>
+                      <span className="min-w-0 flex-1 truncate text-sm">{event.title}</span>
+                      <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+                        <button
+                          type="button"
+                          onClick={() => setEventEditId(event.id)}
+                          className="rounded-md p-1 text-muted-foreground hover:bg-primary/10 hover:text-primary cursor-pointer"
+                          aria-label={`Editar ${event.title}`}
+                        >
+                          <Pencil size={12} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => deleteEvent(event.id)}
+                          className="rounded-md p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive cursor-pointer"
+                          aria-label={`Excluir ${event.title}`}
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -327,12 +394,30 @@ export function DashboardPage() {
                     ? Math.round((goal.currentAmount / goal.targetAmount) * 100)
                     : 0
                   return (
-                    <div key={goal.id}>
+                    <div key={goal.id} className="group">
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-medium">{goal.title}</span>
-                        <span className="text-[11px] text-muted-foreground">
-                          {formatBRL(goal.currentAmount)}/{formatBRL(goal.targetAmount)}
-                        </span>
+                        <span className="min-w-0 truncate text-xs font-medium">{goal.title}</span>
+                        <div className="flex shrink-0 items-center gap-1">
+                          <span className="text-[11px] text-muted-foreground">
+                            {formatBRL(goal.currentAmount)}/{formatBRL(goal.targetAmount)}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setGoalEditId(goal.id)}
+                            className="rounded-md p-1 text-muted-foreground/0 group-hover:text-muted-foreground/60 hover:bg-primary/10 hover:text-primary cursor-pointer"
+                            aria-label={`Editar ${goal.title}`}
+                          >
+                            <Pencil size={11} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => deleteGoal(goal.id)}
+                            className="rounded-md p-1 text-muted-foreground/0 group-hover:text-muted-foreground/60 hover:bg-destructive/10 hover:text-destructive cursor-pointer"
+                            aria-label={`Excluir ${goal.title}`}
+                          >
+                            <Trash2 size={11} />
+                          </button>
+                        </div>
                       </div>
                       <div className="h-1.5 rounded-full bg-muted overflow-hidden">
                         <div
@@ -355,6 +440,22 @@ export function DashboardPage() {
           </Card>
         </div>
       </div>
+      <CreatePlannerDialog
+        open={editTarget !== null}
+        editId={editTarget?.id}
+        onClose={() => setEditTarget(null)}
+      />
+      <DeletePlannerDialog planner={deleteTarget} onClose={() => setDeleteTarget(null)} />
+      <CalendarEventDialog
+        open={eventEditId !== undefined}
+        editId={eventEditId}
+        onClose={() => setEventEditId(undefined)}
+      />
+      <GoalDialog
+        open={goalEditId !== undefined}
+        editId={goalEditId}
+        onClose={() => setGoalEditId(undefined)}
+      />
     </div>
   )
 }

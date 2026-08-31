@@ -3,7 +3,7 @@
 import { useChecklistsStore } from '@/lib/store/use-checklists-store'
 import { cn } from '@/lib/utils'
 import { Check } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button } from '../ui/button'
 import { Dialog, DialogContent } from '../ui/overlays'
 import { Input } from '../ui/primitives'
@@ -45,13 +45,27 @@ function ColorPicker({
 export function AddChecklistDialog({
   open,
   onClose,
+  editId,
 }: {
   open: boolean
   onClose: () => void
+  editId?: string
 }) {
   const addChecklist = useChecklistsStore((s) => s.addChecklist)
+  const updateChecklist = useChecklistsStore((s) => s.updateChecklist)
+  const existing = useChecklistsStore((s) => editId ? s.checklists.find((c) => c.id === editId) : undefined)
   const [title, setTitle] = useState('')
   const [color, setColor] = useState(COLORS[Math.floor(Math.random() * COLORS.length)])
+
+  useEffect(() => {
+    if (!open) return
+    if (existing) {
+      setTitle(existing.title)
+      setColor(existing.color)
+    } else if (!editId) {
+      reset()
+    }
+  }, [open, editId, existing])
 
   const reset = () => {
     setTitle('')
@@ -63,15 +77,20 @@ export function AddChecklistDialog({
       toast({ title: 'Digite um título para o checklist', variant: 'error' })
       return
     }
-    addChecklist({ title: title.trim(), color })
-    toast({ title: 'Checklist criado!', variant: 'success' })
+    if (editId) {
+      updateChecklist(editId, { title: title.trim(), color })
+      toast({ title: 'Checklist atualizado!', variant: 'success' })
+    } else {
+      addChecklist({ title: title.trim(), color })
+      toast({ title: 'Checklist criado!', variant: 'success' })
+    }
     reset()
     onClose()
   }
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent title="Novo checklist" description="Uma lista de verificação para organizar seus passos.">
+      <DialogContent title={editId ? 'Editar checklist' : 'Novo checklist'} description="Uma lista de verificação para organizar seus passos.">
         <div className="flex flex-col gap-4">
           <div>
             <label className="text-sm font-medium mb-1.5 block">Título</label>
@@ -92,7 +111,7 @@ export function AddChecklistDialog({
               Cancelar
             </Button>
             <Button onClick={handleCreate} className="rounded-xl shadow-md">
-              Criar checklist
+              {editId ? 'Salvar alterações' : 'Criar checklist'}
             </Button>
           </div>
         </div>

@@ -72,7 +72,7 @@ service cloud.firestore {
     //   notes, shoppingLists, checklists, quotes, memories, passwords, wishlist,
     //   weightRecords, bodyMeasurements, symptomLogs, medications, cycleRecords,
     //   doctors, appointments, exams, habits, habitLogs, tasks, recurringTasks,
-    //   pendingItems, routineSlots, calendarEvents, transactions, fixedBills,
+    //   pendingItems, routineSlots, calendarEvents, financialAccounts, transactions, fixedBills,
     //   subscriptions, creditCards, installments, financialGoals, goalDeposits,
     //   savingsBoxes, retroEntries, trashItems
     //
@@ -91,6 +91,7 @@ service cloud.firestore {
       //   blocked     : bool          // se true, login barrado no cliente
       //   settings    : map            // SystemSettings
       //   theme         : string       // 'light' | 'dark'
+      //   diarioPasswordHash : string  // hash SHA-256 da senha do Diário
       //   folders       : list         // Planner folders [{id,name,color}]
       //   plannerTags   : list         // Planner tags  [{id,name,color}]
       //   noteFolders   : list         // Notes folders  [{id,name,color,icon?}]
@@ -182,9 +183,10 @@ service cloud.firestore {
         allow read, write: if owns(uid);
       }
 
-      // /users/{uid}/shoppingListPresets/{presetId}
-      //   id, name, kind: 'supermercado'|'mala', items: list<map>, createdAt, updatedAt
-      match /shoppingListPresets/{presetId} {
+      // /users/{uid}/listPresets/{presetId}   — itens "prontos para usar"
+      //   cadastrados pelo próprio usuário (id, kind, name, quantity?,
+      //   category?, dosage?)
+      match /listPresets/{presetId} {
         allow read, write: if owns(uid);
       }
 
@@ -335,6 +337,12 @@ service cloud.firestore {
       }
 
       // ─── Finanças (useFinanceStore) ─ 7 subcollections ────────────────
+      // /users/{uid}/financialAccounts/{accountId}
+      //   id, name, roles: list<'receiving'|'payment'>, createdAt, updatedAt
+      match /financialAccounts/{accountId} {
+        allow read, write: if owns(uid);
+      }
+
       // /users/{uid}/transactions/{txId}
       //   id, title, amount: int (centavos), type: 'income'|'expense',
       //   date, category, notes?, fixedBillId?, createdAt
@@ -398,7 +406,7 @@ service cloud.firestore {
     // /app/admin/coupons/{couponId}   — admina escreve; qual quer usina lê
     // /app/admin/announcements/{id}   — admina escreve; qual quer lê
     // /app/admin/plans/{planId}       — admina escreve; qual quer lê
-    // /app/admin/admin_emails/{email} — admina escreve; qual quer lê (lista de adminas por e-mail)
+    // /app/admin/admin_emails/{email} — admina escreve; qual quer lê (lista de adminpor e-mail)
     match /app/admin/users/{uid} {
       // Cada usinária cria/atualiza só o seu próprio doc de manifest.
       // Admina lê todos (para o painel).

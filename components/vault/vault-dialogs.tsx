@@ -1,7 +1,7 @@
 'use client'
 
 import { usePasswordsStore } from '@/lib/store/use-passwords-store'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button } from '../ui/button'
 import { Dialog, DialogContent } from '../ui/overlays'
 import { Input } from '../ui/primitives'
@@ -10,16 +10,33 @@ import { toast } from '../ui/toaster'
 export function AddPasswordDialog({
   open,
   onClose,
+  editId,
 }: {
   open: boolean
   onClose: () => void
+  editId?: string
 }) {
   const addEntry = usePasswordsStore((s) => s.addEntry)
+  const updateEntry = usePasswordsStore((s) => s.updateEntry)
+  const existing = usePasswordsStore((s) => editId ? s.entries.find((e) => e.id === editId) : undefined)
   const [name, setName] = useState('')
   const [url, setUrl] = useState('')
   const [login, setLogin] = useState('')
   const [password, setPassword] = useState('')
   const [notes, setNotes] = useState('')
+
+  useEffect(() => {
+    if (!open) return
+    if (existing) {
+      setName(existing.title)
+      setUrl(existing.url ?? '')
+      setLogin(existing.username ?? '')
+      setPassword(existing.password)
+      setNotes(existing.notes ?? '')
+    } else if (!editId) {
+      reset()
+    }
+  }, [open, editId, existing])
 
   const reset = () => {
     setName('')
@@ -38,21 +55,27 @@ export function AddPasswordDialog({
       toast({ title: 'Digite a senha', variant: 'error' })
       return
     }
-    addEntry({
+    const data = {
       title: name.trim(),
       url: url.trim() || undefined,
       username: login.trim() || undefined,
       password: password.trim(),
       notes: notes.trim() || undefined,
-    })
-    toast({ title: 'Senha salva!', variant: 'success' })
+    }
+    if (editId) {
+      updateEntry(editId, data)
+      toast({ title: 'Senha atualizada!', variant: 'success' })
+    } else {
+      addEntry(data)
+      toast({ title: 'Senha salva!', variant: 'success' })
+    }
     reset()
     onClose()
   }
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent title="Nova senha" description="Salve suas senhas com segurança.">
+      <DialogContent title={editId ? 'Editar senha' : 'Nova senha'} description="Salve suas senhas com segurança.">
         <div className="flex flex-col gap-4">
           <div>
             <label className="text-sm font-medium mb-1.5 block">Nome</label>

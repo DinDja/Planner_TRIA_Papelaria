@@ -47,6 +47,8 @@ import {
   Scroll,
   CreditCard,
   CircleDollarSign,
+  Pencil,
+  Trash2,
 } from 'lucide-react'
 
 const FONT_HAND = 'var(--font-caveat), "Segoe Script", cursive'
@@ -122,7 +124,7 @@ export function AdminPage() {
           className="mt-1 text-balance"
           style={{ fontFamily: FONT_SERIF, fontSize: '2.1rem', lineHeight: 1.1 }}
         >
-          Painel da dona
+          Painel de administração
         </h1>
         <p className="text-sm text-muted-foreground mt-1.5 max-w-lg">
           Acesso restrito à administração. Tudo aqui é dado real do Firestore — sem mock.
@@ -235,7 +237,7 @@ export function AdminPage() {
 
       {/* Rodapé discreto */}
       <div className={cn('mt-12 border-t border-border/40 pt-4 text-xs text-muted-foreground/55', enter)}>
-        {admins.length} {admins.length === 1 ? 'admina' : 'adminas'} · {users.length}{' '}
+        {admins.length} {admins.length === 1 ? 'admin' : 'admins'} · {users.length}{' '}
         {users.length === 1 ? 'pessoa' : 'pessoas'} no sistema.
       </div>
     </div>
@@ -582,21 +584,35 @@ function CuponsTab({
   const [code, setCode] = useState('')
   const [kind, setKind] = useState<'percent' | 'fixed'>('percent')
   const [value, setValue] = useState(10)
+  const [editingId, setEditingId] = useState<string | null>(null)
 
   const create = () => {
     if (!code.trim()) return toast({ title: 'Digite um código', variant: 'error' })
+    const current = editingId ? coupons.find((coupon) => coupon.id === editingId) : undefined
     const c: Coupon = {
-      id: code.trim().toLowerCase().replace(/[^a-z0-9]/g, ''),
+      id: current?.id ?? code.trim().toLowerCase().replace(/[^a-z0-9]/g, ''),
       code: code.trim().toUpperCase(),
       kind,
       value,
-      active: true,
-      usedCount: 0,
-      createdAt: new Date().toISOString(),
+      active: current?.active ?? true,
+      usedCount: current?.usedCount ?? 0,
+      createdAt: current?.createdAt ?? new Date().toISOString(),
+      expiresAt: current?.expiresAt,
+      maxUses: current?.maxUses,
+      notes: current?.notes,
     }
     onSave(c)
     setCode('')
+    setKind('percent')
     setValue(10)
+    setEditingId(null)
+  }
+
+  const edit = (coupon: Coupon) => {
+    setEditingId(coupon.id)
+    setCode(coupon.code)
+    setKind(coupon.kind)
+    setValue(coupon.value)
   }
 
   const rows = coupons.map((c) => [
@@ -608,15 +624,20 @@ function CuponsTab({
       {c.active ? 'Ativo' : 'Inativo'}
     </Badge>,
     <span key="u" className="text-xs tabular-nums">{c.usedCount}</span>,
-    <Button key="d" size="sm" variant="ghost" onClick={() => onDelete(c.id)} className="text-xs text-destructive">
-      Apagar
-    </Button>,
+    <div key="actions" className="flex justify-end gap-1">
+      <Button size="sm" variant="ghost" onClick={() => edit(c)} className="gap-1 text-xs">
+        <Pencil size={12} /> Editar
+      </Button>
+      <Button size="sm" variant="ghost" onClick={() => { if (editingId === c.id) setEditingId(null); onDelete(c.id) }} className="gap-1 text-xs text-destructive">
+        <Trash2 size={12} /> Apagar
+      </Button>
+    </div>,
   ])
 
   return (
     <div className="space-y-4">
       <div className="rounded-2xl border border-border/40 bg-card p-4 space-y-3">
-        <p className="text-xs text-muted-foreground">Novo cupom</p>
+        <p className="text-xs text-muted-foreground">{editingId ? 'Editar cupom' : 'Novo cupom'}</p>
         <div className="flex flex-wrap gap-2">
           <Input placeholder="CÓDIGO" value={code} onChange={(e) => setCode(e.target.value)} className="max-w-[160px]" />
           <select
@@ -633,7 +654,8 @@ function CuponsTab({
             onChange={(e) => setValue(Number(e.target.value))}
             className="max-w-[100px]"
           />
-          <Button size="sm" onClick={create}>Adicionar</Button>
+          {editingId && <Button size="sm" variant="ghost" onClick={() => { setEditingId(null); setCode(''); setKind('percent'); setValue(10) }}>Cancelar</Button>}
+          <Button size="sm" onClick={create}>{editingId ? 'Salvar' : 'Adicionar'}</Button>
         </div>
       </div>
       <TabelaSimples headers={['Código', 'Desconto', 'Status', 'Usos', '']} rows={rows} empty="Nenhum cupom criado." />
@@ -655,35 +677,52 @@ function ComunicacaoTab({
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
   const [level, setLevel] = useState<'info' | 'success' | 'warning'>('info')
+  const [editingId, setEditingId] = useState<string | null>(null)
 
   const publish = () => {
     if (!title.trim() || !body.trim()) return toast({ title: 'Preencha título e corpo', variant: 'error' })
+    const current = editingId ? announcements.find((announcement) => announcement.id === editingId) : undefined
     const a: Announcement = {
-      id: `${Date.now()}`,
+      id: current?.id ?? `${Date.now()}`,
       title: title.trim(),
       body: body.trim(),
       level,
-      active: true,
-      createdAt: new Date().toISOString(),
+      active: current?.active ?? true,
+      createdAt: current?.createdAt ?? new Date().toISOString(),
+      expiresAt: current?.expiresAt,
     }
     onSave(a)
     setTitle('')
     setBody('')
+    setLevel('info')
+    setEditingId(null)
+  }
+
+  const edit = (announcement: Announcement) => {
+    setEditingId(announcement.id)
+    setTitle(announcement.title)
+    setBody(announcement.body)
+    setLevel(announcement.level)
   }
 
   const rows = announcements.map((a) => [
     <span key="t" className="font-medium">{a.title}</span>,
     <span key="b" className="text-xs text-muted-foreground truncate max-w-xs">{a.body}</span>,
     <Badge key="l" variant="outline" className="text-[10px]">{a.level}</Badge>,
-    <Button key="d" size="sm" variant="ghost" onClick={() => onDelete(a.id)} className="text-xs text-destructive">
-      Remover
-    </Button>,
+    <div key="a" className="flex justify-end gap-1">
+      <Button size="sm" variant="ghost" onClick={() => edit(a)} className="gap-1 text-xs">
+        <Pencil size={12} /> Editar
+      </Button>
+      <Button size="sm" variant="ghost" onClick={() => { if (editingId === a.id) setEditingId(null); onDelete(a.id) }} className="gap-1 text-xs text-destructive">
+        <Trash2 size={12} /> Remover
+      </Button>
+    </div>,
   ])
 
   return (
     <div className="space-y-4">
       <div className="rounded-2xl border border-border/40 bg-card p-4 space-y-3">
-        <p className="text-xs text-muted-foreground">Novo anúncio</p>
+        <p className="text-xs text-muted-foreground">{editingId ? 'Editar anúncio' : 'Novo anúncio'}</p>
         <Input placeholder="Título" value={title} onChange={(e) => setTitle(e.target.value)} />
         <textarea
           placeholder="Mensagem para as usuárias…"
@@ -702,7 +741,8 @@ function ComunicacaoTab({
             <option value="success">Boa notícia</option>
             <option value="warning">Aviso</option>
           </select>
-          <Button size="sm" onClick={publish}>Publicar</Button>
+          {editingId && <Button size="sm" variant="ghost" onClick={() => { setEditingId(null); setTitle(''); setBody(''); setLevel('info') }}>Cancelar</Button>}
+          <Button size="sm" onClick={publish}>{editingId ? 'Salvar' : 'Publicar'}</Button>
         </div>
       </div>
       <TabelaSimples headers={['Título', 'Corpo', 'Nível', '']} rows={rows} empty="Nenhum anúncio publicado." />

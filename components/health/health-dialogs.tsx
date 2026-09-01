@@ -159,7 +159,44 @@ function SpecialtyPicker({
   )
 }
 
-const MED_TIMES = ['Manhã', 'Almoço', 'Tarde', 'Jantar', 'Noite']
+function addDaysToDate(dateValue: string, days: number) {
+  const [year, month, day] = dateValue.split('-').map(Number)
+  const date = new Date(year, month - 1, day)
+  date.setDate(date.getDate() + days)
+  return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-')
+}
+
+function daysBetween(startValue: string, endValue: string) {
+  const [startYear, startMonth, startDay] = startValue.split('-').map(Number)
+  const [endYear, endMonth, endDay] = endValue.split('-').map(Number)
+  const start = new Date(startYear, startMonth - 1, startDay)
+  const end = new Date(endYear, endMonth - 1, endDay)
+  return Math.round((end.getTime() - start.getTime()) / 86400000) + 1
+}
+
+function addHoursToTime(time: string, hours: number) {
+  const [hour, minute] = time.split(':').map(Number)
+  const totalMinutes = (hour * 60 + minute + hours * 60) % 1440
+  return `${String(Math.floor(totalMinutes / 60)).padStart(2, '0')}:${String(totalMinutes % 60).padStart(2, '0')}`
+}
+
+const LEGACY_MEDICATION_TIMES: Record<string, string> = {
+  'Manhã': '08:00',
+  'Almoço': '12:00',
+  Tarde: '15:00',
+  Jantar: '20:00',
+  Noite: '22:00',
+}
+
+function normalizeMedicationTimes(values?: string[]) {
+  return (values ?? []).map((value) => LEGACY_MEDICATION_TIMES[value] ?? value)
+}
+
+function calculateMedicationTimes(firstTime: string, intervalHours: number) {
+  if (!firstTime || !Number.isInteger(intervalHours) || intervalHours < 1 || intervalHours > 24) return []
+  const doseCount = Math.floor(24 / intervalHours)
+  return Array.from({ length: doseCount }, (_, index) => addHoursToTime(firstTime, index * intervalHours))
+}
 
 export function AddWeightDialog({ open, onClose, editId }: { open: boolean; onClose: () => void; editId?: string }) {
   const addWeight = useHealthStore((s) => s.addWeight)
@@ -400,40 +437,53 @@ export function AddMedicationDialog({ open, onClose, editId }: { open: boolean; 
   const existing = useHealthStore((s) => s.medications.find((item) => item.id === editId))
   const [name, setName] = useState('')
   const [dosage, setDosage] = useState('')
-  const [frequency, setFrequency] = useState('')
-  const [times, setTimes] = useState<string[]>([])
+  const [durationDays, setDurationDays] = useState('1')
+  const [intervalHours, setIntervalHours] = useState('24')
+  const [firstTime, setFirstTime] = useState('08:00')
   const [startDate, setStartDate] = useState(dayStr())
-  const [endDate, setEndDate] = useState('')
-  const [reason, setReason] = useState('')
   const [notes, setNotes] = useState('')
 
   useEffect(() => {
     if (!open) return
     if (editId && existing) {
-      setName(existing.name); setDosage(existing.dosage); setFrequency(existing.frequency)
-      setTimes(existing.times ?? []); setStartDate(existing.startDate); setEndDate(existing.endDate ?? '')
-      setReason(existing.reason ?? ''); setNotes(existing.notes ?? '')
+      const parsedDurationDays = existing.durationDays ?? (existing.endDate ? daysBetween(existing.startDate, existing.endDate) : 1)
+      setName(existing.name); setDosage(existing.dosage)
+      const storedTimes = normalizeMedicationTimes(existing.times)
+      setDurationDays(String(parsedDurationDays)); setIntervalHours(String(existing.intervalHours ?? 24))
+      setFirstTime(storedTimes[0]?.match(/^\d{2}:\d{2}$/)?.[0] ?? '08:00')
+      setStartDate(existing.startDate); setNotes(existing.notes ?? '')
     } else if (!editId) {
-      setName(''); setDosage(''); setFrequency(''); setTimes([]); setStartDate(dayStr()); setEndDate(''); setReason(''); setNotes('')
+      const today = dayStr()
+      setName(''); setDosage(''); setDurationDays('1'); setIntervalHours('24')
+      setFirstTime('08:00'); setStartDate(today); setNotes('')
     }
   }, [open, editId, existing])
 
-  const toggleTime = (t: string) => {
-    setTimes((prev) => (prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]))
-  }
-
   const handleSave = () => {
-    if (!name.trim() || !dosage.trim() || !frequency.trim()) {
-      toast({ title: 'Preencha nome, dosagem e frequência', variant: 'error' }); return
+    const days = Number(durationDays)
+    const interval = Number(intervalHours)
+    const generatedTimes = calculateMedicationTimes(firstTime, interval)
+    if (!name.trim() || !dosage.trim()) {
+      toast({ title: 'Preencha nome e dosagem', variant: 'error' }); return
+    }
+    if (!Number.isInteger(days) || days < 1) {
+      toast({ title: 'Informe a duração do tratamento em dias', variant: 'error' }); return
+    }
+    if (!Number.isInteger(interval) || interval < 1 || interval > 24) {
+      toast({ title: 'O intervalo deve estar entre 1 e 24 horas', variant: 'error' }); return
+    }
+    if (!startDate || generatedTimes.length === 0) {
+      toast({ title: 'Informe o primeiro horário e um intervalo válido', variant: 'error' }); return
     }
     const data = {
       name: name.trim(),
       dosage: dosage.trim(),
-      frequency: frequency.trim(),
-      times: times.length > 0 ? times : undefined,
+      frequency: `${generatedTimes.length}x ao dia`,
+      times: generatedTimes,
+      durationDays: days,
+      intervalHours: interval,
       startDate,
-      endDate: endDate || undefined,
-      reason: reason.trim() || undefined,
+      endDate: addDaysToDate(startDate, days - 1),
       notes: notes.trim() || undefined,
     }
     if (editId) {
@@ -443,8 +493,13 @@ export function AddMedicationDialog({ open, onClose, editId }: { open: boolean; 
       addMedication(data)
       toast({ title: 'Medicamento adicionado!', variant: 'success' })
     }
-    setName(''); setDosage(''); setFrequency(''); setTimes([]); setEndDate(''); setReason(''); setNotes(''); onClose()
+    setName(''); setDosage(''); setDurationDays('1'); setIntervalHours('24'); setFirstTime('08:00'); setStartDate(dayStr()); setNotes(''); onClose()
   }
+
+  const calculatedTimes = calculateMedicationTimes(firstTime, Number(intervalHours))
+  const calculatedEndDate = startDate && Number.isInteger(Number(durationDays)) && Number(durationDays) > 0
+    ? addDaysToDate(startDate, Number(durationDays) - 1)
+    : ''
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
@@ -454,32 +509,28 @@ export function AddMedicationDialog({ open, onClose, editId }: { open: boolean; 
             <div><label className="text-sm font-medium mb-1.5 block">Nome</label><Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Vitamina D" autoFocus /></div>
             <div><label className="text-sm font-medium mb-1.5 block">Dosagem</label><Input value={dosage} onChange={(e) => setDosage(e.target.value)} placeholder="Ex: 1 comprimido" /></div>
           </div>
-          <div><label className="text-sm font-medium mb-1.5 block">Frequência</label><Input value={frequency} onChange={(e) => setFrequency(e.target.value)} placeholder="Ex: 1x ao dia" /></div>
-          <div>
-            <label className="text-sm font-medium mb-2 block">Horários (pode marcar mais de um)</label>
-            <div className="flex flex-wrap gap-2">
-              {MED_TIMES.map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => toggleTime(t)}
-                  className={cn(
-                    'rounded-xl border px-3 py-1.5 text-xs font-medium transition-all cursor-pointer',
-                    times.includes(t)
-                      ? 'border-primary/50 bg-primary/10 text-primary'
-                      : 'border-border/60 text-muted-foreground hover:bg-muted/50',
-                  )}
-                >
-                  {t}
-                </button>
+          <div className="grid grid-cols-2 gap-3">
+            <div><label className="text-sm font-medium mb-1.5 block">Data de início</label><Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} /></div>
+            <div><label className="text-sm font-medium mb-1.5 block">Dias de tratamento</label><Input type="number" min="1" max="3650" value={durationDays} onChange={(e) => setDurationDays(e.target.value)} /></div>
+          </div>
+          <p className="-mt-2 text-xs text-muted-foreground">
+            Data de fim calculada: {calculatedEndDate ? calculatedEndDate.split('-').reverse().join('/') : 'informe a duração'}
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            <div><label className="text-sm font-medium mb-1.5 block">Intervalo entre doses (horas)</label><Input type="number" min="1" max="24" value={intervalHours} onChange={(e) => setIntervalHours(e.target.value)} /></div>
+            <div><label className="text-sm font-medium mb-1.5 block">Primeiro horário</label><Input type="time" value={firstTime} onChange={(e) => setFirstTime(e.target.value)} /></div>
+          </div>
+          <div className="rounded-xl border border-border/50 bg-muted/20 p-3 space-y-2">
+            <p className="text-sm font-medium">Horários calculados automaticamente</p>
+            <p className="text-xs text-muted-foreground">A partir do primeiro horário e do intervalo entre as doses.</p>
+            <div className="flex flex-wrap gap-1.5">
+              {calculatedTimes.map((time) => (
+                <span key={time} className="rounded-full border border-primary/40 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
+                  {time}
+                </span>
               ))}
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div><label className="text-sm font-medium mb-1.5 block">Data de início</label><Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} /></div>
-            <div><label className="text-sm font-medium mb-1.5 block">Data de fim</label><Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} /></div>
-          </div>
-          <div><label className="text-sm font-medium mb-1.5 block">Motivo</label><Input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Ex: Deficiência de vitamina D" /></div>
           <div><label className="text-sm font-medium mb-1.5 block">Observação</label><Input value={notes} onChange={(e) => setNotes(e.target.value)} /></div>
           <div className="flex justify-end gap-2 pt-1">
             <Button variant="outline" onClick={onClose} className="rounded-xl">Cancelar</Button>

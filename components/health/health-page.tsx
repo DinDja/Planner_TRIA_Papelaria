@@ -492,7 +492,9 @@ function MedicationsTab() {
               <div className="flex items-start justify-between">
                 <div>
                   <CardTitle className="text-sm">{m.name}</CardTitle>
-                  <p className="text-xs text-muted-foreground">{m.dosage} · {m.frequency}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {m.dosage} · {m.frequency}{m.intervalHours ? ` · a cada ${m.intervalHours}h` : ''}
+                  </p>
                 </div>
                 <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button onClick={() => { setEditId(m.id); setAddOpen(true) }} className="rounded-lg p-1 text-muted-foreground/50 hover:text-primary transition-all cursor-pointer" aria-label="Editar medicamento">
@@ -505,7 +507,9 @@ function MedicationsTab() {
               </div>
             </CardHeader>
             <CardContent className="pt-1">
-              <p className="text-[10px] text-muted-foreground">Desde {formatDate(m.startDate)}{m.endDate ? ` até ${formatDate(m.endDate)}` : ''}</p>
+              <p className="text-[10px] text-muted-foreground">
+                Desde {formatDate(m.startDate)}{m.endDate ? ` até ${formatDate(m.endDate)}` : ''}{m.durationDays ? ` · ${m.durationDays} dias` : ''}
+              </p>
               {m.times && m.times.length > 0 && (
                 <div className="flex flex-wrap gap-1 mt-1.5">
                   {m.times.map((t) => (
@@ -513,7 +517,6 @@ function MedicationsTab() {
                   ))}
                 </div>
               )}
-              {m.reason && <p className="text-xs text-muted-foreground/70 mt-1">Motivo: {m.reason}</p>}
               {m.notes && <p className="text-xs text-muted-foreground/70 mt-1">{m.notes}</p>}
             </CardContent>
           </Card>

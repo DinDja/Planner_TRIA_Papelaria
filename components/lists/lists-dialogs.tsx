@@ -119,10 +119,6 @@ export function AddListDialog({
       toast({ title: 'Digite um nome para a lista', variant: 'error' })
       return
     }
-    if (!editId && isCustomKind && draftItems.length === 0 && !draftItemName.trim()) {
-      toast({ title: 'Adicione pelo menos um item à lista personalizada', variant: 'error' })
-      return
-    }
     // Se o usuário digitou um item e não tocou em "Adicionar", inclui mesmo assim
     const finalDraftItems =
       isCustomKind && draftItemName.trim() ? [...draftItems, draftItemName.trim()] : draftItems
@@ -186,55 +182,7 @@ export function AddListDialog({
               autoFocus
             />
           </div>
-          {!editId && isCustomKind && (
-            <div>
-              <label className="text-sm font-medium mb-1.5 block">O que vai ter na lista?</label>
-              <div className="flex gap-2">
-                <Input
-                  value={draftItemName}
-                  onChange={(e) => setDraftItemName(e.target.value)}
-                  placeholder="Ex: Trocar lâmpada, Pagar conta..."
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault()
-                      handleAddDraftItem()
-                    }
-                  }}
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="rounded-xl shrink-0"
-                  onClick={handleAddDraftItem}
-                >
-                  Adicionar
-                </Button>
-              </div>
-              {draftItems.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mt-2.5">
-                  {draftItems.map((item, index) => (
-                    <span
-                      key={`${item}-${index}`}
-                      className="inline-flex items-center gap-1 rounded-full border border-border/60 px-2.5 py-1 text-xs"
-                    >
-                      {item}
-                      <button
-                        type="button"
-                        aria-label={`Remover ${item}`}
-                        onClick={() => handleRemoveDraftItem(index)}
-                        className="inline-flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors"
-                      >
-                        <X size={12} />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
-              <p className="text-[11px] text-muted-foreground mt-1.5">
-                Esses itens já vêm prontos na sua lista — depois você pode completar ou remover o que quiser.
-              </p>
-            </div>
-          )}
+        
           <div>
             <label className="text-sm font-medium mb-2 block">Cor</label>
             <ColorPicker value={color} onChange={setColor} colors={LIST_COLORS} />
@@ -311,6 +259,7 @@ export function AddItemDialog({
   const isMercado = kindMeta.kind === 'supermercado'
   const existingCategories = getAllCategories()
   const categorySuggestions = [...new Set([...kindMeta.presetCategories, ...existingCategories])]
+    .sort((a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' }))
 
   const presetGroups = new Map<string, PresetItem[]>()
   const builtinPresets: PresetItem[] = isMercado
@@ -351,7 +300,7 @@ export function AddItemDialog({
     })
     toast({
       title: alreadyPacked
-        ? `"${item.name}" já está na mala.`
+        ? `"${item.name}" Sim!`
         : `"${item.name}" adicionado à lista para colocar na mala.`,
       variant: 'success',
     })
@@ -465,9 +414,7 @@ export function AddItemDialog({
           {!itemId && (presetGroups.size > 0 || kindMeta.combos.length > 0 || isMercado) && (
             <div>
               <div className="flex items-center justify-between mb-2">
-                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                  Prontos para usar
-                </p>
+                
                 {isMercado && (
                   <button
                     type="button"
@@ -558,12 +505,7 @@ export function AddItemDialog({
                 </div>
               )}
 
-              <div className="max-h-56 overflow-y-auto rounded-xl border border-border/50 p-2.5 space-y-3">
-                {presetGroups.size === 0 && isMercado && (
-                  <p className="text-xs text-muted-foreground px-1">
-                    Nenhum item pronto cadastrado. Toque em "Cadastrar item pronto" para criar o seu.
-                  </p>
-                )}
+              <div className="max-h-56 overflow-y-auto rounded-xl  border-border/50  space-y-3">                
                 {kindMeta.combos.length > 0 && (
                   <div className="space-y-1.5">
                     {kindMeta.combos.map((combo) => {
@@ -715,26 +657,35 @@ export function AddItemDialog({
               {isMala && (
                 <div>
                   <label className="text-sm font-medium mb-1.5 block">Já colocou na mala?</label>
-                  <button
-                    type="button"
-                    onClick={() => setPacked(!packed)}
-                    className={cn(
-                      'flex items-center gap-2 rounded-xl border px-3 py-2 text-sm transition-all cursor-pointer',
-                      packed
-                        ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-600'
-                        : 'border-border/60 text-muted-foreground hover:border-foreground/30',
-                    )}
-                  >
-                    <span
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      aria-pressed={packed}
+                      onClick={() => setPacked(true)}
                       className={cn(
-                        'flex size-4 items-center justify-center rounded-md border transition-colors',
-                        packed ? 'border-emerald-500 bg-emerald-500' : 'border-muted-foreground/40',
+                        'flex items-center gap-2 rounded-xl border px-3 py-2 text-sm transition-all cursor-pointer',
+                        packed
+                          ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-600'
+                          : 'border-border/60 text-muted-foreground hover:border-foreground/30',
                       )}
                     >
-                      {packed && <Check size={11} strokeWidth={3} className="text-white" />}
-                    </span>
-                    {packed ? 'Está na mala' : 'Ainda não'}
-                  </button>
+                      {packed && <Check size={14} strokeWidth={2.5} />}
+                      Sim
+                    </button>
+                    <button
+                      type="button"
+                      aria-pressed={!packed}
+                      onClick={() => setPacked(false)}
+                      className={cn(
+                        'flex min-w-16 items-center justify-center rounded-xl border px-3 py-2 text-sm transition-all cursor-pointer',
+                        !packed
+                          ? 'border-foreground/50 bg-muted/60 text-foreground'
+                          : 'border-border/60 text-muted-foreground hover:border-foreground/30',
+                      )}
+                    >
+                      Não
+                    </button>
+                  </div>
                 </div>
               )}
               <div>

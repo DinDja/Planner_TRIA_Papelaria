@@ -1,17 +1,19 @@
 'use client'
 
+import Image from 'next/image'
 import { FormEvent, useEffect, useState } from 'react'
-import { Eye, EyeOff } from 'lucide-react'
 import { useDiarioStore } from '@/lib/diario/use-diario-store'
-
-const FONT_HAND = 'var(--font-caveat), "Segoe Script", cursive'
-const FONT_SERIF = 'var(--font-instrument), Georgia, serif'
+import { cn } from '@/lib/utils'
 
 async function hashSenha(senha: string) {
   const bytes = new TextEncoder().encode(senha)
   const digest = await crypto.subtle.digest('SHA-256', bytes)
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('')
 }
+
+const eyebrow = 'font-mono text-[0.62rem] uppercase tracking-[0.28em] text-muted-foreground/55'
+const inputClass =
+  'peer h-12 w-full border-0 border-b border-border/70 bg-transparent pt-3 text-sm text-foreground outline-none transition-colors placeholder:opacity-0 focus:border-primary placeholder-shown:border-border'
 
 export function DiarioGate({ children }: { children: React.ReactNode }) {
   const senhaHash = useDiarioStore((state) => state.senhaHash)
@@ -58,100 +60,132 @@ export function DiarioGate({ children }: { children: React.ReactNode }) {
   if (aberto) return <>{children}</>
 
   return (
-    <div className="mx-auto flex min-h-[calc(100vh-7rem)] max-w-[1180px] items-center px-4 pb-24 pt-10 sm:px-8">
-      <section className="w-full max-w-[34rem] border-y border-border/50 py-10 sm:py-14" aria-labelledby="diario-gate-title">
-        <div className="mb-8 flex items-start gap-5">
-          <div className="relative mt-1 h-16 w-14 shrink-0 border border-foreground/35 bg-background shadow-[5px_5px_0_-1px_var(--background),5px_5px_0_0_color-mix(in_srgb,var(--foreground)_25%,transparent)]" aria-hidden="true">
-            <div className="absolute inset-x-2 top-5 border-t border-foreground/20" />
-            <div className="absolute inset-x-2 top-9 border-t border-foreground/20" />
-            <div className="absolute inset-x-2 top-[3.25rem] border-t border-foreground/20" />
-          </div>
-          <div>
-            <p className="mb-2 text-[0.68rem] uppercase tracking-[0.24em] text-muted-foreground/60">
-              diário pessoal
-            </p>
-            <h1 id="diario-gate-title" className="text-3xl text-foreground" style={{ fontFamily: FONT_HAND }}>
-              {configurando ? 'Escolha a chave do caderno' : 'Seu caderno está fechado'}
-            </h1>
-          </div>
+    <div className="flex min-h-[calc(100vh-7rem)] items-center justify-center px-6 py-12">
+      <section className="w-full max-w-[400px]" aria-labelledby="diario-gate-title">    
+        <div className="mb-9">
+          <p className={eyebrow}>{configurando ? 'abertura · diário' : 'entrada · diário'}</p>
+          <h1 id="diario-gate-title" className="mt-2 font-serif text-[2.3rem] leading-[1.05] text-foreground">
+            {configurando ? 'Escolha a chave.' : 'Seu caderno está fechado.'}
+          </h1>
+          <p className="mt-2 max-w-[320px] text-sm leading-relaxed text-muted-foreground">
+            {configurando
+              ? 'Crie uma senha para proteger suas anotações. Ela será pedida sempre que você voltar para esta área.'
+              : 'Há coisas que só precisam de um lugar seguro para existir. Digite sua senha para continuar.'}
+          </p>
         </div>
 
-        <p className="mb-8 max-w-[30rem] text-base leading-relaxed text-muted-foreground" style={{ fontFamily: FONT_SERIF }}>
-          {configurando
-            ? 'Crie uma senha para proteger suas anotações. Ela será pedida sempre que você voltar para esta área.'
-            : 'Há coisas que só precisam de um lugar seguro para existir. Digite sua senha para continuar.'}
-        </p>
+        <DiarioError error={erro} />
 
-        <form className="flex max-w-[28rem] flex-col gap-5" onSubmit={entrar}>
-          <label className="flex flex-col gap-2">
-            <span className="text-[0.7rem] uppercase tracking-[0.18em] text-muted-foreground/65">
-              senha do diário
-            </span>
-            <span className="relative">
-              <input
-                autoFocus
-                required
-                type={senhaVisivel ? 'text' : 'password'}
-                value={senha}
-                onChange={(event) => setSenha(event.target.value)}
-                autoComplete={configurando ? 'new-password' : 'current-password'}
-                className="h-12 w-full border-b border-foreground/30 bg-transparent px-1 pr-11 text-lg text-foreground outline-none transition-colors placeholder:text-muted-foreground/35 focus:border-foreground"
-                placeholder="••••••••"
-                aria-describedby={erro ? 'diario-gate-error' : undefined}
-              />
+        <form onSubmit={entrar} className="space-y-5">
+          <DiarioField
+            autoFocus
+            label="senha do diário"
+            type={senhaVisivel ? 'text' : 'password'}
+            value={senha}
+            onChange={setSenha}
+            placeholder="sua senha"
+            autoComplete={configurando ? 'new-password' : 'current-password'}
+            describedBy={erro ? 'diario-gate-error' : undefined}
+            trailing={
               <button
                 type="button"
                 onClick={() => setSenhaVisivel((visible) => !visible)}
-                className="absolute right-1 top-1/2 -translate-y-1/2 rounded p-2 text-muted-foreground/65 transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/30"
-                aria-label={senhaVisivel ? 'Ocultar senha' : 'Mostrar senha'}
+                className="cursor-pointer font-mono text-[0.62rem] uppercase tracking-[0.2em] text-muted-foreground/70 transition-colors hover:text-foreground"
               >
-                {senhaVisivel ? <EyeOff size={17} strokeWidth={1.7} /> : <Eye size={17} strokeWidth={1.7} />}
+                {senhaVisivel ? 'ocultar' : 'ver'}
               </button>
-            </span>
-          </label>
+            }
+          />
 
           {configurando && (
-            <label className="flex flex-col gap-2">
-              <span className="text-[0.7rem] uppercase tracking-[0.18em] text-muted-foreground/65">
-                repetir senha
-              </span>
-              <span className="relative">
-                <input
-                  required
-                  type={confirmacaoVisivel ? 'text' : 'password'}
-                  value={confirmacao}
-                  onChange={(event) => setConfirmacao(event.target.value)}
-                  autoComplete="new-password"
-                  className="h-12 w-full border-b border-foreground/30 bg-transparent px-1 pr-11 text-lg text-foreground outline-none transition-colors placeholder:text-muted-foreground/35 focus:border-foreground"
-                  placeholder="••••••••"
-                />
+            <DiarioField
+              label="repetir senha"
+              type={confirmacaoVisivel ? 'text' : 'password'}
+              value={confirmacao}
+              onChange={setConfirmacao}
+              placeholder="repita sua senha"
+              autoComplete="new-password"
+              trailing={
                 <button
                   type="button"
                   onClick={() => setConfirmacaoVisivel((visible) => !visible)}
-                  className="absolute right-1 top-1/2 -translate-y-1/2 rounded p-2 text-muted-foreground/65 transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/30"
-                  aria-label={confirmacaoVisivel ? 'Ocultar confirmação da senha' : 'Mostrar confirmação da senha'}
+                  className="cursor-pointer font-mono text-[0.62rem] uppercase tracking-[0.2em] text-muted-foreground/70 transition-colors hover:text-foreground"
                 >
-                  {confirmacaoVisivel ? <EyeOff size={17} strokeWidth={1.7} /> : <Eye size={17} strokeWidth={1.7} />}
+                  {confirmacaoVisivel ? 'ocultar' : 'ver'}
                 </button>
-              </span>
-            </label>
+              }
+            />
           )}
 
-          {erro && (
-            <p id="diario-gate-error" role="alert" className="text-sm text-foreground/75">
-              {erro}
-            </p>
-          )}
-
-          <button
-            type="submit"
-            className="self-start border border-foreground/45 px-5 py-3 text-[0.72rem] uppercase tracking-[0.18em] text-foreground transition-colors hover:bg-foreground hover:text-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/30"
-          >
-            {configurando ? 'guardar senha e abrir' : 'abrir meu caderno'}
-          </button>
+          <DiarioSubmitButton label={configurando ? 'guardar senha e abrir' : 'abrir meu caderno'} />
         </form>
-
       </section>
     </div>
+  )
+}
+
+function DiarioError({ error }: { error: string }) {
+  if (!error) return null
+
+  return (
+    <div id="diario-gate-error" role="alert" className="mb-5 border-l-2 border-rose-500/70 bg-rose-500/[0.06] py-1.5 pl-3 text-xs text-rose-600 dark:text-rose-300">
+      {error}
+    </div>
+  )
+}
+
+function DiarioField({
+  label,
+  type,
+  value,
+  onChange,
+  placeholder,
+  autoComplete,
+  autoFocus,
+  describedBy,
+  trailing,
+}: {
+  label: string
+  type: string
+  value: string
+  onChange: (value: string) => void
+  placeholder: string
+  autoComplete: string
+  autoFocus?: boolean
+  describedBy?: string
+  trailing?: React.ReactNode
+}) {
+  return (
+    <div className="relative">
+      <label className="pointer-events-none absolute left-0 top-[3px] font-mono text-[0.6rem] uppercase tracking-[0.22em] text-muted-foreground/55 transition-all peer-focus:text-primary">
+        {label}
+      </label>
+      <input
+        autoFocus={autoFocus}
+        type={type}
+        required
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
+        autoComplete={autoComplete}
+        aria-describedby={describedBy}
+        className={cn(inputClass, 'peer peer-placeholder-shown:placeholder:opacity-40 pr-16')}
+      />
+      {trailing && <div className="absolute right-0 top-1/2 -translate-y-1/2">{trailing}</div>}
+    </div>
+  )
+}
+
+function DiarioSubmitButton({ label }: { label: string }) {
+  return (
+    <button type="submit" className="group relative mt-2 flex h-11 w-full cursor-pointer items-center justify-center overflow-hidden">
+      <span className="absolute inset-0 border-b border-foreground/80 transition-colors group-hover:border-primary" />
+      <span className="relative font-mono text-[0.66rem] uppercase tracking-[0.3em] text-foreground/85 transition-colors group-hover:text-primary">
+        <span className="flex items-center gap-2">
+          {label}
+          <span className="opacity-50">→</span>
+        </span>
+      </span>
+    </button>
   )
 }

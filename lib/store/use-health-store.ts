@@ -94,7 +94,7 @@ interface HealthState {
   updateSymptom: (id: string, patch: Partial<SymptomLog>) => void
   deleteSymptom: (id: string) => void
 
-  addMedication: (data: { name: string; dosage: string; frequency: string; times?: string[]; startDate: string; endDate?: string; reason?: string; notes?: string; color?: string }) => void
+  addMedication: (data: { name: string; dosage: string; frequency: string; times?: string[]; durationDays?: number; intervalHours?: number; startDate: string; endDate?: string; notes?: string; color?: string }) => void
   updateMedication: (id: string, patch: Partial<Medication>) => void
   deleteMedication: (id: string) => void
 

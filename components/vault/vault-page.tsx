@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { usePasswordsStore } from '@/lib/store/use-passwords-store'
 import type { PasswordEntry } from '@/lib/types'
 import { cn } from '@/lib/utils'
@@ -11,18 +12,90 @@ import {
   Lock,
   Plus,
   Pencil,
-  ShieldCheck,
   Trash2,
-  Unlock,
 } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '../ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
-import { Badge, Input } from '../ui/primitives'
+import { Badge } from '../ui/primitives'
 import { toast } from '../ui/toaster'
 import { AddPasswordDialog } from './vault-dialogs'
 
 const enter = 'animate-in fade-in slide-in-from-bottom-3 duration-500 fill-mode-both'
+const authEyebrow = 'font-mono text-[0.62rem] uppercase tracking-[0.28em] text-muted-foreground/55'
+const authInput =
+  'peer h-12 w-full border-0 border-b border-border/70 bg-transparent pt-3 text-sm text-foreground outline-none transition-colors placeholder:opacity-0 focus:border-primary placeholder-shown:border-border'
+
+function VaultAccessLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex min-h-[80vh] items-center justify-center px-6 py-12">
+      <section className="w-full max-w-[400px]">{children}</section>
+    </div>
+  )
+}
+
+function VaultError({ error }: { error: string }) {
+  if (!error) return null
+
+  return (
+    <div role="alert" className="mb-5 border-l-2 border-rose-500/70 bg-rose-500/[0.06] py-1.5 pl-3 text-xs text-rose-600 dark:text-rose-300">
+      {error}
+    </div>
+  )
+}
+
+function VaultField({
+  label,
+  type,
+  value,
+  onChange,
+  placeholder,
+  autoFocus,
+  trailing,
+}: {
+  label: string
+  type: string
+  value: string
+  onChange: (value: string) => void
+  placeholder: string
+  autoFocus?: boolean
+  trailing?: React.ReactNode
+}) {
+  const id = `vault-${label.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}`
+
+  return (
+    <div className="relative">
+      <label htmlFor={id} className="pointer-events-none absolute left-0 top-[3px] font-mono text-[0.6rem] uppercase tracking-[0.22em] text-muted-foreground/55 transition-all peer-focus:text-primary">
+        {label}
+      </label>
+      <input
+        id={id}
+        autoFocus={autoFocus}
+        type={type}
+        required
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
+        className={cn(authInput, 'peer peer-placeholder-shown:placeholder:opacity-40 pr-16')}
+      />
+      {trailing && <div className="absolute right-0 top-1/2 -translate-y-1/2">{trailing}</div>}
+    </div>
+  )
+}
+
+function VaultSubmitButton({ label }: { label: string }) {
+  return (
+    <button type="submit" className="group relative mt-2 flex h-11 w-full cursor-pointer items-center justify-center overflow-hidden">
+      <span className="absolute inset-0 border-b border-foreground/80 transition-colors group-hover:border-primary" />
+      <span className="relative font-mono text-[0.66rem] uppercase tracking-[0.3em] text-foreground/85 transition-colors group-hover:text-primary">
+        <span className="flex items-center gap-2">
+          {label}
+          <span className="opacity-50">→</span>
+        </span>
+      </span>
+    </button>
+  )
+}
 
 function PasswordCard({
   entry,
@@ -162,6 +235,7 @@ export function VaultPage() {
   const [showPin, setShowPin] = useState(false)
   const [showConfirmPin, setShowConfirmPin] = useState(false)
   const [showUnlockPin, setShowUnlockPin] = useState(false)
+  const [accessError, setAccessError] = useState('')
 
   const toggleVisibility = (id: string) => {
     setVisiblePasswords((prev) => {
@@ -173,21 +247,23 @@ export function VaultPage() {
   }
 
   const handleUnlock = () => {
+    setAccessError('')
     if (verifyMasterPin(pinInput)) {
       setLocked(false)
       setPinInput('')
     } else {
-      toast({ title: 'Senha incorreta', variant: 'error' })
+      setAccessError('Senha incorreta. Tente novamente.')
     }
   }
 
   const handleSetPin = () => {
+    setAccessError('')
     if (newPin.length < 4) {
-      toast({ title: 'A senha deve ter ao menos 4 caracteres', variant: 'error' })
+      setAccessError('A senha deve ter ao menos 4 caracteres.')
       return
     }
     if (newPin !== confirmPin) {
-      toast({ title: 'As senhas não conferem', variant: 'error' })
+      setAccessError('As senhas não conferem.')
       return
     }
     setMasterPin(newPin)
@@ -208,105 +284,103 @@ export function VaultPage() {
   // Tela de bloqueio
   if (locked) {
     return (
-      <div className="flex items-center justify-center min-h-[80vh] p-6">
-        <Card glass className="w-full max-w-sm">
-          <CardHeader className="items-center text-center pb-2">
-            <div className="flex size-14 items-center justify-center rounded-2xl bg-primary/10 mb-3">
-              <Lock size={28} className="text-primary" />
-            </div>
-            <CardTitle className="text-lg">Senhas bloqueadas</CardTitle>
-            <p className="text-sm text-muted-foreground">Digite sua senha de acesso</p>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="relative">
-              <Input
-                type={showUnlockPin ? 'text' : 'password'}
-                value={pinInput}
-                onChange={(e) => setPinInput(e.target.value)}
-                placeholder="Digite a senha"
-                onKeyDown={(e) => e.key === 'Enter' && handleUnlock()}
-                className="text-center text-lg font-mono tracking-[0.5em] pr-10"
-                autoFocus
-              />
+      <VaultAccessLayout>
+       
+        <div className="mb-9">
+          <p className={authEyebrow}>entrada · cofre</p>
+          <h1 className="mt-2 font-serif text-[2.3rem] leading-[1.05] text-foreground">
+            Suas senhas estão protegidas.
+          </h1>
+          <p className="mt-2 max-w-[320px] text-sm leading-relaxed text-muted-foreground">
+            Digite sua senha de acesso para continuar.
+          </p>
+        </div>
+
+        <VaultError error={accessError} />
+        <form onSubmit={(event) => { event.preventDefault(); handleUnlock() }} className="space-y-5">
+          <VaultField
+            autoFocus
+            label="senha de acesso"
+            type={showUnlockPin ? 'text' : 'password'}
+            value={pinInput}
+            onChange={setPinInput}
+            placeholder="sua senha"
+            trailing={
               <button
                 type="button"
-                onClick={() => setShowUnlockPin((v) => !v)}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-lg p-1 text-muted-foreground/60 hover:text-foreground transition-colors cursor-pointer"
-                aria-label={showUnlockPin ? 'Ocultar senha' : 'Exibir senha'}
+                onClick={() => setShowUnlockPin((visible) => !visible)}
+                className="cursor-pointer font-mono text-[0.62rem] uppercase tracking-[0.2em] text-muted-foreground/70 transition-colors hover:text-foreground"
               >
-                {showUnlockPin ? <EyeOff size={15} /> : <Eye size={15} />}
+                {showUnlockPin ? 'ocultar' : 'ver'}
               </button>
-            </div>
-            <Button className="w-full rounded-xl" onClick={handleUnlock} disabled={pinInput.length < 4}>
-              <Unlock size={15} className="mr-1.5" />
-              Desbloquear
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+            }
+          />
+          <VaultSubmitButton label="desbloquear" />
+        </form>
+      </VaultAccessLayout>
     )
   }
 
   // Tela de configuração de senha
   if (settingPin) {
     return (
-      <div className="flex items-center justify-center min-h-[80vh] p-6">
-        <Card glass className="w-full max-w-sm">
-          <CardHeader className="items-center text-center pb-2">
-            <div className="flex size-14 items-center justify-center rounded-2xl bg-primary/10 mb-3">
-              <ShieldCheck size={28} className="text-primary" />
-            </div>
-            <CardTitle className="text-lg">Proteger as senhas</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Crie uma senha de acesso — pode ser diferente da senha da sua conta. Ela ficará salva neste dispositivo.
-            </p>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="relative">
-              <Input
-                type={showPin ? 'text' : 'password'}
-                value={newPin}
-                onChange={(e) => setNewPin(e.target.value)}
-                placeholder="Crie uma senha (mínimo 4 caracteres)"
-                className="text-center text-lg font-mono tracking-[0.5em] pr-10"
-                autoFocus
-              />
+      <VaultAccessLayout>
+        
+        <div className="mb-9">
+          <p className={authEyebrow}>proteção · cofre</p>
+          <h1 className="mt-2 font-serif text-[2.3rem] leading-[1.05] text-foreground">
+            Proteja suas senhas.
+          </h1>
+          <p className="mt-2 max-w-[320px] text-sm leading-relaxed text-muted-foreground">
+            Crie uma senha de acesso. Ela pode ser diferente da senha da sua conta e ficará salva neste dispositivo.
+          </p>
+        </div>
+
+        <VaultError error={accessError} />
+        <form onSubmit={(event) => { event.preventDefault(); handleSetPin() }} className="space-y-5">
+          <VaultField
+            autoFocus
+            label="crie uma senha"
+            type={showPin ? 'text' : 'password'}
+            value={newPin}
+            onChange={setNewPin}
+            placeholder="ao menos 4 caracteres"
+            trailing={
               <button
                 type="button"
-                onClick={() => setShowPin((v) => !v)}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-lg p-1 text-muted-foreground/60 hover:text-foreground transition-colors cursor-pointer"
-                aria-label={showPin ? 'Ocultar senha' : 'Exibir senha'}
+                onClick={() => setShowPin((visible) => !visible)}
+                className="cursor-pointer font-mono text-[0.62rem] uppercase tracking-[0.2em] text-muted-foreground/70 transition-colors hover:text-foreground"
               >
-                {showPin ? <EyeOff size={15} /> : <Eye size={15} />}
+                {showPin ? 'ocultar' : 'ver'}
               </button>
-            </div>
-            <div className="relative">
-              <Input
-                type={showConfirmPin ? 'text' : 'password'}
-                value={confirmPin}
-                onChange={(e) => setConfirmPin(e.target.value)}
-                placeholder="Confirme a senha"
-                className="text-center text-lg font-mono tracking-[0.5em] pr-10"
-              />
+            }
+          />
+          <VaultField
+            label="repita a senha"
+            type={showConfirmPin ? 'text' : 'password'}
+            value={confirmPin}
+            onChange={setConfirmPin}
+            placeholder="confirme sua senha"
+            trailing={
               <button
                 type="button"
-                onClick={() => setShowConfirmPin((v) => !v)}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-lg p-1 text-muted-foreground/60 hover:text-foreground transition-colors cursor-pointer"
-                aria-label={showConfirmPin ? 'Ocultar senha' : 'Exibir senha'}
+                onClick={() => setShowConfirmPin((visible) => !visible)}
+                className="cursor-pointer font-mono text-[0.62rem] uppercase tracking-[0.2em] text-muted-foreground/70 transition-colors hover:text-foreground"
               >
-                {showConfirmPin ? <EyeOff size={15} /> : <Eye size={15} />}
+                {showConfirmPin ? 'ocultar' : 'ver'}
               </button>
-            </div>
-            <Button className="w-full rounded-xl" onClick={handleSetPin} disabled={!newPin || !confirmPin}>
-              <ShieldCheck size={15} className="mr-1.5" />
-              Proteger
-            </Button>
-            <Button variant="ghost" className="w-full rounded-xl text-muted-foreground" onClick={() => setSettingPin(false)}>
-              Pular — usar sem proteção
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+            }
+          />
+          <VaultSubmitButton label="proteger" />
+        </form>
+        <button
+          type="button"
+          className="mt-8 flex w-full cursor-pointer justify-center font-mono text-[0.6rem] uppercase tracking-[0.22em] text-muted-foreground/45 transition-colors hover:text-foreground"
+          onClick={() => setSettingPin(false)}
+        >
+          pular · usar sem proteção
+        </button>
+      </VaultAccessLayout>
     )
   }
 

@@ -880,14 +880,16 @@ export interface Medication {
   name: string
   dosage: string
   frequency: string
-  /** Períodos do dia em que deve ser tomado (ex: Manhã, Noite) */
+  /** Horários programados no formato HH:mm */
   times?: string[]
+  /** Duração do tratamento em dias */
+  durationDays?: number
+  /** Intervalo entre doses, em horas */
+  intervalHours?: number
   /** ISO date */
   startDate: string
   /** ISO date (opcional) */
   endDate?: string
-  /** Motivo/indicação do medicamento */
-  reason?: string
   notes?: string
   color: string
   createdAt: string

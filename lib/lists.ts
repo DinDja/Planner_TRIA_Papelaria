@@ -44,7 +44,6 @@ export const LIST_KINDS: ListKindMeta[] = [
       'Temperos',
       'Congelados',
       'Doces e sobremesas',
-      'Outros',
     ],
     // Supermercado: sem presets fixos — o usuário cadastra os próprios
     // "prontos para usar" (coleção listPresets, ver use-lists-store).
@@ -63,35 +62,9 @@ export const LIST_KINDS: ListKindMeta[] = [
       'Higiene',
       'Primeiros socorros',
       'Infantil',
-      'Outros',
     ],
     presetItems: [
-      { name: 'Paracetamol', quantity: '500mg', category: 'Medicamentos', dosage: 'Se dor ou febre' },
-      { name: 'Dipirona', category: 'Medicamentos', dosage: 'Se dor ou febre' },
-      { name: 'Ibuprofeno', quantity: '400mg', category: 'Medicamentos', dosage: 'Com alimentação' },
-      { name: 'Antialérgico', category: 'Medicamentos' },
-      { name: 'Dramin', category: 'Medicamentos', dosage: 'Antes de viajar' },
-      { name: 'Vitamina C', category: 'Vitaminas e suplementos', dosage: '1x ao dia' },
-      { name: 'Multivitamínico', category: 'Vitaminas e suplementos', dosage: '1x ao dia' },
-      { name: 'Ômega 3', category: 'Vitaminas e suplementos' },
-      { name: 'Magnésio', category: 'Vitaminas e suplementos' },
-      { name: 'Protetor solar', quantity: 'FPS 50', category: 'Cuidados com a pele' },
-      { name: 'Hidratante facial', category: 'Cuidados com a pele' },
-      { name: 'Água micelar', category: 'Cuidados com a pele' },
-      { name: 'Sabonete facial', category: 'Cuidados com a pele' },
-      { name: 'Álcool em gel', category: 'Higiene' },
-      { name: 'Cotonetes', category: 'Higiene' },
-      { name: 'Algodão', category: 'Higiene' },
-      { name: 'Fio dental', category: 'Higiene' },
-      { name: 'Curativos', category: 'Primeiros socorros' },
-      { name: 'Soro fisiológico', category: 'Primeiros socorros' },
-      { name: 'Atadura', category: 'Primeiros socorros' },
-      { name: 'Gaze', category: 'Primeiros socorros' },
-      { name: 'Termômetro', category: 'Primeiros socorros' },
-      { name: 'Fralda', category: 'Infantil' },
-      { name: 'Lenço umedecido', category: 'Infantil' },
-      { name: 'Pomada de assadura', category: 'Infantil' },
-      { name: 'Antitérmico infantil', category: 'Infantil' },
+      
     ],
     combos: [
       {
@@ -163,7 +136,6 @@ export const LIST_KINDS: ListKindMeta[] = [
       'Saúde e farmácia',
       'Calçados',
       'Eletrônicos e cabos',
-      'Outros',
     ],
     presetItems: [
       { name: 'Passaporte', category: 'Documentos' },

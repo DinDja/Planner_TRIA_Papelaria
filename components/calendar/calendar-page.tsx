@@ -22,7 +22,7 @@ const MONTHS = [
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
 ]
 
-const DAY_HEADERS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
+const DAY_HEADERS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
 const DAY_NAMES = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado']
 const HABIT_DAY_HEADERS = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D']
 
@@ -42,7 +42,8 @@ const todayKey = () => toDateKey(new Date())
 
 function startOfWeek(date: Date) {
   const start = new Date(date)
-  start.setDate(start.getDate() - start.getDay())
+  const daysSinceMonday = (start.getDay() + 6) % 7
+  start.setDate(start.getDate() - daysSinceMonday)
   start.setHours(12, 0, 0, 0)
   return start
 }
@@ -64,7 +65,7 @@ interface CalendarCell {
 }
 
 function getMonthGrid(year: number, month: number) {
-  const firstDay = new Date(year, month, 1).getDay()
+  const firstDay = (new Date(year, month, 1).getDay() + 6) % 7
   const daysInMonth = new Date(year, month + 1, 0).getDate()
   const daysInPreviousMonth = new Date(year, month, 0).getDate()
   const weeks: CalendarCell[][] = []
@@ -485,7 +486,7 @@ function PlannerFooter({ weekKey, weekDays }: { weekKey: string; weekDays: Date[
   const toggleLog = useHabitsStore((state) => state.toggleLog)
 
   const activeHabits = useMemo(() => habits.filter((habit) => !habit.archived).slice(0, 4), [habits])
-  const habitDays = [...weekDays.slice(1), weekDays[0]]
+  const habitDays = weekDays
 
   return (
     <div className="mt-10 space-y-8">
@@ -507,40 +508,6 @@ function PlannerFooter({ weekKey, weekDays }: { weekKey: string; weekDays: Date[
         </div>
       </section>
 
-      <div className="grid grid-cols-1 gap-7 lg:grid-cols-[1.15fr_0.85fr]">
-        <section>
-          <h2 className="mb-3 text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">Hábitos</h2>
-          <div className="border-y border-primary/10 py-2.5">
-            <div className="grid grid-cols-[minmax(110px,1fr)_repeat(7,24px)] items-center gap-1 text-center text-[10px] text-muted-foreground">
-              <span className="text-left"> </span>
-              {HABIT_DAY_HEADERS.map((day, index) => <span key={index}>{day}</span>)}
-            </div>
-            {activeHabits.length === 0 ? (
-              <p className="py-5 text-xs text-muted-foreground">Crie um hábito para acompanhá-lo nesta semana.</p>
-            ) : (
-              activeHabits.map((habit) => (
-                <HabitRow key={habit.id} habit={habit} days={habitDays} logs={logs} onToggle={toggleLog} />
-              ))
-            )}
-            {habits.filter((habit) => !habit.archived).length > 4 && (
-              <p className="mt-2 text-[10px] text-muted-foreground">+ outros hábitos na seção Hábitos</p>
-            )}
-          </div>
-        </section>
-
-        <section>
-          <h2 className="mb-3 text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">Gratidão</h2>
-          <div className="min-h-[142px] border border-primary/10 bg-primary/[0.025] p-4">
-            <textarea
-              value={week.gratitude}
-              onChange={(event) => setGratitude(weekKey, event.target.value)}
-              aria-label="Gratidão da semana"
-              placeholder="uma coisa boa para guardar desta semana"
-              className="h-full min-h-[110px] w-full resize-none bg-transparent text-sm text-foreground/75 outline-none placeholder:text-muted-foreground/40"
-            />
-          </div>
-        </section>
-      </div>
     </div>
   )
 }

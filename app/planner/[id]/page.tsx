@@ -23,7 +23,7 @@ export default function EditorPage() {
           <div className="flex h-screen items-center justify-center">
             <div className="text-center">
               <p className="text-lg font-semibold">Planner não encontrado</p>
-              <Button variant="link" onClick={() => router.push('/')} className="mt-2">
+              <Button variant="link" onClick={() => router.push('/dashboard')} className="mt-2">
                 Voltar ao Dashboard
               </Button>
             </div>

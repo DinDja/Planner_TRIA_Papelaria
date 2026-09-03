@@ -54,7 +54,7 @@ export function FilteredPlannersPage({
     <div className="p-6 lg:p-8 max-w-[1100px] mx-auto">
       <div className={cn('mb-8', enter)}>
         <Link
-          href="/"
+          href="/dashboard"
           className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-4 transition-colors"
         >
           <ArrowLeft size={15} />

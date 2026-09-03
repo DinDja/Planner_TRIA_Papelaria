@@ -156,7 +156,7 @@ export function DashboardPage() {
           <Card glass>
             <CardHeader className="flex-row items-center justify-between pb-0">
               <CardTitle className="text-base">Planners recentes</CardTitle>
-              <Link href="/" className="text-xs text-primary hover:underline flex items-center gap-1">
+              <Link href="/planners" className="text-xs text-primary hover:underline flex items-center gap-1">
                 Ver todos <ArrowUpRight size={12} />
               </Link>
             </CardHeader>

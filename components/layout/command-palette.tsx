@@ -41,7 +41,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
   }, [open])
 
   const baseActions: PaletteItem[] = [
-    { id: 'dashboard',     label: 'Dashboard',            iconId: 'dashboard',     href: '/',              section: 'Navegação' },
+    { id: 'dashboard',     label: 'Dashboard',            iconId: 'dashboard',     href: '/dashboard',     section: 'Navegação' },
     { id: 'diario',        label: 'Diário Digital',        iconId: 'diario',        href: '/diario',        section: 'Navegação' },
     { id: 'notas',         label: 'Notas',                 iconId: 'notas',         href: '/notas',         section: 'Navegação' },
     { id: 'listas',        label: 'Listas',                iconId: 'listas',        href: '/listas',        section: 'Navegação' },

@@ -173,7 +173,7 @@ function LoginForm(props: {
           Bem-vinda de volta.
         </h1>
         <p className="text-base text-muted-foreground mt-2 leading-relaxed max-w-[320px]">
-          Continue de onde parou. Seu caderno está como você deixou.
+          Continue de onde parou.
         </p>
       </div>
 

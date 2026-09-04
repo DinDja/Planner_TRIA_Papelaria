@@ -3,20 +3,15 @@
 import { AppSidebar } from '@/components/layout/app-sidebar'
 import { CommandPalette } from '@/components/layout/command-palette'
 import { TopBar } from '@/components/layout/top-bar'
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/overlays'
 import { SettingsDialog } from '@/components/settings/settings-dialog'
-import { cn } from '@/lib/utils'
 import { useCallback, useEffect, useState } from 'react'
-import { CreatePlannerDialog } from '@/components/dashboard/create-planner-dialog'
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [sideCollapsed, setSideCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [cmdOpen, setCmdOpen] = useState(false)
-  const [createOpen, setCreateOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
 
-  const openCreate = useCallback(() => setCreateOpen(true), [])
   const openSettings = useCallback(() => setSettingsOpen(true), [])
 
   useEffect(() => {
@@ -42,7 +37,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         setCollapsed={setSideCollapsed}
         mobileOpen={mobileOpen}
         setMobileOpen={setMobileOpen}
-        onOpenCreate={openCreate}
         onOpenSettings={openSettings}
       />
 
@@ -56,7 +50,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </div>
 
       <CommandPalette open={cmdOpen} onClose={() => setCmdOpen(false)} />
-      <CreatePlannerDialog open={createOpen} onClose={() => setCreateOpen(false)} />
       <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </div>
   )

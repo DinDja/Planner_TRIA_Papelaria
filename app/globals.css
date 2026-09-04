@@ -94,7 +94,7 @@
   --destructive: #b64f45;
   --success: var(--brand-green);
   --warning: var(--brand-mustard);
-  --border: color-mix(in oklab, var(--brand-green) 22%, var(--brand-beige));
+  --border: color-mix(in oklab, var(--brand-green) 34%, var(--brand-beige));
   --input: color-mix(in oklab, var(--brand-green) 18%, var(--brand-beige));
   --ring: var(--brand-mustard);
   --paper: color-mix(in oklab, var(--brand-beige) 22%, white);

@@ -26,7 +26,6 @@ import {
   Moon,
   PanelLeftClose,
   PanelLeftOpen,
-  Plus,
   Quote,
   Settings,
   Shield,
@@ -49,7 +48,6 @@ interface SidebarProps {
   setCollapsed: (v: boolean) => void
   mobileOpen: boolean
   setMobileOpen: (v: boolean) => void
-  onOpenCreate: () => void
   onOpenSettings: () => void
 }
 
@@ -91,7 +89,6 @@ export function AppSidebar({
   setCollapsed,
   mobileOpen,
   setMobileOpen,
-  onOpenCreate,
   onOpenSettings,
 }: SidebarProps) {
   const { theme, toggle } = useTheme()
@@ -121,32 +118,6 @@ export function AppSidebar({
       <Separator className="mx-3 w-auto" />
 
       <ScrollArea className="flex-1 py-3">
-        {/* Quick Create */}
-        {!collapsed ? (
-          <div className="px-3 pb-3">
-            <Button
-              variant="default"
-              className="w-full justify-start gap-2 rounded-xl h-10 text-sm font-medium"
-              onClick={onOpenCreate}
-            >
-              <Plus size={16} />
-              Novo planner
-            </Button>
-          </div>
-        ) : (
-          <div className="flex justify-center pb-3">
-            <Button
-              variant="default"
-              size="icon"
-              className="size-9 rounded-xl"
-              onClick={onOpenCreate}
-              aria-label="Novo planner"
-            >
-              <Plus size={16} />
-            </Button>
-          </div>
-        )}
-
         {/* Nav — módulos, no mesmo padrão Lucide da sidebar original. */}
         <nav className={cn('flex flex-col gap-0.5 px-3', collapsed && 'px-1.5')}>
           {enabledModules.map((item) => {

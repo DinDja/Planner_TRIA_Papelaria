@@ -213,7 +213,6 @@ export function AddItemDialog({
   const list = useListsStore((s) => s.lists.find((l) => l.id === listId))
   const addItem = useListsStore((s) => s.addItem)
   const updateItem = useListsStore((s) => s.updateItem)
-  const getAllCategories = useListsStore((s) => s.getAllCategories)
   const [name, setName] = useState('')
   const [quantity, setQuantity] = useState('')
   const [category, setCategory] = useState('')
@@ -240,8 +239,11 @@ export function AddItemDialog({
   const kindMeta = getListKindMeta(list?.kind)
   const isFarmacia = kindMeta.kind === 'farmacia'
   const isMala = kindMeta.kind === 'mala'
-  const existingCategories = getAllCategories()
-  const categorySuggestions = [...new Set([...kindMeta.presetCategories, ...existingCategories])]
+  // Categorias já usadas nesta lista (não de todas as listas do usuário)
+  const listCategories = new Set(
+    (list?.items ?? []).map((i) => i.category).filter((c): c is string => Boolean(c)),
+  )
+  const categorySuggestions = [...new Set([...kindMeta.presetCategories, ...listCategories])]
     .sort((a, b) => {
       const aOutros = a.toLowerCase() === 'outros'
       const bOutros = b.toLowerCase() === 'outros'
@@ -298,7 +300,6 @@ export function AddItemDialog({
                 <Input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Ex: Arroz, Leite..."
                   onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
                   autoFocus
                 />
@@ -309,7 +310,6 @@ export function AddItemDialog({
                   <Input
                     value={quantity}
                     onChange={(e) => setQuantity(e.target.value)}
-                    placeholder="Ex: 2kg, 6 un..."
                   />
                 </div>
                 <div>
@@ -317,7 +317,6 @@ export function AddItemDialog({
                   <Input
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
-                    placeholder="Ex: Grãos"
                     list="item-categories"
                   />
                   <datalist id="item-categories">
@@ -333,7 +332,6 @@ export function AddItemDialog({
                   <Input
                     value={dosage}
                     onChange={(e) => setDosage(e.target.value)}
-                    placeholder="Ex: 1 comprimido ao dia"
                   />
                 </div>
               )}

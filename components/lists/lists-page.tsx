@@ -96,6 +96,7 @@ function ListCard({
             onClick={() => onEdit(list.id)}
             className="rounded-lg p-1.5 text-muted-foreground/50 hover:bg-primary/10 hover:text-primary transition-all cursor-pointer"
             aria-label="Editar lista"
+            title="Editar lista"
           >
             <Pencil size={14} />
           </button>
@@ -103,6 +104,7 @@ function ListCard({
             onClick={() => onDuplicate(list.id)}
             className="rounded-lg p-1.5 text-muted-foreground/50 hover:bg-primary/10 hover:text-primary transition-all cursor-pointer"
             aria-label="Duplicar lista"
+            title="Duplicar lista"
           >
             <Copy size={14} />
           </button>
@@ -110,6 +112,7 @@ function ListCard({
             onClick={() => onDelete(list.id)}
             className="rounded-lg p-1.5 text-muted-foreground/50 hover:bg-destructive/10 hover:text-destructive transition-all cursor-pointer"
             aria-label="Excluir lista"
+            title="Excluir lista"
           >
             <Trash2 size={14} />
           </button>

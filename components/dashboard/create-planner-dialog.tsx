@@ -29,25 +29,25 @@ function CreatePlannerDialog({ open, onClose, editId }: Props) {
   const existing = useAppStore((s) => s.planners.find((planner) => planner.id === editId))
   const [name, setName] = useState('')
   const [category, setCategory] = useState<PlannerCategory>('diario')
-  const [color, setColor] = useState('#e05b6d')
+  const [color, setColor] = useState('#d1bdb8')
 
   const categories: { id: PlannerCategory; label: string; icon: typeof NotebookPen; color: string }[] = [
-    { id: 'diario', label: 'Diário', icon: NotebookPen, color: '#e05b6d' },
-    { id: 'estudos', label: 'Estudos', icon: GraduationCap, color: '#5b8dbf' },
-    { id: 'trabalho', label: 'Trabalho', icon: BriefcaseBusiness, color: '#c9b6e4' },
-    { id: 'fitness', label: 'Fitness', icon: Dumbbell, color: '#7bb686' },
-    { id: 'financas', label: 'Finanças', icon: Calculator, color: '#f0b429' },
-    { id: 'bullet', label: 'Bullet Journal', icon: BookHeart, color: '#e8a0a0' },
+    { id: 'diario', label: 'Diário', icon: NotebookPen, color: '#d1bdb8' },
+    { id: 'estudos', label: 'Estudos', icon: GraduationCap, color: '#6a634d' },
+    { id: 'trabalho', label: 'Trabalho', icon: BriefcaseBusiness, color: '#ddd6c6' },
+    { id: 'fitness', label: 'Fitness', icon: Dumbbell, color: '#6a634d' },
+    { id: 'financas', label: 'Finanças', icon: Calculator, color: '#b76f06' },
+    { id: 'bullet', label: 'Bullet Journal', icon: BookHeart, color: '#d1bdb8' },
   ]
 
-  const colors = ['#e05b6d', '#e8a0a0', '#f0b429', '#7bb686', '#5b8dbf', '#a5c8e4', '#c9b6e4', '#d4b070', '#b0a090', '#8b7aaa']
+  const colors = ['#d1bdb8', '#b76f06', '#6a634d', '#ddd6c6']
 
   useEffect(() => {
     if (!open) return
     if (editId && existing) {
       setName(existing.name); setCategory(existing.category); setColor(existing.color)
     } else if (!editId) {
-      setName(''); setCategory('diario'); setColor('#e05b6d')
+      setName(''); setCategory('diario'); setColor('#d1bdb8')
     }
   }, [open, editId, existing])
 

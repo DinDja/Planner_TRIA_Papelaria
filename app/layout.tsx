@@ -26,29 +26,16 @@ export const metadata: Metadata = {
   description:
     'Planner digital premium com escrita à mão, stickers e templates. Organize sua vida com fluidez e beleza.',
   icons: {
-    icon: [
-      {
-        url: '/icon-light-32x32.png',
-        media: '(prefers-color-scheme: light)',
-      },
-      {
-        url: '/icon-dark-32x32.png',
-        media: '(prefers-color-scheme: dark)',
-      },
-      {
-        url: '/icon.svg',
-        type: 'image/svg+xml',
-      },
-    ],
-    apple: '/apple-icon.png',
+    icon: '/triaprojeto.png',
+    apple: '/triaprojeto.png',
   },
 }
 
 export const viewport: Viewport = {
   colorScheme: 'light dark',
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#f5f1ea' },
-    { media: '(prefers-color-scheme: dark)', color: '#211e1a' },
+    { media: '(prefers-color-scheme: light)', color: '#f3eeed' },
+    { media: '(prefers-color-scheme: dark)', color: '#36312e' },
   ],
 }
 

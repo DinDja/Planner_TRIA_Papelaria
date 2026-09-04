@@ -55,8 +55,8 @@ export function AccountPage() {
     <div className="p-6 lg:p-8 max-w-[700px] mx-auto">
       <div className={cn('mb-8', enter)}>
         <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
-          <span className="flex size-11 items-center justify-center rounded-2xl" style={{ backgroundColor: '#8b5cf618' }}>
-            <User size={22} style={{ color: '#8b5cf6' }} />
+          <span className="flex size-11 items-center justify-center rounded-2xl" style={{ backgroundColor: '#d1bdb840' }}>
+            <User size={22} style={{ color: '#6a634d' }} />
           </span>
           Conta e Admin
         </h1>

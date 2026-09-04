@@ -8,8 +8,7 @@
  * descansa, ou afunda — não uma face. Rótulo + cor casam.
  *
  * Cinco graus: incrível / bom / neutro / ruim / difícil.
- * As cores são as mesmas já usadas legado (#7bb686 etc.), preservando níveis
- * já familiares ao usuário.
+ * As cores seguem a paleta TRIA e preservam a leitura entre níveis.
  *
  * Stroke 1.5, butt joints — coerência com components/icons/modules.
  */
@@ -105,11 +104,11 @@ interface MoodDef {
 }
 
 export const MOODS: Record<MoodId, MoodDef> = {
-  great:   { id: 'great',   label: 'Incrível', longLabel: 'incrível',          cor: '#7bb686', Icon: MoodBrilliantIcon },
-  good:    { id: 'good',    label: 'Bom',     longLabel: 'bom',               cor: '#5b8dbf', Icon: MoodGoodIcon },
-  neutral: { id: 'neutral', label: 'Neutro',  longLabel: 'neutro',            cor: '#f0b429', Icon: MoodNeutralIcon },
-  bad:     { id: 'bad',     label: 'Ruim',   longLabel: 'ruim',              cor: '#e8a0a0', Icon: MoodBadIcon },
-  tough:   { id: 'tough',   label: 'Difícil', longLabel: 'difícil',           cor: '#e05b6d', Icon: MoodToughIcon },
+  great:   { id: 'great',   label: 'Incrível', longLabel: 'incrível',          cor: '#6a634d', Icon: MoodBrilliantIcon },
+  good:    { id: 'good',    label: 'Bom',     longLabel: 'bom',               cor: '#ddd6c6', Icon: MoodGoodIcon },
+  neutral: { id: 'neutral', label: 'Neutro',  longLabel: 'neutro',            cor: '#b76f06', Icon: MoodNeutralIcon },
+  bad:     { id: 'bad',     label: 'Ruim',   longLabel: 'ruim',              cor: '#d1bdb8', Icon: MoodBadIcon },
+  tough:   { id: 'tough',   label: 'Difícil', longLabel: 'difícil',           cor: '#b76f06', Icon: MoodToughIcon },
 }
 
 export const MOOD_LIST = [MOODS.great, MOODS.good, MOODS.neutral, MOODS.bad, MOODS.tough]

@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { ArrowRight, PenLine } from 'lucide-react'
 import { InfiniteBook } from './infinite-book'
+import { BrandLogo } from '@/components/brand-logo'
+import { ThemeToggle } from '@/components/auth/theme-toggle'
 
 /** Ícones próprios para a landing — não Lucide; cada um codifica a feature. */
 function StickersGlyph({ size = 18, strokeWidth = 1.5 }: { size?: number; strokeWidth?: number }) {
@@ -153,18 +155,18 @@ function RevealFeature({
   return (
     <div
       ref={ref}
-      className="group relative rounded-2xl border border-black/[0.07] bg-white overflow-hidden p-8 transition-all duration-700 hover:border-black/[0.15] hover:bg-[#fafaf8]"
+      className="landing-card group relative rounded-2xl border overflow-hidden p-8 transition-all duration-700"
       style={{
         opacity: inView ? 1 : 0,
         transform: inView ? 'translateY(0)' : 'translateY(28px)',
         transition: `opacity 0.7s ease ${delay}ms, transform 0.7s ease ${delay}ms, border-color 0.3s ease, background-color 0.3s ease`,
       }}
     >
-      <div className="w-10 h-10 rounded-xl border border-black/10 flex items-center justify-center mb-5">
+      <div className="landing-border w-10 h-10 rounded-xl border flex items-center justify-center mb-5">
         <Icon size={18} strokeWidth={1.5} />
       </div>
       <h3 className="text-lg font-light mb-2">{title}</h3>
-      <p className="text-sm text-black/45 leading-relaxed">{desc}</p>
+      <p className="landing-copy-muted text-sm leading-relaxed">{desc}</p>
     </div>
   )
 }
@@ -184,31 +186,31 @@ const TEMPLATE_PREVIEWS = [
 const TEMPLATE_PATTERNS: Record<string, React.CSSProperties> = {
   blank: {},
   lined: {
-    backgroundImage: 'repeating-linear-gradient(to bottom, transparent 0, transparent 11px, rgba(0,0,0,0.08) 11px, rgba(0,0,0,0.08) 12px)',
+    backgroundImage: 'repeating-linear-gradient(to bottom, transparent 0, transparent 11px, color-mix(in oklab, var(--landing-fg) 12%, transparent) 11px, color-mix(in oklab, var(--landing-fg) 12%, transparent) 12px)',
   },
   grid: {
     backgroundImage:
-      'repeating-linear-gradient(to bottom, transparent 0, transparent 11px, rgba(0,0,0,0.07) 11px, rgba(0,0,0,0.07) 12px), repeating-linear-gradient(to right, transparent 0, transparent 11px, rgba(0,0,0,0.07) 11px, rgba(0,0,0,0.07) 12px)',
+      'repeating-linear-gradient(to bottom, transparent 0, transparent 11px, color-mix(in oklab, var(--landing-fg) 10%, transparent) 11px, color-mix(in oklab, var(--landing-fg) 10%, transparent) 12px), repeating-linear-gradient(to right, transparent 0, transparent 11px, color-mix(in oklab, var(--landing-fg) 10%, transparent) 11px, color-mix(in oklab, var(--landing-fg) 10%, transparent) 12px)',
   },
   dots: {
-    backgroundImage: 'radial-gradient(rgba(0,0,0,0.18) 1px, transparent 1px)',
+    backgroundImage: 'radial-gradient(color-mix(in oklab, var(--landing-fg) 20%, transparent) 1px, transparent 1px)',
     backgroundSize: '12px 12px',
   },
   cornell: {
     backgroundImage:
-      'linear-gradient(to right, transparent 0, transparent 30%, rgba(0,0,0,0.12) 30%, rgba(0,0,0,0.12) calc(30% + 1px), transparent calc(30% + 1px)), linear-gradient(to top, transparent 0, transparent 25%, rgba(0,0,0,0.12) 25%, rgba(0,0,0,0.12) calc(25% + 1px), transparent calc(25% + 1px)), repeating-linear-gradient(to bottom, transparent 0, transparent 11px, rgba(0,0,0,0.06) 11px, rgba(0,0,0,0.06) 12px)',
+      'linear-gradient(to right, transparent 0, transparent 30%, color-mix(in oklab, var(--landing-fg) 14%, transparent) 30%, color-mix(in oklab, var(--landing-fg) 14%, transparent) calc(30% + 1px), transparent calc(30% + 1px)), linear-gradient(to top, transparent 0, transparent 25%, color-mix(in oklab, var(--landing-fg) 14%, transparent) 25%, color-mix(in oklab, var(--landing-fg) 14%, transparent) calc(25% + 1px), transparent calc(25% + 1px)), repeating-linear-gradient(to bottom, transparent 0, transparent 11px, color-mix(in oklab, var(--landing-fg) 9%, transparent) 11px, color-mix(in oklab, var(--landing-fg) 9%, transparent) 12px)',
   },
   weekly: {
     backgroundImage:
-      'repeating-linear-gradient(to right, transparent 0, transparent calc(25% - 1px), rgba(0,0,0,0.1) calc(25% - 1px), rgba(0,0,0,0.1) 25%)',
+      'repeating-linear-gradient(to right, transparent 0, transparent calc(25% - 1px), color-mix(in oklab, var(--landing-fg) 12%, transparent) calc(25% - 1px), color-mix(in oklab, var(--landing-fg) 12%, transparent) 25%)',
   },
   kanban: {
     backgroundImage:
-      'repeating-linear-gradient(to right, transparent 0, transparent calc(33.33% - 1px), rgba(0,0,0,0.1) calc(33.33% - 1px), rgba(0,0,0,0.1) 33.33%)',
+      'repeating-linear-gradient(to right, transparent 0, transparent calc(33.33% - 1px), color-mix(in oklab, var(--landing-fg) 12%, transparent) calc(33.33% - 1px), color-mix(in oklab, var(--landing-fg) 12%, transparent) 33.33%)',
   },
   finance: {
     backgroundImage:
-      'repeating-linear-gradient(to bottom, transparent 0, transparent 15px, rgba(0,0,0,0.09) 15px, rgba(0,0,0,0.09) 16px), linear-gradient(to right, transparent 0, transparent 60%, rgba(0,0,0,0.09) 60%, rgba(0,0,0,0.09) calc(60% + 1px), transparent calc(60% + 1px))',
+      'repeating-linear-gradient(to bottom, transparent 0, transparent 15px, color-mix(in oklab, var(--landing-fg) 12%, transparent) 15px, color-mix(in oklab, var(--landing-fg) 12%, transparent) 16px), linear-gradient(to right, transparent 0, transparent 60%, color-mix(in oklab, var(--landing-fg) 12%, transparent) 60%, color-mix(in oklab, var(--landing-fg) 12%, transparent) calc(60% + 1px), transparent calc(60% + 1px))',
   },
 }
 
@@ -217,7 +219,7 @@ function TemplateCard({ name, pattern, delay = 0 }: { name: string; pattern: str
   return (
     <div
       ref={ref}
-      className="group rounded-2xl border border-black/[0.07] bg-white p-3 transition-all duration-500 hover:border-black/[0.2] hover:-translate-y-1 hover:shadow-[0_12px_32px_-16px_rgba(0,0,0,0.15)]"
+      className="landing-card group rounded-2xl border p-3 transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_12px_32px_-16px_rgba(0,0,0,0.15)]"
       style={{
         opacity: inView ? 1 : 0,
         transform: inView ? 'translateY(0)' : 'translateY(24px)',
@@ -225,10 +227,10 @@ function TemplateCard({ name, pattern, delay = 0 }: { name: string; pattern: str
       }}
     >
       <div
-        className="aspect-[3/4] rounded-lg bg-[#FDFCFA] border border-black/[0.05] transition-transform duration-500 group-hover:scale-[1.02]"
+        className="landing-preview aspect-[3/4] rounded-lg border transition-transform duration-500 group-hover:scale-[1.02]"
         style={TEMPLATE_PATTERNS[pattern]}
       />
-      <p className="mt-3 text-xs tracking-widest text-black/50 uppercase text-center">{name}</p>
+      <p className="landing-copy-muted mt-3 text-xs tracking-widest uppercase text-center">{name}</p>
     </div>
   )
 }
@@ -265,32 +267,35 @@ export function LandingPage() {
 
   return (
     <div
-      className="bg-[#F5F4F0] text-[#111] min-h-screen antialiased"
+      className="landing-page min-h-screen antialiased"
       style={{ fontFamily: 'var(--font-plex), sans-serif', scrollBehavior: 'smooth' }}
     >
       {/* ── STICKY NAV ─────────────────────────────────────────────────── */}
-      <nav className="fixed top-0 inset-x-0 z-50 backdrop-blur-md bg-[#F5F4F0]/70">
+      <nav className="landing-nav fixed top-0 inset-x-0 z-50 backdrop-blur-md">
         <div className="max-w-6xl mx-auto px-6 md:px-12 lg:px-20 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center">
-            <img src="/Logo.svg" alt="PlannerHub" className="h-14 w-auto" />
+            <BrandLogo className="h-14 w-36" />
           </Link>
           <div className="hidden md:flex items-center gap-8">
             {NAV_LINKS.map((l) => (
               <a
                 key={l.href}
                 href={l.href}
-                className="text-xs text-black/40 hover:text-black/70 transition-colors tracking-widest"
+                className="landing-copy-subtle text-xs transition-colors tracking-widest"
               >
                 {l.label.toUpperCase()}
               </a>
             ))}
           </div>
-          <Link
-            href="/auth/login"
-            className="px-5 py-2 rounded-xl bg-[#111] text-white text-sm tracking-widest hover:bg-[#333] transition-colors"
-          >
-            ENTRAR
-          </Link>
+          <div className="flex items-center gap-2">
+            <ThemeToggle className="landing-theme-toggle" />
+            <Link
+              href="/auth/login"
+              className="landing-action px-5 py-2 rounded-xl text-sm tracking-widest transition-colors"
+            >
+              ENTRAR
+            </Link>
+          </div>
         </div>
       </nav>
 
@@ -299,7 +304,7 @@ export function LandingPage() {
         {/* Livro do produto — ao lado do título no desktop e acima dele no mobile. */}
         <div className="absolute z-20 top-0 right-[-18%] h-[42%] w-[92%] sm:right-[-8%] sm:h-[48%] sm:w-[70%] lg:top-auto lg:right-[-2%] lg:bottom-[8%] lg:h-[76%] lg:w-[54%] xl:right-[2%] xl:w-[52%]">
           <InfiniteBook ready={heroReady} />
-          <span className="absolute bottom-3 left-1/2 hidden -translate-x-1/2 whitespace-nowrap text-[10px] uppercase tracking-[0.24em] text-black/35 pointer-events-none sm:block">
+          <span className="landing-copy-faint absolute bottom-3 left-1/2 hidden -translate-x-1/2 whitespace-nowrap text-[10px] uppercase tracking-[0.24em] pointer-events-none sm:block">
             Arraste para girar
           </span>
         </div>
@@ -313,7 +318,7 @@ export function LandingPage() {
           }}
         >
           <h1
-            className="text-6xl sm:text-7xl md:text-8xl font-light text-[#111] leading-[1.0] tracking-tight mb-10"
+            className="landing-heading text-6xl sm:text-7xl md:text-8xl font-light leading-[1.0] tracking-tight mb-10"
             style={{
               fontFamily: 'var(--font-plex), sans-serif',
               opacity: heroReady ? 1 : 0,
@@ -342,13 +347,13 @@ export function LandingPage() {
                 }}
               >
                 <div
-                  className="text-3xl sm:text-4xl text-[#111] font-light tracking-tight"
+                  className="landing-heading text-3xl sm:text-4xl font-light tracking-tight"
                   style={{ fontFamily: 'var(--font-plex), sans-serif' }}
                 >
                   {stat.value}
                 </div>
                 <div
-                  className="text-xs text-black/40 tracking-widest uppercase mt-1"
+                  className="landing-copy-subtle text-xs tracking-widest uppercase mt-1"
                   style={{ fontFamily: 'var(--font-plex), sans-serif' }}
                 >
                   {stat.label}
@@ -361,7 +366,7 @@ export function LandingPage() {
           <div className="mt-10">
             <Link
               href="/auth/login"
-              className="inline-flex items-center gap-2 px-8 py-3 rounded-xl bg-[#111] text-white text-sm tracking-widest hover:bg-[#333] transition-colors"
+              className="landing-action inline-flex items-center gap-2 px-8 py-3 rounded-xl text-sm tracking-widest transition-colors"
             >
               COMEÇAR AGORA
               <ArrowRight size={16} />
@@ -371,7 +376,7 @@ export function LandingPage() {
       </section>
 
       {/* ── MARQUEE ────────────────────────────────────────────────────── */}
-      <div className="overflow-hidden border-y border-black/[0.06] py-4 select-none" aria-hidden>
+      <div className="landing-border overflow-hidden border-y py-4 select-none" aria-hidden>
         <div
           className="flex whitespace-nowrap gap-10 w-max"
           style={{ animation: 'landing-marquee 28s linear infinite' }}
@@ -379,9 +384,9 @@ export function LandingPage() {
           {[0, 1].map((copy) => (
             <div key={copy} className="flex gap-10 items-center">
               {['Escrita à mão', 'Stickers', 'Templates', 'Finanças', 'Hábitos', 'Diário', 'Metas', 'Calendário', 'Listas', 'Memórias'].map((w) => (
-                <span key={w} className="flex items-center gap-10 text-xs tracking-[0.3em] text-black/30 uppercase">
+                <span key={w} className="landing-copy-faint flex items-center gap-10 text-xs tracking-[0.3em] uppercase">
                   {w}
-                  <span className="w-1 h-1 rounded-full bg-black/20" />
+                  <span className="landing-dot w-1 h-1 rounded-full" />
                 </span>
               ))}
             </div>
@@ -394,7 +399,7 @@ export function LandingPage() {
       <section id="plataforma" className="py-32 px-6 md:px-12 lg:px-20">
         <div className="max-w-6xl mx-auto">
           <Reveal className="mb-16">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] tracking-widest text-black/40 bg-black/[0.04]">
+            <span className="landing-chip inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] tracking-widest">
               PLATAFORMA
             </span>
             <h2
@@ -422,11 +427,11 @@ export function LandingPage() {
       </section>
 
       {/* ── TEMPLATES ──────────────────────────────────────────────────── */}
-      <section id="templates" className="py-32 px-6 md:px-12 lg:px-20 border-t border-black/[0.06]">
+      <section id="templates" className="landing-border py-32 px-6 md:px-12 lg:px-20 border-t">
         <div className="max-w-6xl mx-auto">
           <Reveal className="mb-16 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
             <div>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] tracking-widest text-black/40 bg-black/[0.04]">
+              <span className="landing-chip inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] tracking-widest">
                 TEMPLATES
               </span>
               <h2
@@ -438,7 +443,7 @@ export function LandingPage() {
                 cada momento.
               </h2>
             </div>
-            <p className="text-sm text-black/45 max-w-xs leading-relaxed">
+            <p className="landing-copy-muted text-sm max-w-xs leading-relaxed">
               14 formatos prontos — do Cornell ao Kanban — aplicados com um toque, sem sair do canvas.
             </p>
           </Reveal>
@@ -452,10 +457,10 @@ export function LandingPage() {
       </section>
 
       {/* ── PREÇOS ─────────────────────────────────────────────────────── */}
-      <section id="precos" className="py-32 px-6 md:px-12 lg:px-20 border-t border-black/[0.06]">
+      <section id="precos" className="landing-border py-32 px-6 md:px-12 lg:px-20 border-t">
         <div className="max-w-6xl mx-auto">
           <Reveal className="mb-16 text-center">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] tracking-widest text-black/40 bg-black/[0.04]">
+            <span className="landing-chip inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] tracking-widest">
               PREÇOS
             </span>
             <h2
@@ -472,27 +477,27 @@ export function LandingPage() {
                 <div
                   className={`relative rounded-2xl border p-8 h-full transition-all duration-500 hover:-translate-y-1 ${
                     p.highlight
-                      ? 'bg-[#111] text-white border-[#111]'
-                      : 'bg-white border-black/[0.07] hover:border-black/[0.15]'
+                       ? 'landing-action-card border'
+                       : 'landing-surface landing-border border'
                   }`}
                 >
                   {p.highlight && (
-                    <span className="absolute -top-3 left-8 px-3 py-1 rounded-full bg-[#F5F4F0] text-[#111] text-[10px] tracking-widest">
+                    <span className="landing-recommendation absolute -top-3 left-8 px-3 py-1 rounded-full text-[10px] tracking-widest">
                       RECOMENDADO
                     </span>
                   )}
                   <h3 className="text-lg font-light">{p.name}</h3>
                   <div className="mt-4 flex items-baseline gap-1">
                     <span className="text-4xl font-light tracking-tight">{p.price}</span>
-                    <span className={`text-xs ${p.highlight ? 'text-white/50' : 'text-black/40'}`}>{p.period}</span>
+                    <span className={`text-xs ${p.highlight ? 'landing-on-action-muted' : 'landing-copy-subtle'}`}>{p.period}</span>
                   </div>
                   <ul className="mt-6 space-y-2.5">
                     {p.features.map((f) => (
                       <li
                         key={f}
-                        className={`text-sm flex items-start gap-2 ${p.highlight ? 'text-white/70' : 'text-black/55'}`}
+                        className={`text-sm flex items-start gap-2 ${p.highlight ? 'landing-on-action-muted' : 'landing-copy-muted'}`}
                       >
-                        <span className={`mt-[7px] w-1 h-1 rounded-full shrink-0 ${p.highlight ? 'bg-white/50' : 'bg-black/25'}`} />
+                        <span className={`mt-[7px] w-1 h-1 rounded-full shrink-0 ${p.highlight ? 'landing-on-action-dot' : 'landing-dot'}`} />
                         {f}
                       </li>
                     ))}
@@ -501,8 +506,8 @@ export function LandingPage() {
                     href="/auth/login"
                     className={`mt-8 inline-flex items-center justify-center w-full py-3 rounded-xl text-sm tracking-widest transition-colors ${
                       p.highlight
-                        ? 'bg-white text-[#111] hover:bg-white/90'
-                        : 'bg-[#111] text-white hover:bg-[#333]'
+                        ? 'landing-action-inverse'
+                        : 'landing-action'
                     }`}
                   >
                     {p.cta}
@@ -515,7 +520,7 @@ export function LandingPage() {
       </section>
 
       {/* ── CTA final ────────────────────────────────────────────────────── */}
-      <section className="py-32 px-6 md:px-12 lg:px-20 border-t border-black/[0.06]">
+      <section className="landing-border py-32 px-6 md:px-12 lg:px-20 border-t">
         <div className="relative z-10 max-w-2xl mx-auto text-center">
           <h2
             className="text-4xl md:text-5xl lg:text-6xl font-light tracking-tight leading-[1.05] mb-6"
@@ -525,12 +530,12 @@ export function LandingPage() {
             <br />
             agora mesmo.
           </h2>
-          <p className="text-sm text-black/45 leading-relaxed mb-10 max-w-md mx-auto">
+          <p className="landing-copy-muted text-sm leading-relaxed mb-10 max-w-md mx-auto">
             Entre com sua conta e seus planners sincronizam em qualquer dispositivo. Pronto em segundos.
           </p>
           <Link
             href="/auth/login"
-            className="inline-flex items-center gap-2 px-10 py-4 rounded-xl bg-[#111] text-white text-sm tracking-widest hover:bg-[#333] transition-colors"
+            className="landing-action inline-flex items-center gap-2 px-10 py-4 rounded-xl text-sm tracking-widest transition-colors"
           >
             ENTRAR NA MINHA CONTA
             <ArrowRight size={16} />
@@ -539,10 +544,10 @@ export function LandingPage() {
       </section>
 
       {/* ── FOOTER ───────────────────────────────────────────────────────── */}
-      <footer className="py-10 px-6 md:px-12 lg:px-20 border-t border-black/[0.06]">
+      <footer className="landing-border py-10 px-6 md:px-12 lg:px-20 border-t">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
           <span
-            className="text-xs tracking-[0.25em] text-black/50"
+            className="landing-copy-muted text-xs tracking-[0.25em]"
             style={{ fontFamily: 'var(--font-plex), sans-serif' }}
           >
             PLANNERHUB
@@ -552,21 +557,21 @@ export function LandingPage() {
               <a
                 key={l.href}
                 href={l.href}
-                className="text-xs text-black/35 hover:text-black/70 transition-colors tracking-widest"
+                className="landing-copy-subtle text-xs transition-colors tracking-widest"
               >
                 {l.label.toUpperCase()}
               </a>
             ))}
             <Link
               href="/auth/login"
-              className="text-xs text-black/35 hover:text-black/70 transition-colors tracking-widest"
+              className="landing-copy-subtle text-xs transition-colors tracking-widest"
             >
               ENTRAR
             </Link>
           </div>
         </div>
-        <div className="max-w-6xl mx-auto mt-8 pt-6 border-t border-black/[0.04]">
-          <span className="text-xs text-black/20">© {new Date().getFullYear()} PlannerHub. Feito com 💛 para quem ama planejar.</span>
+        <div className="landing-border max-w-6xl mx-auto mt-8 pt-6 border-t">
+          <span className="landing-copy-faint text-xs">© {new Date().getFullYear()} PlannerHub. Feito com 💛 para quem ama planejar.</span>
         </div>
       </footer>
     </div>

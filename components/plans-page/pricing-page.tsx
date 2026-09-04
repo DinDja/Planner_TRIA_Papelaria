@@ -52,7 +52,7 @@ function PricingPage() {
       <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-border/50 bg-card px-4 py-2">
         <span className={cn(
           'size-2 rounded-full',
-          isActive ? 'bg-emerald-500' : 'bg-muted-foreground/40',
+          isActive ? 'bg-success' : 'bg-muted-foreground/40',
         )} />
         <span className="text-sm">
           Status: <span className="font-semibold">{label}</span>
@@ -80,11 +80,11 @@ function PricingPage() {
               <Card
                 className={cn(
                   'relative h-full flex flex-col',
-                  popular && 'border-amber-400/40 shadow-lg ring-2 ring-amber-400/15',
+                  popular && 'border-warning/40 shadow-lg ring-2 ring-warning/15',
                 )}
               >
                 {popular && (
-                  <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-500 text-amber-950 px-4 py-1 text-xs font-semibold rounded-full">
+                  <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-warning text-primary-foreground px-4 py-1 text-xs font-semibold rounded-full">
                     Mais escolhido
                   </Badge>
                 )}
@@ -99,7 +99,7 @@ function PricingPage() {
                   <div>
                     <h3 className="font-bold text-lg">{plan.label}</h3>
                     {plan.savings && (
-                      <p className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">
+                      <p className="text-[11px] text-warning dark:text-warning font-medium">
                         {plan.savings}
                       </p>
                     )}
@@ -115,20 +115,20 @@ function PricingPage() {
 
                 <ul className="flex-1 space-y-2.5 mb-6 text-sm text-muted-foreground">
                   <li className="flex items-start gap-2.5">
-                    <Check size={16} className="text-emerald-500 mt-0.5 shrink-0" />
+                    <Check size={16} className="text-success mt-0.5 shrink-0" />
                     Todos os módulos do PlannerHub
                   </li>
                   <li className="flex items-start gap-2.5">
-                    <Check size={16} className="text-emerald-500 mt-0.5 shrink-0" />
+                    <Check size={16} className="text-success mt-0.5 shrink-0" />
                     Planners, páginas e stickers ilimitados
                   </li>
                   <li className="flex items-start gap-2.5">
-                    <Check size={16} className="text-emerald-500 mt-0.5 shrink-0" />
+                    <Check size={16} className="text-success mt-0.5 shrink-0" />
                     OCR, exportação e sincronização
                   </li>
                   {id === 'annual' && (
                     <li className="flex items-start gap-2.5">
-                      <Check size={16} className="text-emerald-500 mt-0.5 shrink-0" />
+                      <Check size={16} className="text-success mt-0.5 shrink-0" />
                       Acesso antecipado a novos recursos
                     </li>
                   )}

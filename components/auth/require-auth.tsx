@@ -65,7 +65,7 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
 
 function useAuth_signOut(router: ReturnType<typeof useRouter>) {
   return import('firebase/auth').then(({ getAuth, signOut }) => {
-    signOut(getAuth()).then(() => router.replace('/auth/login'))
+    signOut(getAuth()).then(() => router.replace('/'))
   })
 }
 

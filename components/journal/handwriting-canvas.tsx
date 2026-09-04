@@ -9,7 +9,7 @@ import { Button } from '../ui/button'
 
 const uid = () => Math.random().toString(36).slice(2, 10)
 
-const COLORS = ['#1e1e2e', '#e05b6d', '#5b8dbf', '#7bb686', '#f0b429', '#c9b6e4', '#e8a0a0']
+const COLORS = ['#1e1e2e', '#d1bdb8', '#b76f06', '#6a634d', '#ddd6c6']
 
 function vecToSvgPath(points: [number, number][]): string {
   if (points.length < 2) return ''

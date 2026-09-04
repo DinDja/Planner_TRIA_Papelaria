@@ -1358,7 +1358,7 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
         { id: 'add-sticky-note', label: 'Nova nota adesiva', icon: StickyNote, onClick: () => {
           const newData = JSON.parse(JSON.stringify(data)) as CanvasData
           newData.stickyNotes = [...newData.stickyNotes, {
-            id: uid(), x: 200, y: 200 + Math.random() * 200, text: '', color: '#f0b429',
+            id: uid(), x: 200, y: 200 + Math.random() * 200, text: '', color: '#b76f06',
           }]
           commit(newData)
           toast({ title: 'Nota adesiva adicionada' })
@@ -1366,7 +1366,7 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
         { id: 'add-shape', label: 'Novo retângulo', icon: Square, onClick: () => {
           const newData = JSON.parse(JSON.stringify(data)) as CanvasData
           newData.shapes = [...newData.shapes, {
-            id: uid(), kind: 'rectangle', x: 200, y: 200, width: 120, height: 80, color: '#e05b6d',
+            id: uid(), kind: 'rectangle', x: 200, y: 200, width: 120, height: 80, color: '#d1bdb8',
           }]
           commit(newData)
           toast({ title: 'Forma adicionada' })
@@ -1650,7 +1650,7 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
   // ─── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex h-[100dvh] flex-col bg-[color:light-dark(#e8e5df,#1a1a18)]">
+    <div className="flex h-[100dvh] flex-col bg-[color:light-dark(#ddd6c6,#211f1a)]">
       {/* Top bar (mobile-first) */}
       <div className="flex items-center gap-2 h-12 md:h-14 px-2 md:px-3 border-b border-border/40 bg-background/80 backdrop-blur-lg shrink-0">
         <Button variant="ghost" size="icon-sm" className="rounded-xl shrink-0" onClick={() => router.back()}>
@@ -1677,7 +1677,7 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
         {/* Autosave indicator (desktop) */}
         <span className={cn(
           'hidden md:block text-[10px] transition-opacity duration-500',
-          autoSaveStatus === 'saving' ? 'opacity-100 text-amber-500' : 'opacity-50 text-muted-foreground'
+          autoSaveStatus === 'saving' ? 'opacity-100 text-warning' : 'opacity-50 text-muted-foreground'
         )}>
           {autoSaveStatus === 'saving' ? 'Salvando…' : 'Salvo ✓'}
         </span>
@@ -1845,7 +1845,7 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
                   { label: 'Nota adesiva', icon: StickyNote, action: () => {
                     const newData = JSON.parse(JSON.stringify(data)) as CanvasData
                     newData.stickyNotes = [...newData.stickyNotes, {
-                      id: uid(), x: 200, y: 200 + Math.random() * 200, text: '', color: '#f0b429',
+                      id: uid(), x: 200, y: 200 + Math.random() * 200, text: '', color: '#b76f06',
                     }]
                     commit(newData)
                     toast({ title: 'Nota adesiva adicionada' })
@@ -1853,7 +1853,7 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
                   { label: 'Retângulo', icon: Square, action: () => {
                     const newData = JSON.parse(JSON.stringify(data)) as CanvasData
                     newData.shapes = [...newData.shapes, {
-                      id: uid(), kind: 'rectangle', x: 200, y: 200, width: 120, height: 80, color: '#e05b6d',
+                      id: uid(), kind: 'rectangle', x: 200, y: 200, width: 120, height: 80, color: '#d1bdb8',
                     }]
                     commit(newData)
                     toast({ title: 'Forma adicionada' })
@@ -1861,7 +1861,7 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
                   { label: 'Círculo', icon: Minimize2, action: () => {
                     const newData = JSON.parse(JSON.stringify(data)) as CanvasData
                     newData.shapes = [...newData.shapes, {
-                      id: uid(), kind: 'ellipse', x: 200, y: 200, width: 100, height: 100, color: '#5b8dbf',
+                      id: uid(), kind: 'ellipse', x: 200, y: 200, width: 100, height: 100, color: '#6a634d',
                     }]
                     commit(newData)
                     toast({ title: 'Forma adicionada' })
@@ -1869,7 +1869,7 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
                   { label: 'Triângulo', icon: ALargeSmall, action: () => {
                     const newData = JSON.parse(JSON.stringify(data)) as CanvasData
                     newData.shapes = [...newData.shapes, {
-                      id: uid(), kind: 'triangle', x: 200, y: 200, width: 100, height: 100, color: '#7bb686',
+                      id: uid(), kind: 'triangle', x: 200, y: 200, width: 100, height: 100, color: '#6a634d',
                     }]
                     commit(newData)
                     toast({ title: 'Forma adicionada' })
@@ -1877,7 +1877,7 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
                   { label: 'Seta', icon: ArrowLeft, action: () => {
                     const newData = JSON.parse(JSON.stringify(data)) as CanvasData
                     newData.shapes = [...newData.shapes, {
-                      id: uid(), kind: 'arrow', x: 200, y: 200, width: 120, height: 60, color: '#f0b429',
+                      id: uid(), kind: 'arrow', x: 200, y: 200, width: 120, height: 60, color: '#b76f06',
                     }]
                     commit(newData)
                     toast({ title: 'Forma adicionada' })
@@ -2346,12 +2346,12 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
                 <div
                   aria-hidden
                   className="absolute inset-0 rounded-[10px] rotate-[1.2deg] translate-x-2.5 translate-y-3 shadow-paper-sheet"
-                  style={{ backgroundColor: isDark ? '#222220' : '#efece5' }}
+                  style={{ backgroundColor: isDark ? '#211f1a' : '#ddd6c6' }}
                 />
                 <div
                   aria-hidden
                   className="absolute inset-0 rounded-[10px] rotate-[-0.8deg] -translate-x-2 translate-y-1.5 shadow-paper-sheet"
-                  style={{ backgroundColor: isDark ? '#252523' : '#f7f5f0' }}
+                  style={{ backgroundColor: isDark ? '#29261f' : '#eee8dc' }}
                 />
 
                 <div
@@ -2932,7 +2932,7 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
                     key={st.id}
                     className={cn(
                       'aspect-square rounded-xl border border-border/40 p-2 hover:border-primary/30 hover:bg-muted/40 transition-all flex items-center justify-center cursor-pointer active:scale-95',
-                      favoriteStickers.has(st.id) && 'border-yellow-500/40',
+                      favoriteStickers.has(st.id) && 'border-warning/40',
                     )}
                     draggable
                     onDragStart={(e) => {

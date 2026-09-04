@@ -113,9 +113,9 @@ export function QuotesPage() {
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
             <span
               className="flex size-11 items-center justify-center rounded-2xl"
-              style={{ backgroundColor: '#c9b6e418' }}
+              style={{ backgroundColor: '#ddd6c618' }}
             >
-              <Bookmark size={22} style={{ color: '#c9b6e4' }} />
+              <Bookmark size={22} style={{ color: '#ddd6c6' }} />
             </span>
             Frases Favoritas
           </h1>

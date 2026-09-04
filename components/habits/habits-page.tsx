@@ -63,7 +63,7 @@ function MiniHeatmap({ habitId }: { habitId: string }) {
             className={cn(
               'size-[10px] rounded-sm transition-colors',
               d.isToday && 'ring-1 ring-foreground/50',
-              done ? 'bg-emerald-500' : 'bg-muted/40',
+              done ? 'bg-success' : 'bg-muted/40',
             )}
             title={`${d.date}${done ? ' ✓' : ''}`}
           />
@@ -148,14 +148,14 @@ function HabitCard({
           {/* Streak + monthly % */}
           <div className="flex items-center gap-4 mt-1.5">
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <Flame size={13} className={cn(streak > 0 ? 'text-orange-500' : 'text-muted-foreground/50')} />
-              <span className={cn('font-semibold tabular-nums', streak > 0 && 'text-orange-500')}>
+              <Flame size={13} className={cn(streak > 0 ? 'text-warning' : 'text-muted-foreground/50')} />
+              <span className={cn('font-semibold tabular-nums', streak > 0 && 'text-warning')}>
                 {streak}
               </span>
               <span className="text-[10px]">dias</span>
             </div>
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <TrendingUp size={13} className={monthPct > 50 ? 'text-emerald-500' : ''} />
+              <TrendingUp size={13} className={monthPct > 50 ? 'text-success' : ''} />
               <span className="font-semibold tabular-nums">{monthPct}%</span>
               <span className="text-[10px]">este mês</span>
             </div>
@@ -240,8 +240,8 @@ export function HabitsPage() {
       <div className={cn('flex flex-wrap items-end justify-between gap-4 mb-8', enter)}>
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
-            <span className="flex size-11 items-center justify-center rounded-2xl" style={{ backgroundColor: '#7bb68618' }}>
-              <Target size={22} style={{ color: '#7bb686' }} />
+            <span className="flex size-11 items-center justify-center rounded-2xl" style={{ backgroundColor: '#6a634d18' }}>
+              <Target size={22} style={{ color: '#6a634d' }} />
             </span>
             Hábitos
           </h1>
@@ -258,10 +258,10 @@ export function HabitsPage() {
       {/* Stats */}
       <div className={cn('grid grid-cols-2 md:grid-cols-4 gap-4 mb-8', enter)}>
         {[
-          { label: 'Hábitos ativos', value: activeHabits.length, icon: Target, color: '#7bb686' },
-          { label: 'Feitos hoje', value: todayDone, icon: CheckCircle2, color: '#5b8dbf' },
-          { label: 'Melhor sequência', value: `${bestStreak} dias`, icon: Flame, color: '#f0b429' },
-          { label: 'Total de registros', value: logs.length, icon: TrendingUp, color: '#c9b6e4' },
+          { label: 'Hábitos ativos', value: activeHabits.length, icon: Target, color: '#6a634d' },
+          { label: 'Feitos hoje', value: todayDone, icon: CheckCircle2, color: '#d1bdb8' },
+          { label: 'Melhor sequência', value: `${bestStreak} dias`, icon: Flame, color: '#b76f06' },
+          { label: 'Total de registros', value: logs.length, icon: TrendingUp, color: '#ddd6c6' },
         ].map((s) => (
           <Card key={s.label} glass hover className="relative overflow-hidden">
             <div className="flex items-start justify-between">

@@ -42,6 +42,7 @@ import { usePathname } from 'next/navigation'
 import { useTheme } from '../providers/theme-provider'
 import { Button } from '../ui/button'
 import { ScrollArea, Separator } from '../ui/primitives'
+import { BrandLogo } from '../brand-logo'
 
 interface SidebarProps {
   collapsed: boolean
@@ -107,7 +108,7 @@ export function AppSidebar({
     <div className="flex h-full flex-col">
       {/* Logo */}
       <div className={cn('flex items-center px-4 py-2 h-24 shrink-0', collapsed && 'justify-center px-2')}>
-        <img src="/Logo.svg" alt="PlannerHub" className="h-20 w-auto" />
+        <BrandLogo className="h-20 w-[190px]" imageClassName="w-[380px]" />
         <button
           onClick={() => setMobileOpen(false)}
           className="ml-auto rounded-lg p-1 hover:bg-muted md:hidden cursor-pointer"
@@ -157,7 +158,7 @@ export function AppSidebar({
                 className={cn(
                   'flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-all duration-200',
                   active
-                    ? 'bg-primary/15 text-primary'
+                    ? 'bg-brand-rose/70 text-foreground dark:bg-brand-rose/20 dark:text-brand-beige'
                     : 'text-muted-foreground hover:text-foreground hover:bg-muted/60',
                   collapsed && 'justify-center px-0 py-2',
                 )}

@@ -11,11 +11,11 @@ import { Input } from '../ui/primitives'
 import { toast } from '../ui/toaster'
 
 const MOOD_OPTIONS: { value: MemoryMood; label: string; icon: typeof Smile; color: string }[] = [
-  { value: 'great', label: 'Incrível', icon: Sparkles, color: '#7bb686' },
-  { value: 'good', label: 'Bom', icon: Smile, color: '#5b8dbf' },
-  { value: 'neutral', label: 'Neutro', icon: Meh, color: '#f0b429' },
-  { value: 'bad', label: 'Ruim', icon: Frown, color: '#e8a0a0' },
-  { value: 'tough', label: 'Difícil', icon: Angry, color: '#e05b6d' },
+  { value: 'great', label: 'Incrível', icon: Sparkles, color: '#6a634d' },
+  { value: 'good', label: 'Bom', icon: Smile, color: '#ddd6c6' },
+  { value: 'neutral', label: 'Neutro', icon: Meh, color: '#b76f06' },
+  { value: 'bad', label: 'Ruim', icon: Frown, color: '#d1bdb8' },
+  { value: 'tough', label: 'Difícil', icon: Angry, color: '#b76f06' },
 ]
 
 const dayStr = (): string => {

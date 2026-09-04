@@ -23,7 +23,7 @@ import { Dialog, DialogContent } from '../ui/overlays'
 import { Input } from '../ui/primitives'
 import { toast } from '../ui/toaster'
 
-const COLORS = ['#e05b6d', '#f0b429', '#7bb686', '#5b8dbf', '#c9b6e4', '#e8a0a0', '#d4b070']
+const COLORS = ['#d1bdb8', '#b76f06', '#6a634d', '#ddd6c6']
 
 const selectClass =
   'flex h-9 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm shadow-sm outline-none transition-colors focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/20'
@@ -159,7 +159,7 @@ export function AddTransactionDialog({
                 className={cn('flex-1 rounded-xl border px-3 py-2 text-xs font-medium transition-all cursor-pointer',
                   type === t ? 'border-transparent text-white shadow-md' : 'border-border/60 text-muted-foreground hover:bg-muted/50',
                 )}
-                style={type === t ? { backgroundColor: t === 'income' ? '#7bb686' : '#e05b6d' } : undefined}
+                style={type === t ? { backgroundColor: t === 'income' ? '#6a634d' : '#d1bdb8' } : undefined}
               >{t === 'income' ? 'Receita' : 'Despesa'}</button>
             ))}
           </div>

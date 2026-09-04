@@ -348,9 +348,9 @@ export function NotesPage() {
             <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
               <span
                 className="flex size-11 items-center justify-center rounded-2xl"
-                style={{ backgroundColor: '#f0b42918' }}
+                style={{ backgroundColor: '#b76f0618' }}
               >
-                <FileText size={22} style={{ color: '#f0b429' }} />
+                <FileText size={22} style={{ color: '#b76f06' }} />
               </span>
               Notas
             </h1>

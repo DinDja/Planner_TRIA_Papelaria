@@ -105,7 +105,7 @@ export function HealthOnboarding({
           <div className="h-1.5 rounded-full bg-muted overflow-hidden mt-3">
             <div
               className="h-full rounded-full transition-all duration-500"
-              style={{ width: `${progress}%`, backgroundColor: '#7bb686' }}
+              style={{ width: `${progress}%`, backgroundColor: '#6a634d' }}
             />
           </div>
         </CardHeader>
@@ -124,7 +124,7 @@ export function HealthOnboarding({
                   className={cn(
                     'flex flex-col items-center gap-2 rounded-2xl border px-4 py-6 text-sm font-medium transition-all cursor-pointer',
                     sex === 'female'
-                      ? 'border-rose-500/60 bg-rose-500/10 text-rose-600 shadow-sm'
+                      ? 'border-brand-rose bg-brand-rose/45 text-foreground shadow-sm'
                       : 'border-border/60 text-muted-foreground hover:bg-muted/50',
                   )}
                 >
@@ -137,7 +137,7 @@ export function HealthOnboarding({
                   className={cn(
                     'flex flex-col items-center gap-2 rounded-2xl border px-4 py-6 text-sm font-medium transition-all cursor-pointer',
                     sex === 'male'
-                      ? 'border-blue-500/60 bg-blue-500/10 text-blue-600 shadow-sm'
+                      ? 'border-brand-green/60 bg-brand-green/10 text-brand-green dark:text-success shadow-sm'
                       : 'border-border/60 text-muted-foreground hover:bg-muted/50',
                   )}
                 >

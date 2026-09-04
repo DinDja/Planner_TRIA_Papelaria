@@ -22,11 +22,11 @@ import { AddMemoryDialog } from './memories-dialogs'
 const enter = 'animate-in fade-in slide-in-from-bottom-3 duration-500 fill-mode-both'
 
 const MOOD_CONFIG: Record<MemoryMood, { icon: typeof Smile; label: string; color: string }> = {
-  great: { icon: Sparkles, label: 'Incrível', color: '#7bb686' },
-  good: { icon: Smile, label: 'Bom', color: '#5b8dbf' },
-  neutral: { icon: Meh, label: 'Neutro', color: '#f0b429' },
-  bad: { icon: Frown, label: 'Ruim', color: '#e8a0a0' },
-  tough: { icon: Angry, label: 'Difícil', color: '#e05b6d' },
+  great: { icon: Sparkles, label: 'Incrível', color: '#6a634d' },
+  good: { icon: Smile, label: 'Bom', color: '#ddd6c6' },
+  neutral: { icon: Meh, label: 'Neutro', color: '#b76f06' },
+  bad: { icon: Frown, label: 'Ruim', color: '#d1bdb8' },
+  tough: { icon: Angry, label: 'Difícil', color: '#b76f06' },
 }
 
 function formatDate(dateStr: string): string {
@@ -159,9 +159,9 @@ export function MemoriesPage() {
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
             <span
               className="flex size-11 items-center justify-center rounded-2xl"
-              style={{ backgroundColor: '#e8a0a018' }}
+              style={{ backgroundColor: '#d1bdb818' }}
             >
-              <Box size={22} style={{ color: '#e8a0a0' }} />
+              <Box size={22} style={{ color: '#d1bdb8' }} />
             </span>
             Caixa de Memórias
           </h1>

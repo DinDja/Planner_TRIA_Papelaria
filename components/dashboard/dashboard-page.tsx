@@ -126,10 +126,10 @@ export function DashboardPage() {
       {/* Stats row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         {[
-          { label: 'Planners', value: planners.length, icon: FolderOpen, color: '#e05b6d' },
-          { label: 'Páginas', value: totalPages, icon: NotebookPen, color: '#5b8dbf' },
-          { label: 'Registros na semana', value: recordsThisWeek, icon: Clock, color: '#f0b429' },
-          { label: 'Dias de streak', value: currentStreak, icon: Flame, color: '#e8a0a0' },
+          { label: 'Planners', value: planners.length, icon: FolderOpen, color: '#d1bdb8' },
+          { label: 'Páginas', value: totalPages, icon: NotebookPen, color: '#6a634d' },
+          { label: 'Registros na semana', value: recordsThisWeek, icon: Clock, color: '#b76f06' },
+          { label: 'Dias de streak', value: currentStreak, icon: Flame, color: '#d1bdb8' },
         ].map((stat) => (
           <Card key={stat.label} glass hover className="relative overflow-hidden">
             <div className="absolute top-0 right-0 w-20 h-20 rounded-bl-full opacity-10" style={{ backgroundColor: stat.color }} />
@@ -213,7 +213,7 @@ export function DashboardPage() {
             <Card glass>
               <CardHeader className="flex-row items-center justify-between pb-0">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Star size={16} className="text-yellow-500 fill-yellow-500" />
+                  <Star size={16} className="text-warning fill-warning" />
                   Favoritos
                 </CardTitle>
               </CardHeader>
@@ -275,7 +275,7 @@ export function DashboardPage() {
                         className="w-full rounded-t-xl transition-all duration-500"
                         style={{
                           height: `${h}%`,
-                          backgroundColor: day.count > 0 ? '#5b8dbf' : '#d8dee8',
+                          backgroundColor: day.count > 0 ? '#6a634d' : '#ddd6c6',
                           opacity: 0.8,
                         }}
                       />
@@ -383,7 +383,7 @@ export function DashboardPage() {
           <Card glass>
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
-                <Target size={16} className="text-emerald-500" />
+                <Target size={16} className="text-success" />
                 Objetivos
               </CardTitle>
             </CardHeader>

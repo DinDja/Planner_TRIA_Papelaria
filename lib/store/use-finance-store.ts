@@ -50,8 +50,8 @@ const seedSubscriptions: Subscription[] = [
 ]
 
 const seedCards: CreditCard[] = [
-  { id: 'card-seed-1', name: 'Nubank', limit: 500000, closingDay: 3, dueDay: 10, color: '#5b8dbf', createdAt: nowISO() },
-  { id: 'card-seed-2', name: 'Inter', limit: 300000, closingDay: 15, dueDay: 22, color: '#e05b6d', createdAt: nowISO() },
+  { id: 'card-seed-1', name: 'Nubank', limit: 500000, closingDay: 3, dueDay: 10, color: '#6a634d', createdAt: nowISO() },
+  { id: 'card-seed-2', name: 'Inter', limit: 300000, closingDay: 15, dueDay: 22, color: '#d1bdb8', createdAt: nowISO() },
 ]
 
 const seedInstallments: Installment[] = [
@@ -60,15 +60,15 @@ const seedInstallments: Installment[] = [
 ]
 
 const seedGoals: FinancialGoal[] = [
-  { id: 'goal-seed-1', title: 'Reserva de emergência', targetAmount: 600000, currentAmount: 150000, color: '#7bb686', createdAt: nowISO() },
-  { id: 'goal-seed-2', title: 'Viagem para Europa', targetAmount: 1200000, currentAmount: 300000, color: '#5b8dbf', deadline: '2027-06-01', createdAt: nowISO() },
-  { id: 'goal-seed-3', title: 'Carro novo', targetAmount: 8000000, currentAmount: 500000, color: '#f0b429', createdAt: nowISO() },
+  { id: 'goal-seed-1', title: 'Reserva de emergência', targetAmount: 600000, currentAmount: 150000, color: '#6a634d', createdAt: nowISO() },
+  { id: 'goal-seed-2', title: 'Viagem para Europa', targetAmount: 1200000, currentAmount: 300000, color: '#6a634d', deadline: '2027-06-01', createdAt: nowISO() },
+  { id: 'goal-seed-3', title: 'Carro novo', targetAmount: 8000000, currentAmount: 500000, color: '#b76f06', createdAt: nowISO() },
 ]
 
 const seedBoxes: SavingsBox[] = [
-  { id: 'box-seed-1', name: 'Fundo de emergência', targetAmount: 600000, currentAmount: 250000, color: '#7bb686', createdAt: nowISO() },
-  { id: 'box-seed-2', name: 'Viagem', targetAmount: 500000, currentAmount: 120000, color: '#5b8dbf', deadline: '2026-12-31', createdAt: nowISO() },
-  { id: 'box-seed-3', name: 'Presentes Natal', targetAmount: 200000, currentAmount: 80000, color: '#e05b6d', deadline: '2026-12-20', createdAt: nowISO() },
+  { id: 'box-seed-1', name: 'Fundo de emergência', targetAmount: 600000, currentAmount: 250000, color: '#6a634d', createdAt: nowISO() },
+  { id: 'box-seed-2', name: 'Viagem', targetAmount: 500000, currentAmount: 120000, color: '#6a634d', deadline: '2026-12-31', createdAt: nowISO() },
+  { id: 'box-seed-3', name: 'Presentes Natal', targetAmount: 200000, currentAmount: 80000, color: '#d1bdb8', deadline: '2026-12-20', createdAt: nowISO() },
 ]
 
 // ─── Store ────────────────────────────────────────────────────────────────────
@@ -241,7 +241,7 @@ export const useFinanceStore = create<FinanceState>()(
         })),
 
       // ── Cartões ─────────────────────────────────────────────────────
-      addCard: ({ color = '#5b8dbf', ...data }) =>
+      addCard: ({ color = '#6a634d', ...data }) =>
         set((s) => ({
           cards: [
             ...s.cards,
@@ -280,7 +280,7 @@ export const useFinanceStore = create<FinanceState>()(
         })),
 
       // ── Metas ──────────────────────────────────────────────────────
-      addGoal: ({ color = '#7bb686', currentAmount = 0, ...data }) =>
+      addGoal: ({ color = '#6a634d', currentAmount = 0, ...data }) =>
         set((s) => {
           const id = `goal-${uid()}`
           const deposits: GoalDeposit[] = currentAmount > 0
@@ -345,7 +345,7 @@ export const useFinanceStore = create<FinanceState>()(
       getGoalDeposits: (goalId) => get().goalDeposits.filter((d) => d.goalId === goalId),
 
       // ── Caixinhas ──────────────────────────────────────────────────
-      addBox: ({ color = '#7bb686', currentAmount = 0, ...data }) =>
+      addBox: ({ color = '#6a634d', currentAmount = 0, ...data }) =>
         set((s) => ({
           savingsBoxes: [
             ...s.savingsBoxes,

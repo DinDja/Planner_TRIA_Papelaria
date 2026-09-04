@@ -5,9 +5,9 @@ import type { TaskPriority, Weekday } from '@/lib/types'
 // ─── Prioridades ──────────────────────────────────────────────────────────────
 
 export const PRIORITY_COLORS: Record<TaskPriority, string> = {
-  high: '#e05b6d',
-  medium: '#f0b429',
-  low: '#5b8dbf',
+  high: '#d1bdb8',
+  medium: '#b76f06',
+  low: '#6a634d',
 }
 
 export const PRIORITY_LABELS: Record<TaskPriority, string> = {

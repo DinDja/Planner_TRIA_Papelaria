@@ -16,23 +16,22 @@ interface ActivityChartProps {
 
 const daysOfWeek = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
 const dayColors = {
-  'Seg': '#3b82f6',
-  'Ter': '#10b981', 
-  'Qua': '#f59e0b',
-  'Qui': '#ef4444',
-  'Sex': '#8b5cf6',
-  'Sáb': '#06b6d4',
-  'Dom': '#6366f1'
+  'Seg': '#d1bdb8',
+  'Ter': '#b76f06',
+  'Qua': '#6a634d',
+  'Qui': '#ddd6c6',
+  'Sex': '#d1bdb8',
+  'Sáb': '#b76f06',
+  'Dom': '#6a634d'
 }
 
 export function ActivityChart({ data, totalMinutes }: ActivityChartProps) {
   const maxMinutes = Math.max(...data.map(d => d.minutes))
   const maxPages = Math.max(...data.map(d => d.pages))
-  const today = data.find(d => d.day === new Date().toLocaleDateString('pt-BR', { weekday: 'short', weekdayStandalone: false }).slice(0, 2)) || data[0]
   
   const getToday = () => {
     const today = new Date()
-    const todayStr = today.toLocaleDateString('pt-BR', { weekday: 'short', weekdayStandalone: false })
+    const todayStr = today.toLocaleDateString('pt-BR', { weekday: 'short' })
     return todayStr.charAt(0).toUpperCase() + todayStr.slice(1, 3)
   }
 
@@ -40,16 +39,16 @@ export function ActivityChart({ data, totalMinutes }: ActivityChartProps) {
     <Card className="glass border border-border/60 bg-card/50 backdrop-blur-sm">
       <CardHeader className="flex flex-row items-center justify-between pb-3">
         <CardTitle className="flex items-center gap-2 text-base font-semibold">
-          <BarChart3 size={16} className="text-blue-500" />
+          <BarChart3 size={16} className="text-warning" />
           Atividade Semanal
         </CardTitle>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1">
-            <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+            <div className="w-2 h-2 rounded-full bg-warning"></div>
             <span className="text-xs text-muted-foreground">Minutos</span>
           </div>
           <div className="flex items-center gap-1">
-            <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+            <div className="w-2 h-2 rounded-full bg-success"></div>
             <span className="text-xs text-muted-foreground">Páginas</span>
           </div>
         </div>
@@ -59,15 +58,15 @@ export function ActivityChart({ data, totalMinutes }: ActivityChartProps) {
           {/* Resumo semanal */}
           <div className="grid grid-cols-3 gap-3 text-center">
             <div className="p-2 rounded-lg bg-muted/50">
-              <p className="text-lg font-bold text-blue-600">{totalMinutes}min</p>
+              <p className="text-lg font-bold text-warning">{totalMinutes}min</p>
               <p className="text-xs text-muted-foreground">Total</p>
             </div>
             <div className="p-2 rounded-lg bg-muted/50">
-              <p className="text-lg font-bold text-emerald-600">{data.reduce((sum, d) => sum + d.pages, 0)}pg</p>
+              <p className="text-lg font-bold text-success">{data.reduce((sum, d) => sum + d.pages, 0)}pg</p>
               <p className="text-xs text-muted-foreground">Páginas</p>
             </div>
             <div className="p-2 rounded-lg bg-muted/50">
-              <p className="text-lg font-bold text-purple-600">{Math.round(totalMinutes / data.length)}min</p>
+              <p className="text-lg font-bold text-foreground">{Math.round(totalMinutes / data.length)}min</p>
               <p className="text-xs text-muted-foreground">Média</p>
             </div>
           </div>
@@ -103,7 +102,7 @@ export function ActivityChart({ data, totalMinutes }: ActivityChartProps) {
                           <div
                             className={cn(
                               'w-full rounded-t-lg transition-all duration-500 hover:opacity-80',
-                              isToday ? 'shadow-lg ring-2 ring-blue-400/50' : 'shadow-md'
+                              isToday ? 'shadow-lg ring-2 ring-brand-rose/70' : 'shadow-md'
                             )}
                             style={{
                               height: `${minuteHeight}%`,
@@ -115,11 +114,11 @@ export function ActivityChart({ data, totalMinutes }: ActivityChartProps) {
                           <div
                             className={cn(
                               'w-full rounded-b-lg transition-all duration-500',
-                              isToday ? 'shadow-lg ring-2 ring-emerald-400/50' : ''
+                              isToday ? 'shadow-lg ring-2 ring-success/50' : ''
                             )}
                             style={{
                               height: `${pageHeight}%`,
-                              backgroundColor: '#10b981',
+                              backgroundColor: '#6a634d',
                               opacity: isToday ? 1 : 0.7,
                             }}
                           />
@@ -127,7 +126,7 @@ export function ActivityChart({ data, totalMinutes }: ActivityChartProps) {
                           <div className={cn(
                             'text-xs font-semibold px-2 py-0.5 rounded-full transition-all',
                             isToday 
-                              ? 'bg-blue-500 text-white shadow-md' 
+                              ? 'bg-warning text-primary-foreground shadow-md'
                               : 'bg-muted text-muted-foreground hover:bg-muted/80'
                           )}>
                             {day.day}
@@ -139,11 +138,11 @@ export function ActivityChart({ data, totalMinutes }: ActivityChartProps) {
                           <p className="font-semibold">{day.day}</p>
                           <div className="flex gap-4">
                             <div className="flex items-center gap-1">
-                              <Clock size={12} className="text-blue-500" />
+                              <Clock size={12} className="text-warning" />
                               <span>{day.minutes} minutos</span>
                             </div>
                             <div className="flex items-center gap-1">
-                              <FileText size={12} className="text-emerald-500" />
+                              <FileText size={12} className="text-success" />
                               <span>{day.pages} páginas</span>
                             </div>
                           </div>
@@ -159,15 +158,15 @@ export function ActivityChart({ data, totalMinutes }: ActivityChartProps) {
           {/* Insights */}
           <div className="flex flex-wrap gap-2 pt-2">
             <div className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 bg-muted text-muted-foreground rounded-full">
-              <Sparkles size={12} className="text-amber-500" />
+              <Sparkles size={12} className="text-warning" />
               Mais produtivo: {data.reduce((max, day) => day.minutes > max.minutes ? day : max, data[0]).day}
             </div>
             <div className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 bg-muted text-muted-foreground rounded-full">
-              <TrendingUp size={12} className="text-emerald-500" />
+              <TrendingUp size={12} className="text-success" />
               {data.filter(d => d.pages > 3).length} dias com +3 páginas
             </div>
             <div className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 bg-muted text-muted-foreground rounded-full">
-              <Timer size={12} className="text-blue-500" />
+              <Timer size={12} className="text-warning" />
               {Math.round(totalMinutes / 60)}h semanais
             </div>
           </div>

@@ -24,22 +24,18 @@ const AVATARS = ['🦊', '🐼', '🐨', '🦁', '🐧', '🐸', '🦉', '🐱',
 export const AVATAR_OPTIONS = AVATARS
 
 export const ACCENT_OPTIONS = [
-  '#e05b6d',
-  '#5b8dbf',
-  '#7bb686',
-  '#f0b429',
-  '#c9b6e4',
-  '#e8a0a0',
-  '#8b7aaa',
-  '#d4b070',
+  '#d1bdb8',
+  '#b76f06',
+  '#6a634d',
+  '#ddd6c6',
 ]
 
 export const ESTACOES: { id: Estacao; rotulo: string; faixa: string; janela: string }[] = [
-  { id: 'madrugada', rotulo: 'madrugada', faixa: '#3b3b55', janela: '00–05h' },
-  { id: 'manha', rotulo: 'manhã', faixa: '#f0b429', janela: '05–12h' },
-  { id: 'tarde', rotulo: 'tarde', faixa: '#e8a0a0', janela: '12–17h' },
-  { id: 'anoitecer', rotulo: 'anoitecer', faixa: '#8b7aaa', janela: '17–20h' },
-  { id: 'noite', rotulo: 'noite', faixa: '#2a2a44', janela: '20–24h' },
+  { id: 'madrugada', rotulo: 'madrugada', faixa: '#6a634d', janela: '00–05h' },
+  { id: 'manha', rotulo: 'manhã', faixa: '#b76f06', janela: '05–12h' },
+  { id: 'tarde', rotulo: 'tarde', faixa: '#d1bdb8', janela: '12–17h' },
+  { id: 'anoitecer', rotulo: 'anoitecer', faixa: '#ddd6c6', janela: '17–20h' },
+  { id: 'noite', rotulo: 'noite', faixa: '#6a634d', janela: '20–24h' },
 ]
 
 export const useProfileStore = create<ProfileState>()(
@@ -49,7 +45,7 @@ export const useProfileStore = create<ProfileState>()(
       avatar: '🦊',
       email: '',
       bio: '',
-      accent: '#e05b6d',
+      accent: '#d1bdb8',
       estacao: 'manha',
 
       setName: (name) => set({ name }),

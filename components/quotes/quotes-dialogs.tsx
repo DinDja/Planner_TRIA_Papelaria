@@ -9,7 +9,7 @@ import { Dialog, DialogContent } from '../ui/overlays'
 import { Input } from '../ui/primitives'
 import { toast } from '../ui/toaster'
 
-const COLORS = ['#e8a0a0', '#f0b429', '#7bb686', '#5b8dbf', '#c9b6e4', '#f5c8a0']
+const COLORS = ['#d1bdb8', '#b76f06', '#6a634d', '#ddd6c6']
 
 function ColorPicker({
   value,

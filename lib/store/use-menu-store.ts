@@ -12,14 +12,39 @@ export interface ModuleDef {
 
 const REMOVED_MODULE_IDS = new Set(['retrospectiva', 'templates', 'rotina'])
 
+// O Dashboard vive em /dashboard. O / raiz Ã© reservado para a landing pÃºblica.
+const MODULE_HREFS: Partial<Record<ModuloId, string>> = {
+  dashboard: '/dashboard',
+  diario: '/diario',
+  notas: '/notas',
+  listas: '/listas',
+  checklists: '/checklists',
+  wishlist: '/wishlist',
+  frases: '/frases',
+  memorias: '/memorias',
+  cofre: '/cofre',
+  saude: '/saude',
+  calendario: '/calendario',
+  financas: '/financas',
+  aniversarios: '/aniversarios',
+  habitos: '/habitos',
+  plans: '/plans',
+  admin: '/admin',
+  perfil: '/perfil',
+}
+
 export function sanitizeModules(modules: ModuleDef[]): ModuleDef[] {
   return modules
     .filter((module) => !REMOVED_MODULE_IDS.has(module.id))
-    .map((module) => module.id === 'calendario' ? { ...module, label: 'Agenda', href: '/calendario' } : module)
+    .map((module) => ({
+      ...module,
+      href: MODULE_HREFS[module.id] ?? module.href,
+      ...(module.id === 'calendario' ? { label: 'Agenda' } : {}),
+    }))
 }
 
 export const DEFAULT_MODULES: ModuleDef[] = [
-  { id: 'dashboard',       href: '/',              label: 'Dashboard',      enabled: true },
+  { id: 'dashboard',       href: '/dashboard',     label: 'Dashboard',      enabled: true },
   { id: 'diario',          href: '/diario',        label: 'Diário',         enabled: true },
   { id: 'notas',           href: '/notas',         label: 'Notas',          enabled: true },
   { id: 'listas',          href: '/listas',        label: 'Listas',         enabled: true },
@@ -70,7 +95,7 @@ export const useMenuStore = create<MenuState>()(
     }),
     {
       name: 'plannerhub-menu',
-      version: 5,
+      version: 6,
       // Antes da v2, cada item levava `icon: 'BookHeart'` etc (nome Lucide).
       // O ícone virou derivado de `id` (ver components/icons/modules). Aqui
       // descartamos o campo legado ao reidratar do localStorage.

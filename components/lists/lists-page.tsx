@@ -8,6 +8,7 @@ import {
   Check,
   CheckCircle2,
   Circle,
+  Copy,
   List,
   Pencil,
   Plus,
@@ -28,6 +29,7 @@ function ListCard({
   list,
   onEdit,
   onDelete,
+  onDuplicate,
   onAddItem,
   onToggleItem,
   onSelectItem,
@@ -37,6 +39,7 @@ function ListCard({
   list: ShoppingList
   onEdit: (id: string) => void
   onDelete: (id: string) => void
+  onDuplicate: (id: string) => void
   onAddItem: (listId: string) => void
   onToggleItem: (listId: string, itemId: string) => void
   onSelectItem: (listId: string, itemId: string) => void
@@ -84,7 +87,7 @@ function ListCard({
         <div className="flex items-center gap-2">
           {total > 0 && (
             <div className="flex items-center gap-1.5 text-xs font-medium tabular-nums"
-              style={{ color: progress === 100 ? '#7bb686' : 'var(--muted-foreground)' }}
+              style={{ color: progress === 100 ? '#6a634d' : 'var(--muted-foreground)' }}
             >
               {progress}%
             </div>
@@ -95,6 +98,13 @@ function ListCard({
             aria-label="Editar lista"
           >
             <Pencil size={14} />
+          </button>
+          <button
+            onClick={() => onDuplicate(list.id)}
+            className="rounded-lg p-1.5 text-muted-foreground/50 hover:bg-primary/10 hover:text-primary transition-all cursor-pointer"
+            aria-label="Duplicar lista"
+          >
+            <Copy size={14} />
           </button>
           <button
             onClick={() => onDelete(list.id)}
@@ -113,7 +123,7 @@ function ListCard({
               className="h-full rounded-full transition-all duration-500"
               style={{
                 width: `${progress}%`,
-                backgroundColor: progress === 100 ? '#7bb686' : list.color,
+                backgroundColor: progress === 100 ? '#6a634d' : list.color,
               }}
             />
           </div>
@@ -142,7 +152,7 @@ function ListCard({
                       className="shrink-0 text-muted-foreground hover:text-primary transition-colors cursor-pointer"
                     >
                       {(isMala ? item.packed : item.checked) ? (
-                        <CheckCircle2 size={18} className="text-emerald-500" />
+                        <CheckCircle2 size={18} className="text-success" />
                       ) : (
                         <Circle size={18} />
                       )}
@@ -173,7 +183,7 @@ function ListCard({
                       )}
                     </div>
                     {isMala && item.packed && (
-                      <span className="shrink-0 text-[10px] font-medium text-emerald-600">
+                      <span className="shrink-0 text-[10px] font-medium text-success">
                         Na mala
                       </span>
                     )}
@@ -214,6 +224,7 @@ function ListCard({
 export function ListsPage() {
   const lists = useListsStore((s) => s.lists)
   const deleteList = useListsStore((s) => s.deleteList)
+  const duplicateList = useListsStore((s) => s.duplicateList)
   const toggleItem = useListsStore((s) => s.toggleItem)
   const updateItem = useListsStore((s) => s.updateItem)
   const deleteItem = useListsStore((s) => s.deleteItem)
@@ -282,9 +293,9 @@ export function ListsPage() {
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
             <span
               className="flex size-11 items-center justify-center rounded-2xl"
-              style={{ backgroundColor: '#7bb68618' }}
+              style={{ backgroundColor: '#6a634d18' }}
             >
-              <List size={22} style={{ color: '#7bb686' }} />
+              <List size={22} style={{ color: '#6a634d' }} />
             </span>
             Listas
           </h1>
@@ -295,7 +306,7 @@ export function ListsPage() {
         <div className="flex items-center gap-3">
           {totalItems > 0 && (
             <div className="flex items-center gap-2 rounded-2xl border border-border/50 bg-card/60 px-3.5 py-2 shadow-sm">
-              <CheckCircle2 size={16} className="text-emerald-500" />
+              <CheckCircle2 size={16} className="text-success" />
               <div className="leading-tight">
                 <p className="text-sm font-bold tabular-nums">
                   {checkedItems}/{totalItems}
@@ -319,6 +330,7 @@ export function ListsPage() {
               list={list}
               onEdit={(id) => { setEditListId(id); setAddListOpen(true) }}
               onDelete={handleDeleteList}
+              onDuplicate={duplicateList}
               onAddItem={handleAddItem}
               onToggleItem={toggleItem}
               onSelectItem={handleSelectItem}

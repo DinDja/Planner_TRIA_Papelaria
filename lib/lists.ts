@@ -29,7 +29,7 @@ export const LIST_KINDS: ListKindMeta[] = [
     kind: 'supermercado',
     label: 'Supermercado',
     description: 'Mercado, feira e despensa',
-    defaultColor: '#7bb686',
+    defaultColor: '#6a634d',
     presetCategories: [
       'Grãos',
       'Laticínios',
@@ -54,7 +54,7 @@ export const LIST_KINDS: ListKindMeta[] = [
     kind: 'farmacia',
     label: 'Farmácia',
     description: 'Medicamentos e cuidados com a saúde',
-    defaultColor: '#5b8dbf',
+    defaultColor: '#6a634d',
     presetCategories: [
       'Medicamentos',
       'Vitaminas e suplementos',
@@ -66,68 +66,13 @@ export const LIST_KINDS: ListKindMeta[] = [
     presetItems: [
       
     ],
-    combos: [
-      {
-        id: 'farma-resfriado',
-        label: 'Kit resfriado',
-        description: 'Dor, febre e nariz entupido',
-        items: [
-          { name: 'Paracetamol', quantity: '500mg', category: 'Medicamentos', dosage: 'Se dor ou febre' },
-          { name: 'Dipirona', category: 'Medicamentos', dosage: 'Se dor ou febre' },
-          { name: 'Antialérgico', category: 'Medicamentos' },
-          { name: 'Xarope para tosse', category: 'Medicamentos', dosage: 'Conforme a bula' },
-          { name: 'Soro fisiológico', category: 'Primeiros socorros' },
-          { name: 'Vitamina C', category: 'Vitaminas e suplementos', dosage: '1x ao dia' },
-        ],
-      },
-      {
-        id: 'farma-primeiros',
-        label: 'Kit primeiros socorros',
-        description: 'Curativos e emergências leves',
-        items: [
-          { name: 'Curativos', category: 'Primeiros socorros' },
-          { name: 'Atadura', category: 'Primeiros socorros' },
-          { name: 'Gaze', category: 'Primeiros socorros' },
-          { name: 'Soro fisiológico', category: 'Primeiros socorros' },
-          { name: 'Termômetro', category: 'Primeiros socorros' },
-          { name: 'Álcool em gel', category: 'Higiene' },
-          { name: 'Paracetamol', quantity: '500mg', category: 'Medicamentos', dosage: 'Se dor ou febre' },
-        ],
-      },
-      {
-        id: 'farma-viagem',
-        label: 'Kit viagem',
-        description: 'O que não pode faltar na bolsa',
-        items: [
-          { name: 'Dramin', category: 'Medicamentos', dosage: 'Antes de viajar' },
-          { name: 'Protetor solar', quantity: 'FPS 50', category: 'Cuidados com a pele' },
-          { name: 'Repelente', category: 'Cuidados com a pele' },
-          { name: 'Álcool em gel', category: 'Higiene' },
-          { name: 'Curativos', category: 'Primeiros socorros' },
-          { name: 'Dipirona', category: 'Medicamentos', dosage: 'Se dor ou febre' },
-        ],
-      },
-      {
-        id: 'farma-higiene',
-        label: 'Higiene pessoal',
-        description: 'Cuidado diário',
-        items: [
-          { name: 'Hidratante facial', category: 'Cuidados com a pele' },
-          { name: 'Água micelar', category: 'Cuidados com a pele' },
-          { name: 'Sabonete facial', category: 'Cuidados com a pele' },
-          { name: 'Fio dental', category: 'Higiene' },
-          { name: 'Cotonetes', category: 'Higiene' },
-          { name: 'Algodão', category: 'Higiene' },
-          { name: 'Desodorante', category: 'Higiene' },
-        ],
-      },
-    ],
+    combos: [],
   },
   {
     kind: 'mala',
     label: 'Mala de viagem',
     description: 'Itens para não esquecer antes de viajar',
-    defaultColor: '#c9b6e4',
+    defaultColor: '#ddd6c6',
     presetCategories: [
       'Documentos',
       'Vestuário',

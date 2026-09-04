@@ -19,7 +19,7 @@ import { AddChecklistDialog } from './checklists-dialogs'
 const enter = 'animate-in fade-in slide-in-from-bottom-3 duration-500 fill-mode-both'
 
 // Cores festivas para os confetes
-const CONFETTI_COLORS = ['#7bb686', '#f0b429', '#5b8dbf', '#e8a0a0', '#c9b6e4', '#e05b6d', '#f5c8a0']
+const CONFETTI_COLORS = ['#d1bdb8', '#b76f06', '#6a634d', '#ddd6c6']
 
 function CelebrationOverlay() {
   // 18 confetes com posições/cores/durações variadas
@@ -122,7 +122,7 @@ function ChecklistCard({
       className={cn(
         'relative overflow-hidden transition-all duration-300',
         celebrate && 'animate-[celebrate_0.6s_ease-out]',
-        allDone && !celebrate && 'ring-2 ring-emerald-500/30',
+        allDone && !celebrate && 'ring-2 ring-success/30',
       )}
       style={{
         borderTopColor: checklist.color,
@@ -138,10 +138,10 @@ function ChecklistCard({
                 'flex size-10 shrink-0 items-center justify-center rounded-xl transition-all',
                 allDone && 'animate-[pop_0.4s_ease-out]',
               )}
-              style={{ backgroundColor: allDone ? '#7bb68618' : checklist.color + '18' }}
+              style={{ backgroundColor: allDone ? '#6a634d18' : checklist.color + '18' }}
             >
               {allDone ? (
-                <PartyPopper size={18} className="text-emerald-500" />
+                <PartyPopper size={18} className="text-success" />
               ) : (
                 <ListChecks size={18} style={{ color: checklist.color }} />
               )}
@@ -150,7 +150,7 @@ function ChecklistCard({
               <div className="flex items-center gap-2">
                 <CardTitle className="text-base">{checklist.title}</CardTitle>
                 {allDone && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-600 animate-[pop_0.4s_ease-out]">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-success/15 px-2 py-0.5 text-[10px] font-bold text-success animate-[pop_0.4s_ease-out]">
                     <PartyPopper size={10} />
                     Concluído!
                   </span>
@@ -168,7 +168,7 @@ function ChecklistCard({
             <span
               className="text-xs font-bold tabular-nums"
               style={{
-                color: progress === 100 ? '#7bb686' : 'var(--muted-foreground)',
+                color: progress === 100 ? '#6a634d' : 'var(--muted-foreground)',
               }}
             >
               {progress}%
@@ -198,7 +198,7 @@ function ChecklistCard({
               className="h-full rounded-full transition-all duration-500"
               style={{
                 width: `${progress}%`,
-                backgroundColor: progress === 100 ? '#7bb686' : checklist.color,
+                backgroundColor: progress === 100 ? '#6a634d' : checklist.color,
               }}
             />
           </div>
@@ -225,7 +225,7 @@ function ChecklistCard({
                 style={item.checked ? { transformOrigin: 'center' } : undefined}
               >
                 {item.checked ? (
-                  <CheckCircle2 size={18} className="text-emerald-500" />
+                  <CheckCircle2 size={18} className="text-success" />
                 ) : (
                   <Circle size={18} />
                 )}
@@ -317,9 +317,9 @@ export function ChecklistsPage() {
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
             <span
               className="flex size-11 items-center justify-center rounded-2xl"
-              style={{ backgroundColor: '#5b8dbf18' }}
+              style={{ backgroundColor: '#6a634d18' }}
             >
-              <ListChecks size={22} style={{ color: '#5b8dbf' }} />
+              <ListChecks size={22} style={{ color: '#6a634d' }} />
             </span>
             Checklists
           </h1>
@@ -330,7 +330,7 @@ export function ChecklistsPage() {
         <div className="flex items-center gap-3">
           {totalItems > 0 && (
             <div className="flex items-center gap-2 rounded-2xl border border-border/50 bg-card/60 px-3.5 py-2 shadow-sm">
-              <CheckCircle2 size={16} className="text-emerald-500" />
+              <CheckCircle2 size={16} className="text-success" />
               <div className="leading-tight">
                 <p className="text-sm font-bold tabular-nums">
                   {checkedItems}/{totalItems}

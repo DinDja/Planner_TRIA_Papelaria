@@ -16,14 +16,14 @@ function createPageTexture(side: 'front' | 'back') {
   const context = canvas.getContext('2d')
   if (!context) return null
 
-  context.fillStyle = '#fbf7ed'
+  context.fillStyle = '#ddd6c6'
   context.fillRect(0, 0, canvas.width, canvas.height)
 
-  context.strokeStyle = '#cbbf9e'
+  context.strokeStyle = '#d1bdb8'
   context.lineWidth = 3
   context.strokeRect(30, 30, 452, 580)
 
-  context.fillStyle = '#83775f'
+  context.fillStyle = '#6a634d'
   context.font = '600 18px Georgia, serif'
   context.fillText(side === 'front' ? 'PLANOS' : 'MEMÓRIAS', 52, 76)
 
@@ -34,11 +34,11 @@ function createPageTexture(side: 'front' | 'back') {
 
   lineWidths.forEach((width, index) => {
     const y = 112 + index * 31
-    context.fillStyle = index === 0 || index === 7 ? '#a36c5b' : '#aaa18d'
+    context.fillStyle = index === 0 || index === 7 ? '#b76f06' : '#d1bdb8'
     context.fillRect(52, y, width, index === 0 || index === 7 ? 5 : 3)
   })
 
-  context.fillStyle = '#9c927c'
+  context.fillStyle = '#6a634d'
   context.font = '16px Georgia, serif'
   context.textAlign = 'center'
   context.fillText(side === 'front' ? '01' : '∞', 256, 585)

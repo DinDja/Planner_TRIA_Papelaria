@@ -63,7 +63,7 @@ function TrashCard({ item, onDelete, onRestore }: {
         <Button
           variant="ghost"
           size="icon-sm"
-          className="rounded-xl text-muted-foreground hover:text-green-500"
+          className="rounded-xl text-muted-foreground hover:text-success"
           onClick={onRestore}
           aria-label="Restaurar"
         >
@@ -92,8 +92,8 @@ export function TrashPage() {
     <div className="p-6 lg:p-8 max-w-[700px] mx-auto">
       <div className={cn('mb-8', enter)}>
         <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
-          <span className="flex size-11 items-center justify-center rounded-2xl" style={{ backgroundColor: '#ef444418' }}>
-            <Trash2 size={22} style={{ color: '#ef4444' }} />
+          <span className="flex size-11 items-center justify-center rounded-2xl bg-destructive/10">
+            <Trash2 size={22} className="text-destructive" />
           </span>
           Lixeira
         </h1>

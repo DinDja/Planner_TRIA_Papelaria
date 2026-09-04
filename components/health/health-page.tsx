@@ -41,10 +41,10 @@ function calcBMI(weightKg: number, heightCm: number): number {
 }
 
 function bmiCategory(bmi: number): { label: string; color: string } {
-  if (bmi < 18.5) return { label: 'Abaixo do peso', color: '#5b8dbf' }
-  if (bmi < 25) return { label: 'Peso normal', color: '#7bb686' }
-  if (bmi < 30) return { label: 'Sobrepeso', color: '#f0b429' }
-  return { label: 'Obesidade', color: '#e05b6d' }
+  if (bmi < 18.5) return { label: 'Abaixo do peso', color: '#6a634d' }
+  if (bmi < 25) return { label: 'Peso normal', color: '#6a634d' }
+  if (bmi < 30) return { label: 'Sobrepeso', color: '#b76f06' }
+  return { label: 'Obesidade', color: '#d1bdb8' }
 }
 
 function WeightChart({ weights }: { weights: { date: string; weight: number }[] }) {
@@ -240,7 +240,7 @@ function WeightTab() {
 
         <div>
           <div className="flex items-center gap-2 rounded-2xl border border-border/50 bg-card/60 px-4 py-3 shadow-sm h-full">
-            <Activity size={16} className={diffNum <= 0 ? 'text-emerald-500' : 'text-destructive shrink-0'} />
+            <Activity size={16} className={diffNum <= 0 ? 'text-success' : 'text-destructive shrink-0'} />
             <div className="leading-tight">
               <p className="text-sm font-bold tabular-nums" style={{ color: diffNum <= 0 ? 'var(--emerald-500)' : 'var(--destructive)' }}>
                 {diffNum > 0 ? '+' : ''}{diff} kg
@@ -266,14 +266,14 @@ function WeightTab() {
 
         <div>
           <div className="flex items-center gap-2 rounded-2xl border border-border/50 bg-card/60 px-4 py-3 shadow-sm h-full">
-            <Target size={16} className="shrink-0" style={{ color: !goalDiff || goalDiffNum <= 0 ? '#7bb686' : '#f0b429' }} />
+            <Target size={16} className="shrink-0" style={{ color: !goalDiff || goalDiffNum <= 0 ? '#6a634d' : '#b76f06' }} />
             <div className="leading-tight min-w-0">
               {goalWeight ? (
                 <>
                   <p className="text-lg font-bold tabular-nums">
                     {goalWeight} kg
                     {goalDiff && (
-                      <span className="text-xs font-normal ml-1" style={{ color: goalDiffNum <= 0 ? '#7bb686' : '#f0b429' }}>
+                      <span className="text-xs font-normal ml-1" style={{ color: goalDiffNum <= 0 ? '#6a634d' : '#b76f06' }}>
                         ({goalDiffNum > 0 ? '+' : ''}{goalDiff})
                       </span>
                     )}
@@ -546,8 +546,8 @@ function CyclesTab() {
       <div className="space-y-2">
         {sorted.map((c) => (
           <div key={c.id} className="group flex items-start gap-3 rounded-xl px-3 py-2.5 hover:bg-muted/40 transition-colors">
-            <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-rose-100 dark:bg-rose-900/30">
-              <Venus size={16} className="text-rose-500" />
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-brand-rose/55 dark:bg-brand-rose/20">
+              <Venus size={16} className="text-foreground dark:text-brand-beige" />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium">
@@ -638,7 +638,7 @@ function AppointmentsTab() {
   const [editId, setEditId] = useState<string | undefined>()
 
   const sorted = [...appointments].sort((a, b) => a.date.localeCompare(b.date))
-  const statusColor = { scheduled: '#5b8dbf', done: '#7bb686', cancelled: '#e8a0a0' }
+  const statusColor = { scheduled: '#ddd6c6', done: '#6a634d', cancelled: '#d1bdb8' }
   const statusLabel = { scheduled: 'Agendada', done: 'Realizada', cancelled: 'Cancelada' }
 
   return (
@@ -673,7 +673,7 @@ function AppointmentsTab() {
             </div>
             <div className="flex items-center gap-0.5 shrink-0">
               {a.status === 'scheduled' && (
-                <button onClick={() => updateAppointment(a.id, { status: 'done' })} className="rounded-lg p-1 text-muted-foreground/30 hover:text-emerald-500 transition-colors cursor-pointer" title="Marcar como realizada">
+                <button onClick={() => updateAppointment(a.id, { status: 'done' })} className="rounded-lg p-1 text-muted-foreground/30 hover:text-success transition-colors cursor-pointer" title="Marcar como realizada">
                   <ClipboardCheck size={14} />
                 </button>
               )}
@@ -701,7 +701,7 @@ function ExamsTab() {
   const [editId, setEditId] = useState<string | undefined>()
 
   const sorted = [...exams].sort((a, b) => b.date.localeCompare(a.date))
-  const statusColor = { pending: '#f0b429', done: '#5b8dbf', reviewed: '#7bb686' }
+  const statusColor = { pending: '#b76f06', done: '#d1bdb8', reviewed: '#6a634d' }
   const statusLabel = { pending: 'Pendente', done: 'Realizado', reviewed: 'Revisado' }
 
   return (
@@ -780,8 +780,8 @@ export function HealthPage() {
       <div className={cn('flex flex-wrap items-end justify-between gap-4 mb-8', enter)}>
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
-            <span className="flex size-11 items-center justify-center rounded-2xl" style={{ backgroundColor: '#7bb68618' }}>
-              <HeartPulse size={22} style={{ color: '#7bb686' }} />
+            <span className="flex size-11 items-center justify-center rounded-2xl" style={{ backgroundColor: '#6a634d18' }}>
+              <HeartPulse size={22} style={{ color: '#6a634d' }} />
             </span>
             Saúde
           </h1>

@@ -23,8 +23,8 @@ interface ColorPaletteProps {
 }
 
 const DEFAULT_FIXED = [
-  '#1a1a1a', '#4a4a4a', '#e05b6d', '#f0b429', '#7bb686', '#5b8dbf',
-  '#c9b6e4', '#e8a0a0', '#d4b070', '#6b5b8a', '#0f766e', '#b45309',
+  '#1a1a1a', '#4a4a4a', '#d1bdb8', '#b76f06', '#6a634d', '#ddd6c6',
+  '#ffffff',
 ]
 
 /**

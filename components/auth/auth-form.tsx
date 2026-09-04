@@ -2,13 +2,13 @@
 
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Loader2, ArrowLeft } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/lib/auth/auth-context'
 import { GoogleIcon } from './google-icon'
+import { BrandLogo } from '@/components/brand-logo'
 
 type AuthView = 'login' | 'cadastro' | 'esqueci-senha'
 
@@ -57,7 +57,7 @@ export function AuthForm({ initialView = 'login' }: AuthFormProps) {
       try {
         await signInWithGoogle()
         const next = search.get('next')
-        router.replace(next ? decodeURIComponent(next) : '/')
+        router.replace(next ? decodeURIComponent(next) : '/dashboard')
       } catch (err: any) {
         setError(friendlyError(err?.code || err?.message))
       }
@@ -137,7 +137,7 @@ function friendlyError(codeOrMsg: string): string {
 function ErrorBanner({ error }: { error: string | null }) {
   if (!error) return null
   return (
-    <div className="mb-5 border-l-2 border-rose-500/70 bg-rose-500/[0.06] pl-3 py-1.5 text-xs text-rose-600 dark:text-rose-300">
+    <div className="mb-5 border-l-2 border-destructive/70 bg-destructive/[0.06] pl-3 py-1.5 text-xs text-destructive">
       {error}
     </div>
   )
@@ -145,7 +145,7 @@ function ErrorBanner({ error }: { error: string | null }) {
 
 const eyebrow = 'font-mono text-[0.62rem] uppercase tracking-[0.28em] text-muted-foreground/55'
 const inputClass =
-  'peer h-12 w-full border-0 border-b border-border/70 bg-transparent pt-3 text-sm text-foreground outline-none transition-colors placeholder:opacity-0 focus:border-primary placeholder-shown:border-border placeholder-shown:border-border'
+  'peer h-12 w-full border-0 border-b border-border/70 bg-transparent pt-3 text-base text-foreground outline-none transition-colors placeholder:opacity-0 focus:border-primary placeholder-shown:border-border placeholder-shown:border-border'
 
 /* ─── Login ────────────────────────────────────────────────────────── */
 
@@ -166,21 +166,13 @@ function LoginForm(props: {
   const { onSubmit, onGoogle, isPending, showPassword, onTogglePassword, onSwitchToRegister, onSwitchToForgot, email, password, onEmail, onPassword, error } = props
   return (
     <>
-      <Image
-        src="/Logo.svg"
-        alt="PlannerHub"
-        width={156}
-        height={88}
-        priority
-        className="mx-auto mb-10 h-auto w-[156px] opacity-90"
-      />
+      <BrandLogo className="mx-auto mb-10 h-20 w-[190px] opacity-90" imageClassName="w-[380px]" />
 
       <div className="mb-9">
-        <p className={eyebrow}>entrada · 001</p>
-        <h1 className="font-serif text-[2.3rem] leading-[1.05] text-foreground mt-2">
+        <h1 className="font-serif text-[2.3rem] leading-[1.05] text-foreground">
           Bem-vinda de volta.
         </h1>
-        <p className="text-sm text-muted-foreground mt-2 leading-relaxed max-w-[320px]">
+        <p className="text-base text-muted-foreground mt-2 leading-relaxed max-w-[320px]">
           Continue de onde parou. Seu caderno está como você deixou.
         </p>
       </div>
@@ -197,7 +189,7 @@ function LoginForm(props: {
               </button>
             }
           />
-          <button type="button" onClick={onSwitchToForgot} className="mt-2 font-mono text-[0.62rem] uppercase tracking-[0.2em] text-muted-foreground/60 hover:text-foreground transition-colors cursor-pointer">
+          <button type="button" onClick={onSwitchToForgot} className="mt-2 font-mono text-[0.72rem] uppercase tracking-[0.2em] text-muted-foreground/60 hover:text-foreground transition-colors cursor-pointer">
             esqueceu a senha?
           </button>
         </div>
@@ -339,7 +331,7 @@ function Field({ label, type, value, onChange, placeholder, trailing }: {
 }) {
   return (
     <div className="relative">
-      <label className="pointer-events-none absolute left-0 top-[3px] font-mono text-[0.6rem] uppercase tracking-[0.22em] text-muted-foreground/55 transition-all peer-focus:text-primary">
+      <label className="pointer-events-none absolute left-0 top-[3px] font-mono text-[0.72rem] uppercase tracking-[0.22em] text-muted-foreground/55 transition-all peer-focus:text-primary">
         {label}
       </label>
       <input
@@ -367,7 +359,7 @@ function SubmitButton({ isPending, label }: { isPending: boolean; label: string 
     >
       <span className="absolute inset-0 border-b border-foreground/80 transition-colors group-hover:border-primary" />
       <span className={cn(
-        'relative font-mono text-[0.66rem] uppercase tracking-[0.3em] text-foreground/85 transition-colors',
+        'relative font-mono text-[0.78rem] uppercase tracking-[0.3em] text-foreground/85 transition-colors',
         'group-hover:text-primary',
         isPending && 'opacity-50',
       )}>
@@ -400,7 +392,7 @@ function GoogleButton({ onGoogle, isPending, label }: { onGoogle: () => void; is
       )}
     >
       <GoogleIcon className="size-4" />
-      <span className="font-mono text-[0.64rem] uppercase tracking-[0.24em] text-foreground/75">{label}</span>
+      <span className="font-mono text-[0.74rem] uppercase tracking-[0.24em] text-foreground/75">{label}</span>
     </button>
   )
 }
@@ -408,8 +400,8 @@ function GoogleButton({ onGoogle, isPending, label }: { onGoogle: () => void; is
 function SwitchLine({ text, action, actionLabel }: { text: string; action: () => void; actionLabel: string }) {
   return (
     <div className="mt-8 flex items-center justify-center gap-2">
-      <span className="font-mono text-[0.6rem] uppercase tracking-[0.22em] text-muted-foreground/45">{text}</span>
-      <button onClick={action} className="font-mono text-[0.6rem] uppercase tracking-[0.22em] text-foreground/85 hover:text-primary transition-colors cursor-pointer underline-offset-4 hover:underline">
+      <span className="font-mono text-[0.72rem] uppercase tracking-[0.22em] text-muted-foreground/45">{text}</span>
+      <button onClick={action} className="font-mono text-[0.72rem] uppercase tracking-[0.22em] text-foreground/85 hover:text-primary transition-colors cursor-pointer underline-offset-4 hover:underline">
         {actionLabel}
       </button>
     </div>

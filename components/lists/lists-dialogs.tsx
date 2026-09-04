@@ -1,12 +1,10 @@
 'use client'
 
 import { getListKindMeta, LIST_KINDS } from '@/lib/lists'
-import type { PresetCombo, PresetItem } from '@/lib/lists'
-import type { UserListPreset } from '@/lib/types'
 import { useListsStore } from '@/lib/store/use-lists-store'
 import type { ShoppingListKind } from '@/lib/types'
 import { cn } from '@/lib/utils'
-import { Check, Package, Pencil, Plus, X } from 'lucide-react'
+import { Check, Plus } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Button } from '../ui/button'
 import { Dialog, DialogContent } from '../ui/overlays'
@@ -14,7 +12,7 @@ import { Input } from '../ui/primitives'
 import { toast } from '../ui/toaster'
 import { ListKindIcon } from './list-kind-icon'
 
-const LIST_COLORS = ['#7bb686', '#5b8dbf', '#f0b429', '#e8a0a0', '#c9b6e4', '#f5c8a0']
+const LIST_COLORS = ['#d1bdb8', '#b76f06', '#6a634d', '#ddd6c6']
 
 function ColorPicker({
   value,
@@ -216,10 +214,6 @@ export function AddItemDialog({
   const addItem = useListsStore((s) => s.addItem)
   const updateItem = useListsStore((s) => s.updateItem)
   const getAllCategories = useListsStore((s) => s.getAllCategories)
-  const userPresets = useListsStore((s) => s.userPresets)
-  const addPreset = useListsStore((s) => s.addPreset)
-  const updatePreset = useListsStore((s) => s.updatePreset)
-  const deletePreset = useListsStore((s) => s.deletePreset)
   const [name, setName] = useState('')
   const [quantity, setQuantity] = useState('')
   const [category, setCategory] = useState('')
@@ -243,36 +237,18 @@ export function AddItemDialog({
     }
   }, [open, itemId, existingItem])
 
-  // Cadastro de "pronto para usar" (supermercado) e confirmação de mala
-  const [presetFormOpen, setPresetFormOpen] = useState(false)
-  const [presetName, setPresetName] = useState('')
-  const [presetQuantity, setPresetQuantity] = useState('')
-  const [presetCategory, setPresetCategory] = useState('')
-  const [editingPresetId, setEditingPresetId] = useState<string | undefined>()
-  const [pendingPacked, setPendingPacked] = useState<
-    { type: 'item'; preset: PresetItem } | { type: 'combo'; combo: PresetCombo } | null
-  >(null)
-
   const kindMeta = getListKindMeta(list?.kind)
   const isFarmacia = kindMeta.kind === 'farmacia'
   const isMala = kindMeta.kind === 'mala'
-  const isMercado = kindMeta.kind === 'supermercado'
   const existingCategories = getAllCategories()
   const categorySuggestions = [...new Set([...kindMeta.presetCategories, ...existingCategories])]
-    .sort((a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' }))
-
-  const presetGroups = new Map<string, PresetItem[]>()
-  const builtinPresets: PresetItem[] = isMercado
-    ? userPresets.filter((p) => p.kind === 'supermercado')
-    : kindMeta.presetItems
-  builtinPresets.forEach((p) => {
-    const cat = p.category ?? 'Outros'
-    const arr = presetGroups.get(cat) ?? []
-    arr.push(p)
-    presetGroups.set(cat, arr)
-  })
-
-  const existingNames = new Set((list?.items ?? []).map((i) => i.name.trim().toLowerCase()))
+    .sort((a, b) => {
+      const aOutros = a.toLowerCase() === 'outros'
+      const bOutros = b.toLowerCase() === 'outros'
+      if (aOutros && !bOutros) return 1
+      if (!aOutros && bOutros) return -1
+      return a.localeCompare(b, 'pt-BR', { sensitivity: 'base' })
+    })
 
   const reset = () => {
     setName('')
@@ -281,105 +257,6 @@ export function AddItemDialog({
     setDosage('')
     setPacked(false)
     setNotes('')
-    setPresetFormOpen(false)
-    setPresetName('')
-    setPresetQuantity('')
-    setPresetCategory('')
-    setPendingPacked(null)
-  }
-
-  const closePendingPacked = () => setPendingPacked(null)
-
-  const commitPackedItem = (item: PresetItem, alreadyPacked = false) => {
-    addItem(listId, {
-      name: item.name,
-      quantity: item.quantity,
-      category: item.category,
-      dosage: isFarmacia ? item.dosage : undefined,
-      packed: isMala ? alreadyPacked : undefined,
-    })
-    toast({
-      title: alreadyPacked
-        ? `"${item.name}" Sim!`
-        : `"${item.name}" adicionado à lista para colocar na mala.`,
-      variant: 'success',
-    })
-    closePendingPacked()
-  }
-
-  const commitPackedCombo = (combo: PresetCombo, alreadyPacked = false) => {
-    const missing = combo.items.filter((p) => !existingNames.has(p.name.trim().toLowerCase()))
-    missing.forEach((p) =>
-      addItem(listId, {
-        name: p.name,
-        quantity: p.quantity,
-        category: p.category,
-        dosage: isFarmacia ? p.dosage : undefined,
-        packed: isMala ? alreadyPacked : undefined,
-      }),
-    )
-    toast({
-      title: alreadyPacked
-        ? `${combo.label}: itens marcados como já colocados na mala.`
-        : `${combo.label}: ${missing.length} itens adicionados!`,
-      variant: 'success',
-    })
-    closePendingPacked()
-  }
-
-  const handleAddPreset = (preset: PresetItem) => {
-    if (isMala) {
-      setPendingPacked({ type: 'item', preset })
-      return
-    }
-    addItem(listId, {
-      name: preset.name,
-      quantity: preset.quantity,
-      category: preset.category,
-      dosage: isFarmacia ? preset.dosage : undefined,
-    })
-    toast({ title: `${preset.name} adicionado à lista!`, variant: 'success' })
-  }
-
-  const handleAddCombo = (combo: PresetCombo) => {
-    if (isMala) {
-      setPendingPacked({ type: 'combo', combo })
-      return
-    }
-    commitPackedCombo(combo)
-  }
-
-  const handleSavePreset = () => {
-    if (!presetName.trim()) {
-      toast({ title: 'Digite o nome do item', variant: 'error' })
-      return
-    }
-    const data = {
-      kind: 'supermercado' as const,
-      name: presetName.trim(),
-      quantity: presetQuantity.trim() || undefined,
-      category: presetCategory.trim() || undefined,
-    }
-    if (editingPresetId) {
-      updatePreset(editingPresetId, data)
-      toast({ title: 'Item pronto atualizado!', variant: 'success' })
-    } else {
-      addPreset(data)
-      toast({ title: 'Item pronto salvo!', variant: 'success' })
-    }
-    setPresetName('')
-    setPresetQuantity('')
-    setPresetCategory('')
-    setPresetFormOpen(false)
-    setEditingPresetId(undefined)
-  }
-
-  const handleEditPreset = (preset: UserListPreset) => {
-    setEditingPresetId(preset.id)
-    setPresetName(preset.name)
-    setPresetQuantity(preset.quantity ?? '')
-    setPresetCategory(preset.category ?? '')
-    setPresetFormOpen(true)
   }
 
   const handleCreate = () => {
@@ -411,200 +288,6 @@ export function AddItemDialog({
       <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent title={itemId ? 'Editar item' : 'Novo item'} description={kindMeta.description}>
         <div className="flex flex-col gap-4">
-          {!itemId && (presetGroups.size > 0 || kindMeta.combos.length > 0 || isMercado) && (
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                
-                {isMercado && (
-                  <button
-                    type="button"
-                    onClick={() => setPresetFormOpen((o) => !o)}
-                    className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
-                  >
-                    <Plus size={12} />
-                    Cadastrar item pronto
-                  </button>
-                )}
-              </div>
-
-              {isMercado && presetFormOpen && (
-                <div className="rounded-xl border border-border/50 bg-muted/20 p-2.5 space-y-2 mb-3">
-                  <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-                    {editingPresetId ? 'Editar item pronto' : 'Cadastrar novo item pronto'}
-                  </p>
-                  <Input
-                    value={presetName}
-                    onChange={(e) => setPresetName(e.target.value)}
-                    placeholder="Ex: Detergente Ypê"
-                    onKeyDown={(e) => e.key === 'Enter' && handleSavePreset()}
-                  />
-                  <div className="grid grid-cols-2 gap-2">
-                    <Input
-                      value={presetQuantity}
-                      onChange={(e) => setPresetQuantity(e.target.value)}
-                      placeholder="Quantidade (opcional)"
-                    />
-                    <Input
-                      value={presetCategory}
-                      onChange={(e) => setPresetCategory(e.target.value)}
-                      placeholder="Categoria (opcional)"
-                    />
-                  </div>
-                  <div className="flex justify-end gap-2 pt-1">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="rounded-lg"
-                      onClick={() => { setPresetFormOpen(false); setEditingPresetId(undefined) }}
-                    >
-                      Cancelar
-                    </Button>
-                    <Button size="sm" className="rounded-lg" onClick={handleSavePreset}>
-                      {editingPresetId ? 'Salvar alterações' : 'Salvar pronto'}
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              {pendingPacked && (
-                <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 mb-3 space-y-1.5">
-                  <p className="text-sm font-medium">
-                    {pendingPacked.type === 'item'
-                      ? `Já colocou "${pendingPacked.preset.name}" na mala?`
-                      : `Já colocou tudo de "${pendingPacked.combo.label}" na mala?`}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {isMala
-                      ? 'Se não estiver na mala, adiciono à lista de lembretes.'
-                      : 'Confirme antes de adicionar.'}
-                  </p>
-                  <div className="flex gap-2 pt-1">
-                    <Button
-                      size="sm"
-                      className="rounded-lg"
-                      variant="default"
-                      onClick={() => {
-                        if (pendingPacked.type === 'item') commitPackedItem(pendingPacked.preset, false)
-                        else commitPackedCombo(pendingPacked.combo, false)
-                      }}
-                    >
-                      Não
-                    </Button>
-                    <Button
-                      size="sm"
-                      className="rounded-lg"
-                      variant="outline"
-                      onClick={() => {
-                        if (pendingPacked.type === 'item') commitPackedItem(pendingPacked.preset, true)
-                        else commitPackedCombo(pendingPacked.combo, true)
-                      }}
-                    >
-                      Sim
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              <div className="max-h-56 overflow-y-auto rounded-xl  border-border/50  space-y-3">                
-                {kindMeta.combos.length > 0 && (
-                  <div className="space-y-1.5">
-                    {kindMeta.combos.map((combo) => {
-                      const missing = combo.items.filter(
-                        (p) => !existingNames.has(p.name.trim().toLowerCase()),
-                      ).length
-                      const done = missing === 0
-                      return (
-                        <button
-                          key={combo.id}
-                          type="button"
-                          disabled={done}
-                          onClick={() => handleAddCombo(combo)}
-                          className={cn(
-                            'flex w-full items-center justify-between gap-2 rounded-xl border px-3 py-2 text-left transition-all cursor-pointer',
-                            done
-                              ? 'border-transparent bg-muted/50 text-muted-foreground/50'
-                              : 'border-border/60 hover:border-primary/50 hover:bg-primary/5',
-                          )}
-                        >
-                          <span className="flex items-center gap-2 min-w-0">
-                            <Package
-                              size={14}
-                              className={cn('shrink-0', done ? '' : 'text-muted-foreground')}
-                            />
-                            <span className="text-xs font-medium truncate">{combo.label}</span>
-                          </span>
-                          <span className="text-[10px] text-muted-foreground shrink-0">
-                            {done ? 'Tudo já na lista' : `+${missing} itens`}
-                          </span>
-                        </button>
-                      )
-                    })}
-                  </div>
-                )}
-                {presetGroups.size > 0 && (
-                  <div className="space-y-2">
-                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                      {isMercado ? 'Seus itens prontos — toque para adicionar' : 'Sugestões avulsas — toque para adicionar'}
-                    </p>
-                    {[...presetGroups.entries()].map(([cat, presets]) => (
-                      <div key={cat}>
-                        <p className="text-[10px] text-muted-foreground/70 mb-1">{cat}</p>
-                        <div className="flex flex-wrap gap-1.5">
-                          {presets.map((p) => {
-                            const added = existingNames.has(p.name.trim().toLowerCase())
-                            const presetId = (p as UserListPreset).id
-                            return (
-                              <span key={presetId ?? p.name} className="relative inline-flex">
-                                <button
-                                  type="button"
-                                  disabled={added}
-                                  onClick={() => handleAddPreset(p)}
-                                  className={cn(
-                                    'rounded-full border pl-2.5 text-xs transition-all cursor-pointer',
-                                    added
-                                      ? 'border-transparent bg-muted/50 text-muted-foreground/50 line-through cursor-default'
-                                      : 'border-border/60 text-foreground hover:border-primary/50 hover:bg-primary/5',
-                                    presetId ? 'pr-1.5 py-1' : 'pr-2.5 py-1',
-                                  )}
-                                >
-                                  {p.name}
-                                  {p.quantity && (
-                                    <span className="text-muted-foreground/60 ml-1">{p.quantity}</span>
-                                  )}
-                                </button>
-                                {presetId && (
-                                  <>
-                                    <button
-                                      type="button"
-                                      title="Editar pronto"
-                                      aria-label="Editar pronto"
-                                      onClick={() => handleEditPreset(p as UserListPreset)}
-                                      className="inline-flex items-center justify-center rounded-full p-0.5 text-muted-foreground hover:text-primary"
-                                    >
-                                      <Pencil size={12} />
-                                    </button>
-                                    <button
-                                      type="button"
-                                      title="Remover pronto"
-                                      aria-label="Remover pronto"
-                                      onClick={() => deletePreset(presetId)}
-                                      className="inline-flex items-center justify-center rounded-full p-0.5 text-muted-foreground hover:text-destructive"
-                                    >
-                                      <X size={12} />
-                                    </button>
-                                  </>
-                                )}
-                              </span>
-                            )
-                          })}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
           <div className="border-t border-border/50 pt-4">
             <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">
               Item personalizado
@@ -665,7 +348,7 @@ export function AddItemDialog({
                       className={cn(
                         'flex items-center gap-2 rounded-xl border px-3 py-2 text-sm transition-all cursor-pointer',
                         packed
-                          ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-600'
+                          ? 'border-success/50 bg-success/10 text-success'
                           : 'border-border/60 text-muted-foreground hover:border-foreground/30',
                       )}
                     >

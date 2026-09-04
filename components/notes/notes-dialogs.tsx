@@ -9,8 +9,8 @@ import { Dialog, DialogContent } from '../ui/overlays'
 import { Input } from '../ui/primitives'
 import { toast } from '../ui/toaster'
 
-const NOTE_COLORS = ['#e8a0a0', '#f0b429', '#7bb686', '#5b8dbf', '#c9b6e4', '#f5c8a0']
-const FOLDER_COLORS = ['#e05b6d', '#f0b429', '#7bb686', '#5b8dbf', '#c9b6e4', '#e8a0a0', '#34a853', '#1a73e8']
+const NOTE_COLORS = ['#d1bdb8', '#b76f06', '#6a634d', '#ddd6c6']
+const FOLDER_COLORS = ['#d1bdb8', '#b76f06', '#6a634d', '#ddd6c6']
 
 function ColorPicker({
   value,

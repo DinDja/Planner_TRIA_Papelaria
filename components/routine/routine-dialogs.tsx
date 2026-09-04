@@ -287,7 +287,7 @@ function TodayTaskRow({ task, onEdit }: { task: Task; onEdit?: (id: string) => v
         className="shrink-0 text-muted-foreground hover:text-primary transition-colors cursor-pointer"
         aria-label={task.done ? 'Desmarcar tarefa' : 'Concluir tarefa'}
       >
-        {task.done ? <CheckCircle2 size={20} className="text-emerald-500" /> : <Circle size={20} />}
+        {task.done ? <CheckCircle2 size={20} className="text-success" /> : <Circle size={20} />}
       </button>
       <div className="min-w-0 flex-1">
         <p className={cn('truncate text-sm font-medium', task.done && 'line-through text-muted-foreground')}>
@@ -712,7 +712,7 @@ export function AddPendingDialog({
 
 // ─── Dialog: Novo bloco da rotina ideal ───────────────────────────────────────
 
-const SLOT_COLORS = ['#e05b6d', '#f0b429', '#7bb686', '#5b8dbf', '#c9b6e4', '#e8a0a0']
+const SLOT_COLORS = ['#d1bdb8', '#b76f06', '#6a634d', '#ddd6c6']
 
 export function AddSlotDialog({
   open,

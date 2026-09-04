@@ -305,8 +305,8 @@ export function FinancePage() {
       <div className={cn('flex flex-wrap items-end justify-between gap-4 mb-8', enter)}>
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
-            <span className="flex size-11 items-center justify-center rounded-2xl" style={{ backgroundColor: '#f0b42918' }}>
-              <Wallet size={22} style={{ color: '#f0b429' }} />
+            <span className="flex size-11 items-center justify-center rounded-2xl" style={{ backgroundColor: '#b76f0618' }}>
+              <Wallet size={22} style={{ color: '#b76f06' }} />
             </span>
             Finanças
           </h1>
@@ -361,10 +361,10 @@ export function FinancePage() {
         <TabPanel value="resumo">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             {[
-              { label: 'Receitas do mês', value: monthIncome, icon: TrendingUp, color: '#7bb686' },
-              { label: 'Despesas do mês', value: monthExpense, icon: TrendingDown, color: '#e05b6d' },
-              { label: 'Saldo', value: monthIncome - monthExpense, icon: Banknote, color: monthIncome - monthExpense >= 0 ? '#5b8dbf' : '#e05b6d' },
-              { label: 'Em caixinhas', value: totalBoxes, icon: PiggyBank, color: '#f0b429' },
+              { label: 'Receitas do mês', value: monthIncome, icon: TrendingUp, color: '#6a634d' },
+              { label: 'Despesas do mês', value: monthExpense, icon: TrendingDown, color: '#d1bdb8' },
+              { label: 'Saldo', value: monthIncome - monthExpense, icon: Banknote, color: monthIncome - monthExpense >= 0 ? '#6a634d' : '#d1bdb8' },
+              { label: 'Em caixinhas', value: totalBoxes, icon: PiggyBank, color: '#b76f06' },
             ].map((s) => (
               <Card key={s.label} glass hover className="relative overflow-hidden">
                 <div className="flex items-start justify-between">
@@ -394,7 +394,7 @@ export function FinancePage() {
                 {pendingBills.length > 0 ? pendingBills.map((b) => (
                   <div key={b.id} className="flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-muted/40 transition-colors">
                     <div className="flex size-9 shrink-0 items-center justify-center rounded-xl text-xs font-bold tabular-nums"
-                      style={{ backgroundColor: '#e05b6d18', color: '#e05b6d' }}>
+                      style={{ backgroundColor: '#d1bdb818', color: '#d1bdb8' }}>
                       {b.dayOfMonth}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -413,7 +413,7 @@ export function FinancePage() {
             <Card glass>
               <CardHeader className="flex-row items-center justify-between pb-0">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Target size={16} className="text-emerald-500" />
+                  <Target size={16} className="text-success" />
                   Metas em andamento
                 </CardTitle>
               </CardHeader>
@@ -452,8 +452,8 @@ export function FinancePage() {
               {sortedTx.length > 0 ? sortedTx.map((t) => (
                 <div key={t.id} className="group flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-muted/40 transition-colors">
                   <div className="flex size-9 shrink-0 items-center justify-center rounded-xl"
-                    style={{ backgroundColor: (t.type === 'income' ? '#7bb686' : '#e05b6d') + '18' }}>
-                    {t.type === 'income' ? <ArrowUpRight size={15} style={{ color: '#7bb686' }} /> : <ArrowDownRight size={15} style={{ color: '#e05b6d' }} />}
+                    style={{ backgroundColor: (t.type === 'income' ? '#6a634d' : '#d1bdb8') + '18' }}>
+                    {t.type === 'income' ? <ArrowUpRight size={15} style={{ color: '#6a634d' }} /> : <ArrowDownRight size={15} style={{ color: '#d1bdb8' }} />}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{t.title}</p>
@@ -465,11 +465,11 @@ export function FinancePage() {
                         {' · '}{new Date(t.date + 'T12:00:00').toLocaleDateString('pt-BR')}
                       </p>
                       {t.status === 'pending' && (
-                        <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wide">Pendente</span>
+                        <span className="text-[10px] font-semibold text-warning dark:text-warning uppercase tracking-wide">Pendente</span>
                       )}
                     </div>
                   </div>
-                  <span className={cn('text-sm font-semibold tabular-nums', t.type === 'income' ? 'text-emerald-600 dark:text-emerald-400' : '')}>
+                  <span className={cn('text-sm font-semibold tabular-nums', t.type === 'income' ? 'text-success dark:text-success' : '')}>
                     {t.type === 'income' ? '+' : '-'}{formatBRL(t.amount)}
                   </span>
                   <DeleteButton onEdit={() => { setEditTransactionId(t.id); setAddTxOpen(true) }} onClick={() => deleteTransaction(t.id)} />
@@ -492,7 +492,7 @@ export function FinancePage() {
               {fixedBills.length > 0 ? fixedBills.map((b) => (
                 <div key={b.id} className="group flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-muted/40 transition-colors">
                   <div className="flex size-9 shrink-0 items-center justify-center rounded-xl text-xs font-bold tabular-nums"
-                    style={{ backgroundColor: '#e05b6d18', color: '#e05b6d' }}>
+                    style={{ backgroundColor: '#d1bdb818', color: '#d1bdb8' }}>
                     {b.dayOfMonth}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -528,8 +528,8 @@ export function FinancePage() {
               {subscriptions.length > 0 ? subscriptions.map((s) => (
                 <div key={s.id} className="group flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-muted/40 transition-colors">
                   <div className="flex size-9 shrink-0 items-center justify-center rounded-xl"
-                    style={{ backgroundColor: '#c9b6e418' }}>
-                    <Gift size={15} style={{ color: '#c9b6e4' }} />
+                    style={{ backgroundColor: '#ddd6c618' }}>
+                    <Gift size={15} style={{ color: '#ddd6c6' }} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className={cn('text-sm font-medium truncate', !s.active && 'line-through text-muted-foreground')}>{s.name}</p>
@@ -578,7 +578,7 @@ export function FinancePage() {
                       </p>
                       {c.limit > 0 && (
                         <div className="h-1.5 w-20 rounded-full bg-muted/80 mt-1 ml-auto overflow-hidden">
-                          <div className="h-full rounded-full" style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: pct > 80 ? '#e05b6d' : c.color }} />
+                          <div className="h-full rounded-full" style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: pct > 80 ? '#d1bdb8' : c.color }} />
                         </div>
                       )}
                     </div>
@@ -608,7 +608,7 @@ export function FinancePage() {
                 const card = cards.find((c) => c.id === inst.cardId)
                 return (
                   <div key={inst.id} className="group flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-muted/40 transition-colors">
-                    <div className="flex size-9 shrink-0 items-center justify-center rounded-xl text-[10px] font-bold tabular-nums" style={{ backgroundColor: (card?.color ?? '#5b8dbf') + '18', color: card?.color }}>
+                    <div className="flex size-9 shrink-0 items-center justify-center rounded-xl text-[10px] font-bold tabular-nums" style={{ backgroundColor: (card?.color ?? '#6a634d') + '18', color: card?.color }}>
                       {inst.currentInstallment}/{inst.totalInstallments}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -643,7 +643,7 @@ export function FinancePage() {
           <Card glass>
             <CardHeader className="flex-row items-center justify-between pb-0">
               <CardTitle className="text-base flex items-center gap-2">
-                <Target size={16} className="text-emerald-500" />
+                <Target size={16} className="text-success" />
                 Metas financeiras
               </CardTitle>
               <span className="text-[11px] text-muted-foreground tabular-nums">{goals.length}</span>

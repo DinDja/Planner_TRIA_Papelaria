@@ -38,7 +38,7 @@ function VaultError({ error }: { error: string }) {
   if (!error) return null
 
   return (
-    <div role="alert" className="mb-5 border-l-2 border-rose-500/70 bg-rose-500/[0.06] py-1.5 pl-3 text-xs text-rose-600 dark:text-rose-300">
+    <div role="alert" className="mb-5 border-l-2 border-destructive/70 bg-destructive/[0.06] py-1.5 pl-3 text-xs text-destructive">
       {error}
     </div>
   )
@@ -391,9 +391,9 @@ export function VaultPage() {
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
             <span
               className="flex size-11 items-center justify-center rounded-2xl"
-              style={{ backgroundColor: '#e05b6d18' }}
+              style={{ backgroundColor: '#d1bdb818' }}
             >
-              <KeyRound size={22} style={{ color: '#e05b6d' }} />
+              <KeyRound size={22} style={{ color: '#d1bdb8' }} />
             </span>
             Senhas
           </h1>

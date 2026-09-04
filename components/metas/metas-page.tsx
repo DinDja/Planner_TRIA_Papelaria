@@ -103,7 +103,7 @@ function DepositDialog({
                 className={cn(
                   'flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-medium transition-all cursor-pointer',
                   type === 'deposit'
-                    ? 'border-emerald-500/60 bg-emerald-500/10 text-emerald-600 shadow-sm'
+                    ? 'border-success/60 bg-success/10 text-success shadow-sm'
                     : 'border-border/60 text-muted-foreground hover:bg-muted/50',
                 )}
               >
@@ -116,7 +116,7 @@ function DepositDialog({
                 className={cn(
                   'flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-medium transition-all cursor-pointer',
                   type === 'withdraw'
-                    ? 'border-rose-500/60 bg-rose-500/10 text-rose-600 shadow-sm'
+                    ? 'border-destructive/60 bg-destructive/10 text-destructive shadow-sm'
                     : 'border-border/60 text-muted-foreground hover:bg-muted/50',
                 )}
               >
@@ -165,7 +165,7 @@ function DepositDialog({
             <Button
               onClick={handleDeposit}
               className="rounded-xl shadow-md"
-              style={{ backgroundColor: type === 'withdraw' ? '#e05b6d' : '#7bb686' }}
+              style={{ backgroundColor: type === 'withdraw' ? '#d1bdb8' : '#6a634d' }}
             >
               {editId ? 'Salvar alterações' : type === 'withdraw' ? 'Registrar retirada' : 'Adicionar aporte'}
             </Button>
@@ -269,7 +269,7 @@ function GoalCard({
                 variant="outline"
                 className={cn(
                   'text-[10px]',
-                  daysLeft < 0 ? 'text-destructive border-destructive/40' : daysLeft < 30 ? 'text-amber-600 border-amber-600/40' : '',
+                  daysLeft < 0 ? 'text-destructive border-destructive/40' : daysLeft < 30 ? 'text-warning border-warning/40' : '',
                 )}
               >
                 <Calendar size={9} className="mr-1" />
@@ -328,11 +328,11 @@ function DepositTimeline({ goalId, onEdit, onDelete }: { goalId: string; onEdit:
           <div
             className={cn(
               'flex size-7 shrink-0 items-center justify-center rounded-lg',
-              dep.amount > 0 ? 'bg-emerald-500/15' : 'bg-destructive/15',
+              dep.amount > 0 ? 'bg-success/15' : 'bg-destructive/15',
             )}
           >
             {dep.amount > 0 ? (
-              <ArrowUp size={12} className="text-emerald-600" />
+              <ArrowUp size={12} className="text-success" />
             ) : (
               <ArrowDown size={12} className="text-destructive" />
             )}
@@ -429,9 +429,9 @@ export function MetasPage() {
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
             <span
               className="flex size-11 items-center justify-center rounded-2xl"
-              style={{ backgroundColor: '#7bb68618' }}
+              style={{ backgroundColor: '#6a634d18' }}
             >
-              <Target size={22} style={{ color: '#7bb686' }} />
+              <Target size={22} style={{ color: '#6a634d' }} />
             </span>
             Metas Financeiras
           </h1>
@@ -448,10 +448,10 @@ export function MetasPage() {
       {/* Overview cards */}
       <div className={cn('grid grid-cols-2 md:grid-cols-4 gap-4 mb-8', enter)}>
         {[
-          { label: 'Total guardado', value: totalSaved, icon: Wallet, color: '#7bb686' },
-          { label: 'Meta total', value: totalTarget, icon: TrendingUp, color: '#f0b429' },
-          { label: 'Progresso geral', value: `${overallPct}%`, icon: Target, color: '#5b8dbf' },
-          { label: 'Em caixinhas', value: boxTotal, icon: Wallet, color: '#c9b6e4' },
+          { label: 'Total guardado', value: totalSaved, icon: Wallet, color: '#6a634d' },
+          { label: 'Meta total', value: totalTarget, icon: TrendingUp, color: '#b76f06' },
+          { label: 'Progresso geral', value: `${overallPct}%`, icon: Target, color: '#6a634d' },
+          { label: 'Em caixinhas', value: boxTotal, icon: Wallet, color: '#ddd6c6' },
         ].map((s) => (
           <Card key={s.label} glass hover className="relative overflow-hidden">
             <div className="flex items-start justify-between">
@@ -477,7 +477,7 @@ export function MetasPage() {
         <CardContent className="pt-5 pb-4">
           <div className="flex items-center justify-between mb-2">
             <p className="text-sm font-medium">Progresso geral</p>
-            <p className="text-sm font-bold tabular-nums" style={{ color: '#7bb686' }}>
+            <p className="text-sm font-bold tabular-nums" style={{ color: '#6a634d' }}>
               {overallPct}%
             </p>
           </div>
@@ -486,8 +486,8 @@ export function MetasPage() {
               className="h-full rounded-full transition-all duration-700 relative overflow-hidden"
               style={{
                 width: `${Math.min(overallPct, 100)}%`,
-                background: 'linear-gradient(90deg, #7bb686, #5b8dbf)',
-                boxShadow: '0 1px 10px -2px #7bb68680',
+                background: 'linear-gradient(90deg, #6a634d, #b76f06)',
+                boxShadow: '0 1px 10px -2px #6a634d80',
               }}
             >
               <div className="absolute inset-0 bg-gradient-to-b from-white/25 to-transparent" />

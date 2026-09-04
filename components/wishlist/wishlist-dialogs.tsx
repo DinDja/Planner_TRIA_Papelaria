@@ -9,9 +9,9 @@ import { Input } from '../ui/primitives'
 import { toast } from '../ui/toaster'
 
 const PRIORITY_OPTIONS = [
-  { value: 'high' as const, label: 'Alta', color: '#e05b6d' },
-  { value: 'medium' as const, label: 'Média', color: '#f0b429' },
-  { value: 'low' as const, label: 'Baixa', color: '#7bb686' },
+  { value: 'high' as const, label: 'Alta', color: '#d1bdb8' },
+  { value: 'medium' as const, label: 'Média', color: '#b76f06' },
+  { value: 'low' as const, label: 'Baixa', color: '#6a634d' },
 ]
 
 export function AddWishDialog({

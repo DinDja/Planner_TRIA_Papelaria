@@ -595,9 +595,9 @@ export function AddCycleDialog({ open, onClose, editId }: { open: boolean; onClo
                 <button key={f} type="button" onClick={() => setFlow(f)}
                   className="flex-1 rounded-xl border px-3 py-2 text-xs font-medium transition-all cursor-pointer"
                   style={{
-                    backgroundColor: flow === f ? '#e05b6d' : 'transparent',
+                    backgroundColor: flow === f ? '#d1bdb8' : 'transparent',
                     color: flow === f ? 'white' : 'var(--muted-foreground)',
-                    borderColor: flow === f ? '#e05b6d' : 'var(--border)',
+                    borderColor: flow === f ? '#d1bdb8' : 'var(--border)',
                   }}
                 >{f === 'light' ? 'Leve' : f === 'medium' ? 'Moderado' : 'Intenso'}</button>
               ))}

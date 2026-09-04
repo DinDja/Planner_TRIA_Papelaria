@@ -1,10 +1,9 @@
 'use client'
 
-import { useSettingsStore, PALETTES } from '@/lib/store/use-settings-store'
-import type { FontScale, GradientArea, RadiusPreset, SystemPaletteId } from '@/lib/types'
+import { useSettingsStore } from '@/lib/store/use-settings-store'
+import type { FontScale, GradientArea, RadiusPreset } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import {
-  Check,
   Eye,
   Grid3X3,
   Rainbow,
@@ -23,6 +22,13 @@ interface Props {
   open: boolean
   onClose: () => void
 }
+
+const BRAND_COLORS = [
+  { label: 'Rosa', value: '#d1bdb8' },
+  { label: 'Mostarda', value: '#b76f06' },
+  { label: 'Verde', value: '#6a634d' },
+  { label: 'Bege', value: '#ddd6c6' },
+] as const
 
 const GRADIENT_AREAS: { id: GradientArea; label: string; desc: string }[] = [
   { id: 'dashboard', label: 'Dashboard', desc: 'Gradientes no título e cartões da home' },
@@ -105,41 +111,23 @@ export function SettingsDialog({ open, onClose }: Props) {
       >
         <div className="flex flex-col gap-7">
           {/* ── Paleta de cores ──────────────────────────────────────── */}
-          <Section icon={Palette} title="Paleta de cores" desc="Define a cor de destaque do app.">
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {PALETTES.map((p) => {
-                const isActive = s.palette === p.id
-                return (
-                  <button
-                    key={p.id}
-                    onClick={() => s.setPalette(p.id)}
-                    className={cn(
-                      'group relative flex items-center gap-2.5 rounded-2xl border p-2.5 transition-all duration-200 cursor-pointer',
-                      isActive
-                        ? 'border-transparent shadow-md scale-[1.02]'
-                        : 'border-border/60 hover:border-border hover:bg-muted/40',
-                    )}
-                    style={
-                      isActive
-                        ? { boxShadow: `0 0 0 2px ${p.swatch}, 0 4px 12px -4px ${p.swatch}66` }
-                        : undefined
-                    }
-                  >
-                    <div
-                      className="flex size-9 items-center justify-center rounded-xl shrink-0"
-                      style={{ backgroundColor: p.swatch }}
-                    >
-                      {isActive && <Check size={14} strokeWidth={3} className="text-white drop-shadow-sm" />}
-                    </div>
-                    <div className="min-w-0 text-left">
-                      <p className="text-xs font-semibold leading-tight truncate">{p.label}</p>
-                      <p className="text-[10px] text-muted-foreground leading-tight truncate">
-                        {p.description}
-                      </p>
-                    </div>
-                  </button>
-                )
-              })}
+          <Section icon={Palette} title="Paleta TRIA" desc="Identidade fixa do sistema, com predominância do rosa.">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {BRAND_COLORS.map((color) => (
+                <div
+                  key={color.value}
+                  className="flex items-center gap-2.5 rounded-2xl border border-border/60 bg-card p-2.5"
+                >
+                  <span
+                    className="size-9 shrink-0 rounded-xl border border-foreground/10"
+                    style={{ backgroundColor: color.value }}
+                  />
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold leading-tight">{color.label}</p>
+                    <p className="text-[10px] text-muted-foreground uppercase">{color.value}</p>
+                  </div>
+                </div>
+              ))}
             </div>
           </Section>
 
@@ -347,8 +335,8 @@ export function SettingsDialog({ open, onClose }: Props) {
                 className={cn(
                   'rounded-full px-2.5 py-0.5 text-xs font-medium',
                   s.gradients.badges
-                    ? 'bg-gradient-to-r from-amber-400 to-yellow-500 text-white'
-                    : 'bg-amber-400 text-white',
+                    ? 'bg-gradient-to-r from-brand-rose to-brand-mustard text-primary-foreground'
+                    : 'bg-warning text-primary-foreground',
                 )}
               >
                 Premium

@@ -1,6 +1,5 @@
 'use client'
 
-import { useAppStore } from '@/lib/store/use-app-store'
 import { useMenuStore } from '@/lib/store/use-menu-store'
 import { cn } from '@/lib/utils'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -14,7 +13,6 @@ import {
   CheckCircle2,
   Circle,
   FileText,
-  Folder,
   Gift,
   Heart,
   HeartPulse,
@@ -30,7 +28,6 @@ import {
   Settings,
   Shield,
   Sun,
-  Tag,
   Trash2,
   User,
   Wallet,
@@ -93,9 +90,6 @@ export function AppSidebar({
 }: SidebarProps) {
   const { theme, toggle } = useTheme()
   const pathname = usePathname()
-  const planners = useAppStore((s) => s.planners)
-  const folders = useAppStore((s) => s.folders)
-  const tags = useAppStore((s) => s.tags)
   const menuModules = useMenuStore((s) => s.modules)
   const enabledModules = menuModules
     .filter((m) => m.enabled)
@@ -105,7 +99,7 @@ export function AppSidebar({
     <div className="flex h-full flex-col">
       {/* Logo */}
       <div className={cn('flex items-center px-4 py-2 h-24 shrink-0', collapsed && 'justify-center px-2')}>
-        <BrandLogo className="h-20 w-[190px]" imageClassName="w-[380px]" />
+        <BrandLogo className="h-16 w-[170px]" imageClassName="w-[340px]" />
         <button
           onClick={() => setMobileOpen(false)}
           className="ml-auto rounded-lg p-1 hover:bg-muted md:hidden cursor-pointer"
@@ -141,87 +135,6 @@ export function AppSidebar({
           })}
         </nav>
 
-        {!collapsed && (
-          <>
-            {/* Pastas */}
-            <div className="mt-6 px-3">
-              <div className="flex items-center gap-2 mb-2">
-                <Folder size={14} className="text-muted-foreground" />
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Pastas
-                </p>
-              </div>
-              <div className="flex flex-col gap-0.5">
-                {folders.map((f) => (
-                  <Link
-                    key={f.id}
-                    href={`/pastas/${f.id}`}
-                    className="flex items-center gap-3 rounded-xl px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer"
-                  >
-                    <div className="size-2.5 rounded-md" style={{ backgroundColor: f.color }} />
-                    <span className="truncate">{f.name}</span>
-                    <span className="ml-auto text-xs text-muted-foreground/60 tabular-nums">
-                      {planners.filter((p) => p.folderId === f.id).length}
-                    </span>
-                  </Link>
-                ))}
-              </div>
-            </div>
-
-            {/* Tags */}
-            <div className="mt-5 px-3">
-              <div className="flex items-center gap-2 mb-2">
-                <Tag size={14} className="text-muted-foreground" />
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Tags
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {tags.length === 0 ? (
-                  <span className="text-[10px] text-muted-foreground/50 px-1">
-                    Nenhuma tag ainda
-                  </span>
-                ) : (
-                  tags.map((t) => (
-                    <Link
-                      key={t.id}
-                      href={`/tags/${encodeURIComponent(t.id)}`}
-                      className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs transition-colors cursor-pointer hover:brightness-110"
-                      style={{
-                        backgroundColor: t.color + '20',
-                        color: t.color,
-                      }}
-                    >
-                      {t.name}
-                    </Link>
-                  ))
-                )}
-              </div>
-            </div>
-
-            {/* Planners recentes */}
-            <div className="mt-5 px-3">
-              <div className="flex items-center gap-2 mb-2">
-                <BookOpen size={14} className="text-muted-foreground" />
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Planners recentes
-                </p>
-              </div>
-              <div className="flex flex-col gap-0.5">
-                {planners.slice(0, 5).map((p) => (
-                  <Link
-                    key={p.id}
-                    href={`/planner/${p.id}`}
-                    className="flex items-center gap-2.5 rounded-xl px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors truncate"
-                  >
-                    <div className="size-2 rounded-full shrink-0" style={{ backgroundColor: p.color }} />
-                    <span className="truncate">{p.name}</span>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </>
-        )}
       </ScrollArea>
 
       {/* Bottom — ferramentas. Apenas ícones. */}
@@ -232,6 +145,7 @@ export function AppSidebar({
           onClick={toggle}
           className="rounded-xl"
           aria-label={theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
+          title={theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
         >
           {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
         </Button>
@@ -239,18 +153,19 @@ export function AppSidebar({
           variant="ghost"
           size="icon-sm"
           onClick={() => setCollapsed(!collapsed)}
+          title={collapsed ? 'Expandir sidebar' : 'Recolher sidebar'}
           className="rounded-xl hidden md:flex"
           aria-label={collapsed ? 'Expandir sidebar' : 'Recolher sidebar'}
         >
           {collapsed ? <PanelLeftOpen size={15} /> : <PanelLeftClose size={15} />}
         </Button>
         <ToolLink href="/menu" label="Menu" icon={Menu} />
-        <ToolLink href="/admin" label="Admin" icon={Shield} />
         <ToolLink href="/lixeira" label="Lixeira" icon={Trash2} />
         <Button
           variant="ghost"
           size="icon-sm"
           onClick={onOpenSettings}
+          title="Abrir configurações"
           className="rounded-xl shrink-0"
           aria-label="Configurações"
         >

@@ -33,17 +33,46 @@ const MODULE_HREFS: Partial<Record<ModuloId, string>> = {
   perfil: '/perfil',
 }
 
+const DEFAULT_MODULE_ORDER: readonly ModuloId[] = [
+  'dashboard', 'calendario', 'financas', 'saude', 'notas', 'aniversarios',
+  'habitos', 'listas', 'checklists', 'wishlist', 'cofre', 'diario',
+  'memorias', 'frases', 'plans', 'perfil', 'admin',
+]
+
+const LEGACY_DEFAULT_MODULE_ORDER: readonly ModuloId[] = [
+  'dashboard', 'diario', 'notas', 'listas', 'checklists', 'wishlist',
+  'frases', 'memorias', 'cofre', 'saude', 'calendario', 'financas',
+  'aniversarios', 'habitos', 'plans', 'admin', 'perfil',
+]
+
+function orderModules(modules: ModuleDef[]): ModuleDef[] {
+  const order = new Map(DEFAULT_MODULE_ORDER.map((id, index) => [id, index]))
+  return [...modules].sort(
+    (a, b) => (order.get(a.id) ?? Number.MAX_SAFE_INTEGER) - (order.get(b.id) ?? Number.MAX_SAFE_INTEGER),
+  )
+}
+
+function normalizeStoredOrder(modules: ModuleDef[]): ModuleDef[] {
+  const isLegacyDefault =
+    modules.length === LEGACY_DEFAULT_MODULE_ORDER.length &&
+    modules.every((module, index) => module.id === LEGACY_DEFAULT_MODULE_ORDER[index])
+
+  return isLegacyDefault ? orderModules(modules) : modules
+}
+
 export function sanitizeModules(modules: ModuleDef[]): ModuleDef[] {
-  return modules
+  const cleaned = modules
     .filter((module) => !REMOVED_MODULE_IDS.has(module.id))
     .map((module) => ({
       ...module,
       href: MODULE_HREFS[module.id] ?? module.href,
       ...(module.id === 'calendario' ? { label: 'Agenda' } : {}),
     }))
+
+  return normalizeStoredOrder(cleaned)
 }
 
-export const DEFAULT_MODULES: ModuleDef[] = [
+export const DEFAULT_MODULES: ModuleDef[] = orderModules([
   { id: 'dashboard',       href: '/dashboard',     label: 'Dashboard',      enabled: true },
   { id: 'diario',          href: '/diario',        label: 'Diário',         enabled: true },
   { id: 'notas',           href: '/notas',         label: 'Notas',          enabled: true },
@@ -61,7 +90,7 @@ export const DEFAULT_MODULES: ModuleDef[] = [
   { id: 'plans',           href: '/plans',          label: 'Planos',         enabled: true },
   { id: 'admin',           href: '/admin',          label: 'Admin',          enabled: true },
   { id: 'perfil',          href: '/perfil',         label: 'Perfil',         enabled: true },
-]
+])
 
 interface MenuState {
   modules: ModuleDef[]
@@ -95,7 +124,7 @@ export const useMenuStore = create<MenuState>()(
     }),
     {
       name: 'plannerhub-menu',
-      version: 6,
+      version: 7,
       // Antes da v2, cada item levava `icon: 'BookHeart'` etc (nome Lucide).
       // O ícone virou derivado de `id` (ver components/icons/modules). Aqui
       // descartamos o campo legado ao reidratar do localStorage.
@@ -129,7 +158,7 @@ export const useMenuStore = create<MenuState>()(
             cleaned.push(def)
           }
         }
-        return { modules: cleaned }
+        return { modules: normalizeStoredOrder(cleaned) }
       },
       partialize: (s) => ({ modules: s.modules }),
     },

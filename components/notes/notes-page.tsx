@@ -23,11 +23,8 @@ import { AddFolderDialog, AddNoteDialog } from './notes-dialogs'
 
 const enter = 'animate-in fade-in slide-in-from-bottom-3 duration-500 fill-mode-both'
 
-const ROTATIONS = [-2, -1, 0, 1, 2, 3, -3, -1.5, 1.5, 0]
-
 function NoteCard({
   note,
-  index,
   folderName,
   onEdit,
   onDelete,
@@ -35,7 +32,6 @@ function NoteCard({
   onMove,
 }: {
   note: Note
-  index: number
   folderName?: string
   onDelete: (id: string) => void
   onTogglePin: (id: string) => void
@@ -45,13 +41,8 @@ function NoteCard({
   const lines = note.content.split('\n').filter(Boolean)
   const preview = lines.slice(0, 4).join('\n')
   const hasMore = lines.length > 4
-  const rotate = ROTATIONS[index % ROTATIONS.length]
-
   return (
-    <div
-      className="group relative"
-      style={{ transform: `rotate(${rotate}deg)` }}
-    >
+    <div className="group relative">
       {/* Sombra de papel */}
       <div
         className="absolute inset-0 rounded-2xl translate-y-[3px] translate-x-[3px] transition-shadow"
@@ -409,11 +400,10 @@ export function NotesPage() {
 
         {filteredNotes.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 py-4">
-            {filteredNotes.map((n, i) => (
+            {filteredNotes.map((n) => (
               <NoteCard
                 key={n.id}
                 note={n}
-                index={i}
                 folderName={folderMap.get(n.folderId ?? '')}
                 onDelete={deleteNote}
                 onEdit={(id) => { setEditNoteId(id); setAddNoteOpen(true) }}

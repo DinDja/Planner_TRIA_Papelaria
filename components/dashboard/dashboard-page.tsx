@@ -5,11 +5,13 @@ import { useAppStore } from '@/lib/store/use-app-store'
 import type { Planner } from '@/lib/types'
 import { useCalendarStore } from '@/lib/store/use-calendar-store'
 import { useFinanceStore } from '@/lib/store/use-finance-store'
+import { useHabitsStore } from '@/lib/store/use-habits-store'
 import { isoDia, useDiarioStore } from '@/lib/diario/use-diario-store'
 import { cn } from '@/lib/utils'
 import {
   ArrowUpRight,
   Calendar,
+  CheckCircle2,
   Clock,
   Flame,
   FolderOpen,
@@ -32,6 +34,70 @@ const formatBRL = (centavos: number) =>
     currency: 'BRL',
     maximumFractionDigits: 0,
   })
+
+function HabitsSummary({ todayISO }: { todayISO: string }) {
+  const habits = useHabitsStore((s) => s.habits)
+  const logs = useHabitsStore((s) => s.logs)
+  const toggleLog = useHabitsStore((s) => s.toggleLog)
+  const activeHabits = habits.filter((habit) => !habit.archived)
+
+  return (
+    <Card glass className="min-h-[220px]">
+      <CardHeader className="flex-row items-center justify-between pb-0">
+        <CardTitle className="text-base">Hábitos</CardTitle>
+        <Link href="/habitos" className="flex items-center gap-1 text-xs text-primary hover:underline">
+          Ver todos <ArrowUpRight size={12} />
+        </Link>
+      </CardHeader>
+      <CardContent className="pt-3">
+        {activeHabits.length > 0 ? (
+          <div className="space-y-1">
+            {activeHabits.slice(0, 4).map((habit) => {
+              const done = logs.some(
+                (log) => log.habitId === habit.id && log.date === todayISO && log.completed,
+              )
+
+              return (
+                <button
+                  key={habit.id}
+                  type="button"
+                  onClick={() => toggleLog(habit.id, todayISO)}
+                  className="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left transition-colors hover:bg-muted/40 cursor-pointer"
+                  aria-label={`${done ? 'Desmarcar' : 'Marcar'} ${habit.name} hoje`}
+                >
+                  {done ? (
+                    <CheckCircle2 size={18} style={{ color: habit.color }} />
+                  ) : (
+                    <span
+                      className="size-[18px] shrink-0 rounded-full border-2 border-dashed"
+                      style={{ borderColor: `${habit.color}80` }}
+                    />
+                  )}
+                  <span className="min-w-0 flex-1 truncate text-sm">{habit.name}</span>
+                  <span className="shrink-0 text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+                    {done ? 'feito' : 'hoje'}
+                  </span>
+                </button>
+              )
+            })}
+            {activeHabits.length > 4 && (
+              <p className="px-2 pt-1 text-[11px] text-muted-foreground">
+                + {activeHabits.length - 4} hábitos na sua lista
+              </p>
+            )}
+          </div>
+        ) : (
+          <div className="flex min-h-[155px] flex-col items-center justify-center text-center">
+            <p className="text-sm text-muted-foreground">Nenhum hábito cadastrado.</p>
+            <Link href="/habitos" className="mt-2 text-xs text-primary hover:underline">
+              Criar primeiro hábito
+            </Link>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
 
 export function DashboardPage() {
   const planners = useAppStore((s) => s.planners)
@@ -126,12 +192,12 @@ export function DashboardPage() {
       {/* Stats row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         {[
-          { label: 'Planners', value: planners.length, icon: FolderOpen, color: '#d1bdb8' },
-          { label: 'Páginas', value: totalPages, icon: NotebookPen, color: '#6a634d' },
-          { label: 'Registros na semana', value: recordsThisWeek, icon: Clock, color: '#b76f06' },
-          { label: 'Dias de streak', value: currentStreak, icon: Flame, color: '#d1bdb8' },
+          { label: 'Tarefas', value: planners.length, icon: FolderOpen, color: '#d1bdb8' },
+          { label: 'Aniversários', value: totalPages, icon: NotebookPen, color: '#6a634d' },
+          { label: 'Contas', value: recordsThisWeek, icon: Clock, color: '#b76f06' },
+          { label: 'Consultas e Exames', value: currentStreak, icon: Flame, color: '#d1bdb8' },
         ].map((stat) => (
-          <Card key={stat.label} glass hover className="relative overflow-hidden">
+          <Card key={stat.label} glass hover className="relative h-full overflow-hidden">
             <div className="absolute top-0 right-0 w-20 h-20 rounded-bl-full opacity-10" style={{ backgroundColor: stat.color }} />
             <div className="flex items-start justify-between">
               <div>
@@ -149,13 +215,13 @@ export function DashboardPage() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main content: Recent + Favorites */}
-        <div className="lg:col-span-2 space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+        {/* Coluna esquerda: agenda diária, contas e hábitos */}
+        <div className="min-w-0 space-y-6">
           {/* Recents */}
           <Card glass>
             <CardHeader className="flex-row items-center justify-between pb-0">
-              <CardTitle className="text-base">Planners recentes</CardTitle>
+              <CardTitle className="text-base">Agenda Diária</CardTitle>
               <Link href="/planners" className="text-xs text-primary hover:underline flex items-center gap-1">
                 Ver todos <ArrowUpRight size={12} />
               </Link>
@@ -258,9 +324,9 @@ export function DashboardPage() {
           )}
 
           {/* Activity chart */}
-          <Card glass>
+          <Card glass className="min-h-[220px]">
             <CardHeader>
-              <CardTitle className="text-base">Atividade semanal</CardTitle>
+              <CardTitle className="text-base">Contas</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex items-end gap-3 h-32">
@@ -286,10 +352,12 @@ export function DashboardPage() {
               </div>
             </CardContent>
           </Card>
+
+          <HabitsSummary todayISO={todayISO} />
         </div>
 
-        {/* Right sidebar content */}
-        <div className="space-y-6">
+        {/* Coluna direita: aniversários e consultas/exames */}
+        <div className="min-w-0 space-y-6">
           {/* Mini Calendar */}
           <Card glass>
             <div className="flex items-center justify-between mb-3">
@@ -331,7 +399,7 @@ export function DashboardPage() {
             <CardHeader className="flex-row items-center justify-between pb-0">
               <CardTitle className="text-base flex items-center gap-2">
                 <Calendar size={16} className="text-primary" />
-                Agenda de hoje
+                Aniversários
               </CardTitle>
             </CardHeader>
             <div className="px-5 py-3">
@@ -384,7 +452,7 @@ export function DashboardPage() {
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
                 <Target size={16} className="text-success" />
-                Objetivos
+                Consultas e Exames
               </CardTitle>
             </CardHeader>
             <div className="px-5 pb-3 space-y-3">

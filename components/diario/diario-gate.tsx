@@ -63,9 +63,9 @@ export function DiarioGate({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-[calc(100vh-7rem)] items-center justify-center px-6 py-12">
       <section className="w-full max-w-[400px]" aria-labelledby="diario-gate-title">    
         <div className="mb-9">
-          <p className={eyebrow}>{configurando ? 'abertura · diário' : 'entrada · diário'}</p>
+          {configurando && <p className={eyebrow}>abertura · diário</p>}
           <h1 id="diario-gate-title" className="mt-2 font-serif text-[2.3rem] leading-[1.05] text-foreground">
-            {configurando ? 'Escolha a chave.' : 'Seu caderno está fechado.'}
+            {configurando ? 'Escolha a chave.' : 'Seu Diário está fechado'}
           </h1>
           <p className="mt-2 max-w-[320px] text-sm leading-relaxed text-muted-foreground">
             {configurando
@@ -117,7 +117,7 @@ export function DiarioGate({ children }: { children: React.ReactNode }) {
             />
           )}
 
-          <DiarioSubmitButton label={configurando ? 'guardar senha e abrir' : 'abrir meu caderno'} />
+          <DiarioSubmitButton label={configurando ? 'guardar senha e abrir' : 'abrir meu diário'} />
         </form>
       </section>
     </div>

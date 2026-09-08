@@ -244,13 +244,11 @@ export function AddItemDialog({
     (list?.items ?? []).map((i) => i.category).filter((c): c is string => Boolean(c)),
   )
   const categorySuggestions = [...new Set([...kindMeta.presetCategories, ...listCategories])]
+    .filter((category) => category.toLowerCase() !== 'outros')
     .sort((a, b) => {
-      const aOutros = a.toLowerCase() === 'outros'
-      const bOutros = b.toLowerCase() === 'outros'
-      if (aOutros && !bOutros) return 1
-      if (!aOutros && bOutros) return -1
       return a.localeCompare(b, 'pt-BR', { sensitivity: 'base' })
     })
+    .concat('Outros')
 
   const reset = () => {
     setName('')

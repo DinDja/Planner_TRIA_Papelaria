@@ -50,6 +50,30 @@ function markSeeded(uid: string) {
   } catch {}
 }
 
+function getSyncedRole(user: User | null): Role {
+  const nextRole = roleFromEmail(user?.email)
+  const subStore = useSubscriptionStore.getState()
+  if (subStore.role !== nextRole) {
+    subStore.setSubscription({ role: nextRole })
+  }
+  return nextRole
+}
+
+function syncUserDataInBackground(user: User) {
+  if (seededThisSession(user.uid)) return
+
+  // A sessao do Firebase nao deve depender da latencia do Firestore.
+  void (async () => {
+    try {
+      await seedUserDoc(user)
+      await writeUserManifest(user, { email: user.email ?? '', name: user.displayName ?? '' })
+      markSeeded(user.uid)
+    } catch {
+      // Um proximo ciclo de autenticacao tentara novamente.
+    }
+  })()
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
@@ -69,7 +93,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    const unsub = onAuthStateChanged(auth, async (u) => {
+    const unsub = onAuthStateChanged(auth, (u) => {
+      if (!u && auth.currentUser) return
       // Reset do estado de assinatura local ao deslogar (a store será
       // re-hidratada do Firestore no próximo login via StoreSyncProvider).
       if (!u) {
@@ -86,23 +111,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // apenas um fallback idempotente para usuários pré-existentes cujo
       // doc-raiz ainda não existe — cobre o caso Google-login-first-time
       // sem cadastro explícito na nossa app.
-      if (!seededThisSession(u.uid)) {
-        try {
-          await seedUserDoc(u)
-          await writeUserManifest(u, { email: u.email ?? '', name: u.displayName ?? '' })
-          markSeeded(u.uid)
-        } catch {}
-      }
-
       syncRole(u)
       setUser(u)
       setLoading(false)
+      syncUserDataInBackground(u)
     })
     return () => unsub()
   }, [])
 
   const signIn = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth, email, password)
+    const cred = await signInWithEmailAndPassword(auth, email, password)
+    setRole(getSyncedRole(cred.user))
+    setUser(cred.user)
+    setLoading(false)
     // Login de conta já existente: doc-raiz já existe; só atualiza manifest
     // (avatar/nome podem ter mudado do lado do Google, por exemplo). Sienna.
     // Marcamos a sessão para evitar re-chamar isto no onAuthStateChanged.
@@ -114,6 +135,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signUp = async (name: string, email: string, password: string) => {
     const cred = await createUserWithEmailAndPassword(auth, email, password)
     await updateProfile(cred.user, { displayName: name })
+    setRole(getSyncedRole(cred.user))
+    setUser(cred.user)
+    setLoading(false)
     // Seeding/manifest são best-effort: a conta Auth já foi criada acima.
     // Se o Firestore falhar (race com onAuthStateChanged, regra transitória,
     // etc.), o onAuthStateChanged retentará o seed no próximo ciclo (ele
@@ -136,6 +160,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signInWithGoogle = async () => {
     const cred = await signInWithPopup(auth, new GoogleAuthProvider())
+    setRole(getSyncedRole(cred.user))
+    setUser(cred.user)
+    setLoading(false)
     // Google login não tem "cadastro" separado na nossa app; pode ser
     // primeiro login (precisa seed) ou retorno (doc já existe, seed é
     // no-op). seedUserDoc é idempotente (getDoc-then-setDoc). Manifest

@@ -3,7 +3,7 @@
 import { useBirthdaysStore } from '@/lib/store/use-birthdays-store'
 import type { BirthdayRecord } from '@/lib/types'
 import { cn } from '@/lib/utils'
-import { Cake, Gift, Pencil, Plus, Trash2 } from 'lucide-react'
+import { Cake, Gift, List, Pencil, Plus, Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Button } from '../ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
@@ -83,7 +83,7 @@ export function BirthdaysPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
             <span className="flex size-11 items-center justify-center rounded-2xl" style={{ backgroundColor: MODULE_COLOR + '18' }}>
-              <Cake size={22} style={{ color: MODULE_COLOR }} />
+              <List size={22} style={{ color: MODULE_COLOR }} />
             </span>
             Aniversários
           </h1>

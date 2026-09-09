@@ -18,6 +18,7 @@ import {
   Trash2,
   Weight,
   Venus,
+  type LucideIcon,
 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Button } from '../ui/button'
@@ -402,7 +403,10 @@ function WeightTab() {
           const wBmi = height > 0 ? calcBMI(w.weight, height) : 0
           const wBmiInfo = wBmi ? bmiCategory(wBmi) : null
           return (
-            <div key={w.id} className="group flex items-center gap-4 rounded-xl px-3 py-2 hover:bg-muted/40 transition-colors">
+            <div key={w.id} className="group flex items-start gap-3 rounded-xl px-3 py-2 hover:bg-muted/40 transition-colors">
+              <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+                <Weight size={16} className="text-primary" />
+              </div>
               <span className="text-xs text-muted-foreground w-20 shrink-0">{formatDate(w.date)}</span>
               <span className="text-sm font-bold tabular-nums">{w.weight} kg</span>
               {wBmiInfo && (
@@ -444,7 +448,10 @@ function SymptomsTab() {
       </div>
       <div className="space-y-1">
         {sorted.map((s) => (
-          <div key={s.id} className="group flex items-center gap-4 rounded-xl px-3 py-2 hover:bg-muted/40 transition-colors">
+          <div key={s.id} className="group flex items-start gap-3 rounded-xl px-3 py-2 hover:bg-muted/40 transition-colors">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+              <Cigarette size={16} className="text-primary" />
+            </div>
             <span className="text-xs text-muted-foreground w-20 shrink-0">{formatDate(s.date)}</span>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium">{s.symptom}</p>
@@ -476,6 +483,7 @@ function MedicationsTab() {
   const deleteMedication = useHealthStore((s) => s.deleteMedication)
   const [addOpen, setAddOpen] = useState(false)
   const [editId, setEditId] = useState<string | undefined>()
+  const sorted = [...medications].sort((a, b) => b.startDate.localeCompare(a.startDate))
 
   return (
     <div>
@@ -485,30 +493,22 @@ function MedicationsTab() {
           <Plus size={14} /> Adicionar
         </Button>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {medications.map((m) => (
-          <Card key={m.id} glass className="relative group" style={{ borderLeft: `4px solid ${m.color}` }}>
-            <CardHeader className="pb-1">
-              <div className="flex items-start justify-between">
-                <div>
-                  <CardTitle className="text-sm">{m.name}</CardTitle>
-                  <p className="text-xs text-muted-foreground">
-                    {m.dosage} · {m.frequency}{m.intervalHours ? ` · a cada ${m.intervalHours}h` : ''}
-                  </p>
-                </div>
-                <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button onClick={() => { setEditId(m.id); setAddOpen(true) }} className="rounded-lg p-1 text-muted-foreground/50 hover:text-primary transition-all cursor-pointer" aria-label="Editar medicamento">
-                  <Pencil size={13} />
-                </button>
-                <button onClick={() => deleteMedication(m.id)} className="rounded-lg p-1 text-muted-foreground/30 hover:text-destructive transition-all cursor-pointer" aria-label="Excluir medicamento">
-                  <Trash2 size={13} />
-                </button>
-                </div>
+      <div className="space-y-2">
+        {sorted.map((m) => (
+          <div key={m.id} className="group flex items-start gap-3 rounded-xl px-3 py-2.5 hover:bg-muted/40 transition-colors">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-xl" style={{ backgroundColor: `${m.color}18` }}>
+              <Pill size={16} style={{ color: m.color }} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-sm font-medium">{m.name}</span>
+                <Badge variant="outline" className="text-[9px] px-1.5">{m.frequency}</Badge>
               </div>
-            </CardHeader>
-            <CardContent className="pt-1">
-              <p className="text-[10px] text-muted-foreground">
-                Desde {formatDate(m.startDate)}{m.endDate ? ` até ${formatDate(m.endDate)}` : ''}{m.durationDays ? ` · ${m.durationDays} dias` : ''}
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {formatDate(m.startDate)}{m.endDate ? ` até ${formatDate(m.endDate)}` : ''}
+                {m.dosage && ` · ${m.dosage}`}
+                {m.intervalHours ? ` · a cada ${m.intervalHours}h` : ''}
+                {m.durationDays ? ` · ${m.durationDays} dias` : ''}
               </p>
               {m.times && m.times.length > 0 && (
                 <div className="flex flex-wrap gap-1 mt-1.5">
@@ -518,8 +518,16 @@ function MedicationsTab() {
                 </div>
               )}
               {m.notes && <p className="text-xs text-muted-foreground/70 mt-1">{m.notes}</p>}
-            </CardContent>
-          </Card>
+            </div>
+            <div className="flex items-center gap-0.5 shrink-0">
+              <button onClick={() => { setEditId(m.id); setAddOpen(true) }} className="rounded-md p-1 text-muted-foreground/50 opacity-0 group-hover:opacity-100 hover:text-primary cursor-pointer" aria-label="Editar medicamento">
+                <Pencil size={12} />
+              </button>
+              <button onClick={() => deleteMedication(m.id)} className="rounded-md p-1 text-muted-foreground/30 opacity-0 group-hover:opacity-100 hover:text-destructive cursor-pointer" aria-label="Excluir medicamento">
+                <Trash2 size={12} />
+              </button>
+            </div>
+          </div>
         ))}
       </div>
       <AddMedicationDialog open={addOpen} editId={editId} onClose={() => { setAddOpen(false); setEditId(undefined) }} />
@@ -592,37 +600,33 @@ function DoctorsTab() {
           <Plus size={14} /> Adicionar
         </Button>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="space-y-2">
         {doctors.map((d) => (
-          <Card key={d.id} glass className="relative group" style={{ borderLeft: `4px solid ${d.color}` }}>
-            <CardHeader className="pb-1">
-              <div className="flex items-start justify-between">
-                <div className="flex items-start gap-3">
-                  <div className="flex size-9 shrink-0 items-center justify-center rounded-xl" style={{ backgroundColor: d.color + '18' }}>
-                    <Stethoscope size={16} style={{ color: d.color }} />
-                  </div>
-                  <div>
-                    <CardTitle className="text-sm">{d.name}</CardTitle>
-                    <p className="text-xs text-muted-foreground">{d.specialty}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button onClick={() => { setEditId(d.id); setAddOpen(true) }} className="rounded-lg p-1 text-muted-foreground/50 hover:text-primary transition-all cursor-pointer" aria-label="Editar médico">
-                  <Pencil size={13} />
-                </button>
-                <button onClick={() => deleteDoctor(d.id)} className="rounded-lg p-1 text-muted-foreground/30 hover:text-destructive transition-all cursor-pointer" aria-label="Excluir médico">
-                  <Trash2 size={13} />
-                </button>
-                </div>
+          <div key={d.id} className="group flex items-start gap-3 rounded-xl px-3 py-2.5 hover:bg-muted/40 transition-colors">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-xl" style={{ backgroundColor: `${d.color}18` }}>
+              <Stethoscope size={16} style={{ color: d.color }} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-sm font-medium">{d.name}</span>
+                <Badge variant="outline" className="text-[9px] px-1.5">{d.specialty}</Badge>
               </div>
-            </CardHeader>
-            <CardContent className="pt-1 space-y-0.5 text-xs text-muted-foreground/80">
-              {d.phone && <p>📞 {d.phone}</p>}
-              {d.email && <p>✉ {d.email}</p>}
-              {d.address && <p>📍 {d.address}</p>}
-              {d.notes && <p className="text-muted-foreground/60 mt-1">{d.notes}</p>}
-            </CardContent>
-          </Card>
+              <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground/80">
+                {d.phone && <span>📞 {d.phone}</span>}
+                {d.email && <span>✉ {d.email}</span>}
+                {d.address && <span>📍 {d.address}</span>}
+              </div>
+              {d.notes && <p className="text-xs text-muted-foreground/60 mt-1">{d.notes}</p>}
+            </div>
+            <div className="flex items-center gap-0.5 shrink-0">
+              <button onClick={() => { setEditId(d.id); setAddOpen(true) }} className="rounded-md p-1 text-muted-foreground/50 opacity-0 group-hover:opacity-100 hover:text-primary cursor-pointer" aria-label="Editar médico">
+                <Pencil size={12} />
+              </button>
+              <button onClick={() => deleteDoctor(d.id)} className="rounded-md p-1 text-muted-foreground/30 opacity-0 group-hover:opacity-100 hover:text-destructive cursor-pointer" aria-label="Excluir médico">
+                <Trash2 size={12} />
+              </button>
+            </div>
+          </div>
         ))}
       </div>
       <AddDoctorDialog open={addOpen} editId={editId} onClose={() => { setAddOpen(false); setEditId(undefined) }} />
@@ -712,46 +716,40 @@ function ExamsTab() {
           <Plus size={14} /> Novo exame
         </Button>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="space-y-2">
         {sorted.map((e) => (
-          <Card key={e.id} glass className="relative group" style={{ borderLeft: `4px solid ${e.color}` }}>
-            <CardHeader className="pb-1">
-              <div className="flex items-start justify-between">
-                <div className="flex items-start gap-3">
-                  <div className="flex size-9 shrink-0 items-center justify-center rounded-xl" style={{ backgroundColor: e.color + '18' }}>
-                    <Beaker size={16} style={{ color: e.color }} />
-                  </div>
-                  <div>
-                    <CardTitle className="text-sm">{e.name}</CardTitle>
-                    <p className="text-xs text-muted-foreground">{formatDate(e.date)}{e.time ? ` às ${e.time}` : ''}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-0.5">
-                  {e.status !== 'reviewed' && (
-                    <button onClick={() => updateExam(e.id, { status: e.status === 'pending' ? 'done' : 'reviewed' })} className="rounded-lg p-1 text-muted-foreground/30 hover:text-primary transition-colors cursor-pointer">
-                      <ClipboardCheck size={13} />
-                    </button>
-                  )}
-                  <button onClick={() => { setEditId(e.id); setAddOpen(true) }} className="rounded-lg p-1 text-muted-foreground/50 hover:text-primary transition-colors cursor-pointer" aria-label="Editar exame">
-                    <Pencil size={13} />
-                  </button>
-                  <button onClick={() => deleteExam(e.id)} className="rounded-lg p-1 text-muted-foreground/30 hover:text-destructive transition-colors cursor-pointer" aria-label="Excluir exame">
-                    <Trash2 size={13} />
-                  </button>
-                </div>
+          <div key={e.id} className="group flex items-start gap-3 rounded-xl px-3 py-2.5 hover:bg-muted/40 transition-colors">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-xl" style={{ backgroundColor: `${e.color}18` }}>
+              <Beaker size={16} style={{ color: e.color }} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-sm font-medium">{e.name}</span>
+                <Badge variant="outline" className="text-[9px] px-1.5" style={{ color: statusColor[e.status], borderColor: statusColor[e.status] + '50' }}>
+                  {statusLabel[e.status]}
+                </Badge>
               </div>
-            </CardHeader>
-            <CardContent className="pt-1">
-              <Badge variant="outline" className="text-[9px] px-1.5" style={{ color: statusColor[e.status], borderColor: statusColor[e.status] + '50' }}>
-                {statusLabel[e.status]}
-              </Badge>
+              <p className="text-xs text-muted-foreground mt-0.5">{formatDate(e.date)}{e.time ? ` às ${e.time}` : ''}</p>
               {e.doctor && <p className="text-xs text-muted-foreground/70 mt-1">Médico: {e.doctor}</p>}
               {e.laboratory && <p className="text-xs text-muted-foreground/70">Laboratório: {e.laboratory}</p>}
               {e.address && <p className="text-xs text-muted-foreground/70">Endereço: {e.address}</p>}
               {e.result && <p className="text-xs text-muted-foreground/80 mt-1 bg-muted/50 rounded-lg px-2 py-1">{e.result}</p>}
               {e.notes && <p className="text-xs text-muted-foreground/60 mt-1">{e.notes}</p>}
-            </CardContent>
-          </Card>
+            </div>
+            <div className="flex items-center gap-0.5 shrink-0">
+              {e.status !== 'reviewed' && (
+                <button onClick={() => updateExam(e.id, { status: e.status === 'pending' ? 'done' : 'reviewed' })} className="rounded-md p-1 text-muted-foreground/30 hover:text-primary transition-colors cursor-pointer" aria-label="Atualizar status do exame">
+                  <ClipboardCheck size={13} />
+                </button>
+              )}
+              <button onClick={() => { setEditId(e.id); setAddOpen(true) }} className="rounded-md p-1 text-muted-foreground/50 hover:text-primary transition-colors cursor-pointer" aria-label="Editar exame">
+                <Pencil size={12} />
+              </button>
+              <button onClick={() => deleteExam(e.id)} className="rounded-md p-1 text-muted-foreground/30 hover:text-destructive transition-colors cursor-pointer" aria-label="Excluir exame">
+                <Trash2 size={12} />
+              </button>
+            </div>
+          </div>
         ))}
       </div>
       <AddExamDialog open={addOpen} editId={editId} onClose={() => { setAddOpen(false); setEditId(undefined) }} />
@@ -759,8 +757,199 @@ function ExamsTab() {
   )
 }
 
+type OverviewHistoryItem = {
+  id: string
+  date: string
+  label: string
+  detail: string
+}
+
+function OverviewMetric({
+  icon: Icon,
+  label,
+  value,
+  detail,
+}: {
+  icon: LucideIcon
+  label: string
+  value: string
+  detail: string
+}) {
+  return (
+    <Card glass className="h-full">
+      <div className="flex items-start gap-3">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <Icon size={17} strokeWidth={1.8} />
+        </span>
+        <div className="min-w-0">
+          <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+            {label}
+          </p>
+          <p className="mt-1 truncate text-sm font-semibold">{value}</p>
+          <p className="mt-0.5 truncate text-[11px] text-muted-foreground/75">{detail}</p>
+        </div>
+      </div>
+    </Card>
+  )
+}
+
+function OverviewTab({ sex }: { sex: 'male' | 'female' | null }) {
+  const weights = useHealthStore((s) => s.weights)
+  const symptoms = useHealthStore((s) => s.symptoms)
+  const medications = useHealthStore((s) => s.medications)
+  const cycles = useHealthStore((s) => s.cycles)
+  const measurements = useHealthStore((s) => s.measurements)
+  const appointments = useHealthStore((s) => s.appointments)
+  const exams = useHealthStore((s) => s.exams)
+
+  const today = new Date().toISOString().slice(0, 10)
+  const latestWeight = [...weights].sort((a, b) => b.date.localeCompare(a.date))[0]
+  const latestSymptom = [...symptoms].sort((a, b) => b.date.localeCompare(a.date))[0]
+  const activeMedications = medications.filter(
+    (medication) => medication.startDate <= today && (!medication.endDate || medication.endDate >= today),
+  )
+  const nextAppointment = [...appointments]
+    .filter((appointment) => appointment.status === 'scheduled' && appointment.date >= today)
+    .sort((a, b) => `${a.date}T${a.time}`.localeCompare(`${b.date}T${b.time}`))[0]
+  const nextExam = [...exams]
+    .filter((exam) => exam.status === 'pending' && exam.date >= today)
+    .sort((a, b) => `${a.date}T${a.time ?? ''}`.localeCompare(`${b.date}T${b.time ?? ''}`))[0]
+  const latestCycle = sex === 'female'
+    ? [...cycles].sort((a, b) => b.startDate.localeCompare(a.startDate))[0]
+    : undefined
+
+  const history = useMemo<OverviewHistoryItem[]>(() => {
+    const records: OverviewHistoryItem[] = [
+      ...weights.map((record) => ({
+        id: `weight-${record.id}`,
+        date: record.date,
+        label: 'Peso',
+        detail: `${record.weight} kg`,
+      })),
+      ...measurements.map((record) => ({
+        id: `measurement-${record.id}`,
+        date: record.date,
+        label: 'Medidas',
+        detail: 'Medidas corporais registradas',
+      })),
+      ...symptoms.map((record) => ({
+        id: `symptom-${record.id}`,
+        date: record.date,
+        label: 'Sintoma',
+        detail: record.symptom,
+      })),
+      ...medications.map((record) => ({
+        id: `medication-${record.id}`,
+        date: record.startDate,
+        label: 'Medicamento',
+        detail: record.name,
+      })),
+      ...appointments.map((record) => ({
+        id: `appointment-${record.id}`,
+        date: record.date,
+        label: 'Consulta',
+        detail: record.doctorName,
+      })),
+      ...exams.map((record) => ({
+        id: `exam-${record.id}`,
+        date: record.date,
+        label: 'Exame',
+        detail: record.name,
+      })),
+      ...(sex === 'female'
+        ? cycles.map((record) => ({
+            id: `cycle-${record.id}`,
+            date: record.startDate,
+            label: 'Ciclo menstrual',
+            detail: record.endDate ? `${formatDate(record.startDate)} a ${formatDate(record.endDate)}` : 'Em andamento',
+          }))
+        : []),
+    ]
+
+    return records.sort((a, b) => b.date.localeCompare(a.date)).slice(0, 8)
+  }, [appointments, cycles, exams, measurements, medications, sex, symptoms, weights])
+
+  const metrics = [
+    {
+      icon: Weight,
+      label: 'Peso mais recente',
+      value: latestWeight ? `${latestWeight.weight} kg` : 'Sem registro',
+      detail: latestWeight ? `Registrado em ${formatDate(latestWeight.date)}` : 'Nenhum registro ainda',
+    },
+    {
+      icon: Cigarette,
+      label: 'Último sintoma',
+      value: latestSymptom?.symptom ?? 'Sem registro',
+      detail: latestSymptom ? `Registrado em ${formatDate(latestSymptom.date)}` : 'Nenhum registro ainda',
+    },
+    {
+      icon: Pill,
+      label: 'Remédios ativos',
+      value: activeMedications.length ? `${activeMedications.length} ativo${activeMedications.length === 1 ? '' : 's'}` : 'Nenhum ativo',
+      detail: activeMedications.length ? activeMedications.slice(0, 2).map((medication) => medication.name).join(' · ') : 'Nenhum registro ainda',
+    },
+    {
+      icon: CalendarClock,
+      label: 'Próxima consulta',
+      value: nextAppointment?.doctorName ?? 'Sem agendamento',
+      detail: nextAppointment ? `${formatDate(nextAppointment.date)} às ${nextAppointment.time}` : 'Nenhuma consulta marcada',
+    },
+    {
+      icon: Beaker,
+      label: 'Próximo exame',
+      value: nextExam?.name ?? 'Sem agendamento',
+      detail: nextExam ? `Agendado para ${formatDate(nextExam.date)}` : 'Nenhum exame pendente',
+    },
+    ...(sex === 'female'
+      ? [{
+          icon: Venus,
+          label: 'Ciclo menstrual',
+          value: latestCycle ? formatDate(latestCycle.startDate) : 'Sem registro',
+          detail: latestCycle?.endDate ? `Até ${formatDate(latestCycle.endDate)}` : latestCycle ? 'Em andamento' : 'Nenhum registro ainda',
+        }]
+      : []),
+    {
+      icon: ClipboardCheck,
+      label: 'Última receita',
+      value: 'Sem registro',
+      detail: 'Nenhuma receita registrada',
+    },
+  ]
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-semibold tracking-tight">Como você está</h2>
+        <p className="mt-1 text-sm text-muted-foreground">um resumo carinhoso do que você registrou até aqui</p>
+      </div>
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        {metrics.map((metric) => <OverviewMetric key={metric.label} {...metric} />)}
+      </div>
+
+      <Card glass>
+        <CardHeader>
+          <CardTitle className="text-base">Últimos registros</CardTitle>
+        </CardHeader>
+        <div className="mt-3 divide-y divide-border/50">
+          {history.length > 0 ? history.map((record) => (
+            <div key={record.id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
+              <span className="size-2 shrink-0 rounded-full bg-primary/70" />
+              <span className="w-20 shrink-0 text-[11px] text-muted-foreground">{formatDate(record.date)}</span>
+              <span className="text-xs font-medium text-muted-foreground">{record.label}</span>
+              <span className="min-w-0 truncate text-sm">{record.detail}</span>
+            </div>
+          )) : (
+            <p className="py-2 text-sm text-muted-foreground">Ainda não há registros para mostrar.</p>
+          )}
+        </div>
+      </Card>
+    </div>
+  )
+}
+
 export function HealthPage() {
-  const [tab, setTab] = useState('peso')
+  const [tab, setTab] = useState('geral')
   const [editingProfile, setEditingProfile] = useState(false)
   const [onboardingCompletedThisSession, setOnboardingCompletedThisSession] = useState(false)
   const onboarded = useHealthStore((s) => s.onboarded)
@@ -801,7 +990,8 @@ export function HealthPage() {
       </div>
 
       <Tabs value={tab} onValueChange={setTab} className={enter}>
-        <TabList className="mb-4 overflow-auto scrollbar-thin">
+        <TabList className="mb-4 flex w-full flex-wrap items-center justify-start gap-1 overflow-visible">
+          <Tab value="geral"><HeartPulse size={14} className="mr-1.5" />Visão geral</Tab>
           <Tab value="peso"><Weight size={14} className="mr-1.5" />Peso</Tab>
           <Tab value="medidas"><Activity size={14} className="mr-1.5" />Medidas</Tab>
           <Tab value="sintomas"><Cigarette size={14} className="mr-1.5" />Sintomas</Tab>
@@ -814,6 +1004,7 @@ export function HealthPage() {
           <Tab value="exames"><Beaker size={14} className="mr-1.5" />Exames</Tab>
         </TabList>
 
+        <TabPanel value="geral"><OverviewTab sex={sex} /></TabPanel>
         <TabPanel value="peso"><WeightTab /></TabPanel>
         <TabPanel value="medidas"><MeasurementsTab /></TabPanel>
         <TabPanel value="sintomas"><SymptomsTab /></TabPanel>
@@ -838,7 +1029,9 @@ function MeasurementsTab() {
 
   const sorted = [...measurements].sort((a, b) => b.date.localeCompare(a.date))
   const availableMetrics = useMemo(
-    () => measurementMetrics.filter(({ key }) => measurements.some((measurement) => typeof measurement[key] === 'number')),
+    () => measurementMetrics
+      .filter(({ key }) => measurements.some((measurement) => typeof measurement[key] === 'number'))
+      .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR')),
     [measurements],
   )
   const activeMetric = availableMetrics.some(({ key }) => key === selectedMetric)
@@ -882,7 +1075,10 @@ function MeasurementsTab() {
       {sorted.length > 0 ? (
         <div className="space-y-1">
           {sorted.map((m) => (
-            <div key={m.id} className="group flex items-center gap-4 rounded-xl px-3 py-2 hover:bg-muted/40 transition-colors">
+            <div key={m.id} className="group flex items-start gap-3 rounded-xl px-3 py-2 hover:bg-muted/40 transition-colors">
+              <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+                <Activity size={16} className="text-primary" />
+              </div>
               <span className="text-xs text-muted-foreground w-20 shrink-0">{formatDate(m.date)}</span>
               <div className="flex gap-3 text-sm flex-1 flex-wrap">
                 {m.bust && <span>Busto: <strong>{m.bust}cm</strong></span>}

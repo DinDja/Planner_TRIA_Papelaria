@@ -72,7 +72,7 @@ export const LIST_KINDS: ListKindMeta[] = [
     kind: 'mala',
     label: 'Mala de viagem',
     description: 'Itens para não esquecer antes de viajar',
-    defaultColor: '#ddd6c6',
+    defaultColor: '#6a634d',
     presetCategories: [
       'Documentos',
       'Vestuário',
@@ -178,7 +178,7 @@ export const LIST_KINDS: ListKindMeta[] = [
   {
     kind: 'custom',
     label: 'Personalizada',
-    description: 'Tarefas e listas livres',
+    description: 'Listas livres',
     presetCategories: [],
     presetItems: [],
     combos: [],

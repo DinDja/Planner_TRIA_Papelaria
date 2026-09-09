@@ -8,7 +8,6 @@ import {
   ArrowUpRight,
   Banknote,
   CreditCard,
-  Gift,
   PiggyBank,
   Pencil,
   Plus,
@@ -331,7 +330,7 @@ export function FinancePage() {
           {tab === 'transacoes' && 'Nova transação'}
           {tab === 'contas' && 'Nova conta fixa'}
           {tab === 'assinaturas' && 'Nova assinatura'}
-          {tab === 'cartoes' && 'Novo cartão'}
+          {tab === 'cartoes' && 'Novo cartão de crédito'}
           {tab === 'metas' && 'Nova meta'}
           {tab === 'caixinhas' && 'Nova caixinha'}
         </Button>
@@ -529,7 +528,7 @@ export function FinancePage() {
                 <div key={s.id} className="group flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-muted/40 transition-colors">
                   <div className="flex size-9 shrink-0 items-center justify-center rounded-xl"
                     style={{ backgroundColor: '#ddd6c618' }}>
-                    <Gift size={15} style={{ color: '#ddd6c6' }} />
+                    <CreditCard size={15} style={{ color: '#ddd6c6' }} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className={cn('text-sm font-medium truncate', !s.active && 'line-through text-muted-foreground')}>{s.name}</p>
@@ -683,41 +682,47 @@ export function FinancePage() {
 
         {/* ── Caixinhas ──────────────────────────────────────── */}
         <TabPanel value="caixinhas">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {savingsBoxes.length > 0 ? savingsBoxes.map((b) => {
-              const pct = Math.round((b.currentAmount / b.targetAmount) * 100)
-              return (
-                <Card key={b.id} glass hover className="group cursor-pointer" onClick={() => openEditBox(b.id)}>
-                  <CardContent className="pt-5">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="flex size-10 shrink-0 items-center justify-center rounded-xl" style={{ backgroundColor: b.color + '18' }}>
-                        <PiggyBank size={16} style={{ color: b.color }} />
+          <Card glass>
+            <CardHeader className="flex-row items-center justify-between pb-0">
+              <CardTitle className="text-base flex items-center gap-2">
+                <PiggyBank size={16} className="text-success" />
+                Caixinhas financeiras
+              </CardTitle>
+              <span className="text-[11px] text-muted-foreground tabular-nums">{savingsBoxes.length}</span>
+            </CardHeader>
+            <div className="px-5 py-3 space-y-4">
+              {savingsBoxes.length > 0 ? savingsBoxes.map((b) => {
+                const pct = b.targetAmount > 0
+                  ? Math.round((b.currentAmount / b.targetAmount) * 100)
+                  : 0
+                return (
+                  <div key={b.id} className="group flex items-center gap-4 rounded-xl px-3 py-2.5 hover:bg-muted/40 transition-colors cursor-pointer" onClick={() => openEditBox(b.id)}>
+                    <div className="flex size-10 shrink-0 items-center justify-center rounded-xl" style={{ backgroundColor: b.color + '18' }}>
+                      <PiggyBank size={16} style={{ color: b.color }} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="text-sm font-medium truncate">{b.name}</p>
+                        <p className="text-[11px] text-muted-foreground tabular-nums">
+                          <span className="font-semibold text-foreground">{formatBRL(b.currentAmount)}</span> / {formatBRL(b.targetAmount)}
+                        </p>
                       </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold truncate">{b.name}</p>
-                        {b.deadline && <p className="text-[10px] text-muted-foreground">prazo: {new Date(b.deadline + 'T12:00:00').toLocaleDateString('pt-BR')}</p>}
+                      <div className="h-2 rounded-full bg-muted/80 overflow-hidden">
+                        <div className="h-full rounded-full transition-all duration-700" style={{ width: `${Math.min(pct, 100)}%`, background: b.color, boxShadow: `0 1px 6px -1px ${b.color}80` }} />
                       </div>
-                      <DeleteButton onEdit={() => openEditBox(b.id)} onClick={() => deleteBox(b.id)} />
+                      <div className="flex items-center gap-3 mt-1">
+                        <span className="text-[10px] font-semibold text-muted-foreground">{pct}% concluído</span>
+                        {b.deadline && <span className="text-[10px] text-muted-foreground">prazo: {new Date(b.deadline + 'T12:00:00').toLocaleDateString('pt-BR')}</span>}
+                      </div>
                     </div>
-                    <div className="flex items-end justify-between mb-2">
-                      <p className="text-2xl font-bold tabular-nums">{formatBRL(b.currentAmount)}</p>
-                      <p className="text-[11px] text-muted-foreground tabular-nums">meta {formatBRL(b.targetAmount)}</p>
-                    </div>
-                    <div className="h-2 rounded-full bg-muted/80 overflow-hidden">
-                      <div className="h-full rounded-full transition-all duration-700" style={{ width: `${Math.min(pct, 100)}%`, background: b.color, boxShadow: `0 1px 6px -1px ${b.color}80` }} />
-                    </div>
-                    <p className="text-[10px] font-semibold text-muted-foreground mt-1.5">{pct}% concluído</p>
-                  </CardContent>
-                </Card>
-              )
-            }) : (
-              <div className="col-span-full">
-                <Card glass>
-                  <p className="text-sm text-muted-foreground text-center py-10">Nenhuma caixinha criada.</p>
-                </Card>
-              </div>
-            )}
-          </div>
+                    <DeleteButton onEdit={() => openEditBox(b.id)} onClick={() => deleteBox(b.id)} />
+                  </div>
+                )
+              }) : (
+                <p className="text-sm text-muted-foreground text-center py-6">Nenhuma caixinha criada.</p>
+              )}
+            </div>
+          </Card>
         </TabPanel>
       </Tabs>
 

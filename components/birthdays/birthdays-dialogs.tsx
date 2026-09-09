@@ -79,7 +79,7 @@ export function AddBirthdayDialog({ open, onClose, editId }: { open: boolean; on
           </div>
           <div>
             <label className="text-sm font-medium mb-1.5 block">Observação</label>
-            <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Ex: presente que ela quer..." />
+            <Input value={notes} onChange={(e) => setNotes(e.target.value)} />
           </div>
           <div>
             <label className="text-sm font-medium mb-2 block">Cor</label>
@@ -104,7 +104,7 @@ export function AddBirthdayDialog({ open, onClose, editId }: { open: boolean; on
               Cancelar
             </Button>
             <Button onClick={handleSave} className="rounded-xl shadow-md">
-              Salvar
+              {editId ? 'Salvar' : 'Criar lembrete'}
             </Button>
           </div>
         </div>

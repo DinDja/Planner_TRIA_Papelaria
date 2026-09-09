@@ -152,7 +152,7 @@ export function AddTaskDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent title={editId ? 'Editar tarefa' : 'Nova tarefa'} description="Uma tarefa única ou recorrente.">
+      <DialogContent title={editId ? 'Editar Tarefa' : 'Nova Tarefa'} description="Uma tarefa única ou recorrente.">
         <div className="flex flex-col gap-4">
           <div>
             <label className="text-sm font-medium mb-1.5 block">Título</label>
@@ -240,11 +240,10 @@ export function AddTaskDialog({
           )}
 
           <div>
-            <label className="text-sm font-medium mb-1.5 block">Descrição</label>
+            <label className="text-sm font-medium mb-1.5 block">Observação</label>
             <Input
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Detalhes da tarefa..."
             />
           </div>
 
@@ -258,7 +257,7 @@ export function AddTaskDialog({
               Cancelar
             </Button>
             <Button onClick={handleCreate} className="rounded-xl shadow-md">
-              {editId ? 'Salvar alterações' : 'Criar tarefa'}
+              {editId ? 'Salvar alterações' : 'Criar Tarefa'}
             </Button>
           </div>
         </div>

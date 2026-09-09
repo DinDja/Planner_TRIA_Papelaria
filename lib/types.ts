@@ -416,32 +416,32 @@ export interface FinancialAccount {
 }
 
 export const INCOME_CATEGORIES = [
-  'Aluguel recebido', 'Clientes', 'Comissão', 'Extra', 'Investimentos',
-  'Outros', 'Presente', 'Pró-labore', 'Reembolso', 'Salário', 'Vendas',
+  'Aluguel', 'Clientes', 'Comissão', 'Extra', 'Investimentos',
+  'Presente', 'Pró-labore', 'Reembolso', 'Salário', 'Vendas', 'Outros',
 ] as const
 
 export const EXPENSE_CATEGORIES = [
-  'Assinaturas', 'Beleza', 'Compras', 'Educação', 'Lazer', 'Mercado',
-  'Moradia', 'Outros', 'Pets', 'Presentes', 'Restaurantes',
+  'Assinaturas', 'Educação', 'Mercado', 'Moradia', 'Pets', 'Presentes',
+  'Restaurantes', 'Outros',
 ] as const
 
 export const SUBSCRIPTION_CATEGORIES = [
-  'Streaming de filmes e séries', 'Música', 'Jogos', 'Armazenamento em nuvem',
-  'Software', 'Educação', 'Notícias', 'Academia', 'Outros',
+  'Academia', 'Armazenamento em nuvem', 'Educação', 'Jogos', 'Música',
+  'Notícias', 'Software', 'Streaming de filmes e séries', 'Outros',
 ] as const
 
 /** Recorrência de receitas — ausente = avulsa. */
-export const TRANSACTION_RECURRENCE = ['monthly', 'weekly', 'biweekly', 'yearly'] as const
+export const TRANSACTION_RECURRENCE = ['weekly', 'biweekly', 'monthly', 'yearly'] as const
 export type TransactionRecurrence = (typeof TRANSACTION_RECURRENCE)[number]
 
 /** Formas de recebimento e pagamento. */
 export const PAYMENT_METHODS = [
-  'Pix', 'Transferência', 'Dinheiro', 'Débito', 'Crédito', 'Conta bancária', 'Outro',
+  'Conta bancária', 'Crédito', 'Débito', 'Dinheiro', 'Pix', 'Transferência', 'Outro',
 ] as const
 
 /** Bandeiras de cartão. */
 export const CARD_BRANDS = [
-  'Visa', 'Mastercard', 'Elo', 'Hipercard', 'Amex', 'Outros',
+  'Amex', 'Elo', 'Hipercard', 'Mastercard', 'Visa', 'Outros',
 ] as const
 
 export type TransactionStatus = 'received' | 'paid' | 'pending'

@@ -39,12 +39,9 @@ function PricingPage() {
     <div className="p-6 lg:p-8 max-w-[1200px] mx-auto">
       {/* Topete — sem hero padrão */}
       <div className="mb-10">
-        <p className="text-[0.72rem] uppercase tracking-[0.28em] text-muted-foreground/55">
-          assinatura
-        </p>
-        <h1 className="text-3xl font-bold tracking-tight mt-1">PlannerHub Premium</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Assinaturas</h1>
         <p className="text-muted-foreground mt-1.5 max-w-lg">
-          Tudo pago, sem tier gratuito. Compromisso real com quem leva o caderno a sério.
+          Escolha o plano que combina com você
         </p>
       </div>
 
@@ -109,9 +106,10 @@ function PricingPage() {
                 <div className="mb-5">
                   <span className="text-3xl font-bold">{formatBRL(plan.price)}</span>
                   <span className="text-sm text-muted-foreground ml-1.5">{plan.period}</span>
+                  {id === 'annual' && (
+                    <p className="text-xs text-muted-foreground mt-1">12x de 25,00</p>
+                  )}
                 </div>
-
-                <p className="text-[11px] text-muted-foreground mb-5">{plan.description}</p>
 
                 <ul className="flex-1 space-y-2.5 mb-6 text-sm text-muted-foreground">
                   <li className="flex items-start gap-2.5">

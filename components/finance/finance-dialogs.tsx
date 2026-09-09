@@ -165,7 +165,7 @@ export function AddTransactionDialog({
           </div>
           <div>
             <label className="text-sm font-medium mb-1.5 block">Título</label>
-            <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ex: Salário, Supermercado..." autoFocus
+            <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={type === 'income' ? 'Ex: Salário, Comissão...' : 'Ex: Salário, Supermercado...'} autoFocus
               onKeyDown={(e) => e.key === 'Enter' && handleSave()} />
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -787,7 +787,7 @@ export function AddInstallmentDialog({ open, onClose, editId }: { open: boolean;
   const [totalInstallments, setTotalInstallments] = useState(12)
   const [firstInstallment, setFirstInstallment] = useState(new Date().toISOString().slice(0, 10))
   const [cardId, setCardId] = useState('')
-  const [category, setCategory] = useState('Compras')
+  const [category, setCategory] = useState<string>(EXPENSE_CATEGORIES[0])
 
   useEffect(() => {
     if (!open) return
@@ -795,7 +795,7 @@ export function AddInstallmentDialog({ open, onClose, editId }: { open: boolean;
       setTitle(existing.title); setTotalAmount(existing.totalAmount); setTotalInstallments(existing.totalInstallments)
       setFirstInstallment(existing.firstInstallment ?? ''); setCardId(existing.cardId); setCategory(existing.category)
     } else if (!editId) {
-      setTitle(''); setTotalAmount(0); setTotalInstallments(12); setFirstInstallment(new Date().toISOString().slice(0, 10)); setCardId(''); setCategory('Compras')
+      setTitle(''); setTotalAmount(0); setTotalInstallments(12); setFirstInstallment(new Date().toISOString().slice(0, 10)); setCardId(''); setCategory(EXPENSE_CATEGORIES[0])
     }
   }, [open, editId, existing])
 
@@ -864,14 +864,11 @@ export function AddInstallmentDialog({ open, onClose, editId }: { open: boolean;
           </div>
           <div>
             <label className="text-sm font-medium mb-2 block">Categoria</label>
-            <div className="flex flex-wrap gap-1.5">
+            <select className={selectClass} value={category} onChange={(e) => setCategory(e.target.value)}>
               {EXPENSE_CATEGORIES.map((c) => (
-                <button key={c} onClick={() => setCategory(c)}
-                  className={cn('rounded-full border px-3 py-1 text-xs font-medium transition-all cursor-pointer',
-                    category === c ? 'border-primary/50 bg-primary/10 text-primary' : 'border-border/60 text-muted-foreground hover:bg-muted/50',
-                  )}>{c}</button>
+                <option key={c} value={c}>{c}</option>
               ))}
-            </div>
+            </select>
           </div>
           <div className="flex justify-end gap-2 pt-1">
             <Button variant="outline" onClick={onClose} className="rounded-xl">Cancelar</Button>

@@ -433,6 +433,7 @@ function PlannerDayBlock({
 
 function PlannerDays({
   days,
+  weekKey,
   plannerWeeks,
   eventsByDate,
   routineByDate,
@@ -443,6 +444,7 @@ function PlannerDays({
   onCompleteRoutine,
 }: {
   days: Date[]
+  weekKey: string
   plannerWeeks: Record<string, CalendarPlannerWeek>
   eventsByDate: Map<string, CalendarEvent[]>
   routineByDate: Map<string, RoutineCalendarItem[]>
@@ -458,7 +460,7 @@ function PlannerDays({
         const key = toDateKey(date)
         const dayWeekKey = toDateKey(startOfWeek(date))
         return (
-          <div key={key} className={index === days.length - 1 && days.length % 2 === 1 ? 'md:col-span-2' : undefined}>
+          <div key={key} className={index === days.length - 1 && days.length % 2 === 1 && days.length !== 7 ? 'md:col-span-2' : undefined}>
             <PlannerDayBlock
               date={date}
               notes={plannerWeeks[dayWeekKey]?.notesByDate[key] ?? []}
@@ -473,6 +475,11 @@ function PlannerDays({
           </div>
         )
       })}
+      {days.length === 7 && (
+        <div className="md:col-start-2 md:row-start-4">
+          <PlannerFooter weekKey={weekKey} weekDays={days} />
+        </div>
+      )}
     </div>
   )
 }
@@ -489,10 +496,10 @@ function PlannerFooter({ weekKey, weekDays }: { weekKey: string; weekDays: Date[
   const habitDays = weekDays
 
   return (
-    <div className="mt-10 space-y-8">
+    <div className="space-y-8">
       <section>
         <h2 className="mb-4 text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">Objetivos da Semana</h2>
-        <div className="grid grid-cols-1 gap-x-7 gap-y-3 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-x-7 gap-y-3">
           {week.objectives.map((objective, index) => (
             <label key={index} className="flex items-center gap-2.5 rounded-sm border border-primary/10 bg-primary/[0.025] px-3 py-2.5">
               <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-primary/30" />
@@ -666,22 +673,18 @@ export function CalendarPage() {
         </div>
         <div className="flex items-center gap-2">
           <Button
-            variant="outline"
-            onClick={() => setRoutineTodayOpen(true)}
-            className="rounded-xl text-sm"
-          >
-            Rotina
-          </Button>
-          <Button
             variant={view === 'month' ? 'default' : 'outline'}
-            onClick={() => openAdd()}
+            onClick={() => {
+              setRoutineTaskEditId(undefined)
+              setRoutineTaskOpen(true)
+            }}
             className={cn(
               'rounded-xl gap-1.5 text-sm',
               view !== 'month' && 'rounded-sm border-primary/20 bg-transparent text-xs font-normal shadow-none hover:bg-primary/[0.05]',
             )}
           >
             <Plus size={14} />
-            Novo evento
+            Nova Tarefa
           </Button>
         </div>
       </header>
@@ -758,6 +761,7 @@ export function CalendarPage() {
         ) : (
           <PlannerDays
             days={view === 'day' ? [currentDate] : weekDays}
+            weekKey={weekKey}
             plannerWeeks={plannerWeeks}
             eventsByDate={eventsByDate}
             routineByDate={routineByDate}
@@ -770,7 +774,6 @@ export function CalendarPage() {
               : completeRecurring(item.task.id)}
           />
         )}
-        {view === 'week' && <PlannerFooter weekKey={weekKey} weekDays={weekDays} />}
       </main>
 
       <CalendarEventDialog

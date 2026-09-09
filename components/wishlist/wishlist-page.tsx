@@ -4,9 +4,10 @@ import { useWishlistStore } from '@/lib/store/use-wishlist-store'
 import { cn } from '@/lib/utils'
 import {
   CheckCircle2,
+  Circle,
   ExternalLink,
   Gift,
-  Heart,
+  List,
   Plus,
   Pencil,
   Search,
@@ -60,23 +61,23 @@ function WishCard({
     >
       <CardHeader className="flex-row items-start justify-between gap-2 pb-0">
         <div className="flex items-start gap-3 min-w-0 flex-1">
-          <div
-            className={cn(
-              'flex size-10 shrink-0 items-center justify-center rounded-xl',
-            )}
-            style={{
-              backgroundColor: (item.purchased ? '#6a634d' : priority.color) + '18',
-            }}
+          <button
+            type="button"
+            onClick={() => onToggle(item.id)}
+            className="mt-0.5 shrink-0 text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+            aria-label={item.purchased ? 'Marcar como não adquirido' : 'Marcar como adquirido'}
           >
             {item.purchased ? (
-              <ShoppingBag size={18} style={{ color: '#6a634d' }} />
+              <CheckCircle2 size={18} className="text-success" />
             ) : (
-              <Gift size={18} style={{ color: priority.color }} />
+              <Circle size={18} />
             )}
-          </div>
+          </button>
           <div className="min-w-0 flex-1">
             <CardTitle className="text-sm flex items-center gap-2 leading-snug">
-              {item.name}
+              <span className={cn(item.purchased && 'line-through text-muted-foreground')}>
+                {item.name}
+              </span>
               {item.purchased && (
                 <Badge variant="outline" className="text-[9px] px-1.5 text-success border-success/40">
                   <CheckCircle2 size={10} className="mr-0.5" />
@@ -95,13 +96,6 @@ function WishCard({
           </div>
         </div>
         <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-          <button
-            onClick={() => onToggle(item.id)}
-            className="rounded-lg p-1 text-muted-foreground/40 hover:text-success transition-colors cursor-pointer"
-            aria-label={item.purchased ? 'Marcar como não adquirido' : 'Marcar como adquirido'}
-          >
-            <CheckCircle2 size={14} />
-          </button>
           <button
             onClick={() => onEdit(item.id)}
             className="rounded-lg p-1 text-muted-foreground/40 hover:text-primary transition-colors cursor-pointer"
@@ -229,9 +223,9 @@ export function WishlistPage() {
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
             <span
               className="flex size-11 items-center justify-center rounded-2xl"
-              style={{ backgroundColor: '#d1bdb818' }}
+              style={{ backgroundColor: '#6a634d18' }}
             >
-              <Heart size={22} style={{ color: '#d1bdb8' }} />
+              <List size={22} style={{ color: '#6a634d' }} />
             </span>
             Wishlist
           </h1>
@@ -309,7 +303,7 @@ export function WishlistPage() {
 
         <TabPanel value={tab}>
           {filtered.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+            <div className="space-y-4">
               {filtered.map((item) => (
                 <WishCard
                   key={item.id}

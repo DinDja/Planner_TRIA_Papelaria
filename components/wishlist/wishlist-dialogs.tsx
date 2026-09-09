@@ -95,7 +95,7 @@ export function AddWishDialog({
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Ex: Kindle, Tênis, Curso..."
+              placeholder="Ex: Caderno, Blusa, Estojo..."
               onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
               autoFocus
             />
@@ -117,7 +117,7 @@ export function AddWishDialog({
               <Input
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                placeholder="Ex: Tecnologia"
+                placeholder="Ex: Papelaria"
                 list="wish-categories"
               />
               <datalist id="wish-categories">
@@ -132,7 +132,7 @@ export function AddWishDialog({
             <Input
               value={store}
               onChange={(e) => setStore(e.target.value)}
-              placeholder="Ex: Americanas, loja do bairro..."
+              placeholder="Ex: TRIA, Loja do Bairro..."
             />
           </div>
           <div>
@@ -140,7 +140,7 @@ export function AddWishDialog({
             <Input
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              placeholder="https://..."
+              placeholder="Ex: https://..."
             />
           </div>
           <div>

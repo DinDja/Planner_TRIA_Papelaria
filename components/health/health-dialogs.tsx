@@ -18,9 +18,9 @@ const dayStr = (): string => {
 }
 
 const SPECIALTIES = [
-  'Ginecologista', 'Clínico Geral', 'Dentista', 'Dermatologista',
-  'Nutricionista', 'Psicólogo', 'Psiquiatra', 'Endocrinologista',
-  'Oftalmologista', 'Outros',
+  'Clínico Geral', 'Dentista', 'Dermatologista', 'Endocrinologista',
+  'Ginecologista', 'Nutricionista', 'Oftalmologista', 'Outros',
+  'Psicólogo', 'Psiquiatra',
 ]
 
 const CUSTOM_OPTION = '__custom__'
@@ -98,7 +98,7 @@ function RegisteredSelect({
   )
 }
 
-/** Combo de especialidades agrupado por área, com opção de digitar. */
+/** Combo de especialidades médicas predefinidas. */
 function SpecialtyPicker({
   value,
   onChange,
@@ -106,55 +106,16 @@ function SpecialtyPicker({
   value: string
   onChange: (v: string) => void
 }) {
-  const [custom, setCustom] = useState(false)
-  const [customLabel, setCustomLabel] = useState('')
-
-  if (custom) {
-    return (
-      <div className="flex gap-2">
-        <Input
-          value={customLabel}
-          onChange={(e) => {
-            setCustomLabel(e.target.value)
-            onChange(e.target.value)
-          }}
-          placeholder="Digite a especialidade..."
-          autoFocus
-        />
-        <Button
-          type="button"
-          variant="outline"
-          className="rounded-xl shrink-0 px-3"
-          onClick={() => {
-            setCustom(false)
-            setCustomLabel('')
-            onChange('')
-          }}
-        >
-          Voltar
-        </Button>
-      </div>
-    )
-  }
-
-  const allItems = SPECIALTIES
   return (
     <select
       className={selectClass}
-      value={allItems.includes(value) ? value : ''}
-      onChange={(e) => {
-        if (e.target.value === CUSTOM_OPTION) {
-          setCustom(true)
-          return
-        }
-        onChange(e.target.value)
-      }}
+      value={SPECIALTIES.includes(value) ? value : ''}
+      onChange={(e) => onChange(e.target.value)}
     >
       <option value="">Selecione a especialidade</option>
       {SPECIALTIES.map((s) => (
         <option key={s} value={s}>{s}</option>
       ))}
-      <option value={CUSTOM_OPTION}>✎ Outra (digitar)</option>
     </select>
   )
 }
@@ -773,11 +734,11 @@ export function AddAppointmentDialog({ open, onClose, doctors, editId }: { open:
           </div>
           <div>
             <label className="text-sm font-medium mb-1.5 block">O que levar</label>
-            <Input value={whatToBring} onChange={(e) => setWhatToBring(e.target.value)} placeholder="Ex: pedidos de exames, documentos" />
+            <Input value={whatToBring} onChange={(e) => setWhatToBring(e.target.value)} placeholder="Ex: Pedidos de exames, documentos" />
           </div>
           <div>
             <label className="text-sm font-medium mb-1.5 block">Perguntas para o médico</label>
-            <Input value={questions} onChange={(e) => setQuestions(e.target.value)} placeholder="Ex: preciso de acompanhamento mensal?" />
+            <Input value={questions} onChange={(e) => setQuestions(e.target.value)} placeholder="Ex: Preciso de acompanhamento mensal?" />
           </div>
           <div>
             <label className="text-sm font-medium mb-1.5 block">Observação</label>

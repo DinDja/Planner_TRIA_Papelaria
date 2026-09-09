@@ -4,7 +4,7 @@ import { getListKindMeta, LIST_KINDS } from '@/lib/lists'
 import { useListsStore } from '@/lib/store/use-lists-store'
 import type { ShoppingListKind } from '@/lib/types'
 import { cn } from '@/lib/utils'
-import { Check, Plus } from 'lucide-react'
+import { Check, Plus, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Button } from '../ui/button'
 import { Dialog, DialogContent } from '../ui/overlays'
@@ -141,7 +141,7 @@ export function AddListDialog({
 
   return (
       <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent title={editId ? 'Editar lista' : 'Nova lista'} description="Compras, tarefas, viagem ou o que precisar.">
+      <DialogContent title={editId ? 'Editar lista' : 'Nova lista'} description="Crie uma lista para não esquecer.">
         <div className="flex flex-col gap-4">
           <div>
             <label className="text-sm font-medium mb-2 block">Tipo de lista</label>
@@ -175,7 +175,7 @@ export function AddListDialog({
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Ex: Compra da semana, Testes de sangue..."
+              placeholder="Ex: Compra da semana, Medicamentos do mês..."
               onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
               autoFocus
             />
@@ -248,7 +248,6 @@ export function AddItemDialog({
     .sort((a, b) => {
       return a.localeCompare(b, 'pt-BR', { sensitivity: 'base' })
     })
-    .concat('Outros')
 
   const reset = () => {
     setName('')
@@ -288,11 +287,7 @@ export function AddItemDialog({
       <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent title={itemId ? 'Editar item' : 'Novo item'} description={kindMeta.description}>
         <div className="flex flex-col gap-4">
-          <div className="border-t border-border/50 pt-4">
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-              Item personalizado
-            </p>
-            <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4">
               <div>
                 <label className="text-sm font-medium mb-1.5 block">Nome</label>
                 <Input
@@ -321,6 +316,7 @@ export function AddItemDialog({
                     {categorySuggestions.map((c) => (
                       <option key={c} value={c} />
                     ))}
+                    <option value="Outros" />
                   </datalist>
                 </div>
               </div>
@@ -356,12 +352,13 @@ export function AddItemDialog({
                       aria-pressed={!packed}
                       onClick={() => setPacked(false)}
                       className={cn(
-                        'flex min-w-16 items-center justify-center rounded-xl border px-3 py-2 text-sm transition-all cursor-pointer',
+                        'flex min-w-16 items-center justify-center gap-2 rounded-xl border px-3 py-2 text-sm transition-all cursor-pointer',
                         !packed
                           ? 'border-foreground/50 bg-muted/60 text-foreground'
                           : 'border-border/60 text-muted-foreground hover:border-foreground/30',
                       )}
                     >
+                      {!packed && <X size={14} strokeWidth={2.5} />}
                       Não
                     </button>
                   </div>
@@ -382,7 +379,6 @@ export function AddItemDialog({
                   {itemId ? 'Salvar alterações' : 'Adicionar'}
                 </Button>
               </div>
-            </div>
           </div>
         </div>
       </DialogContent>

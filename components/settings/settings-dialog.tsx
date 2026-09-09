@@ -1,12 +1,11 @@
 'use client'
 
 import { useSettingsStore } from '@/lib/store/use-settings-store'
-import type { FontScale, GradientArea, RadiusPreset } from '@/lib/types'
+import type { FontScale, RadiusPreset } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import {
   Eye,
   Grid3X3,
-  Rainbow,
   Palette,
   RotateCcw,
   Settings2,
@@ -30,13 +29,6 @@ const BRAND_COLORS = [
   { label: 'Bege', value: '#ddd6c6' },
 ] as const
 
-const GRADIENT_AREAS: { id: GradientArea; label: string; desc: string }[] = [
-  { id: 'dashboard', label: 'Dashboard', desc: 'Gradientes no título e cartões da home' },
-  { id: 'covers', label: 'Capas de planners', desc: 'Brilho diagonal nas capas' },
-  { id: 'charts', label: 'Gráficos', desc: 'Preenchimento gradiente nos gráficos' },
-  { id: 'badges', label: 'Emblemas premium', desc: 'Brilho dourado/roxo dos selos' },
-]
-
 const RADIUS_OPTIONS: { id: RadiusPreset; label: string }[] = [
   { id: 'sharp', label: 'Reto' },
   { id: 'soft', label: 'Suave' },
@@ -56,7 +48,7 @@ function Section({
   desc,
   children,
 }: {
-  icon: typeof Rainbow
+  icon: typeof Palette
   title: string
   desc?: string
   children: React.ReactNode
@@ -106,12 +98,12 @@ export function SettingsDialog({ open, onClose }: Props) {
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent
         title="Configurações do sistema"
-        description="Personalize a aparência e comportamento do PlannerHub."
+        description="Personalize a aparência e comportamento da TRIA."
         className="max-w-2xl"
       >
         <div className="flex flex-col gap-7">
           {/* ── Paleta de cores ──────────────────────────────────────── */}
-          <Section icon={Palette} title="Paleta TRIA" desc="Identidade fixa do sistema, com predominância do rosa.">
+          <Section icon={Palette} title="Paleta" desc="Identidade fixa do sistema, com predominância do rosa.">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {BRAND_COLORS.map((color) => (
                 <div
@@ -128,45 +120,6 @@ export function SettingsDialog({ open, onClose }: Props) {
                   </div>
                 </div>
               ))}
-            </div>
-          </Section>
-
-          <Separator />
-
-          {/* ── Gradientes ───────────────────────────────────────────── */}
-          <Section
-            icon={Rainbow}
-            title="Gradientes"
-            desc="Escolha em quais lugares usar efeitos de gradiente."
-          >
-            <div className="flex flex-col divide-y divide-border/40">
-              {GRADIENT_AREAS.map((g) => (
-                <ToggleRow
-                  key={g.id}
-                  label={g.label}
-                  desc={g.desc}
-                  checked={s.gradients[g.id]}
-                  onChange={(v) => s.setGradient(g.id, v)}
-                />
-              ))}
-            </div>
-            <div className="flex gap-2 mt-3">
-              <Button
-                variant="outline"
-                size="sm"
-                className="rounded-xl"
-                onClick={() => s.setGradients(true)}
-              >
-                Ativar todos
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="rounded-xl"
-                onClick={() => s.setGradients(false)}
-              >
-                Desativar todos
-              </Button>
             </div>
           </Section>
 
@@ -331,14 +284,7 @@ export function SettingsDialog({ open, onClose }: Props) {
               <span className="rounded-full bg-primary px-2.5 py-0.5 text-xs font-medium text-primary-foreground">
                 Badge primário
               </span>
-              <span
-                className={cn(
-                  'rounded-full px-2.5 py-0.5 text-xs font-medium',
-                  s.gradients.badges
-                    ? 'bg-gradient-to-r from-brand-rose to-brand-mustard text-primary-foreground'
-                    : 'bg-warning text-primary-foreground',
-                )}
-              >
+              <span className="rounded-full bg-warning px-2.5 py-0.5 text-xs font-medium text-primary-foreground">
                 Premium
               </span>
               <Button size="sm" className="rounded-xl">Botão</Button>

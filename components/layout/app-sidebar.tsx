@@ -1,6 +1,8 @@
 'use client'
 
 import { useMenuStore } from '@/lib/store/use-menu-store'
+import { useAuth } from '@/lib/auth/auth-context'
+import { useSubscriptionStore } from '@/lib/subscriptions/use-subscription-store'
 import { cn } from '@/lib/utils'
 import { AnimatePresence, motion } from 'framer-motion'
 import type { ComponentType } from 'react'
@@ -89,10 +91,21 @@ export function AppSidebar({
   onOpenSettings,
 }: SidebarProps) {
   const { theme, toggle } = useTheme()
+  const { user, role } = useAuth()
+  const subscriptionRole = useSubscriptionStore((s) => s.role)
   const pathname = usePathname()
   const menuModules = useMenuStore((s) => s.modules)
+  const isAdminUser = Boolean(user) && (role === 'admin' || subscriptionRole === 'admin')
+  const adminModule = menuModules.find((m) => m.id === 'admin') ?? {
+    id: 'admin' as const,
+    href: '/admin',
+    label: 'Admin',
+    enabled: true,
+  }
   const enabledModules = menuModules
-    .filter((m) => m.enabled)
+    .map((m) => (m.id === 'admin' && isAdminUser ? { ...m, href: '/admin', enabled: true } : m))
+    .filter((m) => m.enabled || (m.id === 'admin' && isAdminUser))
+    .concat(isAdminUser && !menuModules.some((m) => m.id === 'admin') ? [adminModule] : [])
     .map((m) => m.id === 'calendario' ? { ...m, label: 'Agenda' } : m)
   const closeMobileSidebar = () => setMobileOpen(false)
 

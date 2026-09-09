@@ -8,6 +8,7 @@ import { useMemo, useState } from 'react'
 import { Button } from '../ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { AddBirthdayDialog } from './birthdays-dialogs'
+import { ReminderButton } from '../notifications/reminder-button'
 
 const enter = 'animate-in fade-in slide-in-from-bottom-3 duration-500 fill-mode-both'
 const MODULE_COLOR = '#d1bdb8'
@@ -46,6 +47,7 @@ function DeleteButton({ onClick, onEdit }: { onClick: () => void; onEdit: () => 
 export function BirthdaysPage() {
   const entries = useBirthdaysStore((s) => s.entries)
   const deleteEntry = useBirthdaysStore((s) => s.deleteEntry)
+  const updateEntry = useBirthdaysStore((s) => s.updateEntry)
   const [addOpen, setAddOpen] = useState(false)
   const [editId, setEditId] = useState<string | undefined>()
 
@@ -82,8 +84,8 @@ export function BirthdaysPage() {
       <div className={cn('flex flex-wrap items-end justify-between gap-4 mb-8', enter)}>
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
-            <span className="flex size-11 items-center justify-center rounded-2xl" style={{ backgroundColor: MODULE_COLOR + '18' }}>
-              <List size={22} style={{ color: MODULE_COLOR }} />
+            <span className="flex size-11 items-center justify-center rounded-2xl" style={{ backgroundColor: 'rgba(106, 99, 77, 0.094)' }}>
+              <List size={22} style={{ color: '#6a634d' }} />
             </span>
             Aniversários
           </h1>
@@ -156,6 +158,11 @@ export function BirthdaysPage() {
                           {e.notes ? ` · ${e.notes}` : ''}
                         </p>
                       </div>
+                      <ReminderButton
+                        enabled={e.reminderEnabled === true}
+                        onEnabledChange={(enabled) => updateEntry(e.id, { reminderEnabled: enabled })}
+                        compact
+                      />
                       <DeleteButton
                         onEdit={() => { setEditId(e.id); setAddOpen(true) }}
                         onClick={() => deleteEntry(e.id)}

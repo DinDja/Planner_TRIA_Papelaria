@@ -361,6 +361,6 @@ export const useFinanceStore = create<FinanceState>()(
           savingsBoxes: s.savingsBoxes.filter((b) => b.id !== id),
         })),
     }),
-    { name: 'plannerhub-finance' },
+    { name: 'tria-papelaria-finance' },
   ),
 )

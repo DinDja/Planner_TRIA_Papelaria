@@ -314,9 +314,9 @@ export function JournalPage() {
             <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
               <div
                 className="size-11 rounded-2xl flex items-center justify-center"
-                style={{ background: 'linear-gradient(135deg, #d1bdb8 0%, #b76f06 100%)' }}
+                style={{ backgroundColor: 'rgba(106, 99, 77, 0.094)' }}
               >
-                <Heart size={22} className="text-white" />
+                <Heart size={22} style={{ color: '#6a634d' }} />
               </div>
               Meu Diário
             </h1>

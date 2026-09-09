@@ -1,4 +1,4 @@
-# PlannerHub — Firestore Schema
+# Tria Papelaria — Firestore Schema
 
 > Plataforma-alvo: Firebase Firestore (modo nativo / Native mode).
 > Regras em [`firestore/firestore.rules`](./firestore.rules).
@@ -50,6 +50,7 @@
 | `useFinanceStore`                      | `financialAccounts`, `transactions`, `fixedBills`, `subscriptions`, `creditCards`, `installments`, `financialGoals`, `goalDeposits`, `savingsBoxes` | 9 subcollections |
 | `useBirthdaysStore`                    | `users/{uid}/birthdays`                   |       |
 | `useTrashStore`                        | `users/{uid}/trashItems`                   | capped 100 no cliente |
+| `useSubscriptionStore`                 | `users/{uid}` + `billingPayments` + `billingTrials` | assinatura no root; comprovantes append-only |
 
 > As stores de UI transient (editor, dialogs, sidebar) **não** vão pro Firestore
 > — permanecem Zustand puramente em memória.
@@ -63,6 +64,7 @@ users/{uid} {
   name:        string                            // ProfileStore
   avatar:      string                            // ProfileStore (emoji)
   email:       string                            // ProfileStore
+  role:        'admin'|'subscriber'
   theme:       string                            // AppStore ('light'|'dark')
   settings:    map                               // SettingsStore
     palette:         string                      //   'amber'|'rose'|'ocean'|'forest'|'lavender'|'sunset'|'mono'
@@ -86,6 +88,15 @@ users/{uid} {
     { id: string, name: string, color: string }
   noteFolders:    list<map>                      // NotesStore NoteFolder
     { id: string, name: string, color: string, icon?: string }
+  subscription: map
+    role:           'admin'|'subscriber'
+    plan:           'monthly'|'annual'|'trial'|null
+    status:         'active'|'past_due'|'cancelled'|'none'
+    since:          string|null
+    lastPayment:    string|null
+    paidUntil:      string|null
+    trialStartedAt: string|null
+    cancelledAt:    string|null
   updatedAt:   string  // ISO 8601
 }
 ```
@@ -93,6 +104,26 @@ users/{uid} {
 ---
 
 ## Subcollections
+
+### Cobrança da Tria
+
+```
+users/{uid}/billingPayments/{paymentId} {
+  id, provider: 'infinitepay', plan: 'monthly'|'annual', amount,
+  confirmedAt, orderCreatedAt, orderNsu, transactionNsu, invoiceSlug,
+  captureMethod?, receiptUrl?
+}
+
+users/{uid}/billingTrials/one-month {
+  id: 'one-month', startedAt, paidUntil
+}
+```
+
+Esses documentos são criados pela própria usuária e não podem ser alterados ou
+apagados pelas regras. Eles evitam reaplicar o mesmo retorno por acidente. Como
+as regras do Firestore não consultam a InfinitePay, esse modelo não constitui
+uma barreira antifraude para o entitlement; a confirmação normal ainda passa
+por `payment_check` antes da escrita.
 
 ### Diário Digital (V2)
 
@@ -175,6 +206,8 @@ users/{uid}/notes/{noteId} {
 ```
 users/{uid}/shoppingLists/{listId} {
   id, name, color, kind?: 'supermercado'|'farmacia'|'mala'|'custom',
+  folderId?: 'list-folder-supermercado'|'list-folder-farmacia'|
+    'list-folder-mala'|'list-folder-custom',
   items: list<map {
     id, name, quantity?, category?, checked: bool, dosage?, packed?, notes?,
     createdAt
@@ -307,7 +340,7 @@ trashItems/{id} {
 ## Estratégia de migração (localStorage → Firestore)
 
 1. **Bootstrap**: criar `users/{uid}` documento no primeiro login (antes, todo
-   dado vivia em `localStorage/plannerhub-*`). Fazer `set()` no doc-raiz com
+   dado vivia em `localStorage/tria-papelaria-*`). Fazer `set()` no doc-raiz com
    `merge: true` preservando o que já existia em localStorage.
 2. **Migração por módulo**: subir cada store em paralelo, lendo do localStorage
    existente e fazendo `batch().set()` para as subcollections correspondentes.

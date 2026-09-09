@@ -9,6 +9,7 @@ import { Button } from '../ui/button'
 import { Dialog, DialogContent } from '../ui/overlays'
 import { Input } from '../ui/primitives'
 import { toast } from '../ui/toaster'
+import { ReminderButton } from '../notifications/reminder-button'
 
 export function AddBirthdayDialog({ open, onClose, editId }: { open: boolean; onClose: () => void; editId?: string }) {
   const addEntry = useBirthdaysStore((s) => s.addEntry)
@@ -18,6 +19,7 @@ export function AddBirthdayDialog({ open, onClose, editId }: { open: boolean; on
   const [date, setDate] = useState('')
   const [notes, setNotes] = useState('')
   const [color, setColor] = useState(BIRTHDAY_COLORS[0])
+  const [reminderEnabled, setReminderEnabled] = useState(false)
 
   useEffect(() => {
     if (!open) return
@@ -26,6 +28,7 @@ export function AddBirthdayDialog({ open, onClose, editId }: { open: boolean; on
       setDate(existing.date)
       setNotes(existing.notes ?? '')
       setColor(existing.color)
+      setReminderEnabled(existing.reminderEnabled === true)
     } else if (!editId) {
       reset()
     }
@@ -36,6 +39,7 @@ export function AddBirthdayDialog({ open, onClose, editId }: { open: boolean; on
     setDate('')
     setNotes('')
     setColor(BIRTHDAY_COLORS[0])
+    setReminderEnabled(false)
   }
 
   const handleSave = () => {
@@ -47,7 +51,7 @@ export function AddBirthdayDialog({ open, onClose, editId }: { open: boolean; on
       toast({ title: 'Informe a data de aniversário', variant: 'error' })
       return
     }
-    const data = { name: name.trim(), date, notes: notes.trim() || undefined, color }
+    const data = { name: name.trim(), date, notes: notes.trim() || undefined, color, reminderEnabled }
     if (editId) {
       updateEntry(editId, data)
       toast({ title: 'Aniversário atualizado!', variant: 'success' })
@@ -99,6 +103,11 @@ export function AddBirthdayDialog({ open, onClose, editId }: { open: boolean; on
               ))}
             </div>
           </div>
+          <ReminderButton
+            enabled={reminderEnabled}
+            onEnabledChange={setReminderEnabled}
+            description="Avisar anualmente na data do aniversário"
+          />
           <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end">
             <Button variant="outline" onClick={onClose} className="rounded-xl">
               Cancelar

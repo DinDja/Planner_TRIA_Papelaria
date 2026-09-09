@@ -97,6 +97,7 @@ interface CalendarState {
     allDay?: boolean
     color?: string
     notes?: string
+    reminderEnabled?: boolean
     taskId?: string
     plannerId?: string
   }) => void
@@ -134,7 +135,7 @@ export const useCalendarStore = create<CalendarState>()(
         })),
     }),
     {
-      name: 'plannerhub-calendar',
+      name: 'tria-papelaria-calendar',
     },
   ),
 )

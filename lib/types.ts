@@ -320,6 +320,8 @@ export interface CalendarEvent {
   /** Se veio de uma tarefa da Rotina */
   taskId?: string
   plannerId?: string
+  /** Ativa um aviso local quando o evento chegar. */
+  reminderEnabled?: boolean
   createdAt: string
 }
 
@@ -430,7 +432,7 @@ export const SUBSCRIPTION_CATEGORIES = [
   'Notícias', 'Software', 'Streaming de filmes e séries', 'Outros',
 ] as const
 
-/** Recorrência de receitas — ausente = avulsa. */
+/** Recorrência de movimentações — ausente = avulsa. */
 export const TRANSACTION_RECURRENCE = ['weekly', 'biweekly', 'monthly', 'yearly'] as const
 export type TransactionRecurrence = (typeof TRANSACTION_RECURRENCE)[number]
 
@@ -571,6 +573,10 @@ export interface Habit {
   weekdays?: Weekday[]
   /** Dia do mês para monthly (1–31) */
   dayOfMonth?: number
+  /** Horário do aviso, no formato HH:mm. */
+  reminderTime?: string
+  /** Ativa um aviso local na ocorrência do hábito. */
+  reminderEnabled?: boolean
   createdAt: string
   archived: boolean
 }
@@ -717,6 +723,8 @@ export interface ShoppingList {
   name: string
   color: string
   kind?: ShoppingListKind
+  /** Pasta derivada do tipo da lista (mantido opcional para dados legados). */
+  folderId?: string | null
   items: ShoppingItem[]
   createdAt: string
   updatedAt: string
@@ -879,6 +887,8 @@ export interface Medication {
   endDate?: string
   notes?: string
   color: string
+  /** Ativa avisos para os horários do tratamento. */
+  reminderEnabled?: boolean
   createdAt: string
 }
 
@@ -921,6 +931,8 @@ export interface Appointment {
   location?: string
   notes?: string
   status: 'scheduled' | 'done' | 'cancelled'
+  /** Ativa um aviso quando a consulta chegar. */
+  reminderEnabled?: boolean
   createdAt: string
 }
 
@@ -940,6 +952,8 @@ export interface ExamRecord {
   notes?: string
   status: 'pending' | 'done' | 'reviewed'
   color: string
+  /** Ativa um aviso quando o exame chegar. */
+  reminderEnabled?: boolean
   createdAt: string
 }
 
@@ -953,6 +967,8 @@ export interface BirthdayRecord {
   date: string
   notes?: string
   color: string
+  /** Ativa um aviso anual na data do aniversário. */
+  reminderEnabled?: boolean
   createdAt: string
 }
 

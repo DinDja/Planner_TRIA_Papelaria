@@ -44,6 +44,9 @@ export async function seedUserDoc(user: User, opts?: { name?: string }) {
       status: role === 'admin' ? 'active' : 'none',
       since: null,
       lastPayment: null,
+      paidUntil: null,
+      trialStartedAt: null,
+      cancelledAt: null,
     },
     updatedAt: new Date().toISOString(),
   })

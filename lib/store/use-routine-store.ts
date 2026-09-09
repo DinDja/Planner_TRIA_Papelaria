@@ -392,7 +392,7 @@ export const useRoutineStore = create<RoutineState>()(
         })),
     }),
     {
-      name: 'plannerhub-routine',
+      name: 'tria-papelaria-routine',
     },
   ),
 )

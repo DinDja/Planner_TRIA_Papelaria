@@ -196,7 +196,7 @@ export const useAppStore = create<AppState>()(
         })),
     }),
     {
-      name: 'plannerhub-storage',
+      name: 'tria-papelaria-storage',
       partialize: (state) => ({
         planners: state.planners,
         folders: state.folders,

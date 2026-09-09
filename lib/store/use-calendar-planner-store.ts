@@ -62,6 +62,6 @@ export const useCalendarPlannerStore = create<CalendarPlannerState>()(
           }
         }),
     }),
-    { name: 'plannerhub-calendar-planner' },
+    { name: 'tria-papelaria-calendar-planner' },
   ),
 )

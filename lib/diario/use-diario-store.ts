@@ -271,7 +271,7 @@ export const useDiarioStore = create<EstadoDiario>()(
       },
     }),
     {
-      name: 'plannerhub-diario',
+      name: 'tria-papelaria-diario',
       partialize: (s) => ({ registros: s.registros, senhaHash: s.senhaHash }),
     },
   ),

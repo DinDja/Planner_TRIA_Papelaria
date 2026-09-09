@@ -8,6 +8,7 @@ import { Button } from '../ui/button'
 import { Dialog, DialogContent } from '../ui/overlays'
 import { Input } from '../ui/primitives'
 import { toast } from '../ui/toaster'
+import { ReminderButton } from '../notifications/reminder-button'
 
 const dayStr = (): string => {
   const d = new Date()
@@ -403,6 +404,7 @@ export function AddMedicationDialog({ open, onClose, editId }: { open: boolean; 
   const [firstTime, setFirstTime] = useState('08:00')
   const [startDate, setStartDate] = useState(dayStr())
   const [notes, setNotes] = useState('')
+  const [reminderEnabled, setReminderEnabled] = useState(false)
 
   useEffect(() => {
     if (!open) return
@@ -413,10 +415,12 @@ export function AddMedicationDialog({ open, onClose, editId }: { open: boolean; 
       setDurationDays(String(parsedDurationDays)); setIntervalHours(String(existing.intervalHours ?? 24))
       setFirstTime(storedTimes[0]?.match(/^\d{2}:\d{2}$/)?.[0] ?? '08:00')
       setStartDate(existing.startDate); setNotes(existing.notes ?? '')
+      setReminderEnabled(existing.reminderEnabled === true)
     } else if (!editId) {
       const today = dayStr()
       setName(''); setDosage(''); setDurationDays('1'); setIntervalHours('24')
       setFirstTime('08:00'); setStartDate(today); setNotes('')
+      setReminderEnabled(false)
     }
   }, [open, editId, existing])
 
@@ -446,6 +450,7 @@ export function AddMedicationDialog({ open, onClose, editId }: { open: boolean; 
       startDate,
       endDate: addDaysToDate(startDate, days - 1),
       notes: notes.trim() || undefined,
+      reminderEnabled,
     }
     if (editId) {
       updateMedication(editId, data)
@@ -454,7 +459,7 @@ export function AddMedicationDialog({ open, onClose, editId }: { open: boolean; 
       addMedication(data)
       toast({ title: 'Medicamento adicionado!', variant: 'success' })
     }
-    setName(''); setDosage(''); setDurationDays('1'); setIntervalHours('24'); setFirstTime('08:00'); setStartDate(dayStr()); setNotes(''); onClose()
+    setName(''); setDosage(''); setDurationDays('1'); setIntervalHours('24'); setFirstTime('08:00'); setStartDate(dayStr()); setNotes(''); setReminderEnabled(false); onClose()
   }
 
   const calculatedTimes = calculateMedicationTimes(firstTime, Number(intervalHours))
@@ -493,6 +498,11 @@ export function AddMedicationDialog({ open, onClose, editId }: { open: boolean; 
             </div>
           </div>
           <div><label className="text-sm font-medium mb-1.5 block">Observação</label><Input value={notes} onChange={(e) => setNotes(e.target.value)} /></div>
+          <ReminderButton
+            enabled={reminderEnabled}
+            onEnabledChange={setReminderEnabled}
+            description="Avisar nos horários programados do medicamento"
+          />
           <div className="flex justify-end gap-2 pt-1">
             <Button variant="outline" onClick={onClose} className="rounded-xl">Cancelar</Button>
             <Button onClick={handleSave} className="rounded-xl shadow-md">Salvar</Button>
@@ -671,6 +681,7 @@ export function AddAppointmentDialog({ open, onClose, doctors, editId }: { open:
   const [whatToBring, setWhatToBring] = useState('')
   const [questions, setQuestions] = useState('')
   const [notes, setNotes] = useState('')
+  const [reminderEnabled, setReminderEnabled] = useState(false)
 
   useEffect(() => {
     if (!open) return
@@ -678,9 +689,11 @@ export function AddAppointmentDialog({ open, onClose, doctors, editId }: { open:
       setDoctorId(existing.doctorId ?? ''); setDoctorName(existing.doctorName); setSpecialty(existing.specialty)
       setDate(existing.date); setTime(existing.time); setWhatToBring(existing.whatToBring ?? '')
       setQuestions(existing.questions ?? ''); setNotes(existing.notes ?? '')
+      setReminderEnabled(existing.reminderEnabled === true)
     } else if (!editId) {
       setDoctorId(''); setDoctorName(''); setSpecialty(''); setDate(dayStr()); setTime('08:00')
       setWhatToBring(''); setQuestions(''); setNotes('')
+      setReminderEnabled(false)
     }
   }, [open, editId, existing])
 
@@ -695,6 +708,7 @@ export function AddAppointmentDialog({ open, onClose, doctors, editId }: { open:
       whatToBring: whatToBring.trim() || undefined,
       questions: questions.trim() || undefined,
       notes: notes.trim() || undefined,
+      reminderEnabled,
     }
     if (editId) {
       updateAppointment(editId, data)
@@ -703,7 +717,7 @@ export function AddAppointmentDialog({ open, onClose, doctors, editId }: { open:
       addAppointment(data)
       toast({ title: 'Consulta agendada!', variant: 'success' })
     }
-    setDoctorId(''); setDoctorName(''); setSpecialty(''); setTime('08:00'); setWhatToBring(''); setQuestions(''); setNotes(''); onClose()
+    setDoctorId(''); setDoctorName(''); setSpecialty(''); setTime('08:00'); setWhatToBring(''); setQuestions(''); setNotes(''); setReminderEnabled(false); onClose()
   }
 
   return (
@@ -744,6 +758,11 @@ export function AddAppointmentDialog({ open, onClose, doctors, editId }: { open:
             <label className="text-sm font-medium mb-1.5 block">Observação</label>
             <Input value={notes} onChange={(e) => setNotes(e.target.value)} />
           </div>
+          <ReminderButton
+            enabled={reminderEnabled}
+            onEnabledChange={setReminderEnabled}
+            description="Avisar quando chegar o horário da consulta"
+          />
           <div className="flex justify-end gap-2 pt-1">
             <Button variant="outline" onClick={onClose} className="rounded-xl">Cancelar</Button>
             <Button onClick={handleSave} className="rounded-xl shadow-md">Agendar</Button>
@@ -766,16 +785,19 @@ export function AddExamDialog({ open, onClose, editId }: { open: boolean; onClos
   const [doctor, setDoctor] = useState('')
   const [address, setAddress] = useState('')
   const [notes, setNotes] = useState('')
+  const [reminderEnabled, setReminderEnabled] = useState(false)
 
   useEffect(() => {
     if (!open) return
     if (editId && existing) {
       setName(existing.name); setDate(existing.date); setTime(existing.time ?? '')
       setDoctor(existing.doctor ?? ''); setAddress(existing.address ?? ''); setNotes(existing.notes ?? '')
+      setReminderEnabled(existing.reminderEnabled === true)
       const doctorMatch = healthDoctors.find((item) => item.name === existing.doctor)
       setDoctorId(doctorMatch?.id ?? '')
     } else if (!editId) {
       setName(''); setDate(dayStr()); setTime(''); setDoctorId(''); setDoctor(''); setAddress(''); setNotes('')
+      setReminderEnabled(false)
     }
   }, [open, editId, existing, healthDoctors])
 
@@ -788,6 +810,7 @@ export function AddExamDialog({ open, onClose, editId }: { open: boolean; onClos
       doctor: doctor.trim() || undefined,
       address: address.trim() || undefined,
       notes: notes.trim() || undefined,
+      reminderEnabled,
     }
     if (editId) {
       updateExam(editId, data)
@@ -796,7 +819,7 @@ export function AddExamDialog({ open, onClose, editId }: { open: boolean; onClos
       addExam(data)
       toast({ title: 'Exame registrado!', variant: 'success' })
     }
-    setName(''); setTime(''); setDoctorId(''); setDoctor(''); setAddress(''); setNotes(''); onClose()
+    setName(''); setTime(''); setDoctorId(''); setDoctor(''); setAddress(''); setNotes(''); setReminderEnabled(false); onClose()
   }
 
   return (
@@ -835,6 +858,11 @@ export function AddExamDialog({ open, onClose, editId }: { open: boolean; onClos
             <label className="text-sm font-medium mb-1.5 block">Observação</label>
             <Input value={notes} onChange={(e) => setNotes(e.target.value)} />
           </div>
+          <ReminderButton
+            enabled={reminderEnabled}
+            onEnabledChange={setReminderEnabled}
+            description="Avisar na data e horário do exame"
+          />
           <div className="flex justify-end gap-2 pt-1">
             <Button variant="outline" onClick={onClose} className="rounded-xl">Cancelar</Button>
             <Button onClick={handleSave} className="rounded-xl shadow-md">{editId ? 'Salvar alterações' : 'Salvar'}</Button>

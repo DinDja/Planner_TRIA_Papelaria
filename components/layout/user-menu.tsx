@@ -3,7 +3,7 @@
 import { Menu as BaseMenu } from '@base-ui/react/menu'
 import { useProfileStore } from '@/lib/store/use-profile-store'
 import { useAuth } from '@/lib/auth/auth-context'
-import { LogOut, Settings, User } from 'lucide-react'
+import { CircleHelp, LogOut, Settings } from 'lucide-react'
 import { toast } from '@/components/ui/toaster'
 
 interface UserMenuProps {
@@ -60,9 +60,9 @@ export function UserMenu({ onOpenSettings }: UserMenuProps) {
               Configurações
             </BaseMenu.Item>
 
-            <BaseMenu.LinkItem href="/perfil" className={itemClass}>
-              <User size={15} className="text-muted-foreground" />
-              Meu perfil
+            <BaseMenu.LinkItem href="/conta" className={itemClass}>
+              <CircleHelp size={15} className="text-muted-foreground" />
+              Ajuda
             </BaseMenu.LinkItem>
 
             <div className="my-1 h-px bg-border/40" />

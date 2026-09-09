@@ -4,6 +4,9 @@ import { AppSidebar } from '@/components/layout/app-sidebar'
 import { CommandPalette } from '@/components/layout/command-palette'
 import { TopBar } from '@/components/layout/top-bar'
 import { SettingsDialog } from '@/components/settings/settings-dialog'
+import { NotificationCenter } from '@/components/notifications/notification-center'
+import { PwaInstallPrompt } from '@/components/pwa/pwa-install-prompt'
+import { PwaRegister } from '@/components/pwa/pwa-register'
 import { useCallback, useEffect, useState } from 'react'
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -32,6 +35,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex h-screen overflow-hidden">
+      <PwaRegister />
+      <NotificationCenter />
+      <PwaInstallPrompt />
       <AppSidebar
         collapsed={sideCollapsed}
         setCollapsed={setSideCollapsed}

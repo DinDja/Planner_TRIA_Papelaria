@@ -35,6 +35,8 @@ export interface UserManifest {
   since: string | null
   lastPayment: string | null
   paidUntil: string | null
+  trialStartedAt?: string | null
+  cancelledAt?: string | null
   blocked: boolean
   updatedAt: string
 }
@@ -77,7 +79,7 @@ export interface PlanDoc {
   id: PlanId
   label: string
   price: number
-  period: 'por mÃªs' | 'por ano'
+  period: 'por mês' | 'por ano' | 'por 1 mês'
   description: string
   savings?: string
   color: string

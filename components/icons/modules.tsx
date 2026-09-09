@@ -1,5 +1,5 @@
 /**
- * Sistema de ícones de módulo — PlannerHub
+ * Sistema de ícones de módulo — Tria Papelaria
  *
  * Cada ícone aqui é específico do domínio do produto. Não é coleção genérica;
  * não replique Lucide. Queira ler `ICONOGRAFIA.md` antes de adicionar qualquer
@@ -43,7 +43,6 @@ export type ModuloId =
   | 'habitos'
   | 'plans'
   | 'admin'
-  | 'perfil'
 
 const COMMON = {
   fill: 'none',
@@ -263,16 +262,6 @@ export function AdminIcon({ size, ...p }: P) {
   )
 }
 
-export function PerfilIcon({ size, ...p }: P) {
-  // Círculo + arco de ombros, todos vazios.
-  return (
-    <svg {...svgProps(size)} {...p}>
-      <circle cx="10" cy="7" r="3" />
-      <path d="M4 17 Q4 11.5 10 11.5 Q16 11.5 16 17" />
-    </svg>
-  )
-}
-
 export function DashboardIcon({ size, ...p }: P) {
   // Três retângulos de tamanhos diferentes — composição, não grelha.
   return (
@@ -304,7 +293,6 @@ export const MODULO_ICONS: Record<ModuloId, (p: P) => JSX.Element> = {
   habitos: HabitosIcon,
   plans: PlansIcon,
   admin: AdminIcon,
-  perfil: PerfilIcon,
 }
 
 export function ModuloIcon({

@@ -1,11 +1,11 @@
 'use client'
 
 import { useSettingsStore } from '@/lib/store/use-settings-store'
+import { useProfileStore } from '@/lib/store/use-profile-store'
 import type { FontScale, RadiusPreset } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import {
-  Eye,
-  Grid3X3,
+  ContactRound,
   Palette,
   RotateCcw,
   Settings2,
@@ -14,7 +14,7 @@ import {
 } from 'lucide-react'
 import { Dialog, DialogContent } from '../ui/overlays'
 import { Button } from '../ui/button'
-import { Separator, Switch } from '../ui/primitives'
+import { Input, Separator, Switch } from '../ui/primitives'
 import { toast } from '../ui/toaster'
 
 interface Props {
@@ -93,6 +93,10 @@ function ToggleRow({
 
 export function SettingsDialog({ open, onClose }: Props) {
   const s = useSettingsStore()
+  const name = useProfileStore((state) => state.name)
+  const email = useProfileStore((state) => state.email)
+  const setName = useProfileStore((state) => state.setName)
+  const setEmail = useProfileStore((state) => state.setEmail)
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
@@ -102,6 +106,40 @@ export function SettingsDialog({ open, onClose }: Props) {
         className="max-w-2xl"
       >
         <div className="flex flex-col gap-7">
+          {/* ── Dados da conta ──────────────────────────────────────── */}
+          <Section
+            icon={ContactRound}
+            title="Dados da conta"
+            desc="Como você é identificado dentro da TRIA. As alterações são salvas automaticamente."
+          >
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="flex flex-col gap-1.5 text-xs font-medium" htmlFor="settings-account-name">
+                Nome
+                <Input
+                  id="settings-account-name"
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                  placeholder="Seu nome"
+                  autoComplete="name"
+                />
+              </label>
+              <label className="flex flex-col gap-1.5 text-xs font-medium" htmlFor="settings-account-email">
+                E-mail
+                <Input
+                  id="settings-account-email"
+                  type="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  placeholder="voce@email.com"
+                  autoComplete="email"
+                  inputMode="email"
+                />
+              </label>
+            </div>
+          </Section>
+
+          <Separator />
+
           {/* ── Paleta de cores ──────────────────────────────────────── */}
           <Section icon={Palette} title="Paleta" desc="Identidade fixa do sistema, com predominância do rosa.">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -194,44 +232,6 @@ export function SettingsDialog({ open, onClose }: Props) {
             </div>
           </Section>
 
-          <Separator />
-
-          {/* ── Aparência avançada ─────────────────────────────────── */}
-          <Section
-            icon={Eye}
-            title="Aparência avançada"
-            desc="Efeitos visuais do editor e interface."
-          >
-            <div className="flex flex-col divide-y divide-border/40">
-              <ToggleRow
-                label="Glassmorphism"
-                desc="Efeito de vidro fosco (blur) em painéis e janelas."
-                checked={s.glassUI}
-                onChange={s.setGlassUI}
-              />
-              <ToggleRow
-                label="Textura de papel"
-                desc="Grão sutil no fundo das páginas do editor."
-                checked={s.paperGrain}
-                onChange={s.setPaperGrain}
-              />
-              <ToggleRow
-                label="Superfície de mesa"
-                desc="Fundo decorativo de mesa ao redor do papel."
-                checked={s.deskBackground}
-                onChange={s.setDeskBackground}
-              />
-              <ToggleRow
-                label="Reduzir movimento"
-                desc="Desativa animações e transições."
-                checked={s.reduceMotion}
-                onChange={s.setReduceMotion}
-              />
-            </div>
-          </Section>
-
-          <Separator />
-
           {/* ── Comportamento ──────────────────────────────────────── */}
           <Section
             icon={Settings2}
@@ -275,25 +275,6 @@ export function SettingsDialog({ open, onClose }: Props) {
             </Button>
           </div>
 
-          {/* Mini preview ao vivo */}
-          <div className="rounded-2xl border border-border/60 bg-muted/30 p-3">
-            <p className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1.5">
-              <Grid3X3 size={12} /> Pré-visualização
-            </p>
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="rounded-full bg-primary px-2.5 py-0.5 text-xs font-medium text-primary-foreground">
-                Badge primário
-              </span>
-              <span className="rounded-full bg-warning px-2.5 py-0.5 text-xs font-medium text-primary-foreground">
-                Premium
-              </span>
-              <Button size="sm" className="rounded-xl">Botão</Button>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground">Switch:</span>
-                <Switch checked aria-label="Exemplo" onCheckedChange={() => {}} />
-              </div>
-            </div>
-          </div>
         </div>
       </DialogContent>
     </Dialog>

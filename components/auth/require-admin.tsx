@@ -47,7 +47,7 @@ export function RequireAdmin({ children }: { children: React.ReactNode }) {
       <div className="flex h-screen flex-col items-center justify-center gap-3 text-center px-6">
         <ShieldAlert size={28} className="text-muted-foreground" />
         <p className="text-sm text-muted-foreground max-w-sm">
-          Esta área é restrita à administração do PlannerHub.
+          Esta área é restrita à administração da Tria Papelaria.
         </p>
         <Button variant="link" onClick={() => router.replace('/dashboard')} className="mt-1">
           Voltar ao dashboard

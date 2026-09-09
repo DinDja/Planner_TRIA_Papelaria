@@ -4,8 +4,11 @@ import { useMemo, useState } from 'react'
 import { useAppStore } from '@/lib/store/use-app-store'
 import type { Planner } from '@/lib/types'
 import { useCalendarStore } from '@/lib/store/use-calendar-store'
+import { useBirthdaysStore } from '@/lib/store/use-birthdays-store'
 import { useFinanceStore } from '@/lib/store/use-finance-store'
 import { useHabitsStore } from '@/lib/store/use-habits-store'
+import { useHealthStore } from '@/lib/store/use-health-store'
+import { useRoutineStore } from '@/lib/store/use-routine-store'
 import { isoDia, useDiarioStore } from '@/lib/diario/use-diario-store'
 import { cn } from '@/lib/utils'
 import {
@@ -13,8 +16,7 @@ import {
   Calendar,
   CheckCircle2,
   Clock,
-  Flame,
-  FolderOpen,
+  HeartPulse,
   NotebookPen,
   Pencil,
   Star,
@@ -111,19 +113,82 @@ export function DashboardPage() {
   const registros = useDiarioStore((s) => s.registros)
   const calendarEvents = useCalendarStore((s) => s.events)
   const deleteEvent = useCalendarStore((s) => s.deleteEvent)
+  const birthdays = useBirthdaysStore((s) => s.entries)
+  const fixedBills = useFinanceStore((s) => s.fixedBills)
   const goals = useFinanceStore((s) => s.goals)
   const deleteGoal = useFinanceStore((s) => s.deleteGoal)
+  const tasks = useRoutineStore((s) => s.tasks)
+  const recurringTasks = useRoutineStore((s) => s.recurringTasks)
+  const pendingItems = useRoutineStore((s) => s.pendingItems)
+  const toggleTask = useRoutineStore((s) => s.toggleTask)
+  const appointments = useHealthStore((s) => s.appointments)
+  const exams = useHealthStore((s) => s.exams)
   const [eventEditId, setEventEditId] = useState<string | undefined>()
   const [goalEditId, setGoalEditId] = useState<string | undefined>()
 
   const now = new Date()
   const todayISO = isoDia(now)
-  const agenda = useMemo(
+  const monthName = now.toLocaleDateString('pt-BR', { month: 'long' })
+  const year = now.getFullYear()
+  const daysInMonth = new Date(year, now.getMonth() + 1, 0).getDate()
+  const firstDay = (new Date(year, now.getMonth(), 1).getDay() + 6) % 7
+  const today = now.getDate()
+  const todayEvents = useMemo(
     () =>
       calendarEvents
         .filter((event) => event.date === todayISO)
         .sort((a, b) => a.startTime.localeCompare(b.startTime)),
     [calendarEvents, todayISO],
+  )
+
+  const todayTasks = useMemo(
+    () => [
+      ...tasks
+        .filter((task) => task.date === todayISO)
+        .map((task) => ({ id: task.id, title: task.title, time: task.time, done: task.done, recurring: false })),
+      ...recurringTasks
+        .filter((task) => task.active && task.nextDue === todayISO)
+        .map((task) => ({ id: task.id, title: task.title, time: task.time, done: false, recurring: true })),
+    ].sort((a, b) => (a.time ?? '99:99').localeCompare(b.time ?? '99:99')),
+    [recurringTasks, tasks, todayISO],
+  )
+
+  const upcomingBirthdays = useMemo(() => {
+    const todayStart = new Date(year, now.getMonth(), now.getDate())
+    return birthdays
+      .map((entry) => {
+        const [, month, day] = entry.date.split('-').map(Number)
+        const date = new Date(year, month - 1, day)
+        if (date < todayStart) date.setFullYear(year + 1)
+        return { ...entry, nextDate: date }
+      })
+      .sort((a, b) => a.nextDate.getTime() - b.nextDate.getTime())
+      .slice(0, 5)
+  }, [birthdays, todayISO])
+
+  const upcomingHealthRecords = useMemo(() => [
+    ...appointments
+      .filter((appointment) => appointment.date >= todayISO && appointment.status === 'scheduled')
+      .map((appointment) => ({
+        id: `appointment-${appointment.id}`,
+        title: appointment.doctorName,
+        detail: `Consulta · ${appointment.specialty}`,
+        date: appointment.date,
+        time: appointment.time,
+        color: '#6a634d',
+      })),
+    ...exams
+      .filter((exam) => exam.date >= todayISO && exam.status === 'pending')
+      .map((exam) => ({
+        id: `exam-${exam.id}`,
+        title: exam.name,
+        detail: 'Exame pendente',
+        date: exam.date,
+        time: exam.time,
+        color: exam.color,
+      })),
+  ].sort((a, b) => `${a.date} ${a.time ?? ''}`.localeCompare(`${b.date} ${b.time ?? ''}`)).slice(0, 5),
+    [appointments, exams, todayISO],
   )
 
   const activity = useMemo(
@@ -141,34 +206,14 @@ export function DashboardPage() {
     [registros, todayISO],
   )
   const maxActivity = Math.max(...activity.map((day) => day.count), 1)
-  const recordsThisWeek = activity.reduce((total, day) => total + day.count, 0)
 
-  const currentStreak = useMemo(() => {
-    const dailyRecords = new Set(
-      registros.filter((registro) => registro.periodo === 'dia').map((registro) => registro.data),
-    )
-    let streak = 0
-    const date = new Date(now)
-    date.setHours(12, 0, 0, 0)
-    while (dailyRecords.has(isoDia(date))) {
-      streak += 1
-      date.setDate(date.getDate() - 1)
-    }
-    return streak
-  }, [registros, todayISO])
-
-  const totalPages = planners.reduce((total, planner) => total + planner.pages.length, 0)
+  const taskCount = tasks.length + recurringTasks.filter((task) => task.active).length + pendingItems.length
+  const activeBillCount = fixedBills.filter((bill) => bill.active).length
+  const healthRecordCount = appointments.length + exams.length
 
   const hour = new Date().getHours()
   const greeting =
     hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite'
-
-  // Mini calendar
-  const monthName = now.toLocaleDateString('pt-BR', { month: 'long' })
-  const year = now.getFullYear()
-  const daysInMonth = new Date(year, now.getMonth() + 1, 0).getDate()
-  const firstDay = (new Date(year, now.getMonth(), 1).getDay() + 6) % 7
-  const today = now.getDate()
 
   return (
     <div className="p-6 lg:p-8 max-w-[1400px] mx-auto">
@@ -192,10 +237,10 @@ export function DashboardPage() {
       {/* Stats row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         {[
-          { label: 'Tarefas', value: planners.length, icon: FolderOpen, color: '#d1bdb8' },
-          { label: 'Aniversários', value: totalPages, icon: NotebookPen, color: '#6a634d' },
-          { label: 'Contas', value: recordsThisWeek, icon: Clock, color: '#b76f06' },
-          { label: 'Consultas e Exames', value: currentStreak, icon: Flame, color: '#d1bdb8' },
+          { label: 'Tarefas', value: taskCount, icon: CheckCircle2, color: '#d1bdb8' },
+          { label: 'Aniversários', value: birthdays.length, icon: NotebookPen, color: '#6a634d' },
+          { label: 'Contas', value: activeBillCount, icon: Clock, color: '#b76f06' },
+          { label: 'Consultas e Exames', value: healthRecordCount, icon: HeartPulse, color: '#d1bdb8' },
         ].map((stat) => (
           <Card key={stat.label} glass hover className="relative h-full overflow-hidden">
             <div className="absolute top-0 right-0 w-20 h-20 rounded-bl-full opacity-10" style={{ backgroundColor: stat.color }} />
@@ -216,12 +261,12 @@ export function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-        {/* Coluna esquerda: agenda diária, contas e hábitos */}
+        {/* Coluna esquerda: planners, tarefas, diário e hábitos */}
         <div className="min-w-0 space-y-6">
           {/* Recents */}
           <Card glass>
             <CardHeader className="flex-row items-center justify-between pb-0">
-              <CardTitle className="text-base">Agenda Diária</CardTitle>
+              <CardTitle className="text-base">Planners recentes</CardTitle>
               <Link href="/planners" className="text-xs text-primary hover:underline flex items-center gap-1">
                 Ver todos <ArrowUpRight size={12} />
               </Link>
@@ -272,6 +317,44 @@ export function DashboardPage() {
                 </p>
               )}
             </div>
+          </Card>
+
+          {/* Tarefas de hoje */}
+          <Card glass>
+            <CardHeader className="flex-row items-center justify-between pb-0">
+              <CardTitle className="text-base">Tarefas de hoje</CardTitle>
+              <Link href="/calendario" className="text-xs text-primary hover:underline flex items-center gap-1">
+                Ver agenda <ArrowUpRight size={12} />
+              </Link>
+            </CardHeader>
+            <CardContent className="pt-3">
+              {todayTasks.length > 0 ? (
+                <div className="space-y-1">
+                  {todayTasks.map((task) => (
+                    <button
+                      key={task.id}
+                      type="button"
+                      disabled={task.recurring}
+                      onClick={() => !task.recurring && toggleTask(task.id)}
+                      className="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left transition-colors hover:bg-muted/40 disabled:cursor-default"
+                      aria-label={task.recurring ? task.title : `${task.done ? 'Desmarcar' : 'Marcar'} ${task.title}`}
+                    >
+                      {task.done ? (
+                        <CheckCircle2 size={18} className="text-success" />
+                      ) : (
+                        <span className="size-[18px] shrink-0 rounded-full border-2 border-border" />
+                      )}
+                      <span className={cn('min-w-0 flex-1 truncate text-sm', task.done && 'text-muted-foreground line-through')}>
+                        {task.title}
+                      </span>
+                      {task.time && <span className="shrink-0 text-[11px] text-muted-foreground">{task.time}</span>}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="py-4 text-center text-sm text-muted-foreground">Nenhuma tarefa para hoje.</p>
+              )}
+            </CardContent>
           </Card>
 
           {/* Favorites */}
@@ -326,7 +409,7 @@ export function DashboardPage() {
           {/* Activity chart */}
           <Card glass className="min-h-[220px]">
             <CardHeader>
-              <CardTitle className="text-base">Contas</CardTitle>
+                <CardTitle className="text-base">Atividade do diário</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex items-end gap-3 h-32">
@@ -394,18 +477,19 @@ export function DashboardPage() {
             </div>
           </Card>
 
-          {/* Agenda */}
+          {/* Agenda diária */}
           <Card glass>
             <CardHeader className="flex-row items-center justify-between pb-0">
               <CardTitle className="text-base flex items-center gap-2">
                 <Calendar size={16} className="text-primary" />
-                Aniversários
+                Agenda diária
               </CardTitle>
+              <Link href="/calendario" className="text-xs text-primary hover:underline">Ver agenda</Link>
             </CardHeader>
             <div className="px-5 py-3">
-              {agenda.length > 0 ? (
+              {todayEvents.length > 0 ? (
                 <div className="space-y-2">
-                  {agenda.map((event) => (
+                  {todayEvents.map((event) => (
                     <div
                       key={event.id}
                       className="group flex items-center gap-3 rounded-xl p-2.5 hover:bg-muted/40 transition-colors"
@@ -440,19 +524,107 @@ export function DashboardPage() {
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  Nenhum evento para hoje.
-                </p>
+                <p className="text-sm text-muted-foreground text-center py-4">Nenhum evento para hoje.</p>
               )}
             </div>
           </Card>
 
-          {/* Goals */}
+          {/* Aniversários */}
+          <Card glass>
+            <CardHeader className="flex-row items-center justify-between pb-0">
+              <CardTitle className="text-base flex items-center gap-2">
+                <NotebookPen size={16} className="text-primary" />
+                Aniversários
+              </CardTitle>
+              <Link href="/aniversarios" className="text-xs text-primary hover:underline">Ver todos</Link>
+            </CardHeader>
+            <div className="px-5 py-3">
+              {upcomingBirthdays.length > 0 ? (
+                <div className="space-y-1">
+                  {upcomingBirthdays.map((birthday) => (
+                    <div key={birthday.id} className="flex items-center gap-3 rounded-xl p-2.5 hover:bg-muted/40">
+                      <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: birthday.color }} />
+                      <span className="min-w-0 flex-1 truncate text-sm">{birthday.name}</span>
+                      <span className="shrink-0 text-[11px] text-muted-foreground">
+                        {birthday.nextDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">Nenhum aniversário cadastrado.</p>
+              )}
+            </div>
+          </Card>
+
+          {/* Consultas e exames */}
+          <Card glass>
+            <CardHeader className="flex-row items-center justify-between pb-0">
+              <CardTitle className="text-base flex items-center gap-2">
+                <HeartPulse size={16} className="text-primary" />
+                Consultas e exames
+              </CardTitle>
+              <Link href="/saude" className="text-xs text-primary hover:underline">Ver saúde</Link>
+            </CardHeader>
+            <div className="px-5 py-3">
+              {upcomingHealthRecords.length > 0 ? (
+                <div className="space-y-1">
+                  {upcomingHealthRecords.map((record) => (
+                    <div key={record.id} className="flex items-center gap-3 rounded-xl p-2.5 hover:bg-muted/40">
+                      <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: record.color }} />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm">{record.title}</p>
+                        <p className="truncate text-[11px] text-muted-foreground">{record.detail}</p>
+                      </div>
+                      <span className="shrink-0 text-[11px] text-muted-foreground">
+                        {new Date(`${record.date}T12:00:00`).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+                        {record.time ? ` · ${record.time}` : ''}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">Nenhuma consulta ou exame próximo.</p>
+              )}
+            </div>
+          </Card>
+
+          {/* Contas */}
+          <Card glass>
+            <CardHeader className="flex-row items-center justify-between pb-0">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Clock size={16} className="text-warning" />
+                Contas
+              </CardTitle>
+              <Link href="/financas" className="text-xs text-primary hover:underline">Ver finanças</Link>
+            </CardHeader>
+            <div className="px-5 py-3">
+              {fixedBills.filter((bill) => bill.active).length > 0 ? (
+                <div className="space-y-1">
+                  {[...fixedBills]
+                    .filter((bill) => bill.active)
+                    .sort((a, b) => a.dayOfMonth - b.dayOfMonth)
+                    .slice(0, 5)
+                    .map((bill) => (
+                      <div key={bill.id} className="flex items-center gap-3 rounded-xl p-2.5 hover:bg-muted/40">
+                        <span className="min-w-0 flex-1 truncate text-sm">{bill.title}</span>
+                        <span className="text-[11px] text-muted-foreground">dia {bill.dayOfMonth}</span>
+                        <span className="shrink-0 text-xs font-medium">{formatBRL(bill.amount)}</span>
+                      </div>
+                    ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">Nenhuma conta cadastrada.</p>
+              )}
+            </div>
+          </Card>
+
+          {/* Metas */}
           <Card glass>
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
                 <Target size={16} className="text-success" />
-                Consultas e Exames
+                Metas
               </CardTitle>
             </CardHeader>
             <div className="px-5 pb-3 space-y-3">

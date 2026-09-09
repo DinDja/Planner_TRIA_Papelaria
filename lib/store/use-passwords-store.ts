@@ -109,6 +109,6 @@ export const usePasswordsStore = create<PasswordsState>()(
         return [...cats].sort()
       },
     }),
-    { name: 'plannerhub-passwords' },
+    { name: 'tria-papelaria-passwords' },
   ),
 )

@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { getListKindMeta } from '../lists'
+import { getListFolderId, getListKindMeta, normalizeShoppingList } from '../lists'
 import type { ShoppingItem, ShoppingList, ShoppingListKind, UserListPreset } from '../types'
 
 const uid = () => Math.random().toString(36).slice(2, 10)
@@ -129,7 +129,16 @@ export const useListsStore = create<ListsState>()(
         set((s) => ({
           lists: [
             ...s.lists,
-            { id, ...data, kind, color: color ?? defaultColor, items: [], createdAt: nowISO(), updatedAt: nowISO() },
+            {
+              id,
+              ...data,
+              kind,
+              folderId: getListFolderId(kind),
+              color: color ?? defaultColor,
+              items: [],
+              createdAt: nowISO(),
+              updatedAt: nowISO(),
+            },
           ],
         }))
         return id
@@ -138,7 +147,12 @@ export const useListsStore = create<ListsState>()(
       updateList: (id, patch) =>
         set((s) => ({
           lists: s.lists.map((l) =>
-            l.id === id ? { ...l, ...clean(patch), updatedAt: nowISO() } : l,
+            l.id === id
+              ? {
+                  ...normalizeShoppingList({ ...l, ...clean(patch) }),
+                  updatedAt: nowISO(),
+                }
+              : l,
           ),
         })),
 
@@ -153,6 +167,7 @@ export const useListsStore = create<ListsState>()(
           if (!source) return s
           const copy: ShoppingList = {
             ...source,
+            folderId: getListFolderId(source.kind),
             id: `list-${uid()}`,
             name: `${source.name} (cópia)`,
             items: source.items.map((item) => ({
@@ -261,6 +276,16 @@ export const useListsStore = create<ListsState>()(
         return [...cats].sort()
       },
     }),
-    { name: 'plannerhub-lists' },
+    {
+      name: 'tria-papelaria-lists',
+      version: 1,
+      migrate: (persisted) => {
+        const raw = persisted as { lists?: ShoppingList[]; userPresets?: UserListPreset[] }
+        return {
+          lists: Array.isArray(raw?.lists) ? raw.lists.map(normalizeShoppingList) : [],
+          userPresets: Array.isArray(raw?.userPresets) ? raw.userPresets : [],
+        }
+      },
+    },
   ),
 )

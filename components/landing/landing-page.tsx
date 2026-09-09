@@ -547,7 +547,7 @@ export function LandingPage() {
             className="landing-copy-muted text-xs tracking-[0.25em]"
             style={{ fontFamily: 'var(--font-plex), sans-serif' }}
           >
-            PLANNERHUB
+            TRIA PAPELARIA
           </span>
           <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
             {NAV_LINKS.map((l) => (
@@ -568,7 +568,7 @@ export function LandingPage() {
           </div>
         </div>
         <div className="landing-border max-w-6xl mx-auto mt-8 pt-6 border-t">
-          <span className="landing-copy-faint text-xs">© {new Date().getFullYear()} PlannerHub. Feito com 💛 para quem ama planejar.</span>
+          <span className="landing-copy-faint text-xs">© {new Date().getFullYear()} Tria Papelaria. Feito com 💛 para quem ama planejar.</span>
         </div>
       </footer>
     </div>

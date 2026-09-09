@@ -252,6 +252,6 @@ export const useHealthStore = create<HealthState>()(
       completeOnboarding: () => set({ onboarded: true }),
       resetOnboarding: () => set({ onboarded: false, sex: null }),
     }),
-    { name: 'plannerhub-health' },
+    { name: 'tria-papelaria-health' },
   ),
 )

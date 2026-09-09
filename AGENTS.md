@@ -1,4 +1,4 @@
-# PlannerHub
+# Tria Papelaria
 
 Next.js 16 + React 19 + Tailwind CSS v4. Canvas digital planner.
 

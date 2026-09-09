@@ -9,6 +9,7 @@ import { Button } from '../ui/button'
 import { Dialog, DialogContent } from '../ui/overlays'
 import { Input } from '../ui/primitives'
 import { toast } from '../ui/toaster'
+import { ReminderButton } from '../notifications/reminder-button'
 
 const COLORS = ['#d1bdb8', '#b76f06', '#6a634d', '#ddd6c6']
 const WEEKDAY_SHORT: Record<Weekday, string> = { 0: 'Seg', 1: 'Ter', 2: 'Qua', 3: 'Qui', 4: 'Sex', 5: 'Sáb', 6: 'Dom' }
@@ -21,7 +22,9 @@ export function AddHabitDialog({ open, onClose, editId }: { open: boolean; onClo
   const [frequency, setFrequency] = useState<HabitFrequency>('daily')
   const [weekdays, setWeekdays] = useState<Weekday[]>([0, 1, 2, 3, 4])
   const [dayOfMonth, setDayOfMonth] = useState(1)
+  const [reminderTime, setReminderTime] = useState('09:00')
   const [color, setColor] = useState(COLORS[2])
+  const [reminderEnabled, setReminderEnabled] = useState(false)
 
   useEffect(() => {
     if (!open) return
@@ -30,13 +33,17 @@ export function AddHabitDialog({ open, onClose, editId }: { open: boolean; onClo
       setFrequency(existing.frequency)
       setWeekdays(existing.weekdays ?? [0, 1, 2, 3, 4])
       setDayOfMonth(existing.dayOfMonth ?? 1)
+      setReminderTime(existing.reminderTime ?? '09:00')
       setColor(existing.color)
+      setReminderEnabled(existing.reminderEnabled === true)
     } else if (!editId) {
       setName('')
       setFrequency('daily')
       setWeekdays([0, 1, 2, 3, 4])
       setDayOfMonth(1)
+      setReminderTime('09:00')
       setColor(COLORS[2])
+      setReminderEnabled(false)
     }
   }, [open, editId, existing])
 
@@ -57,6 +64,8 @@ export function AddHabitDialog({ open, onClose, editId }: { open: boolean; onClo
       frequency,
       weekdays: frequency === 'weekly' ? weekdays : undefined,
       dayOfMonth: frequency === 'monthly' ? dayOfMonth : undefined,
+      reminderTime,
+      reminderEnabled,
       color,
     }
     if (editId) {
@@ -70,30 +79,33 @@ export function AddHabitDialog({ open, onClose, editId }: { open: boolean; onClo
     setFrequency('daily')
     setWeekdays([0, 1, 2, 3, 4])
     setDayOfMonth(1)
+    setReminderTime('09:00')
     setColor(COLORS[2])
+    setReminderEnabled(false)
     onClose()
   }
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent title={editId ? 'Editar hábito' : 'Novo hábito'} description="Defina um hábito para acompanhar diariamente.">
+      <DialogContent title={editId ? 'Editar hábito' : 'Novo hábito'}>
         <div className="flex flex-col gap-4">
-          <div>
-            <label className="text-sm font-medium mb-1.5 block">Nome</label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Beber 2L de água..."
-              onKeyDown={(e) => e.key === 'Enter' && handleSave()} autoFocus />
-          </div>
-
-          <div>
-            <label className="text-sm font-medium mb-2 block">Frequência</label>
-            <div className="flex gap-2">
-              {(['daily', 'weekly', 'monthly'] as const).map((f) => (
-                <button key={f} type="button" onClick={() => setFrequency(f)}
-                  className={cn('flex-1 rounded-xl border px-3 py-2 text-xs font-medium transition-all cursor-pointer',
-                    frequency === f ? 'border-primary/50 bg-primary/10 text-primary shadow-sm' : 'border-border/60 text-muted-foreground hover:bg-muted/50')}>
-                  {f === 'daily' ? 'Diária' : f === 'weekly' ? 'Semanal' : 'Mensal'}
-                </button>
-              ))}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Nome</label>
+              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Beber 2L de água" autoFocus
+                onKeyDown={(e) => e.key === 'Enter' && handleSave()} />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-2 block">Frequência</label>
+              <div className="flex gap-2">
+                {(['daily', 'weekly', 'monthly'] as const).map((f) => (
+                  <button key={f} type="button" onClick={() => setFrequency(f)}
+                    className={cn('flex-1 rounded-xl border px-2 py-2 text-xs font-medium transition-all cursor-pointer',
+                      frequency === f ? 'border-primary/50 bg-primary/10 text-primary shadow-sm' : 'border-border/60 text-muted-foreground hover:bg-muted/50')}>
+                    {f === 'daily' ? 'Diária' : f === 'weekly' ? 'Semanal' : 'Mensal'}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -120,19 +132,32 @@ export function AddHabitDialog({ open, onClose, editId }: { open: boolean; onClo
             </div>
           )}
 
-          <div>
-            <label className="text-sm font-medium mb-2 block">Cor</label>
-            <div className="flex gap-2 flex-wrap">
-              {COLORS.map((c) => (
-                <button key={c} type="button" onClick={() => setColor(c)}
-                  className={cn('size-8 rounded-full transition-all cursor-pointer inline-flex items-center justify-center',
-                    color === c ? 'scale-110 ring-2 ring-foreground/70 ring-offset-2 ring-offset-popover' : 'hover:scale-110')}
-                  style={{ backgroundColor: c }}>
-                  {color === c && <Check size={14} strokeWidth={3} className="text-white drop-shadow-sm" />}
-                </button>
-              ))}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Horário do aviso</label>
+              <Input type="time" value={reminderTime} onChange={(e) => setReminderTime(e.target.value)} />
+              <p className="mt-1 text-[11px] text-muted-foreground">Usado quando você ativar “Avise-me” no hábito.</p>
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-2 block">Cor</label>
+              <div className="flex gap-2 flex-wrap">
+                {COLORS.map((c) => (
+                  <button key={c} type="button" onClick={() => setColor(c)}
+                    className={cn('size-8 rounded-full transition-all cursor-pointer inline-flex items-center justify-center',
+                      color === c ? 'scale-110 ring-2 ring-foreground/70 ring-offset-2 ring-offset-popover' : 'hover:scale-110')}
+                    style={{ backgroundColor: c }}>
+                    {color === c && <Check size={14} strokeWidth={3} className="text-white drop-shadow-sm" />}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
+
+          <ReminderButton
+            enabled={reminderEnabled}
+            onEnabledChange={setReminderEnabled}
+            description="Avisar no horário definido para o hábito"
+          />
 
           <div className="flex justify-end gap-2 pt-1">
             <Button variant="outline" onClick={onClose} className="rounded-xl">Cancelar</Button>

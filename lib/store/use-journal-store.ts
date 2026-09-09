@@ -228,6 +228,6 @@ export const useJournalStore = create<JournalState>()(
         return groups
       },
     }),
-    { name: 'plannerhub-journal' },
+    { name: 'tria-papelaria-journal' },
   ),
 )

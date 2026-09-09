@@ -1,6 +1,6 @@
-# Plano de melhorias do Editor do PlannerHub
+# Plano de melhorias do Editor da Tria Papelaria
 
-> Estudo do estado atual via **Codebase Memory MCP** (projeto `C-Workspace-planner-hub`, 1286 nós / 2709 arestas) e leitura direta dos arquivos:
+> Estudo do estado atual via **Codebase Memory MCP** (projeto `C-Workspace-tria-papelaria`, 1286 nós / 2709 arestas) e leitura direta dos arquivos:
 > - `components/editor/planner-editor.tsx` (2073 linhas, monolítico)
 > - `components/editor/hooks/use-canvas-pointer.ts` (532 linhas)
 > - `components/editor/context-menu.tsx` (97 linhas)

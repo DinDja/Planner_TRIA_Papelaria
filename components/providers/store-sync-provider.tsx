@@ -37,6 +37,7 @@ import { useFinanceStore } from '@/lib/store/use-finance-store'
 import { useBirthdaysStore } from '@/lib/store/use-birthdays-store'
 import { useTrashStore } from '@/lib/store/use-trash-store'
 import { useSubscriptionStore } from '@/lib/subscriptions/use-subscription-store'
+import { normalizeShoppingList } from '@/lib/lists'
 
 type StoreLike = {
   getState: () => Record<string, any>
@@ -75,12 +76,21 @@ const ROOT_BINDINGS: RootBinding[] = [
   { store: useHealthStore as unknown as StoreLike, field: 'sex', rootKey: 'sex', read: true, write: true },
   { store: useHealthStore as unknown as StoreLike, field: 'onboarded', rootKey: 'onboarded', read: true, write: true },
   { store: usePasswordsStore as unknown as StoreLike, field: 'masterPin', rootKey: 'masterPin', read: false, write: true },
-  { store: useSubscriptionStore as unknown as StoreLike, field: 'role', rootKey: 'subscription.role', read: true, write: true },
-  { store: useSubscriptionStore as unknown as StoreLike, field: 'plan', rootKey: 'subscription.plan', read: true, write: true },
-  { store: useSubscriptionStore as unknown as StoreLike, field: 'status', rootKey: 'subscription.status', read: true, write: true },
-  { store: useSubscriptionStore as unknown as StoreLike, field: 'since', rootKey: 'subscription.since', read: true, write: true },
-  { store: useSubscriptionStore as unknown as StoreLike, field: 'lastPayment', rootKey: 'subscription.lastPayment', read: true, write: true },
+  // Cobrança é somente leitura no cliente. Checkout, teste e cancelamento
+  // escrevem estes campos pelas rotas autenticadas no servidor.
+  { store: useSubscriptionStore as unknown as StoreLike, field: 'role', rootKey: 'subscription.role', read: true, write: false },
+  { store: useSubscriptionStore as unknown as StoreLike, field: 'plan', rootKey: 'subscription.plan', read: true, write: false },
+  { store: useSubscriptionStore as unknown as StoreLike, field: 'status', rootKey: 'subscription.status', read: true, write: false },
+  { store: useSubscriptionStore as unknown as StoreLike, field: 'since', rootKey: 'subscription.since', read: true, write: false },
+  { store: useSubscriptionStore as unknown as StoreLike, field: 'lastPayment', rootKey: 'subscription.lastPayment', read: true, write: false },
+  { store: useSubscriptionStore as unknown as StoreLike, field: 'paidUntil', rootKey: 'subscription.paidUntil', read: true, write: false },
+  { store: useSubscriptionStore as unknown as StoreLike, field: 'trialStartedAt', rootKey: 'subscription.trialStartedAt', read: true, write: false },
+  { store: useSubscriptionStore as unknown as StoreLike, field: 'cancelledAt', rootKey: 'subscription.cancelledAt', read: true, write: false },
 ]
+
+// O menu do usuário e Configurações existem em todas as telas do app.
+// Esses campos de identidade, portanto, não podem depender da rota atual.
+const GLOBAL_ROOT_KEYS = ['name', 'avatar', 'email'] as const
 
 const COL_BINDINGS: ColBinding[] = [
   { store: useAppStore as unknown as StoreLike, field: 'planners', collection: 'planners', read: true, write: false },
@@ -168,7 +178,7 @@ export function StoreSyncProvider({ children, editorMode = false }: StoreSyncPro
     if (!user) return
     const unsubs: Array<() => void> = []
     const rootRef = doc(db, 'users', user.uid)
-    const wantedRootKeys = new Set(plan.rootFields ?? [])
+    const wantedRootKeys = new Set([...GLOBAL_ROOT_KEYS, ...(plan.rootFields ?? [])])
     unsubs.push(onSnapshot(rootRef, (snapshot) => {
       if (!snapshot.exists()) return
       const data = snapshot.data() as Record<string, any>
@@ -189,6 +199,9 @@ export function StoreSyncProvider({ children, editorMode = false }: StoreSyncPro
     for (const binding of COL_BINDINGS) {
       if (!binding.read || !wantedCollections.has(binding.collection)) continue
       unsubs.push(subscribeCollection<any>(user, binding.collection, (items) => {
+        const normalizedItems = binding.collection === 'shoppingLists'
+          ? items.map((item) => normalizeShoppingList(item))
+          : items
         const local: any[] = binding.store.getState()[binding.field] ?? []
         const localMap = new Map(local.map((item) => [item.id, item]))
         const pending = getPendingCollectionState(user.uid, binding.collection)
@@ -196,7 +209,7 @@ export function StoreSyncProvider({ children, editorMode = false }: StoreSyncPro
         const baseline: any[] = []
         const seen = new Set<string>()
 
-        for (const item of items) {
+        for (const item of normalizedItems) {
           if (pending.deletes.has(item.id)) {
             baseline.push(item)
             continue
@@ -219,7 +232,7 @@ export function StoreSyncProvider({ children, editorMode = false }: StoreSyncPro
           if (!seen.has(item.id) && pending.upserts.has(item.id)) merged.push(item)
         }
 
-        notifyCollectionRemote(user.uid, binding.collection, items, baseline)
+        notifyCollectionRemote(user.uid, binding.collection, normalizedItems, baseline)
         const same = merged.length === local.length && merged.every(
           (item, index) => item.id === local[index].id && JSON.stringify(item) === JSON.stringify(local[index]),
         )

@@ -18,7 +18,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    const stored = localStorage.getItem('plannerhub-theme') as Theme | null
+    const stored = localStorage.getItem('tria-papelaria-theme') as Theme | null
     if (stored === 'light' || stored === 'dark') {
       setThemeState(stored)
     }
@@ -35,7 +35,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       root.classList.remove('dark')
       root.classList.add('light')
     }
-    localStorage.setItem('plannerhub-theme', theme)
+    localStorage.setItem('tria-papelaria-theme', theme)
   }, [theme, mounted])
 
   const setTheme = useCallback((t: Theme) => setThemeState(t), [])

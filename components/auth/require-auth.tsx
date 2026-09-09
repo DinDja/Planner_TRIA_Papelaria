@@ -47,7 +47,7 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
       <div className="flex h-screen flex-col items-center justify-center gap-3 text-center px-6">
         <Ban size={28} className="text-destructive" />
         <p className="text-sm text-muted-foreground max-w-sm">
-          Sua conta foi bloqueada pela administração do PlannerHub.
+          Sua conta foi bloqueada pela administração da Tria Papelaria.
         </p>
         <Button
           variant="link"

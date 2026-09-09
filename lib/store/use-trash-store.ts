@@ -41,6 +41,6 @@ export const useTrashStore = create<TrashState>()(
 
       clearAll: () => set({ items: [] }),
     }),
-    { name: 'plannerhub-trash' },
+    { name: 'tria-papelaria-trash' },
   ),
 )

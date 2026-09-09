@@ -1,6 +1,6 @@
 'use client'
 
-import { getListKindMeta } from '@/lib/lists'
+import { getListFolderId, getListFoldersForLists, getListKindMeta } from '@/lib/lists'
 import { useListsStore } from '@/lib/store/use-lists-store'
 import type { ShoppingItem, ShoppingList } from '@/lib/types'
 import { cn } from '@/lib/utils'
@@ -9,17 +9,17 @@ import {
   CheckCircle2,
   Circle,
   Copy,
+  Folder as FolderIcon,
   List,
   Pencil,
   Plus,
   ShoppingCart,
   Trash2,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Button } from '../ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
-import { Input as SearchInput } from '../ui/primitives'
-import { Dialog, DialogContent, Tab, TabList, TabPanel, Tabs } from '../ui/overlays'
+import { Dialog, DialogContent, Tab, TabList, Tabs } from '../ui/overlays'
 import { ListKindIcon } from './list-kind-icon'
 import { AddItemDialog, AddListDialog } from './lists-dialogs'
 
@@ -35,6 +35,7 @@ function ListCard({
   onSelectItem,
   onDeleteItem,
   onEditItem,
+  folderName,
 }: {
   list: ShoppingList
   onEdit: (id: string) => void
@@ -45,6 +46,7 @@ function ListCard({
   onSelectItem: (listId: string, itemId: string) => void
   onDeleteItem: (listId: string, itemId: string) => void
   onEditItem: (listId: string, itemId: string) => void
+  folderName?: string
 }) {
   const isMala = getListKindMeta(list.kind).kind === 'mala'
   const checked = list.items.filter((i) => (isMala ? i.packed : i.checked)).length
@@ -77,6 +79,12 @@ function ListCard({
           </div>
           <div>
             <CardTitle className="text-base">{list.name}</CardTitle>
+            {folderName && (
+              <p className="mt-0.5 flex items-center gap-1 text-[10px] text-muted-foreground/70">
+                <FolderIcon size={10} />
+                {folderName}
+              </p>
+            )}
             {total > 0 && (
               <p className="text-[11px] text-muted-foreground mt-0.5">
                 {checked}/{total} itens
@@ -232,6 +240,12 @@ export function ListsPage() {
   const updateItem = useListsStore((s) => s.updateItem)
   const deleteItem = useListsStore((s) => s.deleteItem)
 
+  const folders = useMemo(() => getListFoldersForLists(lists), [lists])
+  const folderMap = useMemo(
+    () => new Map(folders.map((folder) => [folder.id, folder.name])),
+    [folders],
+  )
+
   const [tab, setTab] = useState('all')
   const [addListOpen, setAddListOpen] = useState(false)
   const [editListId, setEditListId] = useState<string | undefined>()
@@ -289,14 +303,65 @@ export function ListsPage() {
     0,
   )
 
+  const filteredLists = useMemo(() => {
+    if (!tab.startsWith('folder-')) return lists
+    const folderId = tab.replace('folder-', '')
+    return lists.filter((list) => getListFolderId(list.kind) === folderId)
+  }, [lists, tab])
+
   return (
-    <div className="p-6 lg:p-8 max-w-[1200px] mx-auto">
+    <div className="flex h-full">
+      <aside className="hidden lg:flex w-56 shrink-0 flex-col gap-1 border-r border-border/40 p-4">
+        <div className="mb-2 flex items-center gap-2">
+          <FolderIcon size={14} className="text-muted-foreground" />
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Pastas por tipo
+          </p>
+        </div>
+        <button
+          onClick={() => setTab('all')}
+          className={cn(
+            'flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-sm font-medium transition-colors cursor-pointer',
+            tab === 'all'
+              ? 'bg-primary/10 text-primary'
+              : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
+          )}
+        >
+          <List size={15} />
+          Todas as listas
+          <span className="ml-auto text-xs text-muted-foreground/60">{lists.length}</span>
+        </button>
+        <div className="my-2 border-t border-border/30" />
+        <div className="space-y-0.5">
+          {folders.map((folder) => {
+            const count = lists.filter((list) => getListFolderId(list.kind) === folder.id).length
+            return (
+              <button
+                key={folder.id}
+                onClick={() => setTab(`folder-${folder.id}`)}
+                className={cn(
+                  'flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-sm font-medium transition-colors cursor-pointer',
+                  tab === `folder-${folder.id}`
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
+                )}
+              >
+                <span className="size-2.5 shrink-0 rounded-md" style={{ backgroundColor: folder.color }} />
+                <span className="truncate">{folder.name}</span>
+                <span className="ml-auto text-xs text-muted-foreground/60">{count}</span>
+              </button>
+            )
+          })}
+        </div>
+      </aside>
+      <div className="flex-1 overflow-auto p-6 lg:p-8">
+        <div className="mx-auto max-w-[1200px]">
       <div className={cn('flex flex-wrap items-end justify-between gap-4 mb-8', enter)}>
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
             <span
               className="flex size-11 items-center justify-center rounded-2xl"
-              style={{ backgroundColor: '#6a634d18' }}
+              style={{ backgroundColor: 'rgba(106, 99, 77, 0.094)' }}
             >
               <List size={22} style={{ color: '#6a634d' }} />
             </span>
@@ -325,12 +390,32 @@ export function ListsPage() {
         </div>
       </div>
 
-      {lists.length > 0 ? (
+      <div className="mb-4 lg:hidden">
+        <Tabs value={tab} onValueChange={setTab}>
+          <TabList className="overflow-auto scrollbar-thin">
+            <Tab value="all">
+              Todas
+              <span className="ml-1 rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-primary">
+                {lists.length}
+              </span>
+            </Tab>
+            {folders.map((folder) => (
+              <Tab key={folder.id} value={`folder-${folder.id}`}>
+                <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: folder.color }} />
+                {folder.name}
+              </Tab>
+            ))}
+          </TabList>
+        </Tabs>
+      </div>
+
+      {filteredLists.length > 0 ? (
         <div className="space-y-4">
-          {lists.map((list) => (
+          {filteredLists.map((list) => (
             <ListCard
               key={list.id}
               list={list}
+              folderName={folderMap.get(getListFolderId(list.kind))}
               onEdit={(id) => { setEditListId(id); setAddListOpen(true) }}
               onDelete={handleDeleteList}
               onDuplicate={duplicateList}
@@ -345,13 +430,18 @@ export function ListsPage() {
       ) : (
         <div className="text-center py-16">
           <ShoppingCart size={40} className="mx-auto text-muted-foreground/30 mb-4" />
-          <p className="text-muted-foreground">Nenhuma lista ainda.</p>
+          <p className="text-muted-foreground">
+            {lists.length > 0 ? 'Nenhuma lista nesta pasta.' : 'Nenhuma lista ainda.'}
+          </p>
           <Button variant="outline" className="mt-4 rounded-xl" onClick={() => setAddListOpen(true)}>
             <Plus size={14} className="mr-1.5" />
-            Criar primeira lista
+            Criar lista
           </Button>
         </div>
       )}
+
+        </div>
+      </div>
 
       <AddListDialog
         open={addListOpen}

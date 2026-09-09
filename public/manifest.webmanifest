@@ -1,0 +1,19 @@
+{
+  "name": "Tria Papelaria",
+  "short_name": "Tria",
+  "description": "Seu planner digital para organizar a vida com fluidez.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f3eeed",
+  "theme_color": "#f3eeed",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "/triaprojeto.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

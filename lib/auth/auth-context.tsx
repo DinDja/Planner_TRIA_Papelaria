@@ -35,7 +35,7 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 // nesta sessão do navegador. sessionStorage zera ao fechar a aba, então
 // um novo login real dispara novamente. Isto evita repetir seedUserDoc
 // + writeUserManifest em todo refresh/redirect do onAuthStateChanged.
-const SEED_FLAG_PREFIX = 'plannerhub:seeded:'
+const SEED_FLAG_PREFIX = 'tria-papelaria:seeded:'
 
 function seededThisSession(uid: string): boolean {
   try {
@@ -50,11 +50,11 @@ function markSeeded(uid: string) {
   } catch {}
 }
 
-function clearPlannerLocalCache() {
+function clearLocalCache() {
   try {
     for (let index = localStorage.length - 1; index >= 0; index -= 1) {
       const key = localStorage.key(index)
-      if (key?.startsWith('plannerhub-') && key !== 'plannerhub-theme') {
+      if (key?.startsWith('tria-papelaria-') && key !== 'tria-papelaria-theme') {
         localStorage.removeItem(key)
       }
     }
@@ -197,7 +197,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await signOut(auth)
     } finally {
-      clearPlannerLocalCache()
+      clearLocalCache()
     }
   }
 

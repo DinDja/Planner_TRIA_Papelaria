@@ -163,6 +163,6 @@ export const useChecklistsStore = create<ChecklistsState>()(
         return { checked: cl.items.filter((i) => i.checked).length, total: cl.items.length }
       },
     }),
-    { name: 'plannerhub-checklists' },
+    { name: 'tria-papelaria-checklists' },
   ),
 )

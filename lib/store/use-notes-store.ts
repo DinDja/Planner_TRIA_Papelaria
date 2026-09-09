@@ -188,6 +188,6 @@ export const useNotesStore = create<NotesState>()(
         return [...tags].sort()
       },
     }),
-    { name: 'plannerhub-notes' },
+    { name: 'tria-papelaria-notes' },
   ),
 )

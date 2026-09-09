@@ -27,6 +27,7 @@ import { Badge, Input } from '../ui/primitives'
 import { Tab, TabList, TabPanel, Tabs } from '../ui/overlays'
 import { AddWeightDialog, AddSymptomDialog, AddMedicationDialog, AddCycleDialog, AddDoctorDialog, AddAppointmentDialog, AddExamDialog, AddMeasurementDialog } from './health-dialogs'
 import { HealthOnboarding } from './health-onboarding'
+import { ReminderButton } from '../notifications/reminder-button'
 
 const enter = 'animate-in fade-in slide-in-from-bottom-3 duration-500 fill-mode-both'
 
@@ -480,6 +481,7 @@ function SymptomsTab() {
 
 function MedicationsTab() {
   const medications = useHealthStore((s) => s.medications)
+  const updateMedication = useHealthStore((s) => s.updateMedication)
   const deleteMedication = useHealthStore((s) => s.deleteMedication)
   const [addOpen, setAddOpen] = useState(false)
   const [editId, setEditId] = useState<string | undefined>()
@@ -520,6 +522,11 @@ function MedicationsTab() {
               {m.notes && <p className="text-xs text-muted-foreground/70 mt-1">{m.notes}</p>}
             </div>
             <div className="flex items-center gap-0.5 shrink-0">
+              <ReminderButton
+                enabled={m.reminderEnabled === true}
+                onEnabledChange={(enabled) => updateMedication(m.id, { reminderEnabled: enabled })}
+                compact
+              />
               <button onClick={() => { setEditId(m.id); setAddOpen(true) }} className="rounded-md p-1 text-muted-foreground/50 opacity-0 group-hover:opacity-100 hover:text-primary cursor-pointer" aria-label="Editar medicamento">
                 <Pencil size={12} />
               </button>
@@ -676,6 +683,11 @@ function AppointmentsTab() {
               {a.notes && <p className="text-xs text-muted-foreground/70 mt-1">{a.notes}</p>}
             </div>
             <div className="flex items-center gap-0.5 shrink-0">
+              <ReminderButton
+                enabled={a.reminderEnabled === true}
+                onEnabledChange={(enabled) => updateAppointment(a.id, { reminderEnabled: enabled })}
+                compact
+              />
               {a.status === 'scheduled' && (
                 <button onClick={() => updateAppointment(a.id, { status: 'done' })} className="rounded-lg p-1 text-muted-foreground/30 hover:text-success transition-colors cursor-pointer" title="Marcar como realizada">
                   <ClipboardCheck size={14} />
@@ -737,6 +749,11 @@ function ExamsTab() {
               {e.notes && <p className="text-xs text-muted-foreground/60 mt-1">{e.notes}</p>}
             </div>
             <div className="flex items-center gap-0.5 shrink-0">
+              <ReminderButton
+                enabled={e.reminderEnabled === true}
+                onEnabledChange={(enabled) => updateExam(e.id, { reminderEnabled: enabled })}
+                compact
+              />
               {e.status !== 'reviewed' && (
                 <button onClick={() => updateExam(e.id, { status: e.status === 'pending' ? 'done' : 'reviewed' })} className="rounded-md p-1 text-muted-foreground/30 hover:text-primary transition-colors cursor-pointer" aria-label="Atualizar status do exame">
                   <ClipboardCheck size={13} />
@@ -969,7 +986,7 @@ export function HealthPage() {
       <div className={cn('flex flex-wrap items-end justify-between gap-4 mb-8', enter)}>
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
-            <span className="flex size-11 items-center justify-center rounded-2xl" style={{ backgroundColor: '#6a634d18' }}>
+            <span className="flex size-11 items-center justify-center rounded-2xl" style={{ backgroundColor: 'rgba(106, 99, 77, 0.094)' }}>
               <HeartPulse size={22} style={{ color: '#6a634d' }} />
             </span>
             Saúde

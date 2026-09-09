@@ -1,7 +1,7 @@
 rules_version = '2';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// PlannerHub — Firestore Security Rules
+// Tria Papelaria — Firestore Security Rules
 //
 // Modelo de dados: multi-tenant estrito por usuário. Toda collection vive em
 // /users/{uid}/... e só o dono do uid pode ler/escrever. Não há collections
@@ -87,7 +87,7 @@ service cloud.firestore {
       //   avatar      : string        // emoji avatar
       //   email       : string
       //   role        : string        // 'admin' | 'subscriber'  (definido no seed)
-      //   subscription: map           // { role, plan, status, since, lastPayment }
+      //   subscription: map           // cobrança gerenciada somente pelo servidor
       //   blocked     : bool          // se true, login barrado no cliente
       //   settings    : map            // SystemSettings
       //   theme         : string       // 'light' | 'dark'
@@ -107,12 +107,12 @@ service cloud.firestore {
         && (!('folders' in request.resource.data) || request.resource.data.folders is list)
         && (!('plannerTags' in request.resource.data) || request.resource.data.plannerTags is list)
         && (!('noteFolders' in request.resource.data) || request.resource.data.noteFolders is list);
-      // Update: própria usuária pode atualizar tudo EXCETO `role` e `blocked`
-      // (esses campos só a admina mexe). Admina pode atualizar qualquer campo
-      // no doc de outra usuária.
+      // Update: assinatura, role e bloqueio são campos privilegiados. Checkout,
+      // teste e cancelamento usam Admin SDK no servidor e não passam por rules.
       allow update: if (owns(uid) && !(
           ('role' in request.resource.data.diff(resource.data).affectedKeys())
           || ('blocked' in request.resource.data.diff(resource.data).affectedKeys())
+          || ('subscription' in request.resource.data.diff(resource.data).affectedKeys())
         )) || isAdmin();
       allow delete: if owns(uid);
 
@@ -177,6 +177,8 @@ service cloud.firestore {
       // ─── Listas (useListsStore) ─ items embutidos ───────────────────────
       // /users/{uid}/shoppingLists/{listId}
       //   id, name, color, kind?: 'supermercado'|'farmacia'|'mala'|'custom',
+      //   folderId?: 'list-folder-supermercado'|'list-folder-farmacia'|
+      //   'list-folder-mala'|'list-folder-custom',
       //   items: list<map { id, name, quantity?, category?, checked, dosage?,
       //   packed?, notes?, createdAt }>, createdAt, updatedAt
       match /shoppingLists/{listId} {

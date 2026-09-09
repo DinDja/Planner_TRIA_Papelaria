@@ -165,7 +165,7 @@ export function AddTransactionDialog({
           </div>
           <div>
             <label className="text-sm font-medium mb-1.5 block">Título</label>
-            <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={type === 'income' ? 'Ex: Salário, Comissão...' : 'Ex: Salário, Supermercado...'} autoFocus
+            <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={type === 'income' ? 'Ex: Salário, Comissão...' : 'Ex: Energia, Supermercado...'} autoFocus
               onKeyDown={(e) => e.key === 'Enter' && handleSave()} />
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -192,21 +192,22 @@ export function AddTransactionDialog({
             </select>
           </div>
 
+          <div>
+            <label className="text-sm font-medium mb-1.5 block">Recorrência</label>
+            <select
+              className={selectClass}
+              value={recurrence ?? ''}
+              onChange={(e) => setRecurrence(e.target.value ? (e.target.value as Transaction['recurrence']) : undefined)}
+            >
+              <option value="">Não se repete</option>
+              {TRANSACTION_RECURRENCE.map((r) => (
+                <option key={r} value={r}>{RECURRENCE_LABELS[r]}</option>
+              ))}
+            </select>
+          </div>
+
           {type === 'income' && (
             <>
-              <div>
-                <label className="text-sm font-medium mb-1.5 block">Recorrência</label>
-                <select
-                  className={selectClass}
-                  value={recurrence ?? ''}
-                  onChange={(e) => setRecurrence(e.target.value ? (e.target.value as Transaction['recurrence']) : undefined)}
-                >
-                  <option value="">Não se repete</option>
-                  {TRANSACTION_RECURRENCE.map((r) => (
-                    <option key={r} value={r}>{RECURRENCE_LABELS[r]}</option>
-                  ))}
-                </select>
-              </div>
               <div>
                 <label className="text-sm font-medium mb-1.5 block">Forma de Recebimento</label>
                 <select
@@ -920,7 +921,7 @@ export function GoalDialog({ open, onClose, editId }: { open: boolean; onClose: 
       <DialogContent title={editId ? 'Editar meta' : 'Nova meta financeira'}>
         <div className="flex flex-col gap-4">
           <div>
-            <label className="text-sm font-medium mb-1.5 block">Nome da meta</label>
+            <label className="text-sm font-medium mb-1.5 block">Nome</label>
             <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ex: Reserva de emergência..."
               onKeyDown={(e) => e.key === 'Enter' && handleSave()} autoFocus />
           </div>

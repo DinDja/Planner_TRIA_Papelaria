@@ -8,6 +8,7 @@ import { Button } from '../ui/button'
 import { Dialog, DialogContent } from '../ui/overlays'
 import { Input } from '../ui/primitives'
 import { toast } from '../ui/toaster'
+import { ReminderButton } from '../notifications/reminder-button'
 
 const EVENT_COLORS = [
   '#d1bdb8', '#b76f06', '#6a634d', '#ddd6c6',
@@ -38,6 +39,7 @@ export function CalendarEventDialog({
   const [allDay, setAllDay] = useState(false)
   const [color, setColor] = useState(EVENT_COLORS[4])
   const [notes, setNotes] = useState('')
+  const [reminderEnabled, setReminderEnabled] = useState(false)
 
   // Sincroniza os campos sempre que o modal abre ou muda entre criar/editar
   useEffect(() => {
@@ -50,6 +52,7 @@ export function CalendarEventDialog({
       setAllDay(existing.allDay ?? false)
       setColor(existing.color ?? EVENT_COLORS[4])
       setNotes(existing.notes ?? '')
+      setReminderEnabled(existing.reminderEnabled === true)
     } else {
       setTitle('')
       setDate(defaultDate ?? '')
@@ -58,6 +61,7 @@ export function CalendarEventDialog({
       setAllDay(false)
       setColor(EVENT_COLORS[4])
       setNotes('')
+      setReminderEnabled(false)
     }
   }, [open, editId, defaultDate]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -90,6 +94,7 @@ export function CalendarEventDialog({
         allDay,
         color,
         notes: notes.trim() || undefined,
+        reminderEnabled,
       })
       toast({ title: 'Evento atualizado!', variant: 'success' })
     } else {
@@ -101,6 +106,7 @@ export function CalendarEventDialog({
         allDay,
         color,
         notes: notes.trim() || undefined,
+        reminderEnabled,
       })
       toast({ title: 'Evento criado!', variant: 'success' })
     }
@@ -131,6 +137,12 @@ export function CalendarEventDialog({
               autoFocus
             />
           </div>
+
+          <ReminderButton
+            enabled={reminderEnabled}
+            onEnabledChange={setReminderEnabled}
+            description="Avisar quando este evento começar"
+          />
 
           <div>
             <label className="text-sm font-medium mb-1.5 block">Data</label>

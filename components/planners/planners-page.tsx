@@ -39,7 +39,7 @@ export function PlannersPage() {
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
             <span
               className="flex size-11 items-center justify-center rounded-2xl"
-              style={{ backgroundColor: '#6a634d18' }}
+              style={{ backgroundColor: 'rgba(106, 99, 77, 0.094)' }}
             >
               <span className="size-3 rounded-md" style={{ backgroundColor: '#6a634d' }} />
             </span>

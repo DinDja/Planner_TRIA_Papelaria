@@ -57,7 +57,6 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
     { id: 'habitos',       label: 'Hábitos',               iconId: 'habitos',       href: '/habitos',       section: 'Navegação' },
     { id: 'plans',         label: 'Planos',                iconId: 'plans',         href: '/plans',         section: 'Navegação' },
     { id: 'menu',          label: 'Personalizar Menu',     iconId: 'admin',         href: '/menu',          section: 'Sistema' },
-    { id: 'conta',         label: 'Conta e Admin',         iconId: 'perfil',        href: '/conta',         section: 'Sistema' },
     { id: 'lixeira',       label: 'Lixeira',               iconId: 'memorias',      href: '/lixeira',       section: 'Sistema' },
   ]
 

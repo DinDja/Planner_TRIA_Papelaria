@@ -31,7 +31,6 @@ import {
   Shield,
   Sun,
   Trash2,
-  User,
   Wallet,
   X,
 } from 'lucide-react'
@@ -75,7 +74,6 @@ const MODULE_ICONS: Record<string, SidebarIcon> = {
   rotina: CalendarClock,
   plans: BriefcaseBusiness,
   admin: Shield,
-  perfil: User,
 }
 
 function ModuleIcon({ id, size }: { id: string; size: number }) {

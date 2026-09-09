@@ -186,7 +186,7 @@ export function EscreverDialog({
       const dados: EntradaCriar = {
         periodo,
         data,
-        dataFim: periodo === 'dia' ? undefined : dataFim,
+        dataFim,
         titulo: titulo || undefined,
         emocoes,
         energia,

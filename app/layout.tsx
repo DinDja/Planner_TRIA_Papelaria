@@ -23,13 +23,14 @@ const plex = IBM_Plex_Sans({
 })
 
 export const metadata: Metadata = {
-  title: 'PlannerHub — Seu planner digital',
+  title: 'Tria Papelaria — Seu planner digital',
   description:
     'Planner digital premium com escrita à mão, stickers e templates. Organize sua vida com fluidez e beleza.',
   icons: {
     icon: '/triaprojeto.png',
     apple: '/triaprojeto.png',
   },
+  manifest: '/manifest.webmanifest',
 }
 
 export const viewport: Viewport = {

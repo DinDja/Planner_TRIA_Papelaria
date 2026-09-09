@@ -4,6 +4,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { Role } from '@/lib/auth/roles'
 import type { PlanId, SubscriptionStatus } from './plan'
+import { isFutureIso } from './period'
 
 /**
  * Estado da assinatura da usuária atual.
@@ -18,7 +19,7 @@ import type { PlanId, SubscriptionStatus } from './plan'
 export interface Subscription {
   /** Role no sistema. */
   role: Role
-  /** Plano atual (mensal/anual). `null` se ainda não assinou. */
+  /** Plano atual (mensal/anual/teste). `null` se ainda não assinou. */
   plan: PlanId | null
   /** Status da cobrança. */
   status: SubscriptionStatus
@@ -26,12 +27,16 @@ export interface Subscription {
   since: string | null
   /** ISO date do último pagamento confirmado. */
   lastPayment: string | null
+  /** ISO date até quando o período contratado permanece disponível. */
+  paidUntil: string | null
+  /** Primeiro início do teste. Mantido para impedir um segundo uso. */
+  trialStartedAt: string | null
+  /** ISO date em que a usuária pediu o cancelamento. */
+  cancelledAt: string | null
 }
 
 interface SubscriptionState extends Subscription {
   setSubscription: (s: Partial<Subscription>) => void
-  subscribe: (plan: PlanId) => void
-  cancel: () => void
   reset: () => void
 }
 
@@ -41,6 +46,9 @@ const EMPTY: Subscription = {
   status: 'none',
   since: null,
   lastPayment: null,
+  paidUntil: null,
+  trialStartedAt: null,
+  cancelledAt: null,
 }
 
 export const useSubscriptionStore = create<SubscriptionState>()(
@@ -50,23 +58,9 @@ export const useSubscriptionStore = create<SubscriptionState>()(
 
       setSubscription: (patch) => set((s) => ({ ...s, ...patch })),
 
-      subscribe: (plan) =>
-        set((s) => ({
-          plan,
-          status: 'active',
-          since: s.since ?? new Date().toISOString(),
-          lastPayment: new Date().toISOString(),
-        })),
-
-      cancel: () =>
-        set((s) => ({
-          status: 'cancelled',
-          // mantém `plan` e `since` para referência histórica
-        })),
-
       reset: () => set(EMPTY),
     }),
-    { name: 'plannerhub-subscription' },
+    { name: 'tria-papelaria-subscription' },
   ),
 )
 
@@ -77,7 +71,11 @@ export const useSubscriptionStore = create<SubscriptionState>()(
  */
 export function hasAccess(sub: Subscription): boolean {
   if (sub.role === 'admin') return true
-  return sub.status === 'active' && sub.plan !== null
+  if (!sub.plan || (sub.status !== 'active' && sub.status !== 'cancelled')) return false
+
+  // Assinaturas antigas/manualizadas podem não ter validade salva.
+  if (sub.plan !== 'trial' && sub.status === 'active' && !sub.paidUntil) return true
+  return isFutureIso(sub.paidUntil)
 }
 
 /**
@@ -92,7 +90,9 @@ export function isAdmin(sub: Subscription): boolean {
  */
 export function statusLabel(sub: Subscription): string {
   if (sub.role === 'admin') return 'Dona'
+  if (sub.status === 'active' && sub.plan === 'trial') return 'Teste grátis'
   if (sub.status === 'active') return 'Ativa'
+  if (sub.status === 'cancelled' && isFutureIso(sub.paidUntil)) return 'Cancelada · acesso vigente'
   if (sub.status === 'past_due') return 'Pagamento vencido'
   if (sub.status === 'cancelled') return 'Cancelada'
   return 'Sem assinatura'

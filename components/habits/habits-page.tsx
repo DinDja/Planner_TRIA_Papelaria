@@ -19,6 +19,7 @@ import { Card } from '../ui/card'
 import { Badge } from '../ui/primitives'
 import { toast } from '../ui/toaster'
 import { AddHabitDialog } from './habit-dialogs'
+import { ReminderButton } from '../notifications/reminder-button'
 
 const enter = 'animate-in fade-in slide-in-from-bottom-3 duration-500 fill-mode-both'
 
@@ -79,7 +80,7 @@ function HabitCard({
   habit,
   onEdit,
 }: {
-  habit: { id: string; name: string; color: string; frequency: string; archived: boolean }
+  habit: { id: string; name: string; color: string; frequency: string; archived: boolean; reminderEnabled?: boolean }
   onEdit: (id: string) => void
 }) {
   const toggleLog = useHabitsStore((s) => s.toggleLog)
@@ -87,6 +88,7 @@ function HabitCard({
   const getStreak = useHabitsStore((s) => s.getStreak)
   const archiveHabit = useHabitsStore((s) => s.archiveHabit)
   const deleteHabit = useHabitsStore((s) => s.deleteHabit)
+  const updateHabit = useHabitsStore((s) => s.updateHabit)
   const getCompletionCount = useHabitsStore((s) => s.getCompletionCount)
 
   const today = todayStr()
@@ -163,7 +165,12 @@ function HabitCard({
         </div>
 
         {/* Actions */}
-        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+          <ReminderButton
+            enabled={habit.reminderEnabled === true}
+            onEnabledChange={(enabled) => updateHabit(habit.id, { reminderEnabled: enabled })}
+            compact
+          />
           <button
             onClick={() => onEdit(habit.id)}
             className="rounded-lg p-1.5 text-muted-foreground/50 hover:text-primary hover:bg-primary/10 transition-all cursor-pointer"
@@ -240,7 +247,7 @@ export function HabitsPage() {
       <div className={cn('flex flex-wrap items-end justify-between gap-4 mb-8', enter)}>
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
-            <span className="flex size-11 items-center justify-center rounded-2xl" style={{ backgroundColor: '#6a634d18' }}>
+            <span className="flex size-11 items-center justify-center rounded-2xl" style={{ backgroundColor: 'rgba(106, 99, 77, 0.094)' }}>
               <Target size={22} style={{ color: '#6a634d' }} />
             </span>
             Hábitos

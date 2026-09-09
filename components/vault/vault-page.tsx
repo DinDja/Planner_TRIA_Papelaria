@@ -120,8 +120,9 @@ function PasswordCard({
   return (
     <Card
       glass
-      className="group overflow-hidden"
+      className="overflow-hidden"
       style={{
+        borderColor: '#6a634d',
         borderTopColor: entry.color,
         borderTopWidth: 3,
       }}
@@ -147,7 +148,7 @@ function PasswordCard({
             )}
           </div>
         </div>
-        <div className="flex gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex gap-1 shrink-0">
           <button
             onClick={() => onEdit(entry.id)}
             className="rounded-lg p-1.5 text-muted-foreground/50 hover:bg-primary/10 hover:text-primary transition-all cursor-pointer"
@@ -173,7 +174,8 @@ function PasswordCard({
             </div>
             <button
               onClick={() => copyToClipboard(entry.username!, 'Usuário')}
-              className="shrink-0 rounded-lg p-1.5 text-muted-foreground/30 opacity-0 group-hover/copy:opacity-100 hover:text-primary transition-all cursor-pointer"
+              className="shrink-0 rounded-lg p-1.5 text-muted-foreground/30 hover:text-primary transition-colors cursor-pointer"
+              aria-label="Copiar usuário"
             >
               <Copy size={13} />
             </button>
@@ -191,12 +193,14 @@ function PasswordCard({
             <button
               onClick={() => toggleVisibility(entry.id)}
               className="rounded-lg p-1.5 text-muted-foreground/30 hover:text-foreground transition-colors cursor-pointer"
+              aria-label={visible ? 'Ocultar senha' : 'Mostrar senha'}
             >
               {visible ? <EyeOff size={13} /> : <Eye size={13} />}
             </button>
             <button
               onClick={() => copyToClipboard(entry.password, 'Senha')}
               className="rounded-lg p-1.5 text-muted-foreground/30 hover:text-primary transition-colors cursor-pointer"
+              aria-label="Copiar senha"
             >
               <Copy size={13} />
             </button>
@@ -393,9 +397,9 @@ export function VaultPage() {
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
             <span
               className="flex size-11 items-center justify-center rounded-2xl"
-              style={{ backgroundColor: '#d1bdb818' }}
+              style={{ backgroundColor: 'rgba(106, 99, 77, 0.094)' }}
             >
-              <KeyRound size={22} style={{ color: '#d1bdb8' }} />
+              <KeyRound size={22} style={{ color: '#6a634d' }} />
             </span>
             Senhas
           </h1>

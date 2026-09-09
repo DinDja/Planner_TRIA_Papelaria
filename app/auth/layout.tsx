@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import { ThemeToggle } from '@/components/auth/theme-toggle'
 
 export const metadata: Metadata = {
-  title: 'PlannerHub — Entrar',
-  description: 'Acesse sua conta PlannerHub ou crie uma nova conta.',
+  title: 'Tria Papelaria — Entrar',
+  description: 'Acesse sua conta Tria Papelaria ou crie uma nova conta.',
 }
 
 export default function AuthLayout({

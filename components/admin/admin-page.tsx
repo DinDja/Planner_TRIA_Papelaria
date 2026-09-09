@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/lib/auth/auth-context'
-import { PLANS } from '@/lib/subscriptions/plan'
+import { PLANS, monthlyEquivalent } from '@/lib/subscriptions/plan'
 import {
   subscribeUserManifests,
   subscribeAuditLogs,
@@ -93,7 +93,6 @@ export function AdminPage() {
 
   // Métricas honestas (sem mock)
   const activeCount = users.filter((u) => u.status === 'active').length
-  const paidCount = users.filter((u) => u.plan !== null && u.status === 'active').length
   const cancelledCount = users.filter((u) => u.status === 'cancelled').length
   const pastDueCount = users.filter((u) => u.status === 'past_due').length
   const admins = users.filter((u) => u.role === 'admin')
@@ -104,9 +103,9 @@ export function AdminPage() {
     return users
       .filter((u) => u.plan && u.status === 'active')
       .reduce((acc, u) => {
-        const plan = PLANS[u.plan]
-        if (!plan) return acc
-        return acc + (u.plan === 'annual' ? Math.round(plan.price / 12) : plan.price)
+        const planId = u.plan
+        if (!planId) return acc
+        return acc + monthlyEquivalent(PLANS[planId].price, planId)
       }, 0)
   }, [users])
 
@@ -176,7 +175,7 @@ export function AdminPage() {
             >
               {users.length === 0
                 ? 'Nenhuma usuária no sistema ainda.'
-                : `Há ${users.length} ${users.length === 1 ? 'pessoa inscrita' : 'pessoas inscritas'} no PlannerHub.`}
+                : `Há ${users.length} ${users.length === 1 ? 'pessoa inscrita' : 'pessoas inscritas'} na Tria Papelaria.`}
             </p>
             {cancelledCount > 0 && (
               <p className="mt-2 text-sm text-muted-foreground">

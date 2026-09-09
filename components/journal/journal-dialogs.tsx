@@ -3,7 +3,7 @@
 import { useJournalStore } from '@/lib/store/use-journal-store'
 import { EMOTION_CONFIG, ENTRY_COLORS, TIME_OF_DAY_CONFIG, type JournalEmotion, type JournalEntry, type MoodSnapshot, type JournalTimeOfDay } from '@/lib/types'
 import { cn } from '@/lib/utils'
-import { ChevronLeft, ChevronRight, Feather, Hand, Moon, Pencil, Sparkles, Sun, Trash2, X, Zap } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Feather, Hand, Moon, Pencil, Pin, Sparkles, Sun, Trash2, X, Zap } from 'lucide-react'
 import { useState } from 'react'
 import { HandwritingCanvas, DrawingPreview } from './handwriting-canvas'
 import { Button } from '../ui/button'
@@ -217,7 +217,7 @@ export function AddEntryDialog({
       note: moodNote.trim() || undefined,
     }
 
-    addEntry({ title: title.trim(), content: content.trim(), date, timeOfDay, mood, prompt: prompt.trim() || undefined, tags, color, drawing: drawing.length > 0 ? drawing : undefined })
+    addEntry({ title: title.trim(), content: content.trim(), date, timeOfDay, mood, prompt: prompt.trim() || undefined, tags, color, drawing: drawing?.length ? drawing : undefined })
     toast({ title: 'Entrada salva com carinho!', variant: 'success' })
     handleClose()
   }

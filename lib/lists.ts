@@ -1,4 +1,11 @@
-import type { ShoppingListKind } from './types'
+import type { ShoppingList, ShoppingListKind } from './types'
+
+export interface ShoppingListFolder {
+  id: string
+  name: string
+  color: string
+  kind: ShoppingListKind
+}
 
 export interface PresetItem {
   name: string
@@ -184,6 +191,38 @@ export const LIST_KINDS: ListKindMeta[] = [
     combos: [],
   },
 ]
+
+export function getListFolderId(kind?: ShoppingListKind | string): string {
+  return `list-folder-${getListKindMeta(kind).kind}`
+}
+
+export function getListFolder(kind?: ShoppingListKind | string): ShoppingListFolder {
+  const meta = getListKindMeta(kind)
+  return {
+    id: getListFolderId(meta.kind),
+    name: meta.label,
+    color: meta.defaultColor ?? '#6a634d',
+    kind: meta.kind,
+  }
+}
+
+/** Retorna somente as pastas dos tipos que já possuem alguma lista. */
+export function getListFoldersForLists(lists: ShoppingList[]): ShoppingListFolder[] {
+  const kinds = new Set(lists.map((list) => getListKindMeta(list.kind).kind))
+  return LIST_KINDS
+    .filter((meta) => kinds.has(meta.kind))
+    .map((meta) => getListFolder(meta.kind))
+}
+
+/** Normaliza listas antigas e garante a relação tipo → pasta. */
+export function normalizeShoppingList(list: ShoppingList): ShoppingList {
+  const kind = getListKindMeta(list.kind).kind
+  return {
+    ...list,
+    kind,
+    folderId: getListFolderId(kind),
+  }
+}
 
 export function getListKindMeta(kind?: string): ListKindMeta {
   const meta = LIST_KINDS.find((k) => k.kind === kind) ?? LIST_KINDS[3]

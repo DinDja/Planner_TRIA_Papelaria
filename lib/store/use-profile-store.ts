@@ -55,6 +55,6 @@ export const useProfileStore = create<ProfileState>()(
       setAccent: (accent) => set({ accent }),
       setEstacao: (estacao) => set({ estacao }),
     }),
-    { name: 'plannerhub-profile' },
+    { name: 'tria-papelaria-profile' },
   ),
 )

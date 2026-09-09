@@ -10,7 +10,7 @@ export interface ModuleDef {
   enabled: boolean
 }
 
-const REMOVED_MODULE_IDS = new Set(['retrospectiva', 'templates', 'rotina'])
+const REMOVED_MODULE_IDS = new Set(['retrospectiva', 'templates', 'rotina', 'perfil'])
 
 // O Dashboard vive em /dashboard. O / raiz Ã© reservado para a landing pÃºblica.
 const MODULE_HREFS: Partial<Record<ModuloId, string>> = {
@@ -30,19 +30,18 @@ const MODULE_HREFS: Partial<Record<ModuloId, string>> = {
   habitos: '/habitos',
   plans: '/plans',
   admin: '/admin',
-  perfil: '/perfil',
 }
 
 const DEFAULT_MODULE_ORDER: readonly ModuloId[] = [
   'dashboard', 'calendario', 'financas', 'saude', 'notas', 'aniversarios',
   'habitos', 'listas', 'checklists', 'wishlist', 'cofre', 'diario',
-  'memorias', 'frases', 'plans', 'perfil', 'admin',
+  'memorias', 'frases', 'plans', 'admin',
 ]
 
 const LEGACY_DEFAULT_MODULE_ORDER: readonly ModuloId[] = [
   'dashboard', 'diario', 'notas', 'listas', 'checklists', 'wishlist',
   'frases', 'memorias', 'cofre', 'saude', 'calendario', 'financas',
-  'aniversarios', 'habitos', 'plans', 'admin', 'perfil',
+  'aniversarios', 'habitos', 'plans', 'admin',
 ]
 
 function orderModules(modules: ModuleDef[]): ModuleDef[] {
@@ -89,7 +88,6 @@ export const DEFAULT_MODULES: ModuleDef[] = orderModules([
   { id: 'habitos',         href: '/habitos',        label: 'Hábitos',        enabled: true },
   { id: 'plans',           href: '/plans',          label: 'Planos',         enabled: true },
   { id: 'admin',           href: '/admin',          label: 'Admin',          enabled: true },
-  { id: 'perfil',          href: '/perfil',         label: 'Perfil',         enabled: true },
 ])
 
 interface MenuState {
@@ -123,8 +121,8 @@ export const useMenuStore = create<MenuState>()(
       getEnabledModules: () => get().modules.filter((m) => m.enabled),
     }),
     {
-      name: 'plannerhub-menu',
-      version: 7,
+      name: 'tria-papelaria-menu',
+      version: 8,
       // Antes da v2, cada item levava `icon: 'BookHeart'` etc (nome Lucide).
       // O ícone virou derivado de `id` (ver components/icons/modules). Aqui
       // descartamos o campo legado ao reidratar do localStorage.
@@ -134,6 +132,7 @@ export const useMenuStore = create<MenuState>()(
       // para quem já tinha o menu persistido.
       // v4: Retrospectiva e Templates deixaram de ser módulos do menu.
       // v5: Rotina foi incorporada à Agenda e deixou de ser item separado.
+      // v8: Perfil deixou de ser módulo; nome e e-mail passaram para Configurações.
       //
       // `migrate` (não `merge`) é o lugar correto: roda só quando a `version`
       // muda, recebe o estado velho, e devolve apenas os campos persistidos.

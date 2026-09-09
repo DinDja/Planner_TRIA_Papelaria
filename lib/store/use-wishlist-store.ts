@@ -150,6 +150,6 @@ export const useWishlistStore = create<WishlistState>()(
         return [...cats].sort()
       },
     }),
-    { name: 'plannerhub-wishlist' },
+    { name: 'tria-papelaria-wishlist' },
   ),
 )

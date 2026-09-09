@@ -90,7 +90,7 @@ export const useSettingsStore = create<SettingsState>()(
       reset: () => set({ ...DEFAULT_SETTINGS }),
     }),
     {
-      name: 'plannerhub-settings',
+      name: 'tria-papelaria-settings',
     },
   ),
 )

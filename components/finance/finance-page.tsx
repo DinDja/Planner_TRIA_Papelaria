@@ -139,11 +139,10 @@ function AccountSwitcher({
   const isOverviewSelected = selectedAccountId === 'all'
 
   return (
-    <section className="mb-6 border-b border-border/60 pb-5" aria-labelledby="account-switcher-title">
+    <section className="mb-6 border-b border-border/60 pb-5" aria-label="Conta em foco">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Conta em foco</p>
-          <h2 id="account-switcher-title" className="mt-1 text-base font-semibold tracking-tight">Onde você está lançando?</h2>
           <p className="mt-1 text-xs text-muted-foreground">Escolha uma conta para filtrar o resumo e as movimentações.</p>
         </div>
         <button
@@ -304,8 +303,8 @@ export function FinancePage() {
       <div className={cn('flex flex-wrap items-end justify-between gap-4 mb-8', enter)}>
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
-            <span className="flex size-11 items-center justify-center rounded-2xl" style={{ backgroundColor: '#b76f0618' }}>
-              <Wallet size={22} style={{ color: '#b76f06' }} />
+            <span className="flex size-11 items-center justify-center rounded-2xl" style={{ backgroundColor: 'rgba(106, 99, 77, 0.094)' }}>
+              <Wallet size={22} style={{ color: '#6a634d' }} />
             </span>
             Finanças
           </h1>
@@ -313,27 +312,25 @@ export function FinancePage() {
             {visibleTransactions.length} transações · {cards.length} cartões · {goals.length} metas
           </p>
         </div>
-        <Button
-          className="rounded-xl gap-1.5 shadow-md"
-          onClick={() => {
-            if (tab === 'transacoes') setAddTxOpen(true)
-            else if (tab === 'contas') setAddBillOpen(true)
-            else if (tab === 'assinaturas') setAddSubOpen(true)
-            else if (tab === 'cartoes') setAddCardOpen(true)
-            else if (tab === 'metas') openNewGoal()
-            else if (tab === 'caixinhas') openNewBox()
-            else setAddTxOpen(true)
-          }}
-        >
-          <Plus size={15} />
-          {tab === 'resumo' && 'Nova transação'}
-          {tab === 'transacoes' && 'Nova transação'}
-          {tab === 'contas' && 'Nova conta fixa'}
-          {tab === 'assinaturas' && 'Nova assinatura'}
-          {tab === 'cartoes' && 'Novo cartão de crédito'}
-          {tab === 'metas' && 'Nova meta'}
-          {tab === 'caixinhas' && 'Nova caixinha'}
-        </Button>
+        {tab !== 'resumo' && tab !== 'cartoes' && (
+          <Button
+            className="rounded-xl gap-1.5 shadow-md"
+            onClick={() => {
+              if (tab === 'transacoes') setAddTxOpen(true)
+              else if (tab === 'contas') setAddBillOpen(true)
+              else if (tab === 'assinaturas') setAddSubOpen(true)
+              else if (tab === 'metas') openNewGoal()
+              else if (tab === 'caixinhas') openNewBox()
+            }}
+          >
+            <Plus size={15} />
+            {tab === 'transacoes' && 'Nova transação'}
+            {tab === 'contas' && 'Nova conta fixa'}
+            {tab === 'assinaturas' && 'Nova assinatura'}
+            {tab === 'metas' && 'Nova meta'}
+            {tab === 'caixinhas' && 'Nova caixinha'}
+          </Button>
+        )}
       </div>
 
       <AccountSwitcher
@@ -553,7 +550,13 @@ export function FinancePage() {
                 <CreditCard size={16} className="text-primary" />
                 Cartões de crédito
               </CardTitle>
-              <span className="text-[11px] text-muted-foreground tabular-nums">{cards.length}</span>
+              <div className="flex items-center gap-3">
+                <span className="text-[11px] text-muted-foreground tabular-nums">{cards.length}</span>
+                <Button variant="outline" size="sm" className="rounded-xl gap-1 text-xs" onClick={() => setAddCardOpen(true)}>
+                  <Plus size={13} />
+                  Novo cartão de crédito
+                </Button>
+              </div>
             </CardHeader>
             <div className="px-3 py-3 space-y-0.5">
               {cards.length > 0 ? cards.map((c) => {

@@ -101,6 +101,6 @@ export const useQuotesStore = create<QuotesState>()(
         return [...tags].sort()
       },
     }),
-    { name: 'plannerhub-quotes' },
+    { name: 'tria-papelaria-quotes' },
   ),
 )

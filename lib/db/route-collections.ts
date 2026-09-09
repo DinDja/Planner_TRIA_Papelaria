@@ -172,7 +172,16 @@ const PLAN: Array<{ match: RegExp; plan: RouteCollectionPlan }> = [
     match: /^\/plans$/,
     plan: {
       collections: [],
-      rootFields: ['subscription.role', 'subscription.plan', 'subscription.status', 'subscription.since', 'subscription.lastPayment'],
+      rootFields: [
+        'subscription.role',
+        'subscription.plan',
+        'subscription.status',
+        'subscription.since',
+        'subscription.lastPayment',
+        'subscription.paidUntil',
+        'subscription.trialStartedAt',
+        'subscription.cancelledAt',
+      ],
     },
   },
   {
@@ -180,13 +189,6 @@ const PLAN: Array<{ match: RegExp; plan: RouteCollectionPlan }> = [
     plan: {
       collections: [],
       rootFields: ['subscription.role', 'subscription.plan', 'subscription.status'],
-    },
-  },
-  {
-    match: /^\/perfil$/,
-    plan: {
-      collections: [],
-      rootFields: ['name', 'avatar', 'email', 'theme', 'modules', 'subscription.role', 'subscription.plan', 'subscription.status'],
     },
   },
   {

@@ -41,7 +41,7 @@ interface HabitsState {
   habits: Habit[]
   logs: HabitLog[]
 
-  addHabit: (data: { name: string; description?: string; color?: string; frequency: HabitFrequency; weekdays?: Weekday[]; dayOfMonth?: number }) => void
+  addHabit: (data: { name: string; description?: string; color?: string; frequency: HabitFrequency; weekdays?: Weekday[]; dayOfMonth?: number; reminderTime?: string }) => void
   updateHabit: (id: string, patch: Partial<Habit>) => void
   archiveHabit: (id: string) => void
   deleteHabit: (id: string) => void
@@ -163,7 +163,7 @@ export const useHabitsStore = create<HabitsState>()(
             .map((l) => l.date),
         ),
     }),
-    { name: 'plannerhub-habits' },
+    { name: 'tria-papelaria-habits' },
   ),
 )
 

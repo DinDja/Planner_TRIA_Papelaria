@@ -1,4 +1,4 @@
-# PlannerHub — Firestore Schema
+# Tria Papelaria — Firestore Schema
 
 > Plataforma-alvo: Firebase Firestore (modo nativo / Native mode).
 > Regras em [`firestore/firestore.rules`](./firestore.rules).
@@ -175,6 +175,8 @@ users/{uid}/notes/{noteId} {
 ```
 users/{uid}/shoppingLists/{listId} {
   id, name, color, kind?: 'supermercado'|'farmacia'|'mala'|'custom',
+  folderId?: 'list-folder-supermercado'|'list-folder-farmacia'|
+    'list-folder-mala'|'list-folder-custom',
   items: list<map {
     id, name, quantity?, category?, checked: bool, dosage?, packed?, notes?,
     createdAt
@@ -307,7 +309,7 @@ trashItems/{id} {
 ## Estratégia de migração (localStorage → Firestore)
 
 1. **Bootstrap**: criar `users/{uid}` documento no primeiro login (antes, todo
-   dado vivia em `localStorage/plannerhub-*`). Fazer `set()` no doc-raiz com
+   dado vivia em `localStorage/tria-papelaria-*`). Fazer `set()` no doc-raiz com
    `merge: true` preservando o que já existia em localStorage.
 2. **Migração por módulo**: subir cada store em paralelo, lendo do localStorage
    existente e fazendo `batch().set()` para as subcollections correspondentes.

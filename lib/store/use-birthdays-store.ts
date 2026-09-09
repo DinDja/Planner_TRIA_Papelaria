@@ -42,6 +42,6 @@ export const useBirthdaysStore = create<BirthdaysState>()(
           entries: s.entries.filter((e) => e.id !== id),
         })),
     }),
-    { name: 'plannerhub-birthdays' },
+    { name: 'tria-papelaria-birthdays' },
   ),
 )

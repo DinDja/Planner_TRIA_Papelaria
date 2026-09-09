@@ -125,6 +125,6 @@ export const useMemoriesStore = create<MemoriesState>()(
         return [...tags].sort()
       },
     }),
-    { name: 'plannerhub-memories' },
+    { name: 'tria-papelaria-memories' },
   ),
 )

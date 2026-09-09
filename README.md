@@ -62,7 +62,7 @@ Organize sua vida com fluidez e beleza — no navegador, sem backend.
 
 ```bash
 git clone <url-do-repo>
-cd PlannerHub
+cd Tria-Papelaria
 pnpm install
 ```
 
@@ -76,6 +76,20 @@ pnpm install
 | `pnpm lint`    | Roda o ESLint                              |
 
 Abra [http://localhost:3000](http://localhost:3000) para visualizar.
+
+### Pagamentos com InfinitePay
+
+1. Habilite o **Checkout Integrado** na sua conta InfinitePay.
+2. Copie `.env.example` para `.env.local` e informe `INFINITEPAY_HANDLE`,
+   `APP_URL` e as credenciais server-side do Firebase Admin.
+3. Em produção, cadastre uma `APP_URL` pública com HTTPS. O checkout usa:
+   - `POST /api/payments/infinitepay/checkout` para criar o link;
+   - `POST /api/payments/infinitepay/webhook` para confirmar a transação;
+   - `GET /api/payments/infinitepay/return` como retorno do comprador.
+
+O plano grátis é liberado por `POST /api/subscriptions/trial`, uma única vez
+por UID, sem criar checkout ou solicitar cartão. Mensal e anual são períodos
+pagos; a API atual do Checkout Integrado não cria débito recorrente automático.
 
 ---
 

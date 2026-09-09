@@ -79,14 +79,6 @@ describe('route-collections — rootFields por rota', () => {
     expect(p.rootFields).toContain('modules')
   })
 
-  it('/perfil pede rootFields de perfil + assinatura (sem coleções)', () => {
-    const p = plan('/perfil')
-    expect(p.collections).toEqual([])
-    expect(p.rootFields).toContain('name')
-    expect(p.rootFields).toContain('avatar')
-    expect(p.rootFields).toContain('subscription.role')
-  })
-
   it('/lixeira carrega trashItems', () => {
     expect(plan('/lixeira').collections).toEqual(['trashItems'])
   })

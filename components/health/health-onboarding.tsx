@@ -142,7 +142,7 @@ export function HealthOnboarding({
                   )}
                 >
                   <Mars size={28} />
-                  Masculino
+                  Masculino 
                 </button>
               </div>             
             </div>

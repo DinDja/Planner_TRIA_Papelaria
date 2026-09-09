@@ -81,15 +81,17 @@ Abra [http://localhost:3000](http://localhost:3000) para visualizar.
 
 1. Habilite o **Checkout Integrado** na sua conta InfinitePay.
 2. Copie `.env.example` para `.env.local` e informe `INFINITEPAY_HANDLE`,
-   `APP_URL` e as credenciais server-side do Firebase Admin.
+   `PAYMENT_SIGNING_SECRET` e `APP_URL`.
 3. Em produção, cadastre uma `APP_URL` pública com HTTPS. O checkout usa:
    - `POST /api/payments/infinitepay/checkout` para criar o link;
-   - `POST /api/payments/infinitepay/webhook` para confirmar a transação;
-   - `GET /api/payments/infinitepay/return` como retorno do comprador.
+   - `GET /api/payments/infinitepay/return` como retorno do comprador;
+   - `POST /api/payments/infinitepay/claim` para a usuária confirmar e gravar o plano.
 
-O plano grátis é liberado por `POST /api/subscriptions/trial`, uma única vez
-por UID, sem criar checkout ou solicitar cartão. Mensal e anual são períodos
-pagos; a API atual do Checkout Integrado não cria débito recorrente automático.
+Depois de a API confirmar a transação com a InfinitePay, o navegador da própria
+usuária atualiza o campo `subscription` em `users/{uid}`. O plano grátis também
+é gravado diretamente pela usuária, uma vez por UID e sem solicitar cartão.
+Mensal e anual são períodos pagos; o Checkout Integrado não cria débito
+recorrente automático.
 
 ---
 

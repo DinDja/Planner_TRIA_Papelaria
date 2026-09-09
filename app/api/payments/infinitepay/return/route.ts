@@ -3,9 +3,24 @@ import { confirmInfinitePayPayment, serializePaymentError } from '@/lib/payments
 
 export const runtime = 'nodejs'
 
-function redirectToPlans(request: Request, payment: string) {
+function redirectToPlans(
+  request: Request,
+  payment: string,
+  params?: {
+    orderNsu: string
+    transactionNsu: string
+    slug: string
+    receiptUrl?: string
+  },
+) {
   const destination = new URL('/plans', request.url)
   destination.searchParams.set('payment', payment)
+  if (params) {
+    destination.searchParams.set('order_nsu', params.orderNsu)
+    destination.searchParams.set('transaction_nsu', params.transactionNsu)
+    destination.searchParams.set('slug', params.slug)
+    if (params.receiptUrl) destination.searchParams.set('receipt_url', params.receiptUrl)
+  }
   return NextResponse.redirect(destination)
 }
 
@@ -19,19 +34,29 @@ export async function GET(request: Request) {
     return redirectToPlans(request, 'invalid')
   }
 
+  const confirmation = {
+    orderNsu,
+    transactionNsu,
+    slug,
+    receiptUrl: params.get('receipt_url') ?? undefined,
+  }
   try {
-    await confirmInfinitePayPayment({
-      orderNsu,
-      transactionNsu,
-      slug,
-      receiptUrl: params.get('receipt_url') ?? undefined,
+    const paymentResult = await confirmInfinitePayPayment(confirmation)
+    return redirectToPlans(request, 'success', {
+      ...confirmation,
+      receiptUrl: paymentResult.receiptUrl,
     })
-    return redirectToPlans(request, 'success')
   } catch (error) {
     const response = serializePaymentError(error)
+    const retryable = [
+      'payment_not_confirmed',
+      'verification_unavailable',
+      'verification_rejected',
+    ].includes(response.body.code)
     return redirectToPlans(
       request,
-      response.body.code === 'payment_not_confirmed' ? 'pending' : 'error',
+      retryable ? 'pending' : 'error',
+      retryable ? { ...confirmation, receiptUrl: undefined } : undefined,
     )
   }
 }

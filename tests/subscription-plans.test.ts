@@ -5,6 +5,7 @@ import {
   isConfirmedPayment,
   isTrustedInfinitePayCheckoutUrl,
 } from '@/lib/payments/infinitepay'
+import { createOrderToken, createPaymentId, verifyOrderToken } from '@/lib/payments/order-token'
 
 describe('catálogo de planos', () => {
   it('mantém a economia anual de R$ 60 em relação a doze mensalidades', () => {
@@ -44,5 +45,28 @@ describe('validação da InfinitePay', () => {
     expect(isTrustedInfinitePayCheckoutUrl('https://buy.infinitepay.io/pagar')).toBe(true)
     expect(isTrustedInfinitePayCheckoutUrl('https://infinitepay.io.evil.test/pagar')).toBe(false)
     expect(isTrustedInfinitePayCheckoutUrl('http://checkout.infinitepay.com.br/pagar')).toBe(false)
+  })
+
+  it('assina o pedido sem depender de uma gravação administrativa', () => {
+    const secret = 'segredo-de-teste-com-mais-de-trinta-e-dois-caracteres'
+    const now = new Date('2026-09-09T12:00:00.000Z')
+    const token = createOrderToken('firebase-uid-123', 'monthly', secret, now)
+
+    expect(verifyOrderToken(token, secret, now)).toEqual({
+      uid: 'firebase-uid-123',
+      plan: 'monthly',
+      createdAt: Math.floor(now.getTime() / 1000),
+    })
+    expect(verifyOrderToken(token.replace('.m.', '.a.'), secret, now)).toBeNull()
+  })
+
+  it('recusa pedidos expirados e gera uma chave de pagamento estável', () => {
+    const secret = 'outro-segredo-de-teste-com-trinta-e-dois-caracteres'
+    const createdAt = new Date('2026-09-01T12:00:00.000Z')
+    const token = createOrderToken('uid', 'annual', secret, createdAt)
+    expect(verifyOrderToken(token, secret, new Date('2026-09-09T12:00:01.000Z'))).toBeNull()
+    expect(createPaymentId(token, 'transaction', 'slug', secret)).toBe(
+      createPaymentId(token, 'transaction', 'slug', secret),
+    )
   })
 })

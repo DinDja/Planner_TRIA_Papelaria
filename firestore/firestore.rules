@@ -43,6 +43,46 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
+    function isBootstrapAdmin() {
+      return isSignedIn()
+        && request.auth.token.email == 'brunomomoshiki@gmail.com';
+    }
+
+    function validSubscriptionShape(subscription, role) {
+      return subscription is map
+        && subscription.role == role
+        && subscription.plan in [null, 'monthly', 'annual', 'trial']
+        && subscription.status in ['active', 'past_due', 'cancelled', 'none']
+        && (!('since' in subscription) || subscription.since == null || isTimestampString(subscription.since))
+        && (!('lastPayment' in subscription) || subscription.lastPayment == null || isTimestampString(subscription.lastPayment))
+        && (!('paidUntil' in subscription) || subscription.paidUntil == null || isTimestampString(subscription.paidUntil))
+        && (!('trialStartedAt' in subscription) || subscription.trialStartedAt == null || isTimestampString(subscription.trialStartedAt))
+        && (!('cancelledAt' in subscription) || subscription.cancelledAt == null || isTimestampString(subscription.cancelledAt));
+    }
+
+    function validInitialAccount(data) {
+      return validSubscriptionShape(data.subscription, data.role)
+        && data.email == request.auth.token.email
+        && (
+          (isBootstrapAdmin()
+            && data.role == 'admin'
+            && data.subscription.plan == null
+            && data.subscription.status == 'active')
+          || (!isBootstrapAdmin()
+            && data.role == 'subscriber'
+            && data.subscription.plan == null
+            && data.subscription.status == 'none')
+        );
+    }
+
+    function ownManifestMatchesAccount(uid, data) {
+      let account = getAfter(/databases/$(database)/documents/users/$(uid)).data;
+      return data.uid == uid
+        && data.role == account.role
+        && data.plan == account.subscription.plan
+        && data.status == account.subscription.status;
+    }
+
     // Valida que `value` é uma string timestamp ISO 8601 (heurística leve).
     // Aceita tanto "2026-07-24T…" quanto "2026-07-24". Regras não podem
     // rodar regex com / multa complexa sem estourar custo, então conferimos
@@ -87,7 +127,7 @@ service cloud.firestore {
       //   avatar      : string        // emoji avatar
       //   email       : string
       //   role        : string        // 'admin' | 'subscriber'  (definido no seed)
-      //   subscription: map           // cobrança gerenciada somente pelo servidor
+      //   subscription: map           // cobrança persistida pela própria usuária
       //   blocked     : bool          // se true, login barrado no cliente
       //   settings    : map            // SystemSettings
       //   theme         : string       // 'light' | 'dark'
@@ -102,19 +142,46 @@ service cloud.firestore {
         && request.resource.data.name is string
         && request.resource.data.avatar is string
         && request.resource.data.email is string
-        && (!('role' in request.resource.data) || request.resource.data.role is string)
+        && validInitialAccount(request.resource.data)
         && (!('settings' in request.resource.data) || request.resource.data.settings is map)
         && (!('folders' in request.resource.data) || request.resource.data.folders is list)
         && (!('plannerTags' in request.resource.data) || request.resource.data.plannerTags is list)
         && (!('noteFolders' in request.resource.data) || request.resource.data.noteFolders is list);
-      // Update: assinatura, role e bloqueio são campos privilegiados. Checkout,
-      // teste e cancelamento usam Admin SDK no servidor e não passam por rules.
+      // Update: a própria usuária persiste a assinatura após o retorno da
+      // InfinitePay. A role interna da assinatura precisa continuar igual à
+      // role imutável do documento-raiz.
       allow update: if (owns(uid) && !(
           ('role' in request.resource.data.diff(resource.data).affectedKeys())
           || ('blocked' in request.resource.data.diff(resource.data).affectedKeys())
-          || ('subscription' in request.resource.data.diff(resource.data).affectedKeys())
+        ) && (
+          !('subscription' in request.resource.data.diff(resource.data).affectedKeys())
+          || validSubscriptionShape(request.resource.data.subscription, resource.data.role)
         )) || isAdmin();
-      allow delete: if owns(uid);
+      allow delete: if isAdmin();
+
+      // Registro append-only usado pelo cliente para não aplicar a mesma
+      // transação da InfinitePay duas vezes em retornos/reloads.
+      match /billingPayments/{paymentId} {
+        allow read: if owns(uid) || isAdmin();
+        allow create: if owns(uid)
+          && request.resource.data.id == paymentId
+          && request.resource.data.provider == 'infinitepay'
+          && request.resource.data.plan in ['monthly', 'annual']
+          && request.resource.data.amount is number
+          && isTimestampString(request.resource.data.confirmedAt);
+        allow update, delete: if false;
+      }
+
+      // Comprovante local e imutável de que o mês grátis já foi iniciado.
+      match /billingTrials/{trialId} {
+        allow read: if owns(uid) || isAdmin();
+        allow create: if owns(uid)
+          && trialId == 'one-month'
+          && request.resource.data.id == trialId
+          && isTimestampString(request.resource.data.startedAt)
+          && isTimestampString(request.resource.data.paidUntil);
+        allow update, delete: if false;
+      }
 
       // ─── Planners (useAppStore) ─────────────────────────────────────────
       // /users/{uid}/planners/{plannerId}
@@ -412,8 +479,9 @@ service cloud.firestore {
     match /app/admin/users/{uid} {
       // Cada usinária cria/atualiza só o seu próprio doc de manifest.
       // Admina lê todos (para o painel).
-      allow read: if isAdmin();
-      allow create, update: if isSignedIn() && request.auth.uid == uid;
+      allow read: if owns(uid) || isAdmin();
+      allow create, update: if (owns(uid)
+        && ownManifestMatchesAccount(uid, request.resource.data)) || isAdmin();
       allow delete: if isAdmin();
     }
 

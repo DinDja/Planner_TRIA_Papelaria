@@ -5,7 +5,6 @@ export const INFINITEPAY_API_URL = 'https://api.checkout.infinitepay.io'
 export interface InfinitePayCheckoutPayload {
   handle: string
   redirect_url: string
-  webhook_url: string
   order_nsu: string
   items: Array<{
     quantity: number
@@ -27,24 +26,18 @@ export interface InfinitePayPaymentCheck {
   capture_method?: string
 }
 
-export interface PaymentOrder {
-  orderNsu: string
+export interface VerifiedPayment {
+  paymentId: string
   uid: string
   plan: PaidPlanId
   amount: number
-  status: 'pending' | 'paid' | 'failed'
-  customerEmail: string
-  customerName: string
-  checkoutUrl?: string
-  createdAt: string
-  updatedAt: string
-  paidAt?: string
-  paidUntil?: string
-  transactionNsu?: string
-  invoiceSlug?: string
+  confirmedAt: string
+  orderCreatedAt: string
+  orderNsu: string
+  transactionNsu: string
+  invoiceSlug: string
   captureMethod?: string
   receiptUrl?: string
-  failureReason?: string
 }
 
 export function isTrustedInfinitePayCheckoutUrl(value: unknown): value is string {

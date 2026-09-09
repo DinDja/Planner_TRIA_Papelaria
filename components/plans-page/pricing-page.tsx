@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { User } from 'firebase/auth'
 import { motion } from 'framer-motion'
 import { Card } from '@/components/ui/card'
@@ -12,9 +12,15 @@ import {
   hasAccess,
   statusLabel,
   useSubscriptionStore,
-  type Subscription,
 } from '@/lib/subscriptions/use-subscription-store'
 import { PLANS, PLAN_ORDER, formatBRL, type PlanId } from '@/lib/subscriptions/plan'
+import {
+  cancelSubscriptionFromClient,
+  claimInfinitePayPayment,
+  startTrialFromClient,
+  SubscriptionClientError,
+  type PaymentClaimInput,
+} from '@/lib/subscriptions/client'
 
 const FONT_HAND = 'var(--font-caveat), "Segoe Script", cursive'
 const FONT_SERIF = 'var(--font-instrument), Georgia, serif'
@@ -41,41 +47,95 @@ function formatAccessDate(value: string | null) {
   return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'long' }).format(date)
 }
 
+const RETRYABLE_PAYMENT_CODES = new Set([
+  'payment_not_confirmed',
+  'verification_unavailable',
+  'verification_rejected',
+])
+
+async function claimPaymentWithRetry(user: User, input: PaymentClaimInput) {
+  const delays = [0, 1_500, 3_000, 5_000]
+  let lastError: unknown
+  for (const delay of delays) {
+    if (delay) await new Promise((resolve) => setTimeout(resolve, delay))
+    try {
+      return await claimInfinitePayPayment(user, input)
+    } catch (error) {
+      lastError = error
+      if (!(error instanceof SubscriptionClientError) || !RETRYABLE_PAYMENT_CODES.has(error.code)) {
+        throw error
+      }
+    }
+  }
+  throw lastError
+}
+
 function PricingPage() {
   const { user } = useAuth()
   const sub = useSubscriptionStore()
-  const [processingPlan, setProcessingPlan] = useState<PlanId | 'cancel' | null>(null)
+  const callbackHandled = useRef(false)
+  const [processingPlan, setProcessingPlan] = useState<PlanId | 'cancel' | 'confirming' | null>(null)
   const isActive = hasAccess(sub)
   const label = statusLabel(sub)
   const accessUntil = formatAccessDate(sub.paidUntil)
 
   useEffect(() => {
+    if (!user || callbackHandled.current) return
     const url = new URL(window.location.href)
     const payment = url.searchParams.get('payment')
     if (!payment) return
+    callbackHandled.current = true
 
-    if (payment === 'success') {
-      toast({
-        title: 'Pagamento confirmado',
-        description: 'Seu período da Tria Papelaria já está liberado.',
-        variant: 'success',
-      })
-    } else if (payment === 'pending') {
-      toast({
-        title: 'Pagamento em confirmação',
-        description: 'Assim que a InfinitePay confirmar, seu acesso será liberado.',
-      })
-    } else {
-      toast({
-        title: 'Não foi possível confirmar o pagamento',
-        description: 'Confira a transação ou tente abrir um novo checkout.',
-        variant: 'error',
-      })
+    const finishReturn = async () => {
+      let keepReturnData = false
+      try {
+        if (payment === 'success' || payment === 'pending') {
+          const orderNsu = url.searchParams.get('order_nsu')
+          const transactionNsu = url.searchParams.get('transaction_nsu')
+          const slug = url.searchParams.get('slug')
+          if (!orderNsu || !transactionNsu || !slug) {
+            throw new Error('O retorno do pagamento está incompleto.')
+          }
+
+          setProcessingPlan('confirming')
+          const subscription = await claimPaymentWithRetry(user, {
+            orderNsu,
+            transactionNsu,
+            slug,
+            receiptUrl: url.searchParams.get('receipt_url') ?? undefined,
+          })
+          sub.setSubscription(subscription)
+          toast({
+            title: 'Pagamento confirmado',
+            description: 'Seu período da Tria Papelaria já está liberado.',
+            variant: 'success',
+          })
+        } else {
+          throw new Error('Confira a transação ou tente abrir um novo checkout.')
+        }
+      } catch (error) {
+        const retryable = error instanceof SubscriptionClientError
+          && RETRYABLE_PAYMENT_CODES.has(error.code)
+        keepReturnData = retryable
+        toast({
+          title: retryable ? 'Pagamento ainda em confirmação' : 'Não foi possível confirmar o pagamento',
+          description: retryable
+            ? 'Os dados foram preservados. Atualize esta página para tentar novamente.'
+            : error instanceof Error ? error.message : 'Tente novamente em instantes.',
+          variant: retryable ? 'default' : 'error',
+        })
+      } finally {
+        if (!keepReturnData) {
+          for (const key of ['payment', 'order_nsu', 'transaction_nsu', 'slug', 'receipt_url']) {
+            url.searchParams.delete(key)
+          }
+          window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`)
+        }
+        setProcessingPlan(null)
+      }
     }
-
-    url.searchParams.delete('payment')
-    window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`)
-  }, [])
+    void finishReturn()
+  }, [user, sub])
 
   const handleChoosePlan = async (planId: PlanId) => {
     if (!user || processingPlan) return
@@ -83,11 +143,8 @@ function PricingPage() {
 
     try {
       if (planId === 'trial') {
-        const result = await authenticatedPost<{ subscription: Partial<Subscription> }>(
-          user,
-          '/api/subscriptions/trial',
-        )
-        sub.setSubscription(result.subscription)
+        const subscription = await startTrialFromClient(user)
+        sub.setSubscription(subscription)
         toast({
           title: 'Seu mês grátis começou',
           description: 'Todos os módulos e atualizações estão liberados.',
@@ -117,11 +174,8 @@ function PricingPage() {
     if (!user || processingPlan) return
     setProcessingPlan('cancel')
     try {
-      const result = await authenticatedPost<{ subscription: Partial<Subscription> }>(
-        user,
-        '/api/subscriptions/cancel',
-      )
-      sub.setSubscription(result.subscription)
+      const subscription = await cancelSubscriptionFromClient(user)
+      sub.setSubscription(subscription)
       toast({
         title: 'Plano cancelado',
         description: accessUntil

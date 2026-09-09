@@ -4,9 +4,10 @@ import { useWishlistStore } from '@/lib/store/use-wishlist-store'
 import { cn } from '@/lib/utils'
 import {
   CheckCircle2,
+  Circle,
   ExternalLink,
   Gift,
-  Heart,
+  List,
   Plus,
   Pencil,
   Search,
@@ -23,9 +24,9 @@ import { AddWishDialog } from './wishlist-dialogs'
 const enter = 'animate-in fade-in slide-in-from-bottom-3 duration-500 fill-mode-both'
 
 const PRIORITY_CONFIG = {
-  high: { label: 'Alta', color: '#e05b6d' },
-  medium: { label: 'Média', color: '#f0b429' },
-  low: { label: 'Baixa', color: '#7bb686' },
+  high: { label: 'Alta', color: '#d1bdb8' },
+  medium: { label: 'Média', color: '#b76f06' },
+  low: { label: 'Baixa', color: '#6a634d' },
 }
 
 function formatPrice(cents: number): string {
@@ -54,31 +55,31 @@ function WishCard({
         item.purchased && 'opacity-70',
       )}
       style={{
-        borderTopColor: item.purchased ? '#7bb686' : priority.color,
+        borderTopColor: item.purchased ? '#6a634d' : priority.color,
         borderTopWidth: 3,
       }}
     >
       <CardHeader className="flex-row items-start justify-between gap-2 pb-0">
         <div className="flex items-start gap-3 min-w-0 flex-1">
-          <div
-            className={cn(
-              'flex size-10 shrink-0 items-center justify-center rounded-xl',
-            )}
-            style={{
-              backgroundColor: (item.purchased ? '#7bb686' : priority.color) + '18',
-            }}
+          <button
+            type="button"
+            onClick={() => onToggle(item.id)}
+            className="mt-0.5 shrink-0 text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+            aria-label={item.purchased ? 'Marcar como não adquirido' : 'Marcar como adquirido'}
           >
             {item.purchased ? (
-              <ShoppingBag size={18} style={{ color: '#7bb686' }} />
+              <CheckCircle2 size={18} className="text-success" />
             ) : (
-              <Gift size={18} style={{ color: priority.color }} />
+              <Circle size={18} />
             )}
-          </div>
+          </button>
           <div className="min-w-0 flex-1">
             <CardTitle className="text-sm flex items-center gap-2 leading-snug">
-              {item.name}
+              <span className={cn(item.purchased && 'line-through text-muted-foreground')}>
+                {item.name}
+              </span>
               {item.purchased && (
-                <Badge variant="outline" className="text-[9px] px-1.5 text-emerald-600 border-emerald-300">
+                <Badge variant="outline" className="text-[9px] px-1.5 text-success border-success/40">
                   <CheckCircle2 size={10} className="mr-0.5" />
                   Adquirido
                 </Badge>
@@ -95,13 +96,6 @@ function WishCard({
           </div>
         </div>
         <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-          <button
-            onClick={() => onToggle(item.id)}
-            className="rounded-lg p-1 text-muted-foreground/40 hover:text-emerald-500 transition-colors cursor-pointer"
-            aria-label={item.purchased ? 'Marcar como não adquirido' : 'Marcar como adquirido'}
-          >
-            <CheckCircle2 size={14} />
-          </button>
           <button
             onClick={() => onEdit(item.id)}
             className="rounded-lg p-1 text-muted-foreground/40 hover:text-primary transition-colors cursor-pointer"
@@ -229,9 +223,9 @@ export function WishlistPage() {
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
             <span
               className="flex size-11 items-center justify-center rounded-2xl"
-              style={{ backgroundColor: '#e05b6d18' }}
+              style={{ backgroundColor: '#6a634d18' }}
             >
-              <Heart size={22} style={{ color: '#e05b6d' }} />
+              <List size={22} style={{ color: '#6a634d' }} />
             </span>
             Wishlist
           </h1>
@@ -247,7 +241,7 @@ export function WishlistPage() {
               )}
               style={{
                 borderColor: totalCost === purchasedCost && totalCost > 0
-                  ? '#7bb68660'
+                  ? '#6a634d60'
                   : 'var(--border-color)',
               }}
             >
@@ -309,7 +303,7 @@ export function WishlistPage() {
 
         <TabPanel value={tab}>
           {filtered.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+            <div className="space-y-4">
               {filtered.map((item) => (
                 <WishCard
                   key={item.id}

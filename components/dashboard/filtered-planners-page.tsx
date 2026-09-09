@@ -54,7 +54,7 @@ export function FilteredPlannersPage({
     <div className="p-6 lg:p-8 max-w-[1100px] mx-auto">
       <div className={cn('mb-8', enter)}>
         <Link
-          href="/"
+          href="/dashboard"
           className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-4 transition-colors"
         >
           <ArrowLeft size={15} />
@@ -63,12 +63,12 @@ export function FilteredPlannersPage({
         <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
           <span
             className="flex size-11 items-center justify-center rounded-2xl"
-            style={{ backgroundColor: (color ?? '#7bb686') + '18' }}
+            style={{ backgroundColor: (color ?? '#6a634d') + '18' }}
           >
             {kind === 'folder' ? (
-              <FolderIcon size={22} style={{ color: color ?? '#7bb686' }} />
+              <FolderIcon size={22} style={{ color: color ?? '#6a634d' }} />
             ) : (
-              <TagIcon size={22} style={{ color: color ?? '#7bb686' }} />
+              <TagIcon size={22} style={{ color: color ?? '#6a634d' }} />
             )}
           </span>
           {title}

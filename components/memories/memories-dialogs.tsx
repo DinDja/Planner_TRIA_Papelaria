@@ -1,22 +1,13 @@
 'use client'
 
 import { useMemoriesStore } from '@/lib/store/use-memories-store'
-import type { MemoryMood } from '@/lib/types'
 import { cn } from '@/lib/utils'
-import { Angry, Frown, Meh, Smile, Sparkles, X } from 'lucide-react'
+import { Check } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Button } from '../ui/button'
 import { Dialog, DialogContent } from '../ui/overlays'
 import { Input } from '../ui/primitives'
 import { toast } from '../ui/toaster'
-
-const MOOD_OPTIONS: { value: MemoryMood; label: string; icon: typeof Smile; color: string }[] = [
-  { value: 'great', label: 'Incrível', icon: Sparkles, color: '#7bb686' },
-  { value: 'good', label: 'Bom', icon: Smile, color: '#5b8dbf' },
-  { value: 'neutral', label: 'Neutro', icon: Meh, color: '#f0b429' },
-  { value: 'bad', label: 'Ruim', icon: Frown, color: '#e8a0a0' },
-  { value: 'tough', label: 'Difícil', icon: Angry, color: '#e05b6d' },
-]
 
 const dayStr = (): string => {
   const d = new Date()
@@ -24,43 +15,6 @@ const dayStr = (): string => {
   const m = String(d.getMonth() + 1).padStart(2, '0')
   const day = String(d.getDate()).padStart(2, '0')
   return `${y}-${m}-${day}`
-}
-
-function MoodPicker({
-  value,
-  onChange,
-}: {
-  value: MemoryMood
-  onChange: (m: MemoryMood) => void
-}) {
-  return (
-    <div className="grid grid-cols-5 gap-1.5 sm:gap-2 sm:flex">
-      {MOOD_OPTIONS.map((opt) => {
-        const active = value === opt.value
-        return (
-          <button
-            key={opt.value}
-            type="button"
-            onClick={() => onChange(opt.value)}
-            className={cn(
-              'flex flex-col items-center gap-1 flex-1 rounded-xl border px-1 py-2 sm:px-2 sm:py-3 text-[9px] sm:text-[10px] font-medium transition-all duration-200 cursor-pointer',
-              active
-                ? 'border-transparent shadow-md text-white'
-                : 'border-border/60 text-muted-foreground hover:bg-muted/50',
-            )}
-            style={active ? { backgroundColor: opt.color } : undefined}
-          >
-            <opt.icon
-              size={18}
-              className={active ? 'text-white' : ''}
-              style={!active ? { color: opt.color } : undefined}
-            />
-            <span className="leading-tight">{opt.label}</span>
-          </button>
-        )
-      })}
-    </div>
-  )
 }
 
 export function AddMemoryDialog({
@@ -78,9 +32,6 @@ export function AddMemoryDialog({
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [date, setDate] = useState(dayStr())
-  const [mood, setMood] = useState<MemoryMood>('great')
-  const [tags, setTags] = useState<string[]>([])
-  const [tagInput, setTagInput] = useState('')
 
   useEffect(() => {
     if (!open) return
@@ -88,9 +39,6 @@ export function AddMemoryDialog({
       setTitle(existing.title)
       setDescription(existing.description)
       setDate(existing.date)
-      setMood(existing.mood)
-      setTags(existing.tags)
-      setTagInput('')
     } else if (!editId) {
       reset()
     }
@@ -100,16 +48,6 @@ export function AddMemoryDialog({
     setTitle('')
     setDescription('')
     setDate(dayStr())
-    setMood('great')
-    setTags([])
-    setTagInput('')
-  }
-
-  const handleAddTag = () => {
-    const t = tagInput.trim().toLowerCase()
-    if (!t || tags.includes(t)) return
-    setTags([...tags, t])
-    setTagInput('')
   }
 
   const handleCreate = () => {
@@ -121,12 +59,20 @@ export function AddMemoryDialog({
       toast({ title: 'Descreva essa memória', variant: 'error' })
       return
     }
-    const data = { title: title.trim(), description: description.trim(), date, mood, tags }
     if (editId) {
-      updateEntry(editId, data)
+      updateEntry(editId, {
+        title: title.trim(),
+        description: description.trim(),
+        date,
+      })
       toast({ title: 'Memória atualizada!', variant: 'success' })
     } else {
-      addEntry(data)
+      addEntry({
+        title: title.trim(),
+        description: description.trim(),
+        date,
+        mood: 'great',
+      })
       toast({ title: 'Memória registrada!', variant: 'success' })
     }
     reset()
@@ -146,15 +92,9 @@ export function AddMemoryDialog({
               autoFocus
             />
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="text-sm font-medium mb-1.5 block">Data</label>
-              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-2 block">Sentimento</label>
-              <MoodPicker value={mood} onChange={setMood} />
-            </div>
+          <div>
+            <label className="text-sm font-medium mb-1.5 block">Data</label>
+            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
           </div>
           <div>
             <label className="text-sm font-medium mb-1.5 block">Descrição</label>
@@ -165,35 +105,6 @@ export function AddMemoryDialog({
               rows={4}
               className="flex w-full rounded-xl border border-border bg-background px-3 py-2 text-sm shadow-sm outline-none transition-colors placeholder:text-muted-foreground/60 focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/20 resize-none"
             />
-          </div>
-          <div>
-            <label className="text-sm font-medium mb-1.5 block">Tags</label>
-            <div className="flex gap-2 mb-2">
-              <Input
-                value={tagInput}
-                onChange={(e) => setTagInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
-                placeholder="Digite e Enter"
-              />
-              <Button variant="outline" size="sm" className="rounded-xl shrink-0" onClick={handleAddTag} disabled={!tagInput.trim()}>
-                Adicionar
-              </Button>
-            </div>
-            {tags.length > 0 && (
-              <div className="flex flex-wrap gap-1.5">
-                {tags.map((t) => (
-                  <span
-                    key={t}
-                    className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-2.5 py-0.5 text-[11px] font-medium"
-                  >
-                    {t}
-                    <button type="button" onClick={() => setTags(tags.filter((x) => x !== t))} className="cursor-pointer hover:text-destructive">
-                      <X size={12} />
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
           </div>
           <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end">
             <Button variant="outline" onClick={onClose} className="rounded-xl">

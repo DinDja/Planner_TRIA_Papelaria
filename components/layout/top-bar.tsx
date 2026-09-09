@@ -18,6 +18,8 @@ export function TopBar({ onToggleSidebar, onOpenCommand, onOpenSettings }: TopBa
         variant="ghost"
         size="icon"
         onClick={onToggleSidebar}
+        aria-label="Abrir menu lateral"
+        title="Abrir menu lateral"
         className="md:hidden rounded-xl -ml-1"
       >
         <Menu size={18} />

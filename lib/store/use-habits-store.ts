@@ -17,11 +17,11 @@ const dayStr = (offset = 0): string => {
 const today = dayStr()
 
 const seedHabits: Habit[] = [
-  { id: 'hab-seed-1', name: 'Beber 2L de água', color: '#5b8dbf', frequency: 'daily', createdAt: nowISO(), archived: false },
-  { id: 'hab-seed-2', name: 'Meditar 10 min', color: '#c9b6e4', frequency: 'daily', createdAt: nowISO(), archived: false },
-  { id: 'hab-seed-3', name: 'Academia', color: '#7bb686', frequency: 'weekly', weekdays: [0, 1, 3, 4], createdAt: nowISO(), archived: false },
-  { id: 'hab-seed-4', name: 'Ler 30 min', color: '#f0b429', frequency: 'daily', createdAt: nowISO(), archived: false },
-  { id: 'hab-seed-5', name: 'Review financeira', color: '#e05b6d', frequency: 'monthly', dayOfMonth: 1, createdAt: nowISO(), archived: false },
+  { id: 'hab-seed-1', name: 'Beber 2L de água', color: '#6a634d', frequency: 'daily', createdAt: nowISO(), archived: false },
+  { id: 'hab-seed-2', name: 'Meditar 10 min', color: '#ddd6c6', frequency: 'daily', createdAt: nowISO(), archived: false },
+  { id: 'hab-seed-3', name: 'Academia', color: '#6a634d', frequency: 'weekly', weekdays: [0, 1, 3, 4], createdAt: nowISO(), archived: false },
+  { id: 'hab-seed-4', name: 'Ler 30 min', color: '#b76f06', frequency: 'daily', createdAt: nowISO(), archived: false },
+  { id: 'hab-seed-5', name: 'Review financeira', color: '#d1bdb8', frequency: 'monthly', dayOfMonth: 1, createdAt: nowISO(), archived: false },
 ]
 
 const seedLogs: HabitLog[] = [
@@ -64,7 +64,7 @@ export const useHabitsStore = create<HabitsState>()(
       habits: [],
       logs: [],
 
-      addHabit: ({ color = '#7bb686', ...data }) =>
+      addHabit: ({ color = '#6a634d', ...data }) =>
         set((s) => ({
           habits: [
             ...s.habits,

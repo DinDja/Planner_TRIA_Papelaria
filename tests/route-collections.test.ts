@@ -34,8 +34,8 @@ describe('route-collections — pathname resolve plano de coleções', () => {
     )
   })
 
-  it('rota de finanças carrega 8 coleções, metas só 3', () => {
-    expect(plan('/financas').collections).toHaveLength(8)
+  it('rota de finanças carrega 9 coleções, metas só 3', () => {
+    expect(plan('/financas').collections).toHaveLength(9)
     expect(plan('/metas').collections.sort()).toEqual(
       ['financialGoals', 'goalDeposits', 'savingsBoxes'].sort(),
     )

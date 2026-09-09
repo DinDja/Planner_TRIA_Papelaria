@@ -46,7 +46,7 @@ export const promptDoDia = (dataISO: string = isoDia()): Prompt => {
   return PROMPTS[nums % PROMPTS.length]
 }
 
-const corPadrao = '#8a8580'
+const corPadrao = '#d1bdb8'
 
 // ─── Seeds honestos ───────────────────────────────────────────────────────────
 // Não há "50K usuários" aqui. São entradas próprias, sinais de uma vida

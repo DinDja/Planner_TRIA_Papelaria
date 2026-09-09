@@ -3,6 +3,9 @@
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { ArrowRight, PenLine } from 'lucide-react'
+import { InfiniteBook } from './infinite-book'
+import { BrandLogo } from '@/components/brand-logo'
+import { ThemeToggle } from '@/components/auth/theme-toggle'
 
 /** Ícones próprios para a landing — não Lucide; cada um codifica a feature. */
 function StickersGlyph({ size = 18, strokeWidth = 1.5 }: { size?: number; strokeWidth?: number }) {
@@ -43,9 +46,6 @@ function TemplatesGlyph({ size = 18, strokeWidth = 1.5 }: { size?: number; strok
     </svg>
   )
 }
-
-const HERO_VIDEO =
-  'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/agentic-hero-9yW3wnTNMfn2U6lsVhTTZSJFEvAoSj.mp4'
 
 const NAV_LINKS = [
   { label: 'Plataforma', href: '#plataforma' },
@@ -96,6 +96,50 @@ function useScrollReveal(threshold = 0.15) {
   return { ref, inView }
 }
 
+/** Deslocamento vertical do hero conforme o scroll (parallax sutil). */
+function useHeroParallax() {
+  const [offset, setOffset] = useState(0)
+  useEffect(() => {
+    let raf = 0
+    const onScroll = () => {
+      cancelAnimationFrame(raf)
+      raf = requestAnimationFrame(() => setOffset(Math.min(window.scrollY, window.innerHeight)))
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      cancelAnimationFrame(raf)
+    }
+  }, [])
+  return offset
+}
+
+function Reveal({
+  children,
+  delay = 0,
+  className = '',
+}: {
+  children: React.ReactNode
+  delay?: number
+  className?: string
+}) {
+  const { ref, inView } = useScrollReveal(0.12)
+  return (
+    <div
+      ref={ref}
+      className={className}
+      style={{
+        opacity: inView ? 1 : 0,
+        transform: inView ? 'translateY(0)' : 'translateY(28px)',
+        filter: inView ? 'blur(0px)' : 'blur(6px)',
+        transition: `opacity 0.8s cubic-bezier(0.16,1,0.3,1) ${delay}ms, transform 0.8s cubic-bezier(0.16,1,0.3,1) ${delay}ms, filter 0.8s cubic-bezier(0.16,1,0.3,1) ${delay}ms`,
+      }}
+    >
+      {children}
+    </div>
+  )
+}
+
 function RevealFeature({
   icon: Icon,
   title,
@@ -111,125 +155,167 @@ function RevealFeature({
   return (
     <div
       ref={ref}
-      className="group relative rounded-2xl border border-black/[0.07] bg-white overflow-hidden p-8 transition-all duration-700 hover:border-black/[0.15] hover:bg-[#fafaf8]"
+      className="landing-card group relative rounded-2xl border overflow-hidden p-8 transition-all duration-700"
       style={{
         opacity: inView ? 1 : 0,
         transform: inView ? 'translateY(0)' : 'translateY(28px)',
         transition: `opacity 0.7s ease ${delay}ms, transform 0.7s ease ${delay}ms, border-color 0.3s ease, background-color 0.3s ease`,
       }}
     >
-      <div className="w-10 h-10 rounded-xl border border-black/10 flex items-center justify-center mb-5">
+      <div className="landing-border w-10 h-10 rounded-xl border flex items-center justify-center mb-5">
         <Icon size={18} strokeWidth={1.5} />
       </div>
       <h3 className="text-lg font-light mb-2">{title}</h3>
-      <p className="text-sm text-black/45 leading-relaxed">{desc}</p>
+      <p className="landing-copy-muted text-sm leading-relaxed">{desc}</p>
     </div>
   )
 }
 
+/** Miniaturas desenhadas em CSS puro — cada padrão representa o template de verdade. */
+const TEMPLATE_PREVIEWS = [
+  { name: 'Em branco', pattern: 'blank' },
+  { name: 'Pautado', pattern: 'lined' },
+  { name: 'Grade', pattern: 'grid' },
+  { name: 'Pontos', pattern: 'dots' },
+  { name: 'Cornell', pattern: 'cornell' },
+  { name: 'Semanal', pattern: 'weekly' },
+  { name: 'Kanban', pattern: 'kanban' },
+  { name: 'Finanças', pattern: 'finance' },
+] as const
+
+const TEMPLATE_PATTERNS: Record<string, React.CSSProperties> = {
+  blank: {},
+  lined: {
+    backgroundImage: 'repeating-linear-gradient(to bottom, transparent 0, transparent 11px, color-mix(in oklab, var(--landing-fg) 12%, transparent) 11px, color-mix(in oklab, var(--landing-fg) 12%, transparent) 12px)',
+  },
+  grid: {
+    backgroundImage:
+      'repeating-linear-gradient(to bottom, transparent 0, transparent 11px, color-mix(in oklab, var(--landing-fg) 10%, transparent) 11px, color-mix(in oklab, var(--landing-fg) 10%, transparent) 12px), repeating-linear-gradient(to right, transparent 0, transparent 11px, color-mix(in oklab, var(--landing-fg) 10%, transparent) 11px, color-mix(in oklab, var(--landing-fg) 10%, transparent) 12px)',
+  },
+  dots: {
+    backgroundImage: 'radial-gradient(color-mix(in oklab, var(--landing-fg) 20%, transparent) 1px, transparent 1px)',
+    backgroundSize: '12px 12px',
+  },
+  cornell: {
+    backgroundImage:
+      'linear-gradient(to right, transparent 0, transparent 30%, color-mix(in oklab, var(--landing-fg) 14%, transparent) 30%, color-mix(in oklab, var(--landing-fg) 14%, transparent) calc(30% + 1px), transparent calc(30% + 1px)), linear-gradient(to top, transparent 0, transparent 25%, color-mix(in oklab, var(--landing-fg) 14%, transparent) 25%, color-mix(in oklab, var(--landing-fg) 14%, transparent) calc(25% + 1px), transparent calc(25% + 1px)), repeating-linear-gradient(to bottom, transparent 0, transparent 11px, color-mix(in oklab, var(--landing-fg) 9%, transparent) 11px, color-mix(in oklab, var(--landing-fg) 9%, transparent) 12px)',
+  },
+  weekly: {
+    backgroundImage:
+      'repeating-linear-gradient(to right, transparent 0, transparent calc(25% - 1px), color-mix(in oklab, var(--landing-fg) 12%, transparent) calc(25% - 1px), color-mix(in oklab, var(--landing-fg) 12%, transparent) 25%)',
+  },
+  kanban: {
+    backgroundImage:
+      'repeating-linear-gradient(to right, transparent 0, transparent calc(33.33% - 1px), color-mix(in oklab, var(--landing-fg) 12%, transparent) calc(33.33% - 1px), color-mix(in oklab, var(--landing-fg) 12%, transparent) 33.33%)',
+  },
+  finance: {
+    backgroundImage:
+      'repeating-linear-gradient(to bottom, transparent 0, transparent 15px, color-mix(in oklab, var(--landing-fg) 12%, transparent) 15px, color-mix(in oklab, var(--landing-fg) 12%, transparent) 16px), linear-gradient(to right, transparent 0, transparent 60%, color-mix(in oklab, var(--landing-fg) 12%, transparent) 60%, color-mix(in oklab, var(--landing-fg) 12%, transparent) calc(60% + 1px), transparent calc(60% + 1px))',
+  },
+}
+
+function TemplateCard({ name, pattern, delay = 0 }: { name: string; pattern: string; delay?: number }) {
+  const { ref, inView } = useScrollReveal(0.1)
+  return (
+    <div
+      ref={ref}
+      className="landing-card group rounded-2xl border p-3 transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_12px_32px_-16px_rgba(0,0,0,0.15)]"
+      style={{
+        opacity: inView ? 1 : 0,
+        transform: inView ? 'translateY(0)' : 'translateY(24px)',
+        transition: `opacity 0.7s ease ${delay}ms, transform 0.7s ease ${delay}ms, border-color 0.3s ease, box-shadow 0.3s ease`,
+      }}
+    >
+      <div
+        className="landing-preview aspect-[3/4] rounded-lg border transition-transform duration-500 group-hover:scale-[1.02]"
+        style={TEMPLATE_PATTERNS[pattern]}
+      />
+      <p className="landing-copy-muted mt-3 text-xs tracking-widest uppercase text-center">{name}</p>
+    </div>
+  )
+}
+
+const PLANS = [
+  {
+    name: 'Papel',
+    price: 'Grátis',
+    period: 'para sempre',
+    cta: 'COMEÇAR GRÁTIS',
+    highlight: false,
+    features: ['Planners ilimitados', '14 templates de página', '180+ stickers', 'Salvo no navegador'],
+  },
+  {
+    name: 'Papelaria',
+    price: 'R$ 19',
+    period: '/mês',
+    cta: 'ASSINAR',
+    highlight: true,
+    features: ['Tudo do plano Papel', 'Sincronização entre dispositivos', 'Backup na nuvem', 'Novos stickers toda semana'],
+  },
+]
+
 export function LandingPage() {
   const [heroReady, setHeroReady] = useState(false)
-  const [videoReady, setVideoReady] = useState(false)
+  const heroOffset = useHeroParallax()
 
   useEffect(() => {
     const t = setTimeout(() => {
       setHeroReady(true)
-      setVideoReady(true)
     }, 200)
     return () => clearTimeout(t)
   }, [])
 
   return (
-    <div className="bg-[#F5F4F0] text-[#111] min-h-screen antialiased" style={{ fontFamily: 'var(--font-plex), sans-serif' }}>
+    <div
+      className="landing-page min-h-screen antialiased"
+      style={{ fontFamily: 'var(--font-plex), sans-serif', scrollBehavior: 'smooth' }}
+    >
       {/* ── STICKY NAV ─────────────────────────────────────────────────── */}
-      <nav className="fixed top-0 inset-x-0 z-50 backdrop-blur-md bg-[#F5F4F0]/70 border-b border-black/[0.06]">
+      <nav className="landing-nav fixed top-0 inset-x-0 z-50 backdrop-blur-md">
         <div className="max-w-6xl mx-auto px-6 md:px-12 lg:px-20 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center">
-            <img src="/Logo.svg" alt="PlannerHub" className="h-14 w-auto" />
+            <BrandLogo className="h-14 w-36" />
           </Link>
           <div className="hidden md:flex items-center gap-8">
             {NAV_LINKS.map((l) => (
               <a
                 key={l.href}
                 href={l.href}
-                className="text-xs text-black/40 hover:text-black/70 transition-colors tracking-widest"
+                className="landing-copy-subtle text-xs transition-colors tracking-widest"
               >
                 {l.label.toUpperCase()}
               </a>
             ))}
           </div>
-          <Link
-            href="/"
-            className="px-5 py-2 rounded-xl bg-[#111] text-white text-sm tracking-widest hover:bg-[#333] transition-colors"
-          >
-            ABRIR
-          </Link>
+          <div className="flex items-center gap-2">
+            <ThemeToggle className="landing-theme-toggle" />
+            <Link
+              href="/auth/login"
+              className="landing-action px-5 py-2 rounded-xl text-sm tracking-widest transition-colors"
+            >
+              ENTRAR
+            </Link>
+          </div>
         </div>
       </nav>
 
       {/* ── HERO ────────────────────────────────────────────────────────── */}
-      <section className="relative h-screen overflow-hidden">
-        {/* Vídeo de fundo — zoom in quando o hero revela */}
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="absolute inset-0 w-full h-full object-cover z-0"
-          src={HERO_VIDEO}
-          style={{
-            transform: videoReady ? 'scale(1.05)' : 'scale(0.85)',
-            transition: 'transform 2s cubic-bezier(0.16, 1, 0.3, 1)',
-          }}
-        />
+      <section className="relative mt-16 h-[calc(100svh-4rem)] min-h-[780px] sm:min-h-[700px] lg:min-h-[640px] overflow-hidden">
+        {/* Livro do produto — ao lado do título no desktop e acima dele no mobile. */}
+        <div className="absolute z-20 top-0 right-[-18%] h-[42%] w-[92%] sm:right-[-8%] sm:h-[48%] sm:w-[70%] lg:top-auto lg:right-[-2%] lg:bottom-[8%] lg:h-[76%] lg:w-[54%] xl:right-[2%] xl:w-[52%]">
+          <InfiniteBook ready={heroReady} />
+        </div>
 
-        {/* Gradient + progressive blur subindo do rodapé */}
+        {/* Título + métricas — ancorados no canto inferior esquerdo, com parallax invertido */}
         <div
-          className="absolute inset-x-0 bottom-0 z-10 pointer-events-none"
+          className="absolute inset-x-0 bottom-0 z-30 flex flex-col px-6 md:px-12 pb-12 max-w-3xl"
           style={{
-            height: '65%',
-            background:
-              'linear-gradient(to top, #F5F4F0 0%, #F5F4F0 18%, rgba(245,244,240,0.85) 35%, rgba(245,244,240,0.5) 55%, rgba(245,244,240,0.15) 75%, transparent 100%)',
+            transform: `translateY(${heroOffset * -0.15}px)`,
+            opacity: 1 - heroOffset / (typeof window !== 'undefined' ? window.innerHeight : 1000) * 1.2,
           }}
-        />
-        <div
-          className="absolute inset-x-0 bottom-0 z-10 pointer-events-none"
-          style={{
-            height: '20%',
-            backdropFilter: 'blur(12px)',
-            WebkitBackdropFilter: 'blur(12px)',
-            maskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
-            WebkitMaskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
-          }}
-        />
-        <div
-          className="absolute inset-x-0 bottom-0 z-10 pointer-events-none"
-          style={{
-            height: '38%',
-            backdropFilter: 'blur(6px)',
-            WebkitBackdropFilter: 'blur(6px)',
-            maskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
-            WebkitMaskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
-          }}
-        />
-        <div
-          className="absolute inset-x-0 bottom-0 z-10 pointer-events-none"
-          style={{
-            height: '55%',
-            backdropFilter: 'blur(2px)',
-            WebkitBackdropFilter: 'blur(2px)',
-            maskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
-            WebkitMaskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
-          }}
-        />
-
-        {/* Spacer para não ficar embaixo do nav */}
-        <div className="h-20" />
-
-        {/* Título + métricas — ancorados no canto inferior esquerdo */}
-        <div className="absolute inset-x-0 bottom-0 z-30 flex flex-col px-6 md:px-12 pb-12 max-w-3xl">
+        >
           <h1
-            className="text-6xl sm:text-7xl md:text-8xl font-light text-[#111] leading-[1.0] tracking-tight mb-10"
+            className="landing-heading text-6xl sm:text-7xl md:text-8xl font-light leading-[1.0] tracking-tight mb-10"
             style={{
               fontFamily: 'var(--font-plex), sans-serif',
               opacity: heroReady ? 1 : 0,
@@ -258,13 +344,13 @@ export function LandingPage() {
                 }}
               >
                 <div
-                  className="text-3xl sm:text-4xl text-[#111] font-light tracking-tight"
+                  className="landing-heading text-3xl sm:text-4xl font-light tracking-tight"
                   style={{ fontFamily: 'var(--font-plex), sans-serif' }}
                 >
                   {stat.value}
                 </div>
                 <div
-                  className="text-xs text-black/40 tracking-widest uppercase mt-1"
+                  className="landing-copy-subtle text-xs tracking-widest uppercase mt-1"
                   style={{ fontFamily: 'var(--font-plex), sans-serif' }}
                 >
                   {stat.label}
@@ -276,8 +362,8 @@ export function LandingPage() {
           {/* CTA — inicia o planner */}
           <div className="mt-10">
             <Link
-              href="/"
-              className="inline-flex items-center gap-2 px-8 py-3 rounded-xl bg-[#111] text-white text-sm tracking-widest hover:bg-[#333] transition-colors"
+              href="/auth/login"
+              className="landing-action inline-flex items-center gap-2 px-8 py-3 rounded-xl text-sm tracking-widest transition-colors"
             >
               COMEÇAR AGORA
               <ArrowRight size={16} />
@@ -286,11 +372,31 @@ export function LandingPage() {
         </div>
       </section>
 
+      {/* ── MARQUEE ────────────────────────────────────────────────────── */}
+      <div className="landing-border overflow-hidden border-y py-4 select-none" aria-hidden>
+        <div
+          className="flex whitespace-nowrap gap-10 w-max"
+          style={{ animation: 'landing-marquee 28s linear infinite' }}
+        >
+          {[0, 1].map((copy) => (
+            <div key={copy} className="flex gap-10 items-center">
+              {['Escrita à mão', 'Stickers', 'Templates', 'Finanças', 'Hábitos', 'Diário', 'Metas', 'Calendário', 'Listas', 'Memórias'].map((w) => (
+                <span key={w} className="landing-copy-faint flex items-center gap-10 text-xs tracking-[0.3em] uppercase">
+                  {w}
+                  <span className="landing-dot w-1 h-1 rounded-full" />
+                </span>
+              ))}
+            </div>
+          ))}
+        </div>
+        <style>{`@keyframes landing-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }`}</style>
+      </div>
+
       {/* ── PLATAFORMA (bento resumido) ────────────────────────────────── */}
       <section id="plataforma" className="py-32 px-6 md:px-12 lg:px-20">
         <div className="max-w-6xl mx-auto">
-          <div className="mb-16">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] tracking-widest text-black/40 bg-black/[0.04]">
+          <Reveal className="mb-16">
+            <span className="landing-chip inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] tracking-widest">
               PLATAFORMA
             </span>
             <h2
@@ -301,7 +407,7 @@ export function LandingPage() {
               <br />
               para planejar.
             </h2>
-          </div>
+          </Reveal>
 
           <div id="ferramentas" className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {FEATURE_CARDS.map((card, i) => (
@@ -317,8 +423,101 @@ export function LandingPage() {
         </div>
       </section>
 
+      {/* ── TEMPLATES ──────────────────────────────────────────────────── */}
+      <section id="templates" className="landing-border py-32 px-6 md:px-12 lg:px-20 border-t">
+        <div className="max-w-6xl mx-auto">
+          <Reveal className="mb-16 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+            <div>
+              <span className="landing-chip inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] tracking-widest">
+                TEMPLATES
+              </span>
+              <h2
+                className="mt-5 text-4xl md:text-5xl font-light tracking-tight leading-[1.05]"
+                style={{ fontFamily: 'var(--font-plex), sans-serif' }}
+              >
+                Uma página para
+                <br />
+                cada momento.
+              </h2>
+            </div>
+            <p className="landing-copy-muted text-sm max-w-xs leading-relaxed">
+              14 formatos prontos — do Cornell ao Kanban — aplicados com um toque, sem sair do canvas.
+            </p>
+          </Reveal>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {TEMPLATE_PREVIEWS.map((t, i) => (
+              <TemplateCard key={t.name} {...t} delay={i * 60} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── PREÇOS ─────────────────────────────────────────────────────── */}
+      <section id="precos" className="landing-border py-32 px-6 md:px-12 lg:px-20 border-t">
+        <div className="max-w-6xl mx-auto">
+          <Reveal className="mb-16 text-center">
+            <span className="landing-chip inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] tracking-widest">
+              PREÇOS
+            </span>
+            <h2
+              className="mt-5 text-4xl md:text-5xl font-light tracking-tight leading-[1.05]"
+              style={{ fontFamily: 'var(--font-plex), sans-serif' }}
+            >
+              Simples como papel.
+            </h2>
+          </Reveal>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-3xl mx-auto">
+            {PLANS.map((p, i) => (
+              <Reveal key={p.name} delay={i * 100}>
+                <div
+                  className={`relative rounded-2xl border p-8 h-full transition-all duration-500 hover:-translate-y-1 ${
+                    p.highlight
+                       ? 'landing-action-card border'
+                       : 'landing-surface landing-border border'
+                  }`}
+                >
+                  {p.highlight && (
+                    <span className="landing-recommendation absolute -top-3 left-8 px-3 py-1 rounded-full text-[10px] tracking-widest">
+                      RECOMENDADO
+                    </span>
+                  )}
+                  <h3 className="text-lg font-light">{p.name}</h3>
+                  <div className="mt-4 flex items-baseline gap-1">
+                    <span className="text-4xl font-light tracking-tight">{p.price}</span>
+                    <span className={`text-xs ${p.highlight ? 'landing-on-action-muted' : 'landing-copy-subtle'}`}>{p.period}</span>
+                  </div>
+                  <ul className="mt-6 space-y-2.5">
+                    {p.features.map((f) => (
+                      <li
+                        key={f}
+                        className={`text-sm flex items-start gap-2 ${p.highlight ? 'landing-on-action-muted' : 'landing-copy-muted'}`}
+                      >
+                        <span className={`mt-[7px] w-1 h-1 rounded-full shrink-0 ${p.highlight ? 'landing-on-action-dot' : 'landing-dot'}`} />
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+                  <Link
+                    href="/auth/login"
+                    className={`mt-8 inline-flex items-center justify-center w-full py-3 rounded-xl text-sm tracking-widest transition-colors ${
+                      p.highlight
+                        ? 'landing-action-inverse'
+                        : 'landing-action'
+                    }`}
+                  >
+                    {p.cta}
+                  </Link>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ── CTA final ────────────────────────────────────────────────────── */}
-      <section className="py-32 px-6 md:px-12 lg:px-20 border-t border-black/[0.06]">
+      <section className="landing-border py-32 px-6 md:px-12 lg:px-20 border-t">
         <div className="relative z-10 max-w-2xl mx-auto text-center">
           <h2
             className="text-4xl md:text-5xl lg:text-6xl font-light tracking-tight leading-[1.05] mb-6"
@@ -328,24 +527,24 @@ export function LandingPage() {
             <br />
             agora mesmo.
           </h2>
-          <p className="text-sm text-black/45 leading-relaxed mb-10 max-w-md mx-auto">
-            Sem cadastro, sem backend. Seus planners ficam salvos no seu navegador. Pronto em segundos.
+          <p className="landing-copy-muted text-sm leading-relaxed mb-10 max-w-md mx-auto">
+            Entre com sua conta e seus planners sincronizam em qualquer dispositivo. Pronto em segundos.
           </p>
           <Link
-            href="/"
-            className="inline-flex items-center gap-2 px-10 py-4 rounded-xl bg-[#111] text-white text-sm tracking-widest hover:bg-[#333] transition-colors"
+            href="/auth/login"
+            className="landing-action inline-flex items-center gap-2 px-10 py-4 rounded-xl text-sm tracking-widest transition-colors"
           >
-            ABRIR EDITOR
+            ENTRAR NA MINHA CONTA
             <ArrowRight size={16} />
           </Link>
         </div>
       </section>
 
       {/* ── FOOTER ───────────────────────────────────────────────────────── */}
-      <footer className="py-10 px-6 md:px-12 lg:px-20 border-t border-black/[0.06]">
+      <footer className="landing-border py-10 px-6 md:px-12 lg:px-20 border-t">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
           <span
-            className="text-xs tracking-[0.25em] text-black/50"
+            className="landing-copy-muted text-xs tracking-[0.25em]"
             style={{ fontFamily: 'var(--font-plex), sans-serif' }}
           >
             PLANNERHUB
@@ -355,21 +554,21 @@ export function LandingPage() {
               <a
                 key={l.href}
                 href={l.href}
-                className="text-xs text-black/35 hover:text-black/70 transition-colors tracking-widest"
+                className="landing-copy-subtle text-xs transition-colors tracking-widest"
               >
                 {l.label.toUpperCase()}
               </a>
             ))}
             <Link
-              href="/"
-              className="text-xs text-black/35 hover:text-black/70 transition-colors tracking-widest"
+              href="/auth/login"
+              className="landing-copy-subtle text-xs transition-colors tracking-widest"
             >
-              EDITOR
+              ENTRAR
             </Link>
           </div>
         </div>
-        <div className="max-w-6xl mx-auto mt-8 pt-6 border-t border-black/[0.04]">
-          <span className="text-xs text-black/20">© {new Date().getFullYear()} PlannerHub. Feito com 💛 para quem ama planejar.</span>
+        <div className="landing-border max-w-6xl mx-auto mt-8 pt-6 border-t">
+          <span className="landing-copy-faint text-xs">© {new Date().getFullYear()} PlannerHub. Feito com 💛 para quem ama planejar.</span>
         </div>
       </footer>
     </div>

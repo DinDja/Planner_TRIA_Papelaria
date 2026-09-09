@@ -5,19 +5,9 @@ import {
   DEFAULT_SETTINGS,
   FONT_SCALE_VALUES,
   RADIUS_PRESET_VALUES,
-  getPaletteDef,
   useSettingsStore,
 } from '@/lib/store/use-settings-store'
 import { useEffect } from 'react'
-
-function hexToRgb(hex: string): string {
-  // usado só para cores hex dos gradientes swatch (decoration)
-  const m = hex.replace('#', '')
-  const r = parseInt(m.slice(0, 2), 16)
-  const g = parseInt(m.slice(2, 4), 16)
-  const b = parseInt(m.slice(4, 6), 16)
-  return `${r} ${g} ${b}`
-}
 
 /**
  * Aplica as configurações do sistema (paleta, gradientes, raio, escala de fonte,
@@ -35,16 +25,18 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     const isDark = theme === 'dark'
 
     // ── Paleta ───────────────────────────────────────────
-    const paletteDef = getPaletteDef(settings.palette)
-    const pal = isDark ? paletteDef.dark : paletteDef.light
-    root.style.setProperty('--primary', pal.primary)
-    root.style.setProperty('--ring', pal.ring)
-    root.style.setProperty('--sidebar-primary', pal.primary)
-    root.style.setProperty('--sidebar-ring', pal.ring)
+    const primary = isDark
+      ? 'color-mix(in oklab, var(--brand-mustard) 82%, var(--brand-beige))'
+      : 'var(--brand-mustard)'
+    const ring = isDark ? 'var(--brand-rose)' : 'var(--brand-mustard)'
+    root.style.setProperty('--primary', primary)
+    root.style.setProperty('--ring', ring)
+    root.style.setProperty('--sidebar-primary', primary)
+    root.style.setProperty('--sidebar-ring', ring)
     root.style.setProperty('--sidebar-primary-foreground', isDark
-      ? 'oklch(0.2 0.012 65)'
-      : 'oklch(0.98 0.005 90)')
-    root.style.setProperty('--chart-1', pal.primary)
+      ? '#241e16'
+      : '#211a12')
+    root.style.setProperty('--chart-1', 'var(--brand-rose)')
 
     // ── Raio ─────────────────────────────────────────────
     const radius = RADIUS_PRESET_VALUES[settings.radius]
@@ -65,18 +57,23 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 
     // ── Cores de destaque (paleta swatch) como RGB ───────
     // Úteis para gradientes dinâmicos (`rgb(${primaryRgb})`)
-    root.style.setProperty('--primary-rgb', hexToRgb(paletteDef.swatch))
+    root.style.setProperty('--primary-rgb', '183 111 6')
 
     return () => {
       // Reset parcial ao desmontar (raro em SPA)
       const defRadius = RADIUS_PRESET_VALUES[DEFAULT_SETTINGS.radius]
       const defFont = FONT_SCALE_VALUES[DEFAULT_SETTINGS.fontScale]
       root.style.removeProperty('--primary')
+      root.style.removeProperty('--ring')
+      root.style.removeProperty('--sidebar-primary')
+      root.style.removeProperty('--sidebar-ring')
+      root.style.removeProperty('--sidebar-primary-foreground')
+      root.style.removeProperty('--chart-1')
+      root.style.removeProperty('--primary-rgb')
       root.style.removeProperty('--radius')
       root.style.removeProperty('font-size')
       root.style.setProperty('--radius', defRadius)
       root.style.setProperty('font-size', defFont)
-      void hexToRgb
     }
   }, [mounted, theme, settings])
 

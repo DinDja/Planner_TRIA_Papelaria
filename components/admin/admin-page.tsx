@@ -157,10 +157,10 @@ export function AdminPage() {
       {tab === 'visao' && (
         <div className="space-y-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Stat label="MRR real" value={formatBRLLocal(mrr)} color="#8b5cf6" icon={CircleDollarSign} index={0} />
-            <Stat label="Ativas" value={String(activeCount)} color="#10b981" icon={CheckCircle2} index={1} />
-            <Stat label="Vencidas" value={String(pastDueCount)} color="#f59e0b" icon={PauseCircle} index={2} />
-            <Stat label="Bloqueadas" value={String(blockedCount)} color="#ef4444" icon={Ban} index={3} />
+            <Stat label="MRR real" value={formatBRLLocal(mrr)} color="#d1bdb8" icon={CircleDollarSign} index={0} />
+            <Stat label="Ativas" value={String(activeCount)} color="#6a634d" icon={CheckCircle2} index={1} />
+            <Stat label="Vencidas" value={String(pastDueCount)} color="#b76f06" icon={PauseCircle} index={2} />
+            <Stat label="Bloqueadas" value={String(blockedCount)} color="var(--destructive)" icon={Ban} index={3} />
           </div>
 
           <div className={cn('rounded-2xl border border-border/50 bg-card p-6', enter)} style={stagger(4)}>

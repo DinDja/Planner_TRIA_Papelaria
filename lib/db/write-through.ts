@@ -7,30 +7,34 @@ import { markCollectionWrite, markRootFieldWrite } from './own-writes'
 
 type WithId = { id: string }
 
-/**
- * Firestore rejeita campos com valor `undefined` (lança
- * `Unsupported field value: undefined`). As stores do Zustand,
- * porém, guardam livremente `undefined` em campos opcionais
- * (`titulo?: string`, `notas?: string`, etc.).
- *
- * Esta função remove recursivamente toda chave cujo valor seja
- * `undefined` — antes de o documento ser escrito. `null` é
- * preservado, porque Firestore aceita `null` e o usamos para
- * diferenciar "vazio" de "ausente".
- */
+/** Remove valores que o Firestore não aceita em documentos. */
 export function stripUndefined<T>(obj: T): T {
   if (obj === null || typeof obj !== 'object') return obj
   if (Array.isArray(obj)) {
-    return obj.map((x) =>
-      typeof x === 'object' && x !== null ? stripUndefined(x) : x,
-    ) as T
+    return obj
+      .filter((value) => value !== undefined)
+      .map((value) =>
+        typeof value === 'object' && value !== null ? stripUndefined(value) : value,
+      ) as T
   }
   const out: Record<string, unknown> = {}
-  for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
-    if (v === undefined) continue
-    out[k] = typeof v === 'object' && v !== null ? stripUndefined(v) : v
+  for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
+    if (value === undefined) continue
+    out[key] = typeof value === 'object' && value !== null ? stripUndefined(value) : value
   }
   return out as T
+}
+
+/** Impede que um setState originado de onSnapshot volte para o write-through. */
+let remoteStoreUpdateDepth = 0
+
+export function withRemoteStoreUpdate<T>(fn: () => T): T {
+  remoteStoreUpdateDepth += 1
+  try {
+    return fn()
+  } finally {
+    remoteStoreUpdateDepth -= 1
+  }
 }
 
 interface CollectionBinding<T extends WithId> {
@@ -39,197 +43,282 @@ interface CollectionBinding<T extends WithId> {
   collectionName: string
 }
 
-function snapshotsEqual<T extends WithId>(a: T[], b: T[]): boolean {
-  if (a.length !== b.length) return false
-  const bmap = new Map(b.map((x) => [x.id, x]))
-  for (const item of a) {
-    const other = bmap.get(item.id)
-    if (!other) return false
-    if (JSON.stringify(item) !== JSON.stringify(other)) return false
+export interface PendingCollectionState {
+  upserts: Set<string>
+  deletes: Set<string>
+}
+
+interface CollectionRuntime {
+  applyRemote: (items: WithId[], baseline: WithId[]) => void
+  getPending: () => PendingCollectionState
+}
+
+const collectionRuntimes = new Map<string, CollectionRuntime>()
+
+function collectionRuntimeKey(uid: string, collectionName: string) {
+  return `${uid}/${collectionName}`
+}
+
+export function getPendingCollectionState(
+  uid: string,
+  collectionName: string,
+): PendingCollectionState {
+  const runtime = collectionRuntimes.get(collectionRuntimeKey(uid, collectionName))
+  return runtime?.getPending() ?? { upserts: new Set(), deletes: new Set() }
+}
+
+/** Atualiza o baseline remoto sem disparar uma nova escrita. */
+export function notifyCollectionRemote(
+  uid: string,
+  collectionName: string,
+  items: WithId[],
+  baseline: WithId[] = items,
+) {
+  collectionRuntimes
+    .get(collectionRuntimeKey(uid, collectionName))
+    ?.applyRemote(items, baseline)
+}
+
+function canonical(value: unknown): string {
+  return JSON.stringify(stripUndefined(value))
+}
+
+interface CollectionDiff<T extends WithId> {
+  upserts: T[]
+  deletes: string[]
+}
+
+function diffCollections<T extends WithId>(before: T[], after: T[]): CollectionDiff<T> {
+  const previous = new Map(before.map((item) => [item.id, item]))
+  const current = new Map(after.map((item) => [item.id, item]))
+  const upserts: T[] = []
+  const deletes: string[] = []
+
+  for (const item of after) {
+    const old = previous.get(item.id)
+    if (!old || canonical(old) !== canonical(item)) upserts.push(item)
   }
-  return true
+  for (const item of before) {
+    if (!current.has(item.id)) deletes.push(item.id)
+  }
+  return { upserts, deletes }
+}
+
+function snapshotsEqual<T extends WithId>(a: T[], b: T[]): boolean {
+  return canonical(a) === canonical(b)
 }
 
 /**
- * Write-through: subscribes to a store field (array of {id}) and, when it
- * changes due to a local action, batches a full collection rewrite to Firestore.
- *
- * Debounce de 1500ms: o usuário editando (riscando item, digitando, mudando
- * uma tag) dispara dezenas de mudanças por segundo. Cada uma, sem debounce,
- * acionaria um writeBatch da coleção inteira — exaure a quota Firestore
- * (50K docs/dia no spark plano). Aguardamos silêncio curto antes de escrever.
+ * Persiste somente os documentos que realmente mudaram. A versão anterior
+ * regravava a coleção inteira em qualquer alteração de um único item.
  */
 export function bindCollectionWriteThrough<T extends WithId>(
   user: User,
   binding: CollectionBinding<T>,
 ): () => void {
   const { store, field, collectionName } = binding
-  let lastSnapshot: T[] = [...(store.getState()[field] ?? [])]
-  // Guarda IDs já enviados ao Firestore, para diff de remoções.
-  // Sem isto, deletar localmente não apaga o documento remoto —
-  // ele volta via onSnapshot e a store é sobrescrita, ressuscitando.
-  let lastWrittenIds: Set<string> = new Set(lastSnapshot.map((x) => x.id))
-  let unsubscribed = false
-  let pendingTimer: ReturnType<typeof setTimeout> | null = null
+  let lastObserved: T[] = [...(store.getState()[field] ?? [])]
+  let lastPersisted: T[] = [...lastObserved]
   let pendingSnapshot: T[] | null = null
-  let pendingIds: Set<string> | null = null
+  let pendingTimer: ReturnType<typeof setTimeout> | null = null
+  let pendingUpserts = new Set<string>()
+  let pendingDeletes = new Set<string>()
+  let changeVersion = 0
+  let hasLocalMutation = false
+  let disposed = false
+  let commitChain: Promise<void> = Promise.resolve()
+
+  const refreshPending = (snapshot: T[]) => {
+    const diff = diffCollections(lastPersisted, snapshot)
+    pendingUpserts = new Set(diff.upserts.map((item) => item.id))
+    pendingDeletes = new Set(diff.deletes)
+  }
+
+  const persist = (snapshot: T[]) => {
+    const version = ++changeVersion
+    const desired = [...snapshot]
+    const diff = diffCollections(lastPersisted, desired)
+    if (diff.upserts.length === 0 && diff.deletes.length === 0) {
+      hasLocalMutation = false
+      refreshPending(desired)
+      return
+    }
+
+    const markedAt = new Date().toISOString()
+    const payload = diff.upserts.map((item) =>
+      stripUndefined({ ...item, updatedAt: markedAt }),
+    ) as T[]
+
+    commitChain = commitChain
+      .then(async () => {
+        markCollectionWrite(user.uid, collectionName, payload)
+        await writeCollectionDiff(user, collectionName, payload, diff.deletes)
+      })
+      .then(() => {
+        lastPersisted = desired
+        if (version === changeVersion) {
+          hasLocalMutation = false
+          refreshPending(lastObserved)
+        }
+      })
+      .catch((error) => {
+        console.error(`Falha ao sincronizar ${collectionName}`, error)
+        if (version === changeVersion) refreshPending(lastObserved)
+      })
+  }
 
   const schedule = (snapshot: T[]) => {
-    pendingSnapshot = snapshot
-    pendingIds = new Set(snapshot.map((x) => x.id))
+    hasLocalMutation = true
+    pendingSnapshot = [...snapshot]
+    refreshPending(snapshot)
     if (pendingTimer) clearTimeout(pendingTimer)
     pendingTimer = setTimeout(() => {
       pendingTimer = null
-      if (unsubscribed) return
-      const toWrite = pendingSnapshot
-      const newIds = pendingIds
+      const next = pendingSnapshot
       pendingSnapshot = null
-      pendingIds = null
-      if (!toWrite || !newIds) return
-      // IDs que saíram: presentes no último write, ausentes agora.
-      const removed: string[] = [...lastWrittenIds].filter((id) => !newIds.has(id))
-      // Prepara payload canônico UMA vez (sem `undefined` + com updatedAt)
-      // e usa este mesmo payload tanto para marcar own-writes quanto
-      // para comitar no Firestore. Sem isto, o canonical marcado divergiria
-      // do canonical ecado pelo Firestore (timestamps/arredondamentos
-      // diferentes) e a flag own-writes nunca cortaria o loop.
-      const markedAt = new Date().toISOString()
-      const payload = toWrite.map((it: any) =>
-        stripUndefined({ ...it, updatedAt: markedAt }),
-      )
-      markCollectionWrite(user.uid, collectionName, payload as { id: string }[])
-      void writeFullCollection(user, collectionName, payload as T[], removed)
-      lastWrittenIds = newIds
+      if (!disposed && next) persist(next)
     }, 1500)
   }
 
+  const runtime: CollectionRuntime = {
+    applyRemote: (_items, baseline) => {
+      lastPersisted = baseline as T[]
+      if (hasLocalMutation) refreshPending(lastObserved)
+      else {
+        pendingUpserts = new Set()
+        pendingDeletes = new Set()
+      }
+    },
+    getPending: () => ({
+      upserts: new Set(pendingUpserts),
+      deletes: new Set(pendingDeletes),
+    }),
+  }
+  const runtimeKey = collectionRuntimeKey(user.uid, collectionName)
+  collectionRuntimes.set(runtimeKey, runtime)
+
   const unsub = store.subscribe((state: Record<string, any>) => {
     const current: T[] = state[field] ?? []
-    if (snapshotsEqual(lastSnapshot, current)) return
-    lastSnapshot = current
-    schedule(current)
+    if (snapshotsEqual(lastObserved, current)) return
+    lastObserved = [...current]
+    if (remoteStoreUpdateDepth > 0) return
+    schedule(lastObserved)
   })
 
   return () => {
-    unsubscribed = true
-    if (pendingTimer) {
-      clearTimeout(pendingTimer)
-      pendingTimer = null
-    }
-    // Flush final pending write so user doesn't lose last edit on logout.
-    if (pendingSnapshot && pendingIds) {
-      const removed = [...lastWrittenIds].filter((id) => !pendingIds!.has(id))
-      const flushAt = new Date().toISOString()
-      const payload = pendingSnapshot.map((it: any) =>
-        stripUndefined({ ...it, updatedAt: flushAt }),
-      )
-      markCollectionWrite(user.uid, collectionName, payload as { id: string }[])
-      void writeFullCollection(user, collectionName, payload as T[], removed)
-      lastWrittenIds = pendingIds
-    }
+    if (disposed) return
+    disposed = true
+    if (pendingTimer) clearTimeout(pendingTimer)
+    pendingTimer = null
+    const finalSnapshot = pendingSnapshot
     pendingSnapshot = null
-    pendingIds = null
+    if (finalSnapshot) persist(finalSnapshot)
     unsub()
+    if (collectionRuntimes.get(runtimeKey) === runtime) collectionRuntimes.delete(runtimeKey)
   }
 }
 
-async function writeFullCollection<T extends WithId>(
+async function writeCollectionDiff<T extends WithId>(
   user: User,
   path: string,
-  items: T[],
-  removedIds: string[] = [],
+  upserts: T[],
+  removedIds: string[],
 ) {
-  const batches: ReturnType<typeof writeBatch>[] = []
-  let batch = writeBatch(db)
-  let count = 0
-
-  // ── Upserts: items já vêm limpos (stripUndefined + updatedAt) do caller.
-  //    Usá-los diretamente garante que o eco do snapshot case com o marcador.
-  for (const item of items) {
-    const ref = doc(db, 'users', user.uid, path, item.id)
-    batch.set(ref, item as any, { merge: true })
-    count++
-    if (count >= 400) {
-      batches.push(batch)
-      batch = writeBatch(db)
-      count = 0
+  const operations = [
+    ...upserts.map((item) => ({ type: 'set' as const, id: item.id, item })),
+    ...removedIds.map((id) => ({ type: 'delete' as const, id })),
+  ]
+  for (let offset = 0; offset < operations.length; offset += 400) {
+    const batch = writeBatch(db)
+    for (const operation of operations.slice(offset, offset + 400)) {
+      const ref = doc(db, 'users', user.uid, path, operation.id)
+      if (operation.type === 'set') batch.set(ref, operation.item as any, { merge: true })
+      else batch.delete(ref)
     }
+    await batch.commit()
   }
-
-  // ── Deletes: IDs que saíram do estado (usuário apagou um registro)
-  //    Sem isto, o documento fica órfão no Firestore, e o onSnapshot
-  //    o manda de volta à store — ressuscitando o registro apagado.
-  for (const id of removedIds) {
-    const ref = doc(db, 'users', user.uid, path, id)
-    batch.delete(ref)
-    count++
-    if (count >= 400) {
-      batches.push(batch)
-      batch = writeBatch(db)
-      count = 0
-    }
-  }
-
-  // Se batch vazio (nada a fazer), não empurra — evita commit de batch sem ops.
-  if (count > 0) batches.push(batch)
-  for (const b of batches) await b.commit()
 }
 
-/**
- * Bind a root-doc field (array embedded on the user root document).
- * Write-through on store field changes. Same 1500ms debounce — root fields
- * (theme, name, avatar, height, weight, etc.) também exaurem quota se
- * atualizados em rajada (slider de peso, troca de tema contínua).
- */
+interface RootCoordinator {
+  activeBindings: number
+  pending: Map<string, unknown>
+  timer: ReturnType<typeof setTimeout> | null
+}
+
+const rootCoordinators = new Map<string, RootCoordinator>()
+
+function setNestedValue(target: Record<string, any>, path: string, value: unknown) {
+  const parts = path.split('.')
+  let cursor = target
+  for (const part of parts.slice(0, -1)) {
+    if (!cursor[part] || typeof cursor[part] !== 'object') cursor[part] = {}
+    cursor = cursor[part]
+  }
+  cursor[parts[parts.length - 1]] = value
+}
+
+async function flushRootCoordinator(user: User, coordinator: RootCoordinator) {
+  if (coordinator.pending.size === 0) return
+  const entries = [...coordinator.pending.entries()]
+  coordinator.pending.clear()
+  const payload: Record<string, any> = { updatedAt: new Date().toISOString() }
+  for (const [rootKey, value] of entries) {
+    setNestedValue(payload, rootKey, stripUndefined(value))
+    markRootFieldWrite(user.uid, rootKey, value)
+  }
+  try {
+    await setDoc(doc(db, 'users', user.uid), stripUndefined(payload), { merge: true })
+  } catch (error) {
+    console.error('Falha ao sincronizar dados do perfil', error)
+  }
+}
+
+function scheduleRootField(user: User, rootKey: string, value: unknown) {
+  const coordinator = rootCoordinators.get(user.uid)
+  if (!coordinator) return
+  coordinator.pending.set(rootKey, value)
+  if (coordinator.timer) clearTimeout(coordinator.timer)
+  coordinator.timer = setTimeout(() => {
+    coordinator.timer = null
+    void flushRootCoordinator(user, coordinator)
+  }, 1500)
+}
+
+/** Agrupa alterações de todos os root fields em um único setDoc. */
 export function bindRootField<T>(
   user: User,
   store: { getState: () => Record<string, any>; subscribe: any },
   field: string,
   rootKey: string,
 ): () => void {
-  let last = JSON.stringify(store.getState()[field] ?? null)
-  let unsubscribed = false
-  let pendingTimer: ReturnType<typeof setTimeout> | null = null
-  let pendingValue: T | null = null
-
-  const schedule = (value: T) => {
-    pendingValue = value
-    if (pendingTimer) clearTimeout(pendingTimer)
-    pendingTimer = setTimeout(() => {
-      pendingTimer = null
-      if (unsubscribed) return
-      const v = pendingValue
-      pendingValue = null
-      if (v === null) return
-      const rootRef = doc(db, 'users', user.uid)
-      const cleaned = stripUndefined({ [rootKey]: v, updatedAt: new Date().toISOString() })
-      // Marca como escrita própria — evita que o onSnapshot do root doc
-      // ecoe de volta e dispare novo setState neste bind.
-      markRootFieldWrite(user.uid, rootKey, v)
-      void setDoc(rootRef, cleaned, { merge: true })
-    }, 1500)
+  let coordinator = rootCoordinators.get(user.uid)
+  if (!coordinator) {
+    coordinator = { activeBindings: 0, pending: new Map(), timer: null }
+    rootCoordinators.set(user.uid, coordinator)
   }
+  coordinator.activeBindings += 1
 
+  let last = JSON.stringify(store.getState()[field] ?? null)
+  let disposed = false
   const unsub = store.subscribe((state: Record<string, any>) => {
     const current = JSON.stringify(state[field] ?? null)
     if (current === last) return
     last = current
-    schedule(state[field])
+    if (remoteStoreUpdateDepth > 0) return
+    scheduleRootField(user, rootKey, state[field])
   })
 
   return () => {
-    unsubscribed = true
-    if (pendingTimer) {
-      clearTimeout(pendingTimer)
-      pendingTimer = null
-    }
-    if (pendingValue !== null) {
-      const rootRef = doc(db, 'users', user.uid)
-      const cleaned = stripUndefined({ [rootKey]: pendingValue, updatedAt: new Date().toISOString() })
-      markRootFieldWrite(user.uid, rootKey, pendingValue)
-      void setDoc(rootRef, cleaned, { merge: true })
-    }
-    pendingValue = null
+    if (disposed) return
+    disposed = true
     unsub()
+    const currentCoordinator = rootCoordinators.get(user.uid)
+    if (!currentCoordinator) return
+    currentCoordinator.activeBindings -= 1
+    if (currentCoordinator.activeBindings > 0) return
+    if (currentCoordinator.timer) clearTimeout(currentCoordinator.timer)
+    currentCoordinator.timer = null
+    rootCoordinators.delete(user.uid)
+    void flushRootCoordinator(user, currentCoordinator)
   }
 }

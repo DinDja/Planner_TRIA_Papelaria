@@ -40,8 +40,8 @@ const seedSymptoms: SymptomLog[] = [
 ]
 
 const seedMedications: Medication[] = [
-  { id: `med-${uid()}`, name: 'Vitamina D', dosage: '1 comprimido', frequency: '1x ao dia', startDate: dayStr(-60), notes: 'Após o almoço', color: '#f0b429', createdAt: nowISO() },
-  { id: `med-${uid()}`, name: 'Ômega 3', dosage: '1 cápsula', frequency: '2x ao dia', startDate: dayStr(-30), notes: 'Café da manhã e jantar', color: '#5b8dbf', createdAt: nowISO() },
+  { id: `med-${uid()}`, name: 'Vitamina D', dosage: '1 comprimido', frequency: '1x ao dia', startDate: dayStr(-60), notes: 'Após o almoço', color: '#b76f06', createdAt: nowISO() },
+  { id: `med-${uid()}`, name: 'Ômega 3', dosage: '1 cápsula', frequency: '2x ao dia', startDate: dayStr(-30), notes: 'Café da manhã e jantar', color: '#6a634d', createdAt: nowISO() },
 ]
 
 const seedCycles: CycleRecord[] = [
@@ -50,8 +50,8 @@ const seedCycles: CycleRecord[] = [
 ]
 
 const seedDoctors: Doctor[] = [
-  { id: `doc-${uid()}`, name: 'Dra. Ana Oliveira', specialty: 'Clínico Geral', phone: '(11) 99999-0001', email: 'ana.oliveira@email.com', address: 'Rua Augusta, 1500', color: '#5b8dbf', createdAt: nowISO() },
-  { id: `doc-${uid()}`, name: 'Dr. Carlos Santos', specialty: 'Dermatologista', phone: '(11) 99999-0002', address: 'Av. Paulista, 2000', color: '#7bb686', createdAt: nowISO() },
+  { id: `doc-${uid()}`, name: 'Dra. Ana Oliveira', specialty: 'Clínico Geral', phone: '(11) 99999-0001', email: 'ana.oliveira@email.com', address: 'Rua Augusta, 1500', color: '#6a634d', createdAt: nowISO() },
+  { id: `doc-${uid()}`, name: 'Dr. Carlos Santos', specialty: 'Dermatologista', phone: '(11) 99999-0002', address: 'Av. Paulista, 2000', color: '#6a634d', createdAt: nowISO() },
 ]
 
 const seedAppointments: Appointment[] = [
@@ -60,9 +60,9 @@ const seedAppointments: Appointment[] = [
 ]
 
 const seedExams: ExamRecord[] = [
-  { id: `exam-${uid()}`, name: 'Hemograma completo', date: dayStr(-20), doctor: 'Dra. Ana Oliveira', laboratory: 'Lab São Paulo', result: 'Tudo dentro da normalidade', status: 'reviewed', color: '#7bb686', createdAt: nowISO() },
-  { id: `exam-${uid()}`, name: 'Colesterol e triglicerídeos', date: dayStr(-20), doctor: 'Dra. Ana Oliveira', laboratory: 'Lab São Paulo', result: 'Colesterol levemente elevado (210 mg/dL)', status: 'reviewed', color: '#f0b429', createdAt: nowISO() },
-  { id: `exam-${uid()}`, name: 'Glicemia em jejum', date: dayStr(15), doctor: 'Dra. Ana Oliveira', status: 'pending', color: '#e8a0a0', createdAt: nowISO() },
+  { id: `exam-${uid()}`, name: 'Hemograma completo', date: dayStr(-20), doctor: 'Dra. Ana Oliveira', laboratory: 'Lab São Paulo', result: 'Tudo dentro da normalidade', status: 'reviewed', color: '#6a634d', createdAt: nowISO() },
+  { id: `exam-${uid()}`, name: 'Colesterol e triglicerídeos', date: dayStr(-20), doctor: 'Dra. Ana Oliveira', laboratory: 'Lab São Paulo', result: 'Colesterol levemente elevado (210 mg/dL)', status: 'reviewed', color: '#b76f06', createdAt: nowISO() },
+  { id: `exam-${uid()}`, name: 'Glicemia em jejum', date: dayStr(15), doctor: 'Dra. Ana Oliveira', status: 'pending', color: '#d1bdb8', createdAt: nowISO() },
 ]
 
 interface HealthState {
@@ -132,7 +132,7 @@ interface HealthState {
   resetOnboarding: () => void
 }
 
-const COLORS = ['#e05b6d', '#f0b429', '#7bb686', '#5b8dbf', '#c9b6e4', '#e8a0a0']
+const COLORS = ['#d1bdb8', '#b76f06', '#6a634d', '#ddd6c6']
 
 export const useHealthStore = create<HealthState>()(
   persist(

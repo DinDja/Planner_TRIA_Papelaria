@@ -5,8 +5,8 @@ import type { MemoryMood } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import {
   Angry,
-  Box,
   Frown,
+  List,
   Meh,
   Plus,
   Pencil,
@@ -16,17 +16,18 @@ import {
 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Button } from '../ui/button'
+import { Card, CardContent, CardHeader } from '../ui/card'
 import { Badge } from '../ui/primitives'
 import { AddMemoryDialog } from './memories-dialogs'
 
 const enter = 'animate-in fade-in slide-in-from-bottom-3 duration-500 fill-mode-both'
 
 const MOOD_CONFIG: Record<MemoryMood, { icon: typeof Smile; label: string; color: string }> = {
-  great: { icon: Sparkles, label: 'Incrível', color: '#7bb686' },
-  good: { icon: Smile, label: 'Bom', color: '#5b8dbf' },
-  neutral: { icon: Meh, label: 'Neutro', color: '#f0b429' },
-  bad: { icon: Frown, label: 'Ruim', color: '#e8a0a0' },
-  tough: { icon: Angry, label: 'Difícil', color: '#e05b6d' },
+  great: { icon: Sparkles, label: 'Incrível', color: '#6a634d' },
+  good: { icon: Smile, label: 'Bom', color: '#ddd6c6' },
+  neutral: { icon: Meh, label: 'Neutro', color: '#b76f06' },
+  bad: { icon: Frown, label: 'Ruim', color: '#d1bdb8' },
+  tough: { icon: Angry, label: 'Difícil', color: '#b76f06' },
 }
 
 function formatDate(dateStr: string): string {
@@ -48,34 +49,16 @@ function MemoryCard({
   const MoodIcon = mood.icon
 
   return (
-    <div className="group relative pl-8 pb-8 last:pb-0">
-      {/* Linha vertical da timeline */}
-      <div
-        className="absolute left-[11px] top-3 bottom-0 w-px last:hidden"
-        style={{ backgroundColor: entry.color + '40' }}
-      />
-
-      {/* Bolha da timeline */}
-      <div
-        className="absolute left-0 top-1 size-6 rounded-full border-2 flex items-center justify-center"
-        style={{
-          borderColor: entry.color,
-          backgroundColor: entry.color + '18',
-        }}
-      >
-        <div className="size-2 rounded-full" style={{ backgroundColor: entry.color }} />
-      </div>
-
-      {/* Card */}
-      <div
-        className="rounded-2xl p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
-        style={{
-          backgroundColor: entry.color + '0a',
-          border: `1px solid ${entry.color}20`,
-        }}
-      >
-        <div className="flex items-start justify-between gap-3 mb-3">
-          <div className="flex items-start gap-3 min-w-0">
+    <Card
+      glass
+      className="group overflow-hidden"
+      style={{
+        borderTopColor: entry.color,
+        borderTopWidth: 3,
+      }}
+    >
+      <CardHeader className="flex-row items-start justify-between gap-3 pb-0">
+        <div className="flex items-start gap-3 min-w-0 flex-1">
             <div
               className="flex size-9 shrink-0 items-center justify-center rounded-xl"
               style={{ backgroundColor: mood.color + '18' }}
@@ -109,8 +92,9 @@ function MemoryCard({
               <Trash2 size={13} />
             </button>
           </div>
-        </div>
+      </CardHeader>
 
+      <CardContent className="pt-3">
         <p className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap">
           {entry.description}
         </p>
@@ -124,8 +108,8 @@ function MemoryCard({
             ))}
           </div>
         )}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   )
 }
 
@@ -153,15 +137,15 @@ export function MemoriesPage() {
   }, [entries, tagFilter])
 
   return (
-    <div className="p-6 lg:p-8 max-w-[900px] mx-auto">
+    <div className="p-6 lg:p-8 max-w-[1200px] mx-auto">
       <div className={cn('flex flex-wrap items-end justify-between gap-4 mb-8', enter)}>
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
             <span
               className="flex size-11 items-center justify-center rounded-2xl"
-              style={{ backgroundColor: '#e8a0a018' }}
+              style={{ backgroundColor: '#6a634d18' }}
             >
-              <Box size={22} style={{ color: '#e8a0a0' }} />
+              <List size={22} style={{ color: '#6a634d' }} />
             </span>
             Caixa de Memórias
           </h1>
@@ -207,7 +191,7 @@ export function MemoriesPage() {
       )}
 
       {filtered.length > 0 ? (
-        <div className="max-w-2xl">
+        <div className="space-y-4">
           {filtered.map((entry) => (
             <MemoryCard
               key={entry.id}
@@ -219,7 +203,7 @@ export function MemoriesPage() {
         </div>
       ) : (
         <div className="text-center py-16">
-          <Box size={40} className="mx-auto text-muted-foreground/30 mb-4" />
+          <List size={40} className="mx-auto text-muted-foreground/30 mb-4" />
           <p className="text-muted-foreground">
             {tagFilter ? 'Nenhuma memória com essa tag.' : 'Nenhuma memória guardada ainda.'}
           </p>

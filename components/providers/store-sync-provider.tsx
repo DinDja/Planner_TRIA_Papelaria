@@ -1,16 +1,20 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { usePathname } from 'next/navigation'
 import { doc, onSnapshot } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { useAuth } from '@/lib/auth/auth-context'
 import { subscribeCollection } from '@/lib/db/client'
-import { bindCollectionWriteThrough, bindRootField } from '@/lib/db/write-through'
+import {
+  bindCollectionWriteThrough,
+  bindRootField,
+  getPendingCollectionState,
+  notifyCollectionRemote,
+  withRemoteStoreUpdate,
+} from '@/lib/db/write-through'
 import { isOwnDocSnapshot, isOwnRootFieldSnapshot } from '@/lib/db/own-writes'
 import { EDITOR_PLAN, resolveRoutePlan, type RouteCollectionPlan } from '@/lib/db/route-collections'
-import type { User } from 'firebase/auth'
-
 import { useAppStore } from '@/lib/store/use-app-store'
 import { useProfileStore } from '@/lib/store/use-profile-store'
 import { sanitizeModules, useMenuStore } from '@/lib/store/use-menu-store'
@@ -71,8 +75,6 @@ const ROOT_BINDINGS: RootBinding[] = [
   { store: useHealthStore as unknown as StoreLike, field: 'sex', rootKey: 'sex', read: true, write: true },
   { store: useHealthStore as unknown as StoreLike, field: 'onboarded', rootKey: 'onboarded', read: true, write: true },
   { store: usePasswordsStore as unknown as StoreLike, field: 'masterPin', rootKey: 'masterPin', read: false, write: true },
-
-  // Assinatura — sinergia de role (admin) com plano/status.
   { store: useSubscriptionStore as unknown as StoreLike, field: 'role', rootKey: 'subscription.role', read: true, write: true },
   { store: useSubscriptionStore as unknown as StoreLike, field: 'plan', rootKey: 'subscription.plan', read: true, write: true },
   { store: useSubscriptionStore as unknown as StoreLike, field: 'status', rootKey: 'subscription.status', read: true, write: true },
@@ -87,10 +89,6 @@ const COL_BINDINGS: ColBinding[] = [
   { store: useNotesStore as unknown as StoreLike, field: 'notes', collection: 'notes', read: true, write: true },
   { store: useNotesStore as unknown as StoreLike, field: 'folders', collection: 'noteFolders', read: false, write: false },
   { store: useListsStore as unknown as StoreLike, field: 'lists', collection: 'shoppingLists', read: true, write: true },
-  // listPresets — sync desligado propositalmente até as rules serem publicadas
-  // (aguardando deploy de firestore.rules no projeto teste-3637d; hoje iria
-  // quebrar com "Missing or insufficient permissions" e os presets vivem só
-  // no localStorage via persist). Para reativar: read/write = true.
   { store: useListsStore as unknown as StoreLike, field: 'userPresets', collection: 'listPresets', read: false, write: false },
   { store: useChecklistsStore as unknown as StoreLike, field: 'checklists', collection: 'checklists', read: true, write: true },
   { store: useQuotesStore as unknown as StoreLike, field: 'quotes', collection: 'quotes', read: true, write: true },
@@ -125,182 +123,111 @@ const COL_BINDINGS: ColBinding[] = [
   { store: useHealthStore as unknown as StoreLike, field: 'exams', collection: 'exams', read: true, write: true },
 ]
 
-/**
- * Resolve um rootKey aninhado (ex.: "subscription.role") a partir do
- * documento-raiz plano serializado pelo Firestore. Suporta uma chave
- * simples ("theme") ou uma nested com ponto ("subscription.role").
- */
-function readRootField(d: Record<string, any>, rootKey: string): unknown {
-  if (!rootKey.includes('.')) return d[rootKey]
-  let cur: any = d
-  for (const seg of rootKey.split('.')) {
-    if (cur == null || typeof cur !== 'object') return undefined
-    cur = cur[seg]
+function readRootField(data: Record<string, any>, rootKey: string): unknown {
+  if (!rootKey.includes('.')) return data[rootKey]
+  let current: any = data
+  for (const segment of rootKey.split('.')) {
+    if (current == null || typeof current !== 'object') return undefined
+    current = current[segment]
   }
-  return cur
+  return current
 }
 
 export interface StoreSyncProviderProps {
   children: React.ReactNode
-  /**
-   * Modo editor (/planner/[id]): bypassa o resolveRoutePlan baseado em
-   * pathname e usa um planta fixo que carrega planners + root essenciais
-   * (theme/folders/plannerTags). Passa `true` no mount inline do editor.
-   */
   editorMode?: boolean
 }
 
 export function StoreSyncProvider({ children, editorMode = false }: StoreSyncProviderProps) {
   const { user } = useAuth()
   const pathname = usePathname()
+  const plan: RouteCollectionPlan = useMemo(
+    () => (editorMode ? EDITOR_PLAN : resolveRoutePlan(pathname ?? '/')),
+    [editorMode, pathname],
+  )
 
-  // Plano atual: coleções/rootFields que esta página precisa ler.
-  // No modo editor, ignora o pathname e usa o plano fixo do editor.
-  const plan: RouteCollectionPlan = editorMode
-    ? EDITOR_PLAN
-    : resolveRoutePlan(pathname ?? '/')
-
-  // ── Efeito 1 — Root doc + collection writes (sempre ativos enquanto
-  //    o usuário está logado). Os write-through não dependem da rota:
-  //    garantem que criações locais sejam persistidas mesmo se o listener
-  //    de read estiver desligado (caso do usuário criar item fora da página
-  //    nativa da coleção). Custo néant: nenhum onSnapshot aberto aqui.
   useEffect(() => {
     if (!user) return
     const unsubs: Array<() => void> = []
-
-    // Write-through de root fields — SEMPRE ativos para escrita. A leitura
-    // seletiva dos snapshots é feita no outro useEffect via own-writes flag.
-    for (const b of ROOT_BINDINGS) {
-      if (b.write) {
-        unsubs.push(bindRootField(user, b.store, b.field, b.rootKey))
+    for (const binding of ROOT_BINDINGS) {
+      if (binding.write) unsubs.push(bindRootField(user, binding.store, binding.field, binding.rootKey))
+    }
+    for (const binding of COL_BINDINGS) {
+      if (binding.write) {
+        unsubs.push(bindCollectionWriteThrough(user, {
+          store: binding.store,
+          field: binding.field,
+          collectionName: binding.collection,
+        }))
       }
     }
-    // Write-through de coleções — SEMPRE ativos. Importante: se o listener
-    // de read daquela coleção está desligado (página não precisa), o write-
-    // through ainda escreve, e quando o usuário abrir a página certa, o
-    // onSnapshot chega com o estado atualizado. Sem isso, creates feitos
-    // fora da página nativa sumiriam até a próxima visita.
-    for (const b of COL_BINDINGS) {
-      if (b.write) {
-        unsubs.push(
-          bindCollectionWriteThrough(user, {
-            store: b.store,
-            field: b.field,
-            collectionName: b.collection,
-          }),
-        )
-      }
-    }
-    return () => unsubs.forEach((u) => u())
-  }, [user])
+    return () => unsubs.forEach((unsubscribe) => unsubscribe())
+  }, [user?.uid])
 
-  // ── Efeito 2 — Leitura (onSnapshot) lazy por pathname/plano.
-  //    Só abre o listener do root doc e das coleções que a página atual
-  //    precisa. Re-roda quando o pathname muda (navegação) ou quando o
-  //    usuário muda (login/logout). Isto corta ~70% das leituras diárias.
   useEffect(() => {
     if (!user) return
     const unsubs: Array<() => void> = []
-
-    // 2a. Root doc — aberto sempre (cobra só 1 leitura/refresh), mas só
-    //     aplicamos ao store os rootFields que o plano pede. Isto continua
-    //     económico: 1 listener + 1 doc reads vs. 35 collection listeners.
     const rootRef = doc(db, 'users', user.uid)
-    const wantRootKeys = new Set(plan.rootFields ?? [])
-    const unsubRoot = onSnapshot(rootRef, (snap) => {
-      if (!snap.exists()) return
-      const d = snap.data() as any
-      for (const b of ROOT_BINDINGS) {
-        if (!b.read) continue
-        if (wantRootKeys.size > 0 && !wantRootKeys.has(b.rootKey)) continue
-        const value = readRootField(d, b.rootKey)
+    const wantedRootKeys = new Set(plan.rootFields ?? [])
+    unsubs.push(onSnapshot(rootRef, (snapshot) => {
+      if (!snapshot.exists()) return
+      const data = snapshot.data() as Record<string, any>
+      for (const binding of ROOT_BINDINGS) {
+        if (!binding.read) continue
+        if (wantedRootKeys.size > 0 && !wantedRootKeys.has(binding.rootKey)) continue
+        const value = readRootField(data, binding.rootKey)
         if (value === undefined) continue
-        const normalizedValue =
-          b.field === 'modules' && Array.isArray(value)
-            ? sanitizeModules(value as ModuleDef[])
-            : value
-        // Corte do loop: se este campo é eco de uma escrita nossa recente,
-        // ignora o setState — o write-through já atualizou a store.
-        if (isOwnRootFieldSnapshot(user.uid, b.rootKey, normalizedValue)) continue
-        ;(b.store as any).setState({ [b.field]: normalizedValue })
+        const normalized = binding.field === 'modules' && Array.isArray(value)
+          ? sanitizeModules(value as ModuleDef[])
+          : value
+        if (isOwnRootFieldSnapshot(user.uid, binding.rootKey, normalized)) continue
+        withRemoteStoreUpdate(() => binding.store.setState({ [binding.field]: normalized }))
       }
-    })
-    unsubs.push(unsubRoot)
+    }))
 
-    // 2b. Coleções — abre onSnapshot só para as do plano.
-    const wantCols = new Set(plan.collections)
-    const UPSERT_KEY = '__pendingWrites'
-
-    for (const b of COL_BINDINGS) {
-      if (!b.read) continue
-      if (!wantCols.has(b.collection)) continue
-
-      const unsub = subscribeCollection<any>(user, b.collection, (items) => {
-        // Corte do loop por item: para cada item do snapshot, verificamos
-        // se é eco de uma escrita nossa recente.
-        //  • Se é eco (mesmo canonical) → o estado local JÁ está com este
-        //    item atualizado (foi o próprio write-through que o escreveu).
-        //    Mantemos a cópia LOCAL no merge — descartar faria com que o
-        //    "merged" perdesse o item e o setState acabasse apagando-o.
-        //  • Se NÃO é eco → aplicar o item do snapshot (atualização remota
-        //    legítima, de outra aba/dispositivo).
-        const local: any[] = (b.store as any).getState()[b.field] ?? []
-        const localMap = new Map(local.map((x) => [x.id, x]))
-        // IDs criados localmente que ainda não foram escritos — preservar.
-        const pendingRaw = (window as any)[UPSERT_KEY + ':' + b.collection] as Set<string> | undefined
-        const pending = pendingRaw ? new Set([...pendingRaw]) : new Set<string>()
-
-        // Estratégia de merge:
-        //  • Para cada id no snapshot:
-        //    - se é eco nosso → usar cópia LOCAL (já está correta, não
-        //      precisa re-setar → corta o loop do write-through).
-        //    - senão → usar snapshot remote (mudança externa legítima).
-        //  • Para cada id no local que NÃO está no snapshot:
-        //    - se está em pending (criação local ainda não escrita) → manter local.
-        //    - senão → descartar (apagado remotamente por outra aba/device).
+    const wantedCollections = new Set(plan.collections)
+    for (const binding of COL_BINDINGS) {
+      if (!binding.read || !wantedCollections.has(binding.collection)) continue
+      unsubs.push(subscribeCollection<any>(user, binding.collection, (items) => {
+        const local: any[] = binding.store.getState()[binding.field] ?? []
+        const localMap = new Map(local.map((item) => [item.id, item]))
+        const pending = getPendingCollectionState(user.uid, binding.collection)
         const merged: any[] = []
-        const seenIds = new Set<string>()
+        const baseline: any[] = []
+        const seen = new Set<string>()
+
         for (const item of items) {
-          if (isOwnDocSnapshot(user.uid, b.collection, item)) {
-            // Eco de nossa escrita. Mantém o local (que já contém este item
-            // — foi o write-through que disparou a escrita que gerou o eco).
-            const localItem = localMap.get(item.id)
-            if (localItem) {
-              merged.push(localItem)
-              seenIds.add(item.id)
-            }
+          if (pending.deletes.has(item.id)) {
+            baseline.push(item)
             continue
           }
-          // Atualização externa legítima — usa o payload do snapshot.
-          merged.push(item)
-          seenIds.add(item.id)
+          const own = isOwnDocSnapshot(user.uid, binding.collection, item)
+          const localItem = localMap.get(item.id)
+          if (pending.upserts.has(item.id)) {
+            merged.push(localItem ?? item)
+            baseline.push(item)
+          } else if (own) {
+            merged.push(localItem ?? item)
+            baseline.push(localItem ?? item)
+          } else {
+            merged.push(item)
+            baseline.push(item)
+          }
+          seen.add(item.id)
         }
         for (const item of local) {
-          if (!seenIds.has(item.id)) {
-            // Não está no snapshot remoto. Se é pending (criação local
-            // recente), preservamos até a próxima emissãoofirestore dele.
-            // Caso contrário, foi apagado remotamente — descarta.
-            if (pending.has(item.id)) {
-              merged.push(item)
-              seenIds.add(item.id)
-            }
-          }
+          if (!seen.has(item.id) && pending.upserts.has(item.id)) merged.push(item)
         }
 
-        // Se o merge casa id<EA>nticamente com o estado local (incl. ordem),
-        // aborta o setState — corta novo ciclo write-through:
-        const same =
-          merged.length === local.length &&
-          merged.every((m, i) => m.id === local[i].id && JSON.stringify(m) === JSON.stringify(local[i]))
-        if (same) return
-        ;(b.store as any).setState({ [b.field]: merged })
-      })
-      unsubs.push(unsub)
+        notifyCollectionRemote(user.uid, binding.collection, items, baseline)
+        const same = merged.length === local.length && merged.every(
+          (item, index) => item.id === local[index].id && JSON.stringify(item) === JSON.stringify(local[index]),
+        )
+        if (!same) withRemoteStoreUpdate(() => binding.store.setState({ [binding.field]: merged }))
+      }))
     }
-
-    return () => unsubs.forEach((u) => u())
-  }, [user, plan])
+    return () => unsubs.forEach((unsubscribe) => unsubscribe())
+  }, [user?.uid, plan])
 
   return <>{children}</>
 }

@@ -82,7 +82,7 @@ function EnergyPicker({ value, onChange }: { value: number; onChange: (v: number
             'size-10 rounded-xl border-2 transition-all flex items-center justify-center cursor-pointer',
             value === level ? 'border-transparent' : 'border-border/60 hover:border-primary/40',
           )}
-          style={value === level ? { backgroundColor: level <= 2 ? '#e05b6d' : level <= 3 ? '#f0b429' : '#7bb686' } : {}}
+          style={value === level ? { backgroundColor: level <= 2 ? '#d1bdb8' : level <= 3 ? '#b76f06' : '#6a634d' } : {}}
           title={labels[level - 1]}
         >
           <div
@@ -702,7 +702,7 @@ function EnergyIndicatorSimple({ level }: { level: number }) {
           style={{
             height: `${6 + bar * 2}px`,
             backgroundColor: bar <= level
-              ? level <= 2 ? '#e05b6d' : level <= 3 ? '#f0b429' : '#7bb686'
+              ? level <= 2 ? '#d1bdb8' : level <= 3 ? '#b76f06' : '#6a634d'
               : 'var(--muted)',
           }}
         />

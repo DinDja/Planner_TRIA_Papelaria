@@ -276,16 +276,6 @@ export interface DayActivity {
 
 // ─── Configurações do Sistema ────────────────────────────────────────────────
 
-/** Identificadores de paletas de cores predefinidas do app */
-export type SystemPaletteId =
-  | 'amber' // Padrão (default atual, baseado em oklch(0.56 0.1 50))
-  | 'rose'
-  | 'ocean'
-  | 'forest'
-  | 'lavender'
-  | 'sunset'
-  | 'mono'
-
 /** Locais onde gradientes podem ser ativados/desativados */
 export type GradientArea = 'dashboard' | 'covers' | 'charts' | 'badges'
 
@@ -294,8 +284,6 @@ export type RadiusPreset = 'sharp' | 'soft' | 'rounded' | 'pill'
 export type FontScale = 'sm' | 'base' | 'lg'
 
 export interface SystemSettings {
-  /** Paleta de cores do sistema (afeta --primary e derivados) */
-  palette: SystemPaletteId
   /** Áreas onde usar gradientes (liga/desliga por local) */
   gradients: Record<GradientArea, boolean>
   /** Raio de borda global */
@@ -428,32 +416,32 @@ export interface FinancialAccount {
 }
 
 export const INCOME_CATEGORIES = [
-  'Aluguel recebido', 'Clientes', 'Comissão', 'Extra', 'Investimentos',
-  'Outros', 'Presente', 'Pró-labore', 'Reembolso', 'Salário', 'Vendas',
+  'Aluguel', 'Clientes', 'Comissão', 'Extra', 'Investimentos',
+  'Presente', 'Pró-labore', 'Reembolso', 'Salário', 'Vendas', 'Outros',
 ] as const
 
 export const EXPENSE_CATEGORIES = [
-  'Assinaturas', 'Beleza', 'Compras', 'Educação', 'Lazer', 'Mercado',
-  'Moradia', 'Outros', 'Pets', 'Presentes', 'Restaurantes',
+  'Assinaturas', 'Educação', 'Mercado', 'Moradia', 'Pets', 'Presentes',
+  'Restaurantes', 'Outros',
 ] as const
 
 export const SUBSCRIPTION_CATEGORIES = [
-  'Streaming de filmes e séries', 'Música', 'Jogos', 'Armazenamento em nuvem',
-  'Software', 'Educação', 'Notícias', 'Academia', 'Outros',
+  'Academia', 'Armazenamento em nuvem', 'Educação', 'Jogos', 'Música',
+  'Notícias', 'Software', 'Streaming de filmes e séries', 'Outros',
 ] as const
 
 /** Recorrência de receitas — ausente = avulsa. */
-export const TRANSACTION_RECURRENCE = ['monthly', 'weekly', 'biweekly', 'yearly'] as const
+export const TRANSACTION_RECURRENCE = ['weekly', 'biweekly', 'monthly', 'yearly'] as const
 export type TransactionRecurrence = (typeof TRANSACTION_RECURRENCE)[number]
 
 /** Formas de recebimento e pagamento. */
 export const PAYMENT_METHODS = [
-  'Pix', 'Transferência', 'Dinheiro', 'Débito', 'Crédito', 'Conta bancária', 'Outro',
+  'Conta bancária', 'Crédito', 'Débito', 'Dinheiro', 'Pix', 'Transferência', 'Outro',
 ] as const
 
 /** Bandeiras de cartão. */
 export const CARD_BRANDS = [
-  'Visa', 'Mastercard', 'Elo', 'Hipercard', 'Amex', 'Outros',
+  'Amex', 'Elo', 'Hipercard', 'Mastercard', 'Visa', 'Outros',
 ] as const
 
 export type TransactionStatus = 'received' | 'paid' | 'pending'
@@ -651,24 +639,23 @@ export const JOURNAL_PROMPTS: JournalPrompt[] = [
 ]
 
 export const ENTRY_COLORS = [
-  '#e8a0a0', '#f0b429', '#7bb686', '#5b8dbf', '#c9b6e4',
-  '#e05b6d', '#f7c59f', '#a0c4ff', '#bdb2ff', '#ffc6ff',
+  '#d1bdb8', '#b76f06', '#6a634d', '#ddd6c6',
 ]
 
 export const EMOTION_CONFIG: Record<JournalEmotion, { label: string; color: string; emoji: string }> = {
-  excited:   { label: 'Animado',    color: '#f7c59f', emoji: '✨' },
-  happy:     { label: 'Feliz',      color: '#7bb686', emoji: '😊' },
-  calm:      { label: 'Calmo',      color: '#a0c4ff', emoji: '😌' },
-  grateful:  { label: 'Grato',      color: '#c9b6e4', emoji: '🙏' },
-  inspired:  { label: 'Inspirado',  color: '#f0b429', emoji: '💡' },
-  anxious:  { label: 'Ansioso',    color: '#e8a0a0', emoji: '😰' },
-  sad:       { label: 'Triste',     color: '#5b8dbf', emoji: '😢' },
-  tired:     { label: 'Cansado',    color: '#a0a0a0', emoji: '😴' },
-  frustrated:{ label: 'Frustrado',  color: '#e05b6d', emoji: '😤' },
-  stressed:  { label: 'Estressado', color: '#e8a0a0', emoji: '😣' },
-  confused:  { label: 'Confuso',   color: '#c9b6e4', emoji: '😕' },
-  hopeful:   { label: 'Esperançoso',color: '#7bb686', emoji: '🌱' },
-  neutral:   { label: 'Neutro',     color: '#a0a0a0', emoji: '😐' },
+  excited:   { label: 'Animado',    color: '#b76f06', emoji: '✨' },
+  happy:     { label: 'Feliz',      color: '#6a634d', emoji: '😊' },
+  calm:      { label: 'Calmo',      color: '#ddd6c6', emoji: '😌' },
+  grateful:  { label: 'Grato',      color: '#ddd6c6', emoji: '🙏' },
+  inspired:  { label: 'Inspirado',  color: '#b76f06', emoji: '💡' },
+  anxious:  { label: 'Ansioso',    color: '#d1bdb8', emoji: '😰' },
+  sad:       { label: 'Triste',     color: '#6a634d', emoji: '😢' },
+  tired:     { label: 'Cansado',    color: '#ddd6c6', emoji: '😴' },
+  frustrated:{ label: 'Frustrado',  color: '#b76f06', emoji: '😤' },
+  stressed:  { label: 'Estressado', color: '#d1bdb8', emoji: '😣' },
+  confused:  { label: 'Confuso',   color: '#ddd6c6', emoji: '😕' },
+  hopeful:   { label: 'Esperançoso',color: '#6a634d', emoji: '🌱' },
+  neutral:   { label: 'Neutro',     color: '#ddd6c6', emoji: '😐' },
 }
 
 export const TIME_OF_DAY_CONFIG: Record<JournalTimeOfDay, { label: string; icon: string }> = {
@@ -970,5 +957,5 @@ export interface BirthdayRecord {
 }
 
 export const BIRTHDAY_COLORS = [
-  '#e8a0a0', '#f0b429', '#7bb686', '#5b8dbf', '#c9b6e4', '#e05b6d', '#d4b070',
+  '#d1bdb8', '#b76f06', '#6a634d', '#ddd6c6',
 ]

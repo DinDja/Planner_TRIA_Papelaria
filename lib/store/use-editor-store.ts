@@ -168,7 +168,7 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
   markerColor: '#1a1a1a',
   markerSize: 5,
   markerOpacity: 1,
-  highlighterColor: '#f0b429',
+  highlighterColor: '#b76f06',
   highlighterSize: 8,
   highlighterOpacity: 0.4,
   rulerColor: '#1a1a1a',
@@ -177,10 +177,10 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
   textColor: '#1a1a1a',
   textFontSize: 18,
   textFontFamily: 'sans',
-  shapeColor: '#e05b6d',
+  shapeColor: '#d1bdb8',
   shapeOutline: false,
   shapeStrokeWidth: 3,
-  fillColor: '#7bb686',
+  fillColor: '#6a634d',
   eraserSize: 20,
 
   // Estilos sketchbook — valores iniciais tinta nanquim / aquarela

@@ -22,7 +22,7 @@ const seedEvents: CalendarEvent[] = [
     date: dayStr(0),
     startTime: '08:00',
     endTime: '09:30',
-    color: '#5b8dbf',
+    color: '#6a634d',
     plannerId: 'pl-2',
     createdAt: nowISO(),
   },
@@ -32,7 +32,7 @@ const seedEvents: CalendarEvent[] = [
     date: dayStr(0),
     startTime: '10:00',
     endTime: '11:00',
-    color: '#c9b6e4',
+    color: '#ddd6c6',
     plannerId: 'pl-3',
     createdAt: nowISO(),
   },
@@ -42,7 +42,7 @@ const seedEvents: CalendarEvent[] = [
     date: dayStr(0),
     startTime: '12:30',
     endTime: '13:30',
-    color: '#f0b429',
+    color: '#b76f06',
     createdAt: nowISO(),
   },
   {
@@ -51,7 +51,7 @@ const seedEvents: CalendarEvent[] = [
     date: dayStr(1),
     startTime: '14:00',
     endTime: '15:00',
-    color: '#7bb686',
+    color: '#6a634d',
     plannerId: 'pl-5',
     createdAt: nowISO(),
   },
@@ -61,7 +61,7 @@ const seedEvents: CalendarEvent[] = [
     date: dayStr(2),
     startTime: '16:00',
     endTime: '17:30',
-    color: '#e05b6d',
+    color: '#d1bdb8',
     plannerId: 'pl-4',
     createdAt: nowISO(),
   },
@@ -71,7 +71,7 @@ const seedEvents: CalendarEvent[] = [
     date: dayStr(3),
     startTime: '00:00',
     allDay: true,
-    color: '#e8a0a0',
+    color: '#d1bdb8',
     createdAt: nowISO(),
   },
   {
@@ -80,7 +80,7 @@ const seedEvents: CalendarEvent[] = [
     date: dayStr(5),
     startTime: '09:00',
     endTime: '18:00',
-    color: '#e05b6d',
+    color: '#d1bdb8',
     notes: 'Enviar para o gerente até as 18h',
     createdAt: nowISO(),
   },
@@ -110,7 +110,7 @@ export const useCalendarStore = create<CalendarState>()(
     (set) => ({
       events: [],
 
-      addEvent: ({ color = '#5b8dbf', ...rest }) =>
+      addEvent: ({ color = '#6a634d', ...rest }) =>
         set((s) => ({
           events: [
             ...s.events,

@@ -5,13 +5,13 @@ import type { Checklist, ChecklistItem } from '../types'
 const uid = () => Math.random().toString(36).slice(2, 10)
 const nowISO = () => new Date().toISOString()
 
-const COLORS = ['#e05b6d', '#f0b429', '#7bb686', '#5b8dbf', '#c9b6e4', '#e8a0a0']
+const COLORS = ['#d1bdb8', '#b76f06', '#6a634d', '#ddd6c6']
 
 const seedChecklists: Checklist[] = [
   {
     id: 'cl-seed-1',
     title: 'Mudança para o novo apê',
-    color: '#5b8dbf',
+    color: '#6a634d',
     items: [
       { id: `cli-${uid()}`, text: 'Contatar empresa de mudança', checked: true, createdAt: nowISO() },
       { id: `cli-${uid()}`, text: 'Comprar caixas de papelão', checked: true, createdAt: nowISO() },
@@ -26,7 +26,7 @@ const seedChecklists: Checklist[] = [
   {
     id: 'cl-seed-2',
     title: 'Setup do home office',
-    color: '#7bb686',
+    color: '#6a634d',
     items: [
       { id: `cli-${uid()}`, text: 'Comprar mesa ergonômica', checked: true, createdAt: nowISO() },
       { id: `cli-${uid()}`, text: 'Ajustar altura do monitor', checked: false, createdAt: nowISO() },
@@ -39,7 +39,7 @@ const seedChecklists: Checklist[] = [
   {
     id: 'cl-seed-3',
     title: 'Preparativos para a viagem',
-    color: '#f0b429',
+    color: '#b76f06',
     items: [
       { id: `cli-${uid()}`, text: 'Separar documentos (RG, passaporte)', checked: false, createdAt: nowISO() },
       { id: `cli-${uid()}`, text: 'Comprar chip internacional', checked: false, createdAt: nowISO() },

@@ -13,7 +13,7 @@ async function hashSenha(senha: string) {
 
 const eyebrow = 'font-mono text-[0.62rem] uppercase tracking-[0.28em] text-muted-foreground/55'
 const inputClass =
-  'peer h-12 w-full border-0 border-b border-border/70 bg-transparent pt-3 text-sm text-foreground outline-none transition-colors placeholder:opacity-0 focus:border-primary placeholder-shown:border-border'
+  'peer h-12 w-full border-0 border-b border-border/70 bg-transparent pt-3 text-base text-foreground outline-none transition-colors placeholder:opacity-0 focus:border-primary placeholder-shown:border-border'
 
 export function DiarioGate({ children }: { children: React.ReactNode }) {
   const senhaHash = useDiarioStore((state) => state.senhaHash)
@@ -63,9 +63,9 @@ export function DiarioGate({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-[calc(100vh-7rem)] items-center justify-center px-6 py-12">
       <section className="w-full max-w-[400px]" aria-labelledby="diario-gate-title">    
         <div className="mb-9">
-          <p className={eyebrow}>{configurando ? 'abertura · diário' : 'entrada · diário'}</p>
+          {configurando && <p className={eyebrow}>abertura · diário</p>}
           <h1 id="diario-gate-title" className="mt-2 font-serif text-[2.3rem] leading-[1.05] text-foreground">
-            {configurando ? 'Escolha a chave.' : 'Seu caderno está fechado.'}
+            {configurando ? 'Escolha a chave.' : 'Seu Diário está fechado'}
           </h1>
           <p className="mt-2 max-w-[320px] text-sm leading-relaxed text-muted-foreground">
             {configurando
@@ -90,7 +90,7 @@ export function DiarioGate({ children }: { children: React.ReactNode }) {
               <button
                 type="button"
                 onClick={() => setSenhaVisivel((visible) => !visible)}
-                className="cursor-pointer font-mono text-[0.62rem] uppercase tracking-[0.2em] text-muted-foreground/70 transition-colors hover:text-foreground"
+                className="cursor-pointer font-mono text-[0.72rem] uppercase tracking-[0.2em] text-muted-foreground/70 transition-colors hover:text-foreground"
               >
                 {senhaVisivel ? 'ocultar' : 'ver'}
               </button>
@@ -109,7 +109,7 @@ export function DiarioGate({ children }: { children: React.ReactNode }) {
                 <button
                   type="button"
                   onClick={() => setConfirmacaoVisivel((visible) => !visible)}
-                  className="cursor-pointer font-mono text-[0.62rem] uppercase tracking-[0.2em] text-muted-foreground/70 transition-colors hover:text-foreground"
+                  className="cursor-pointer font-mono text-[0.72rem] uppercase tracking-[0.2em] text-muted-foreground/70 transition-colors hover:text-foreground"
                 >
                   {confirmacaoVisivel ? 'ocultar' : 'ver'}
                 </button>
@@ -117,7 +117,7 @@ export function DiarioGate({ children }: { children: React.ReactNode }) {
             />
           )}
 
-          <DiarioSubmitButton label={configurando ? 'guardar senha e abrir' : 'abrir meu caderno'} />
+          <DiarioSubmitButton label={configurando ? 'guardar senha e abrir' : 'abrir meu diário'} />
         </form>
       </section>
     </div>
@@ -128,7 +128,7 @@ function DiarioError({ error }: { error: string }) {
   if (!error) return null
 
   return (
-    <div id="diario-gate-error" role="alert" className="mb-5 border-l-2 border-rose-500/70 bg-rose-500/[0.06] py-1.5 pl-3 text-xs text-rose-600 dark:text-rose-300">
+    <div id="diario-gate-error" role="alert" className="mb-5 border-l-2 border-destructive/70 bg-destructive/[0.06] py-1.5 pl-3 text-xs text-destructive">
       {error}
     </div>
   )
@@ -157,7 +157,7 @@ function DiarioField({
 }) {
   return (
     <div className="relative">
-      <label className="pointer-events-none absolute left-0 top-[3px] font-mono text-[0.6rem] uppercase tracking-[0.22em] text-muted-foreground/55 transition-all peer-focus:text-primary">
+      <label className="pointer-events-none absolute left-0 top-[3px] font-mono text-[0.72rem] uppercase tracking-[0.22em] text-muted-foreground/55 transition-all peer-focus:text-primary">
         {label}
       </label>
       <input
@@ -180,7 +180,7 @@ function DiarioSubmitButton({ label }: { label: string }) {
   return (
     <button type="submit" className="group relative mt-2 flex h-11 w-full cursor-pointer items-center justify-center overflow-hidden">
       <span className="absolute inset-0 border-b border-foreground/80 transition-colors group-hover:border-primary" />
-      <span className="relative font-mono text-[0.66rem] uppercase tracking-[0.3em] text-foreground/85 transition-colors group-hover:text-primary">
+      <span className="relative font-mono text-[0.78rem] uppercase tracking-[0.3em] text-foreground/85 transition-colors group-hover:text-primary">
         <span className="flex items-center gap-2">
           {label}
           <span className="opacity-50">→</span>

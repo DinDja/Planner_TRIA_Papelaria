@@ -19,7 +19,7 @@ export default function TagPage() {
       <div className="flex h-screen items-center justify-center">
         <div className="text-center">
           <p className="text-lg font-semibold">Tag não encontrada</p>
-          <Button variant="link" onClick={() => router.push('/')} className="mt-2">
+          <Button variant="link" onClick={() => router.push('/dashboard')} className="mt-2">
             Voltar ao Dashboard
           </Button>
         </div>

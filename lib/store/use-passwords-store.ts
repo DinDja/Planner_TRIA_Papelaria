@@ -5,7 +5,7 @@ import type { PasswordEntry } from '../types'
 const uid = () => Math.random().toString(36).slice(2, 10)
 const nowISO = () => new Date().toISOString()
 
-const COLORS = ['#e05b6d', '#f0b429', '#7bb686', '#5b8dbf', '#c9b6e4', '#e8a0a0']
+const COLORS = ['#d1bdb8', '#b76f06', '#6a634d', '#ddd6c6']
 
 const seedPasswords: PasswordEntry[] = [
   {

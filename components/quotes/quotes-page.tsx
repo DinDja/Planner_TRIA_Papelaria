@@ -4,14 +4,15 @@ import { useQuotesStore } from '@/lib/store/use-quotes-store'
 import { cn } from '@/lib/utils'
 import {
   Bookmark,
+  List,
   Plus,
   Pencil,
   Quote,
-  Shuffle,
   Trash2,
 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Button } from '../ui/button'
+import { Card, CardContent } from '../ui/card'
 import { Badge } from '../ui/primitives'
 import { Tab, TabList, TabPanel, Tabs } from '../ui/overlays'
 import { AddQuoteDialog } from './quotes-dialogs'
@@ -28,11 +29,12 @@ function QuoteCard({
   onDelete: (id: string) => void
 }) {
   return (
-    <div
-      className="group relative rounded-2xl p-6 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
+    <Card
+      glass
+      className="group relative overflow-hidden"
       style={{
-        backgroundColor: quote.color + '12',
-        borderLeft: `4px solid ${quote.color}`,
+        borderTopColor: quote.color,
+        borderTopWidth: 3,
       }}
     >
       <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -52,6 +54,7 @@ function QuoteCard({
         </button>
       </div>
 
+      <CardContent className="pt-0">
       <Quote size={18} className="mb-3" style={{ color: quote.color }} />
 
       <blockquote className="text-sm leading-relaxed italic text-foreground/85 mb-3">
@@ -73,19 +76,18 @@ function QuoteCard({
           ))}
         </div>
       )}
-    </div>
+      </CardContent>
+    </Card>
   )
 }
 
 export function QuotesPage() {
   const quotes = useQuotesStore((s) => s.quotes)
   const deleteQuote = useQuotesStore((s) => s.deleteQuote)
-  const getRandomQuote = useQuotesStore((s) => s.getRandomQuote)
 
   const [addOpen, setAddOpen] = useState(false)
   const [editId, setEditId] = useState<string | undefined>()
   const [tab, setTab] = useState('all')
-  const [randomQuote, setRandomQuote] = useState<import('@/lib/types').FavoriteQuote | undefined>(undefined)
 
   const allTags = useMemo(() => {
     const tags = new Set<string>()
@@ -102,20 +104,16 @@ export function QuotesPage() {
     return quotes
   }, [quotes, tab])
 
-  const handleRandom = () => {
-    setRandomQuote(getRandomQuote())
-  }
-
   return (
-    <div className="p-6 lg:p-8 max-w-[900px] mx-auto">
+    <div className="p-6 lg:p-8 max-w-[1200px] mx-auto">
       <div className={cn('flex flex-wrap items-end justify-between gap-4 mb-8', enter)}>
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
             <span
               className="flex size-11 items-center justify-center rounded-2xl"
-              style={{ backgroundColor: '#c9b6e418' }}
+              style={{ backgroundColor: '#6a634d18' }}
             >
-              <Bookmark size={22} style={{ color: '#c9b6e4' }} />
+              <List size={22} style={{ color: '#6a634d' }} />
             </span>
             Frases Favoritas
           </h1>
@@ -124,44 +122,12 @@ export function QuotesPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            className="rounded-xl gap-1.5"
-            onClick={handleRandom}
-            disabled={quotes.length === 0}
-          >
-            <Shuffle size={14} />
-            Frase aleatória
-          </Button>
           <Button className="rounded-xl gap-1.5 shadow-md" onClick={() => setAddOpen(true)}>
             <Plus size={15} />
             Nova frase
           </Button>
         </div>
       </div>
-
-      {/* Frase aleatória */}
-      {randomQuote && (
-        <div className={cn('mb-8', enter)}>
-          <div
-            className="rounded-2xl p-6 text-center"
-            style={{
-              background: `linear-gradient(135deg, ${randomQuote.color}18, ${randomQuote.color}08)`,
-              border: `1px solid ${randomQuote.color}30`,
-            }}
-          >
-            <Quote size={24} className="mx-auto mb-3" style={{ color: randomQuote.color }} />
-            <blockquote className="text-lg font-medium leading-relaxed italic text-foreground/90 mb-3 max-w-2xl mx-auto">
-              &ldquo;{randomQuote.text}&rdquo;
-            </blockquote>
-            {randomQuote.author && (
-              <p className="text-sm font-semibold" style={{ color: randomQuote.color }}>
-                &mdash; {randomQuote.author}
-              </p>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* Tags filter */}
       {allTags.length > 0 && (
@@ -195,7 +161,7 @@ export function QuotesPage() {
       )}
 
       {filtered.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="space-y-4">
           {filtered.map((q) => (
             <QuoteCard
               key={q.id}

@@ -58,7 +58,7 @@ export function Toaster({ children }: { children?: React.ReactNode }) {
             >
               <span className="mt-0.5 shrink-0">
                 {t.variant === 'success' ? (
-                  <CheckCircle size={18} className="text-emerald-500" />
+                  <CheckCircle size={18} className="text-success" />
                 ) : t.variant === 'error' ? (
                   <XCircle size={18} className="text-red-500" />
                 ) : (

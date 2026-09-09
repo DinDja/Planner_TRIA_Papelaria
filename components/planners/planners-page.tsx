@@ -39,9 +39,9 @@ export function PlannersPage() {
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
             <span
               className="flex size-11 items-center justify-center rounded-2xl"
-              style={{ backgroundColor: '#5b8dbf18' }}
+              style={{ backgroundColor: '#6a634d18' }}
             >
-              <span className="size-3 rounded-md" style={{ backgroundColor: '#5b8dbf' }} />
+              <span className="size-3 rounded-md" style={{ backgroundColor: '#6a634d' }} />
             </span>
             Meus Planners
           </h1>
@@ -69,7 +69,7 @@ export function PlannersPage() {
                 style={{ animationDelay: `${i * 50}ms` }}
               >
                 {/* Capa */}
-                <div className="relative bg-[color:light-dark(#f4f2ed,#1b1b19)] px-2 pt-2 overflow-hidden">
+                <div className="relative bg-[color:light-dark(#ddd6c6,#211f1a)] px-2 pt-2 overflow-hidden">
                   <div className="relative overflow-hidden rounded-[4px] ring-1 ring-black/[0.07] dark:ring-white/10 shadow-sm bg-[color:light-dark(#ffffff,#2a2a28)]">
                     {firstPage?.template && (
                       <TemplateThumbnail template={firstPage.template} className="block w-full" />
@@ -77,7 +77,7 @@ export function PlannersPage() {
                   </div>
                   {/* Favorito — estrela preenchida só para leitura rápida. */}
                   {planner.favorite && (
-                    <span className="absolute right-3.5 top-3.5 flex size-6 items-center justify-center rounded-full bg-amber-400/90 text-white shadow-sm">
+                    <span className="absolute right-3.5 top-3.5 flex size-6 items-center justify-center rounded-full bg-warning/90 text-primary-foreground shadow-sm">
                       <Star size={12} className="fill-current" />
                     </span>
                   )}
@@ -103,7 +103,7 @@ export function PlannersPage() {
                     setDeleteTarget(planner)
                   }}
                   aria-label={`Excluir ${planner.name}`}
-                  className="absolute right-2 top-2 z-10 flex size-8 items-center justify-center rounded-xl bg-black/45 text-white opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100 hover:bg-rose-600 focus-visible:opacity-100 cursor-pointer"
+                  className="absolute right-2 top-2 z-10 flex size-8 items-center justify-center rounded-xl bg-black/45 text-white opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100 hover:bg-destructive focus-visible:opacity-100 cursor-pointer"
                 >
                   <Trash2 size={14} />
                 </button>

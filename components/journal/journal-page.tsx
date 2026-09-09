@@ -90,7 +90,7 @@ function EnergyIndicator({ level }: { level: number }) {
           )}
           style={{
             backgroundColor: bar <= level
-              ? level <= 2 ? '#e05b6d' : level <= 3 ? '#f0b429' : '#7bb686'
+              ? level <= 2 ? '#d1bdb8' : level <= 3 ? '#b76f06' : '#6a634d'
               : 'var(--muted)',
           }}
         />
@@ -314,7 +314,7 @@ export function JournalPage() {
             <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
               <div
                 className="size-11 rounded-2xl flex items-center justify-center"
-                style={{ background: 'linear-gradient(135deg, #e8a0a0 0%, #f0b429 100%)' }}
+                style={{ background: 'linear-gradient(135deg, #d1bdb8 0%, #b76f06 100%)' }}
               >
                 <Heart size={22} className="text-white" />
               </div>
@@ -328,7 +328,7 @@ export function JournalPage() {
           </div>
           <Button
             className="rounded-xl gap-2 shadow-md"
-            style={{ background: 'linear-gradient(135deg, #e8a0a0 0%, #e05b6d 100%)' }}
+            style={{ background: 'linear-gradient(135deg, #d1bdb8 0%, #b76f06 100%)' }}
             onClick={() => setAddOpen(true)}
           >
             <Plus size={16} />
@@ -359,8 +359,8 @@ export function JournalPage() {
 
           {/* Quick Stats */}
           <div className="space-y-3">
-            <StatCard icon={Flame} value={stats.streak} label="dias seguidos" color="#e05b6d" />
-            <StatCard icon={Feather} value={stats.totalEntries} label="entradas" color="#5b8dbf" />
+            <StatCard icon={Flame} value={stats.streak} label="dias seguidos" color="#d1bdb8" />
+            <StatCard icon={Feather} value={stats.totalEntries} label="entradas" color="#6a634d" />
 
             {topEmotions.length > 0 && (
               <Card>
@@ -379,13 +379,13 @@ export function JournalPage() {
 
         {/* Today's Prompt */}
         {!hasTodayEntry && (
-          <Card className={cn('border-dashed border-2', enter)} style={{ borderColor: '#e8a0a040' }}>
+          <Card className={cn('border-dashed border-2', enter)} style={{ borderColor: '#d1bdb840' }}>
             <CardContent className="p-5 flex items-center gap-4">
               <div
                 className="size-12 rounded-2xl flex items-center justify-center shrink-0"
-                style={{ background: 'linear-gradient(135deg, #e8a0a020, #f0b42920)' }}
+                style={{ background: 'linear-gradient(135deg, #d1bdb820, #b76f0620)' }}
               >
-                <Sparkles size={20} style={{ color: '#e8a0a0' }} />
+                <Sparkles size={20} style={{ color: '#d1bdb8' }} />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-[10px] text-muted-foreground mb-0.5">PROMPT DO DIA</p>

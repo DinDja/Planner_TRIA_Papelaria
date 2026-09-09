@@ -3,14 +3,14 @@
 import { useBirthdaysStore } from '@/lib/store/use-birthdays-store'
 import type { BirthdayRecord } from '@/lib/types'
 import { cn } from '@/lib/utils'
-import { Cake, Gift, Pencil, Plus, Trash2 } from 'lucide-react'
+import { Cake, Gift, List, Pencil, Plus, Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Button } from '../ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { AddBirthdayDialog } from './birthdays-dialogs'
 
 const enter = 'animate-in fade-in slide-in-from-bottom-3 duration-500 fill-mode-both'
-const MODULE_COLOR = '#e8a0a0'
+const MODULE_COLOR = '#d1bdb8'
 
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 
@@ -83,7 +83,7 @@ export function BirthdaysPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
             <span className="flex size-11 items-center justify-center rounded-2xl" style={{ backgroundColor: MODULE_COLOR + '18' }}>
-              <Cake size={22} style={{ color: MODULE_COLOR }} />
+              <List size={22} style={{ color: MODULE_COLOR }} />
             </span>
             Aniversários
           </h1>
@@ -148,7 +148,7 @@ export function BirthdaysPage() {
                         <p className="text-sm font-medium truncate">
                           {e.name}
                           {next && next.e.id === e.id && next.days === 0 && (
-                            <span className="ml-2 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase">Hoje</span>
+                            <span className="ml-2 text-[10px] font-bold text-success dark:text-success uppercase">Hoje</span>
                           )}
                         </p>
                         <p className="text-[11px] text-muted-foreground">

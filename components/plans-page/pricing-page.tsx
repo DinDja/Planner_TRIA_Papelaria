@@ -39,12 +39,9 @@ function PricingPage() {
     <div className="p-6 lg:p-8 max-w-[1200px] mx-auto">
       {/* Topete — sem hero padrão */}
       <div className="mb-10">
-        <p className="text-[0.72rem] uppercase tracking-[0.28em] text-muted-foreground/55">
-          assinatura
-        </p>
-        <h1 className="text-3xl font-bold tracking-tight mt-1">PlannerHub Premium</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Assinaturas</h1>
         <p className="text-muted-foreground mt-1.5 max-w-lg">
-          Tudo pago, sem tier gratuito. Compromisso real com quem leva o caderno a sério.
+          Escolha o plano que combina com você
         </p>
       </div>
 
@@ -52,7 +49,7 @@ function PricingPage() {
       <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-border/50 bg-card px-4 py-2">
         <span className={cn(
           'size-2 rounded-full',
-          isActive ? 'bg-emerald-500' : 'bg-muted-foreground/40',
+          isActive ? 'bg-success' : 'bg-muted-foreground/40',
         )} />
         <span className="text-sm">
           Status: <span className="font-semibold">{label}</span>
@@ -80,11 +77,11 @@ function PricingPage() {
               <Card
                 className={cn(
                   'relative h-full flex flex-col',
-                  popular && 'border-amber-400/40 shadow-lg ring-2 ring-amber-400/15',
+                  popular && 'border-warning/40 shadow-lg ring-2 ring-warning/15',
                 )}
               >
                 {popular && (
-                  <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-500 text-amber-950 px-4 py-1 text-xs font-semibold rounded-full">
+                  <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-warning text-primary-foreground px-4 py-1 text-xs font-semibold rounded-full">
                     Mais escolhido
                   </Badge>
                 )}
@@ -99,7 +96,7 @@ function PricingPage() {
                   <div>
                     <h3 className="font-bold text-lg">{plan.label}</h3>
                     {plan.savings && (
-                      <p className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">
+                      <p className="text-[11px] text-warning dark:text-warning font-medium">
                         {plan.savings}
                       </p>
                     )}
@@ -109,26 +106,27 @@ function PricingPage() {
                 <div className="mb-5">
                   <span className="text-3xl font-bold">{formatBRL(plan.price)}</span>
                   <span className="text-sm text-muted-foreground ml-1.5">{plan.period}</span>
+                  {id === 'annual' && (
+                    <p className="text-xs text-muted-foreground mt-1">12x de 25,00</p>
+                  )}
                 </div>
-
-                <p className="text-[11px] text-muted-foreground mb-5">{plan.description}</p>
 
                 <ul className="flex-1 space-y-2.5 mb-6 text-sm text-muted-foreground">
                   <li className="flex items-start gap-2.5">
-                    <Check size={16} className="text-emerald-500 mt-0.5 shrink-0" />
+                    <Check size={16} className="text-success mt-0.5 shrink-0" />
                     Todos os módulos do PlannerHub
                   </li>
                   <li className="flex items-start gap-2.5">
-                    <Check size={16} className="text-emerald-500 mt-0.5 shrink-0" />
+                    <Check size={16} className="text-success mt-0.5 shrink-0" />
                     Planners, páginas e stickers ilimitados
                   </li>
                   <li className="flex items-start gap-2.5">
-                    <Check size={16} className="text-emerald-500 mt-0.5 shrink-0" />
+                    <Check size={16} className="text-success mt-0.5 shrink-0" />
                     OCR, exportação e sincronização
                   </li>
                   {id === 'annual' && (
                     <li className="flex items-start gap-2.5">
-                      <Check size={16} className="text-emerald-500 mt-0.5 shrink-0" />
+                      <Check size={16} className="text-success mt-0.5 shrink-0" />
                       Acesso antecipado a novos recursos
                     </li>
                   )}

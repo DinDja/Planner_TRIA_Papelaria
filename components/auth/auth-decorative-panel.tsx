@@ -1,8 +1,8 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import Image from 'next/image'
 import { useEffect, useState } from 'react'
+import { BrandLogo } from '@/components/brand-logo'
 
 // ─── Geometria da "página" (fonte única de verdade p/ SVG + texto DOM) ────────
 const PAGE_W = 340
@@ -251,7 +251,7 @@ export function AuthDecorativePanel() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.5 }}
         >
-          <Image src="/Logo.svg" alt="PlannerHub" width={180} height={102} className="opacity-90" priority />
+          <BrandLogo className="h-20 w-[180px] opacity-90" imageClassName="w-[360px]" />
         </motion.div>
 
         <motion.p

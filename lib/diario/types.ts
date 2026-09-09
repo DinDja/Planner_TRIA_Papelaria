@@ -40,18 +40,18 @@ export type Emocao =
   | 'pressa'
 
 export const EMOCOES: Record<Emocao, { rotulo: string; cor: string }> = {
-  serenidade:   { rotulo: 'serenidade',   cor: '#8aa6a3' },
-  gratidao:     { rotulo: 'gratidão',     cor: '#b08968' },
-  alegria:      { rotulo: 'alegria',      cor: '#d4a657' },
-  inspiracao:   { rotulo: 'inspiração',   cor: '#c98a5e' },
-  esperanca:   { rotulo: 'esperança',   cor: '#7a9a6f' },
-  curiosidade:  { rotulo: 'curiosidade',  cor: '#6f8fad' },
-  neutra:       { rotulo: 'neutra',       cor: '#9a958c' },
-  cansaco:      { rotulo: 'cansaço',      cor: '#8a8782' },
-  preocupacao: { rotulo: 'preocupação', cor: '#c08a6e' },
-  tristeza:     { rotulo: 'tristeza',     cor: '#6f7d96' },
-  frustracao:  { rotulo: 'frustração',  cor: '#b6706a' },
-  pressa:       { rotulo: 'pressa',       cor: '#a87a5e' },
+  serenidade:   { rotulo: 'serenidade',   cor: '#6a634d' },
+  gratidao:     { rotulo: 'gratidão',     cor: '#d1bdb8' },
+  alegria:      { rotulo: 'alegria',      cor: '#b76f06' },
+  inspiracao:   { rotulo: 'inspiração',   cor: '#b76f06' },
+  esperanca:   { rotulo: 'esperança',   cor: '#6a634d' },
+  curiosidade:  { rotulo: 'curiosidade',  cor: '#ddd6c6' },
+  neutra:       { rotulo: 'neutra',       cor: '#ddd6c6' },
+  cansaco:      { rotulo: 'cansaço',      cor: '#ddd6c6' },
+  preocupacao: { rotulo: 'preocupação', cor: '#d1bdb8' },
+  tristeza:     { rotulo: 'tristeza',     cor: '#6a634d' },
+  frustracao:  { rotulo: 'frustração',  cor: '#d1bdb8' },
+  pressa:       { rotulo: 'pressa',       cor: '#b76f06' },
 }
 
 /** Toda emoção tem uma "nota" de valência entre -2 e +2, usada só internamente. */

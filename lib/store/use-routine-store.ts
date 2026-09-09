@@ -206,7 +206,7 @@ const seedRoutine: RoutineSlot[] = [
     endTime: '07:30',
     title: 'Academia',
     weekdays: [0, 1, 2, 3, 4],
-    color: '#7bb686',
+    color: '#6a634d',
   },
   {
     id: 'slot-seed-2',
@@ -214,7 +214,7 @@ const seedRoutine: RoutineSlot[] = [
     endTime: '08:30',
     title: 'Café da manhã + journaling',
     weekdays: [0, 1, 2, 3, 4, 5, 6],
-    color: '#f0b429',
+    color: '#b76f06',
   },
   {
     id: 'slot-seed-3',
@@ -222,7 +222,7 @@ const seedRoutine: RoutineSlot[] = [
     endTime: '23:00',
     title: 'Leitura antes de dormir',
     weekdays: [0, 1, 2, 3, 4, 5, 6],
-    color: '#5b8dbf',
+    color: '#6a634d',
   },
 ]
 

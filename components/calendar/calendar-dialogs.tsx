@@ -10,8 +10,7 @@ import { Input } from '../ui/primitives'
 import { toast } from '../ui/toaster'
 
 const EVENT_COLORS = [
-  '#e05b6d', '#e8a0a0', '#f0b429', '#7bb686',
-  '#5b8dbf', '#a5c8e4', '#c9b6e4', '#d4b070',
+  '#d1bdb8', '#b76f06', '#6a634d', '#ddd6c6',
 ]
 
 export function CalendarEventDialog({

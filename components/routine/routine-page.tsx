@@ -59,7 +59,7 @@ function TaskRow({ task, onEdit }: { task: Task; onEdit: (id: string) => void })
         aria-label={task.done ? 'Desmarcar tarefa' : 'Concluir tarefa'}
       >
         {task.done ? (
-          <CheckCircle2 size={20} className="text-emerald-500" />
+          <CheckCircle2 size={20} className="text-success" />
         ) : (
           <Circle size={20} />
         )}
@@ -153,7 +153,7 @@ function RecurringRow({ task, compact, onEdit }: { task: RecurringTask; compact?
           aria-label="Concluir ocorrência de hoje"
         >
           {justCompleted ? (
-            <CheckCircle2 size={20} className="text-emerald-500 animate-[pop_0.3s_ease-out]" />
+            <CheckCircle2 size={20} className="text-success animate-[pop_0.3s_ease-out]" />
           ) : (
             <Circle size={20} />
           )}
@@ -346,9 +346,9 @@ export function RoutinePage() {
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
             <span
               className="flex size-11 items-center justify-center rounded-2xl"
-              style={{ backgroundColor: '#5b8dbf18' }}
+              style={{ backgroundColor: '#6a634d18' }}
             >
-              <ClipboardList size={22} style={{ color: '#5b8dbf' }} />
+              <ClipboardList size={22} style={{ color: '#6a634d' }} />
             </span>
             Rotina
           </h1>
@@ -362,7 +362,7 @@ export function RoutinePage() {
           </p>
         </div>
         <div className="flex items-center gap-2 rounded-2xl border border-border/50 bg-card/60 px-3.5 py-2 shadow-sm">
-          <CheckCircle2 size={16} className="text-emerald-500" />
+          <CheckCircle2 size={16} className="text-success" />
           <div className="leading-tight">
             <p className="text-sm font-bold tabular-nums">
               {todayDone}/{todayTotal}
@@ -508,7 +508,7 @@ export function RoutinePage() {
               <Card glass>
                 <CardHeader className="flex-row items-center justify-between pb-0">
                   <CardTitle className="text-base flex items-center gap-2">
-                    <Sparkles size={16} className="text-amber-500" />
+                    <Sparkles size={16} className="text-warning" />
                     Rotina ideal de hoje
                   </CardTitle>
                 </CardHeader>
@@ -531,7 +531,7 @@ export function RoutinePage() {
                           </div>
                           <div
                             className="relative z-10 size-2.5 rounded-full shrink-0 ring-4 ring-card"
-                            style={{ backgroundColor: slot.color ?? '#5b8dbf' }}
+                            style={{ backgroundColor: slot.color ?? '#6a634d' }}
                           />
                           <span className="text-sm truncate">{slot.title}</span>
                         </div>
@@ -600,7 +600,7 @@ export function RoutinePage() {
           <Card glass>
             <CardHeader className="flex-row items-center justify-between pb-0">
               <CardTitle className="text-base flex items-center gap-2">
-                <Sparkles size={16} className="text-amber-500" />
+                <Sparkles size={16} className="text-warning" />
                 Blocos da rotina ideal
               </CardTitle>
               <span className="text-[11px] text-muted-foreground tabular-nums">
@@ -619,8 +619,8 @@ export function RoutinePage() {
                       <div
                         className="flex size-9 shrink-0 items-center justify-center rounded-xl text-[11px] font-bold tabular-nums"
                         style={{
-                          backgroundColor: (slot.color ?? '#5b8dbf') + '18',
-                          color: slot.color ?? '#5b8dbf',
+                          backgroundColor: (slot.color ?? '#6a634d') + '18',
+                          color: slot.color ?? '#6a634d',
                         }}
                       >
                         {slot.time}

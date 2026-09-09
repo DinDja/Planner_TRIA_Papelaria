@@ -5,7 +5,7 @@ import type { FavoriteQuote } from '../types'
 const uid = () => Math.random().toString(36).slice(2, 10)
 const nowISO = () => new Date().toISOString()
 
-const QUOTE_COLORS = ['#e8a0a0', '#f0b429', '#7bb686', '#5b8dbf', '#c9b6e4', '#f5c8a0']
+const QUOTE_COLORS = ['#d1bdb8', '#b76f06', '#6a634d', '#ddd6c6']
 
 const seedQuotes: FavoriteQuote[] = [
   {
@@ -13,7 +13,7 @@ const seedQuotes: FavoriteQuote[] = [
     text: 'A única maneira de fazer um excelente trabalho é amar o que você faz.',
     author: 'Steve Jobs',
     tags: ['trabalho', 'inspiração'],
-    color: '#5b8dbf',
+    color: '#6a634d',
     createdAt: nowISO(),
   },
   {
@@ -21,7 +21,7 @@ const seedQuotes: FavoriteQuote[] = [
     text: 'A vida é o que acontece enquanto você está ocupado fazendo outros planos.',
     author: 'John Lennon',
     tags: ['vida', 'reflexão'],
-    color: '#f0b429',
+    color: '#b76f06',
     createdAt: nowISO(),
   },
   {
@@ -29,7 +29,7 @@ const seedQuotes: FavoriteQuote[] = [
     text: 'Não espere por oportunidades. Crie-as.',
     author: 'George Bernard Shaw',
     tags: ['motivação', 'ação'],
-    color: '#7bb686',
+    color: '#6a634d',
     createdAt: nowISO(),
   },
   {
@@ -37,7 +37,7 @@ const seedQuotes: FavoriteQuote[] = [
     text: 'O sucesso é ir de fracasso em fracasso sem perder o entusiasmo.',
     author: 'Winston Churchill',
     tags: ['sucesso', 'resiliência'],
-    color: '#e8a0a0',
+    color: '#d1bdb8',
     createdAt: nowISO(),
   },
   {
@@ -45,7 +45,7 @@ const seedQuotes: FavoriteQuote[] = [
     text: 'Acredite que você pode, e você já está no meio do caminho.',
     author: 'Theodore Roosevelt',
     tags: ['motivação', 'autoconfiança'],
-    color: '#c9b6e4',
+    color: '#ddd6c6',
     createdAt: nowISO(),
   },
 ]

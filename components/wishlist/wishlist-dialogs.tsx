@@ -9,9 +9,9 @@ import { Input } from '../ui/primitives'
 import { toast } from '../ui/toaster'
 
 const PRIORITY_OPTIONS = [
-  { value: 'high' as const, label: 'Alta', color: '#e05b6d' },
-  { value: 'medium' as const, label: 'Média', color: '#f0b429' },
-  { value: 'low' as const, label: 'Baixa', color: '#7bb686' },
+  { value: 'high' as const, label: 'Alta', color: '#d1bdb8' },
+  { value: 'medium' as const, label: 'Média', color: '#b76f06' },
+  { value: 'low' as const, label: 'Baixa', color: '#6a634d' },
 ]
 
 export function AddWishDialog({
@@ -95,7 +95,7 @@ export function AddWishDialog({
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Ex: Kindle, Tênis, Curso..."
+              placeholder="Ex: Caderno, Blusa, Estojo..."
               onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
               autoFocus
             />
@@ -117,7 +117,7 @@ export function AddWishDialog({
               <Input
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                placeholder="Ex: Tecnologia"
+                placeholder="Ex: Papelaria"
                 list="wish-categories"
               />
               <datalist id="wish-categories">
@@ -132,7 +132,7 @@ export function AddWishDialog({
             <Input
               value={store}
               onChange={(e) => setStore(e.target.value)}
-              placeholder="Ex: Americanas, loja do bairro..."
+              placeholder="Ex: TRIA, Loja do Bairro..."
             />
           </div>
           <div>
@@ -140,7 +140,7 @@ export function AddWishDialog({
             <Input
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              placeholder="https://..."
+              placeholder="Ex: https://..."
             />
           </div>
           <div>

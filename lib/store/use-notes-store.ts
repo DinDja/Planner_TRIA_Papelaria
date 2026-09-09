@@ -5,13 +5,13 @@ import type { Note, NoteFolder } from '../types'
 const uid = () => Math.random().toString(36).slice(2, 10)
 const nowISO = () => new Date().toISOString()
 
-const NOTE_COLORS = ['#e8a0a0', '#f0b429', '#7bb686', '#5b8dbf', '#c9b6e4', '#f5c8a0']
+const NOTE_COLORS = ['#d1bdb8', '#b76f06', '#6a634d', '#ddd6c6']
 
 const seedFolders: NoteFolder[] = [
-  { id: 'folder-seed-1', name: 'Pessoal', color: '#e8a0a0' },
-  { id: 'folder-seed-2', name: 'Trabalho', color: '#5b8dbf' },
-  { id: 'folder-seed-3', name: 'Ideias', color: '#f0b429' },
-  { id: 'folder-seed-4', name: 'Estudos', color: '#7bb686' },
+  { id: 'folder-seed-1', name: 'Pessoal', color: '#d1bdb8' },
+  { id: 'folder-seed-2', name: 'Trabalho', color: '#6a634d' },
+  { id: 'folder-seed-3', name: 'Ideias', color: '#b76f06' },
+  { id: 'folder-seed-4', name: 'Estudos', color: '#6a634d' },
 ]
 
 const seedNotes: Note[] = [
@@ -143,7 +143,7 @@ export const useNotesStore = create<NotesState>()(
           ),
         })),
 
-      addFolder: ({ color = '#5b8dbf', ...data }) =>
+      addFolder: ({ color = '#6a634d', ...data }) =>
         set((s) => ({
           folders: [
             ...s.folders,

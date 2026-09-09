@@ -23,7 +23,7 @@ Next.js 16 + React 19 + Tailwind CSS v4. Canvas digital planner.
   - `lib/auth/auth-context.tsx` — `AuthProvider` + `useAuth()` (signIn/signUp/Google/reset/logout)
   - `lib/auth/migrate.ts` — one-time localStorage → Firestore migration on first login
   - `lib/db/client.ts` — Firestore CRUD + `subscribeCollection` helpers
-  - `lib/db/write-through.ts` — store → Firestore write-through (batches full collection rewrites)
+  - `lib/db/write-through.ts` — store → Firestore write-through (debounced per-document diffs and root-field coalescing)
   - `components/providers/store-sync-provider.tsx` — bidirectional sync: `onSnapshot` (Firestore→store) + `store.subscribe` (store→Firestore) for root doc + 36 collections. Loop-safe via `snapshotsEqual` guard.
 - **Canvas**: HTML5 Canvas (template bg) + SVG overlay (perfect-freehand strokes)
 - **UI**: shadcn/base-ui components; cn() utility

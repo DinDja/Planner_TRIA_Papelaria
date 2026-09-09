@@ -22,20 +22,19 @@ export interface PlanDefinition {
 export const PLANS: Record<PlanId, PlanDefinition> = {
   monthly: {
     id: 'monthly',
-    label: 'Premium Mensal',
-    price: 1990,
+    label: 'Mensal',
+    price: 3000,
     period: 'por mês',
     description: 'Leve a organização a sério, mês a mês.',
-    color: '#c9b6e4',
+    color: '#ddd6c6',
   },
   annual: {
     id: 'annual',
-    label: 'Premium Anual',
-    price: 14990,
+    label: 'Anual',
+    price: 30000,
     period: 'por ano',
     description: 'Compromisso anual com economia real.',
-    savings: 'Economize R$ 89,80/ano',
-    color: '#f0b429',
+    color: '#b76f06',
   },
 }
 

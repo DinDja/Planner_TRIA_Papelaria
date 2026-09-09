@@ -17,6 +17,16 @@ export function UserMenu({ onOpenSettings }: UserMenuProps) {
   const profile = useProfileStore()
   const { logout } = useAuth()
 
+  const handleLogout = async () => {
+    try {
+      await logout()
+      toast({ title: 'Você saiu da conta', variant: 'default' })
+      window.location.replace('/')
+    } catch {
+      toast({ title: 'Não foi possível sair agora', variant: 'error' })
+    }
+  }
+
   return (
     <BaseMenu.Root>
       <BaseMenu.Trigger
@@ -57,12 +67,8 @@ export function UserMenu({ onOpenSettings }: UserMenuProps) {
 
             <div className="my-1 h-px bg-border/40" />
 
-            <BaseMenu.Item
-              onClick={() => {
-                logout()
-                toast({ title: 'Você saiu da conta', variant: 'default' })
-              }}
-              className="flex w-full items-center gap-2.5 px-2.5 py-2 text-sm text-rose-500 hover:bg-rose-500/10 hover:text-rose-600 transition-colors cursor-pointer outline-none data-[highlighted]:bg-rose-500/10 data-[highlighted]:text-rose-600"
+            <BaseMenu.Item onClick={handleLogout}
+              className="flex w-full items-center gap-2.5 px-2.5 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors cursor-pointer outline-none data-[highlighted]:bg-destructive/10 data-[highlighted]:text-destructive"
             >
               <LogOut size={15} />
               Sair da conta

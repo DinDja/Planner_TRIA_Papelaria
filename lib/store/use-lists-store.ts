@@ -9,13 +9,13 @@ const nowISO = () => new Date().toISOString()
 const clean = <T extends Record<string, unknown>>(data: T): Partial<T> =>
   Object.fromEntries(Object.entries(data).filter(([, v]) => v !== undefined)) as Partial<T>
 
-const LIST_COLORS = ['#7bb686', '#5b8dbf', '#f0b429', '#e8a0a0', '#c9b6e4', '#f5c8a0']
+const LIST_COLORS = ['#d1bdb8', '#b76f06', '#6a634d', '#ddd6c6']
 
 const seedLists: ShoppingList[] = [
   {
     id: 'list-seed-1',
     name: 'Supermercado',
-    color: '#7bb686',
+    color: '#6a634d',
     kind: 'supermercado',
     items: [
       { id: `item-${uid()}`, name: 'Arroz', quantity: '5kg', category: 'Grãos', checked: false, createdAt: nowISO() },
@@ -33,7 +33,7 @@ const seedLists: ShoppingList[] = [
   {
     id: 'list-seed-2',
     name: 'Farmácia',
-    color: '#5b8dbf',
+    color: '#6a634d',
     kind: 'farmacia',
     items: [
       { id: `item-${uid()}`, name: 'Vitamina C', quantity: '1 caixa', category: 'Vitaminas e suplementos', dosage: '1x ao dia', checked: false, createdAt: nowISO() },
@@ -46,7 +46,7 @@ const seedLists: ShoppingList[] = [
   {
     id: 'list-seed-3',
     name: 'Lista de tarefas',
-    color: '#f0b429',
+    color: '#b76f06',
     kind: 'custom',
     items: [
       { id: `item-${uid()}`, name: 'Trocar lâmpada do quarto', checked: false, createdAt: nowISO() },
@@ -60,7 +60,7 @@ const seedLists: ShoppingList[] = [
   {
     id: 'list-seed-4',
     name: 'Mala de viagem',
-    color: '#c9b6e4',
+    color: '#ddd6c6',
     kind: 'mala',
     items: [
       { id: `item-${uid()}`, name: 'Passaporte e RG', category: 'Documentos', packed: true, checked: false, createdAt: nowISO() },
@@ -86,6 +86,7 @@ interface ListsState {
   addList: (data: { name: string; color?: string; kind?: ShoppingListKind }) => string
   updateList: (id: string, patch: Partial<ShoppingList>) => void
   deleteList: (id: string) => void
+  duplicateList: (id: string) => void
 
   addItem: (listId: string, data: { name: string; quantity?: string; category?: string; dosage?: string; packed?: boolean; notes?: string }) => void
   toggleItem: (listId: string, itemId: string) => void
@@ -145,6 +146,27 @@ export const useListsStore = create<ListsState>()(
         set((s) => ({
           lists: s.lists.filter((l) => l.id !== id),
         })),
+
+      duplicateList: (id) =>
+        set((s) => {
+          const source = s.lists.find((l) => l.id === id)
+          if (!source) return s
+          const copy: ShoppingList = {
+            ...source,
+            id: `list-${uid()}`,
+            name: `${source.name} (cópia)`,
+            items: source.items.map((item) => ({
+              ...item,
+              id: `item-${uid()}`,
+              checked: false,
+              packed: false,
+              createdAt: nowISO(),
+            })),
+            createdAt: nowISO(),
+            updatedAt: nowISO(),
+          }
+          return { lists: [...s.lists, copy] }
+        }),
 
       addItem: (listId, data) =>
         set((s) => ({

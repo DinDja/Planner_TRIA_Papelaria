@@ -38,7 +38,7 @@ function VaultError({ error }: { error: string }) {
   if (!error) return null
 
   return (
-    <div role="alert" className="mb-5 border-l-2 border-rose-500/70 bg-rose-500/[0.06] py-1.5 pl-3 text-xs text-rose-600 dark:text-rose-300">
+    <div role="alert" className="mb-5 border-l-2 border-destructive/70 bg-destructive/[0.06] py-1.5 pl-3 text-xs text-destructive">
       {error}
     </div>
   )
@@ -118,10 +118,13 @@ function PasswordCard({
   }
 
   return (
-      <Card
-        glass
-        className="group overflow-hidden"
-      style={{ borderLeft: `4px solid ${entry.color}` }}
+    <Card
+      glass
+      className="group overflow-hidden"
+      style={{
+        borderTopColor: entry.color,
+        borderTopWidth: 3,
+      }}
     >
       <CardHeader className="flex-row items-start justify-between gap-3 pb-0">
         <div className="flex items-start gap-3 min-w-0 flex-1">
@@ -327,7 +330,6 @@ export function VaultPage() {
       <VaultAccessLayout>
         
         <div className="mb-9">
-          <p className={authEyebrow}>proteção · cofre</p>
           <h1 className="mt-2 font-serif text-[2.3rem] leading-[1.05] text-foreground">
             Proteja suas senhas.
           </h1>
@@ -385,15 +387,15 @@ export function VaultPage() {
   }
 
   return (
-    <div className="p-6 lg:p-8 max-w-[900px] mx-auto">
+    <div className="p-6 lg:p-8 max-w-[1200px] mx-auto">
       <div className={cn('flex flex-wrap items-end justify-between gap-4 mb-8', enter)}>
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
             <span
               className="flex size-11 items-center justify-center rounded-2xl"
-              style={{ backgroundColor: '#e05b6d18' }}
+              style={{ backgroundColor: '#d1bdb818' }}
             >
-              <KeyRound size={22} style={{ color: '#e05b6d' }} />
+              <KeyRound size={22} style={{ color: '#d1bdb8' }} />
             </span>
             Senhas
           </h1>
@@ -423,7 +425,7 @@ export function VaultPage() {
       </div>
 
       {entries.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="space-y-4">
           {entries.map((e) => (
             <PasswordCard
               key={e.id}

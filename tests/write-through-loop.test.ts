@@ -22,7 +22,7 @@ vi.mock('@/lib/firebase', () => ({
 
 // IMPORTS depois dos mocks.
 import { create } from 'zustand'
-import { bindCollectionWriteThrough, stripUndefined } from '@/lib/db/write-through'
+import { bindCollectionWriteThrough, bindRootField, stripUndefined, withRemoteStoreUpdate } from '@/lib/db/write-through'
 import {
   markDocWrite,
   isOwnDocSnapshot,
@@ -85,6 +85,7 @@ describe('write-through — sem flag own-writes no callback, eco regravaria', ()
 
     // 2. Debounce dispara → 1 commit, 1 markCollectionWrite (não testamos aqui).
     vi.advanceTimersByTime(1500)
+    await vi.runAllTimersAsync()
     expect(state.commit).toHaveBeenCalledTimes(1)
     state.set.mockClear()
     state.commit.mockClear()
@@ -95,6 +96,7 @@ describe('write-through — sem flag own-writes no callback, eco regravaria', ()
     const eco = { id: 'L1', titulo: 'Compras', updatedAt: '2026-07-26T10:00:00.000Z' }
     store.getState().setLists([eco])
     vi.advanceTimersByTime(1500)
+    await vi.runAllTimersAsync()
     // Provamos: segundo commit — o loop ORIGINAL aconteceria aqui.
     expect(state.commit).toHaveBeenCalledTimes(1)
 
@@ -119,6 +121,7 @@ describe('write-through — com flag own-writes, commit é único (loop cortado)
     const novo = { id: 'L1', titulo: 'Compras' }
     store.getState().setList(novo)
     vi.advanceTimersByTime(1500)
+    await vi.runAllTimersAsync()
     expect(state.commit).toHaveBeenCalledTimes(1)
 
     // 2. O Firestore ecoa o snapshot com EXATAMENTE o mesmo payload
@@ -149,6 +152,7 @@ describe('write-through — com flag own-writes, commit é único (loop cortado)
     const original = { id: 'L1', titulo: 'Compras' }
     store.getState().setList(original)
     vi.advanceTimersByTime(1500)
+    await vi.runAllTimersAsync()
     expect(state.commit).toHaveBeenCalledTimes(1)
     state.set.mockClear()
     state.commit.mockClear()
@@ -161,6 +165,7 @@ describe('write-through — com flag own-writes, commit é único (loop cortado)
     // Provider não filtra → setState → bind reage → outro commit.
     store.getState().setLists([editado])
     vi.advanceTimersByTime(1500)
+    await vi.runAllTimersAsync()
     expect(state.commit).toHaveBeenCalledTimes(1)
 
     unsub()
@@ -179,6 +184,7 @@ describe('write-through — flush no unsubscribe persiste estado pendente', () =
 
     store.getState().setList({ id: 'L1', titulo: 'Pendentes' })
     unsub()
+    await vi.runAllTimersAsync()
     expect(state.commit).toHaveBeenCalledTimes(1)
   })
 })
@@ -284,7 +290,7 @@ describe('write-through — reprodução do crash "Unsupported field value: unde
       collectionName: 'shoppingLists',
     })
 
-    // Nova ação local força a reescrita da coleção inteira:
+    // Uma ação local em item existente força apenas o diff desse documento:
     const listId = useListsStore.getState().lists[0].id
     useListsStore.getState().toggleItem(listId, 'i1')
 
@@ -314,11 +320,76 @@ describe('write-through — batch: 50 itens = 1 batch, 1 commit', () => {
     }))
     store.getState().setLists(items)
     vi.advanceTimersByTime(1500)
+    await vi.runAllTimersAsync()
 
     expect(state.writeBatch).toHaveBeenCalledTimes(1)
     expect(state.commit).toHaveBeenCalledTimes(1)
     expect(state.set).toHaveBeenCalledTimes(50)
 
+    state.writeBatch.mockClear()
+    state.commit.mockClear()
+    state.set.mockClear()
+    store.getState().setLists(items.map((item, index) => index === 17 ? { ...item, titulo: 'Lista alterada' } : item))
+    vi.advanceTimersByTime(1500)
+    await vi.runAllTimersAsync()
+    expect(state.writeBatch).toHaveBeenCalledTimes(1)
+    expect(state.commit).toHaveBeenCalledTimes(1)
+    expect(state.set).toHaveBeenCalledTimes(1)
+
     unsub()
+  })
+})
+
+describe('write-through — sincronização remota e root coalescido', () => {
+  it('setState remoto não agenda nova escrita', async () => {
+    vi.useFakeTimers()
+    const store = makeStore([])
+    const unsub = bindCollectionWriteThrough<Item>(user as any, {
+      store,
+      field: 'lists',
+      collectionName: 'shoppingLists',
+    })
+
+    store.getState().setList({ id: 'L1', titulo: 'Local' })
+    vi.advanceTimersByTime(1500)
+    await vi.runAllTimersAsync()
+    state.commit.mockClear()
+
+    withRemoteStoreUpdate(() => store.getState().setLists([{ id: 'L1', titulo: 'Remoto' }]))
+    vi.advanceTimersByTime(1500)
+    await vi.runAllTimersAsync()
+    expect(state.commit).not.toHaveBeenCalled()
+    unsub()
+  })
+
+  it('coalesce alterações de vários campos do documento raiz em um setDoc', async () => {
+    vi.useFakeTimers()
+    const profile = create<{ name: string }>((set) => ({
+      name: '',
+      setName: (name: string) => set({ name }),
+    })) as any
+    const subscription = create<{ role: string; plan: string }>((set) => ({
+      role: 'subscriber',
+      plan: 'free',
+      setRole: (role: string) => set({ role }),
+      setPlan: (plan: string) => set({ plan }),
+    })) as any
+    const unbindName = bindRootField(user as any, profile, 'name', 'name')
+    const unbindRole = bindRootField(user as any, subscription, 'role', 'subscription.role')
+    const unbindPlan = bindRootField(user as any, subscription, 'plan', 'subscription.plan')
+
+    profile.setState({ name: 'Bruno' })
+    subscription.setState({ role: 'admin', plan: 'pro' })
+    vi.advanceTimersByTime(1500)
+    await vi.runAllTimersAsync()
+
+    expect(state.setDoc).toHaveBeenCalledTimes(1)
+    expect((state.setDoc.mock.calls[0] as any)[1]).toMatchObject({
+      name: 'Bruno',
+      subscription: { role: 'admin', plan: 'pro' },
+    })
+    unbindName()
+    unbindRole()
+    unbindPlan()
   })
 })

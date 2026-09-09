@@ -94,6 +94,7 @@ export function AppSidebar({
   const enabledModules = menuModules
     .filter((m) => m.enabled)
     .map((m) => m.id === 'calendario' ? { ...m, label: 'Agenda' } : m)
+  const closeMobileSidebar = () => setMobileOpen(false)
 
   const sidebarContent = (
     <div className="flex h-full flex-col">
@@ -120,6 +121,7 @@ export function AppSidebar({
               <Link
                 key={item.id}
                 href={item.href}
+                onClick={closeMobileSidebar}
                 className={cn(
                   'flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-all duration-200',
                   active
@@ -159,12 +161,15 @@ export function AppSidebar({
         >
           {collapsed ? <PanelLeftOpen size={15} /> : <PanelLeftClose size={15} />}
         </Button>
-        <ToolLink href="/menu" label="Menu" icon={Menu} />
-        <ToolLink href="/lixeira" label="Lixeira" icon={Trash2} />
+        <ToolLink href="/menu" label="Menu" icon={Menu} onClick={closeMobileSidebar} />
+        <ToolLink href="/lixeira" label="Lixeira" icon={Trash2} onClick={closeMobileSidebar} />
         <Button
           variant="ghost"
           size="icon-sm"
-          onClick={onOpenSettings}
+          onClick={() => {
+            closeMobileSidebar()
+            onOpenSettings()
+          }}
           title="Abrir configurações"
           className="rounded-xl shrink-0"
           aria-label="Configurações"
@@ -218,10 +223,12 @@ function ToolLink({
   href,
   label,
   icon: Icon,
+  onClick,
 }: {
   href: string
   label: string
   icon: SidebarIcon
+  onClick?: () => void
 }) {
   return (
     <Link
@@ -229,6 +236,7 @@ function ToolLink({
       className="inline-flex items-center justify-center size-8 shrink-0 rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
       aria-label={label}
       title={label}
+      onClick={onClick}
     >
       <Icon size={16} />
     </Link>

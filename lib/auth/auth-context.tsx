@@ -50,6 +50,17 @@ function markSeeded(uid: string) {
   } catch {}
 }
 
+function clearPlannerLocalCache() {
+  try {
+    for (let index = localStorage.length - 1; index >= 0; index -= 1) {
+      const key = localStorage.key(index)
+      if (key?.startsWith('plannerhub-') && key !== 'plannerhub-theme') {
+        localStorage.removeItem(key)
+      }
+    }
+  } catch {}
+}
+
 function getSyncedRole(user: User | null): Role {
   const nextRole = roleFromEmail(user?.email)
   const subStore = useSubscriptionStore.getState()
@@ -183,7 +194,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const logout = async () => {
-    await signOut(auth)
+    try {
+      await signOut(auth)
+    } finally {
+      clearPlannerLocalCache()
+    }
   }
 
   return (

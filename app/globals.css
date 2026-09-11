@@ -231,8 +231,8 @@ textarea {
   --landing-line: color-mix(in oklab, var(--brand-green) 18%, transparent);
   --landing-line-strong: color-mix(in oklab, var(--brand-green) 32%, transparent);
   --landing-chip: color-mix(in oklab, var(--brand-rose) 52%, transparent);
-  --landing-action-bg: var(--brand-mustard);
-  --landing-action-fg: #211a12;
+  --landing-action-bg: var(--brand-rose);
+  --landing-action-fg: #332c2b;
   --landing-highlight-bg: var(--brand-rose);
   --landing-highlight-fg: color-mix(in oklab, var(--brand-green) 76%, #211f1a);
   background-color: var(--landing-bg);
@@ -250,8 +250,8 @@ textarea {
   --landing-line: color-mix(in oklab, var(--brand-rose) 22%, transparent);
   --landing-line-strong: color-mix(in oklab, var(--brand-rose) 38%, transparent);
   --landing-chip: color-mix(in oklab, var(--brand-rose) 22%, transparent);
-  --landing-action-bg: color-mix(in oklab, var(--brand-mustard) 84%, var(--brand-beige));
-  --landing-action-fg: #241e16;
+  --landing-action-bg: color-mix(in oklab, var(--brand-rose) 84%, var(--brand-beige));
+  --landing-action-fg: #332c2b;
   --landing-highlight-bg: var(--brand-rose);
   --landing-highlight-fg: #332e27;
 }

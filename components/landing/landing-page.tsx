@@ -6,6 +6,7 @@ import { ArrowRight, PenLine } from 'lucide-react'
 import { InfiniteBook } from './infinite-book'
 import { BrandLogo } from '@/components/brand-logo'
 import { ThemeToggle } from '@/components/auth/theme-toggle'
+import { PLANS as SUBSCRIPTION_PLANS, PLAN_ORDER, formatBRL } from '@/lib/subscriptions/plan'
 
 /** Ícones próprios para a landing — não Lucide; cada um codifica a feature. */
 function StickersGlyph({ size = 18, strokeWidth = 1.5 }: { size?: number; strokeWidth?: number }) {
@@ -235,25 +236,6 @@ function TemplateCard({ name, pattern, delay = 0 }: { name: string; pattern: str
   )
 }
 
-const PLANS = [
-  {
-    name: 'Papel',
-    price: 'Grátis',
-    period: 'para sempre',
-    cta: 'COMEÇAR GRÁTIS',
-    highlight: false,
-    features: ['Planners ilimitados', '14 templates de página', '180+ stickers', 'Salvo no navegador'],
-  },
-  {
-    name: 'Papelaria',
-    price: 'R$ 19',
-    period: '/mês',
-    cta: 'ASSINAR',
-    highlight: true,
-    features: ['Tudo do plano Papel', 'Sincronização entre dispositivos', 'Backup na nuvem', 'Novos stickers toda semana'],
-  },
-]
-
 export function LandingPage() {
   const [heroReady, setHeroReady] = useState(false)
   const heroOffset = useHeroParallax()
@@ -468,33 +450,49 @@ export function LandingPage() {
             </h2>
           </Reveal>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-3xl mx-auto">
-            {PLANS.map((p, i) => (
-              <Reveal key={p.name} delay={i * 100}>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 max-w-5xl mx-auto">
+            {PLAN_ORDER.map((id, i) => {
+              const p = SUBSCRIPTION_PLANS[id]
+              const highlight = id === 'annual'
+
+              return (
+              <Reveal key={p.id} delay={i * 100}>
                 <div
                   className={`relative rounded-2xl border p-8 h-full transition-all duration-500 hover:-translate-y-1 ${
-                    p.highlight
+                    highlight
                        ? 'landing-action-card border'
                        : 'landing-surface landing-border border'
                   }`}
                 >
-                  {p.highlight && (
+                  {highlight && (
                     <span className="landing-recommendation absolute -top-3 left-8 px-3 py-1 rounded-full text-[10px] tracking-widest">
                       RECOMENDADO
                     </span>
                   )}
-                  <h3 className="text-lg font-light">{p.name}</h3>
+                  <h3 className="text-lg font-light">{p.label}</h3>
+                  <p className={`mt-2 text-sm leading-relaxed ${highlight ? 'landing-on-action-muted' : 'landing-copy-muted'}`}>
+                    {p.description}
+                  </p>
                   <div className="mt-4 flex items-baseline gap-1">
-                    <span className="text-4xl font-light tracking-tight">{p.price}</span>
-                    <span className={`text-xs ${p.highlight ? 'landing-on-action-muted' : 'landing-copy-subtle'}`}>{p.period}</span>
+                    {id === 'annual' ? (
+                      <div className="flex flex-col items-start gap-0.5">
+                        <span className="text-3xl font-semibold tracking-tight">12x de {formatBRL(p.price / 12)}</span>
+                        <span className="text-xs landing-on-action-muted">{formatBRL(p.price)} por ano</span>
+                      </div>
+                    ) : (
+                      <>
+                        <span className="text-4xl font-light tracking-tight">{id === 'trial' ? 'Grátis' : formatBRL(p.price)}</span>
+                        <span className={`text-xs ${highlight ? 'landing-on-action-muted' : 'landing-copy-subtle'}`}>{p.period}</span>
+                      </>
+                    )}
                   </div>
                   <ul className="mt-6 space-y-2.5">
                     {p.features.map((f) => (
                       <li
                         key={f}
-                        className={`text-sm flex items-start gap-2 ${p.highlight ? 'landing-on-action-muted' : 'landing-copy-muted'}`}
+                        className={`text-sm flex items-start gap-2 ${highlight ? 'landing-on-action-muted' : 'landing-copy-muted'}`}
                       >
-                        <span className={`mt-[7px] w-1 h-1 rounded-full shrink-0 ${p.highlight ? 'landing-on-action-dot' : 'landing-dot'}`} />
+                        <span className={`mt-[7px] w-1 h-1 rounded-full shrink-0 ${highlight ? 'landing-on-action-dot' : 'landing-dot'}`} />
                         {f}
                       </li>
                     ))}
@@ -502,16 +500,17 @@ export function LandingPage() {
                   <Link
                     href="/auth/login"
                     className={`mt-8 inline-flex items-center justify-center w-full py-3 rounded-xl text-sm tracking-widest transition-colors ${
-                      p.highlight
+                      highlight
                         ? 'landing-action-inverse'
                         : 'landing-action'
                     }`}
                   >
-                    {p.cta}
+                    {id === 'trial' ? 'COMEÇAR MEU MÊS GRÁTIS' : `PAGAR ${formatBRL(p.price)}`}
                   </Link>
                 </div>
               </Reveal>
-            ))}
+              )
+            })}
           </div>
         </div>
       </section>

@@ -60,20 +60,20 @@ export function PwaInstallPrompt() {
         <X size={15} />
       </button>
       <div className="pr-5">
-        <p className="text-sm font-semibold">Leve o Tria com você</p>
+        <p className="text-sm font-semibold">Leve o App com você</p>
         <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-          Instale o planner para abrir mais rápido e receber seus avisos no dispositivo.
+          instale o app para abrir mais rápido e receber seus avisos no dispositivo
         </p>
       </div>
       {ios ? (
         <div className="mt-3 rounded-xl bg-muted/60 p-3 text-xs leading-relaxed text-foreground/80">
           No iPhone ou iPad: toque em <Share size={13} className="mx-0.5 inline-block align-[-2px]" /> <strong>Compartilhar</strong> e depois em <strong>Adicionar à Tela de Início</strong>.
-          <span className="mt-1 block text-muted-foreground">Depois, abra o Tria pela nova tela para ativar os avisos.</span>
+          <span className="mt-1 block text-muted-foreground">Depois, abra o app pela nova tela para ativar os avisos.</span>
         </div>
       ) : installEvent ? (
         <>
           <Button onClick={install} className="mt-3 w-full rounded-xl gap-2">
-            <Download size={15} /> Instalar Tria
+            <Download size={15} /> Instalar app
           </Button>
           <NotificationPermissionButton />
         </>

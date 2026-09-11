@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils'
 import { useEffect, useState } from 'react'
 import { Button } from '../ui/button'
 import { Dialog, DialogContent } from '../ui/overlays'
-import { Input } from '../ui/primitives'
+import { Input, Textarea } from '../ui/primitives'
 import { toast } from '../ui/toaster'
 
 const PRIORITY_OPTIONS = [
@@ -26,7 +26,6 @@ export function AddWishDialog({
   const addItem = useWishlistStore((s) => s.addItem)
   const updateItem = useWishlistStore((s) => s.updateItem)
   const existing = useWishlistStore((s) => editId ? s.items.find((i) => i.id === editId) : undefined)
-  const getAllCategories = useWishlistStore((s) => s.getAllCategories)
   const [name, setName] = useState('')
   const [store, setStore] = useState('')
   const [url, setUrl] = useState('')
@@ -34,7 +33,6 @@ export function AddWishDialog({
   const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('medium')
   const [category, setCategory] = useState('')
   const [notes, setNotes] = useState('')
-  const existingCategories = getAllCategories()
 
   useEffect(() => {
     if (!open) return
@@ -118,13 +116,7 @@ export function AddWishDialog({
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
                 placeholder="Ex: Papelaria"
-                list="wish-categories"
               />
-              <datalist id="wish-categories">
-                {existingCategories.map((c) => (
-                  <option key={c} value={c} />
-                ))}
-              </datalist>
             </div>
           </div>
           <div>
@@ -166,7 +158,7 @@ export function AddWishDialog({
           </div>
           <div>
             <label className="text-sm font-medium mb-1.5 block">Observação</label>
-            <Input
+            <Textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
             />

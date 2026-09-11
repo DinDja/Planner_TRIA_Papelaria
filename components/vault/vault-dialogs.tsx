@@ -4,7 +4,7 @@ import { usePasswordsStore } from '@/lib/store/use-passwords-store'
 import { useEffect, useState } from 'react'
 import { Button } from '../ui/button'
 import { Dialog, DialogContent } from '../ui/overlays'
-import { Input } from '../ui/primitives'
+import { Input, Textarea } from '../ui/primitives'
 import { toast } from '../ui/toaster'
 
 export function AddPasswordDialog({
@@ -114,7 +114,7 @@ export function AddPasswordDialog({
           </div>
           <div>
             <label className="text-sm font-medium mb-1.5 block">Observação</label>
-            <Input
+            <Textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
             />

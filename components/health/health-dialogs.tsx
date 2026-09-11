@@ -6,7 +6,7 @@ import type { Doctor } from '@/lib/types'
 import { useEffect, useState } from 'react'
 import { Button } from '../ui/button'
 import { Dialog, DialogContent } from '../ui/overlays'
-import { Input } from '../ui/primitives'
+import { Input, Textarea } from '../ui/primitives'
 import { toast } from '../ui/toaster'
 import { ReminderButton } from '../notifications/reminder-button'
 
@@ -20,8 +20,8 @@ const dayStr = (): string => {
 
 const SPECIALTIES = [
   'Clínico Geral', 'Dentista', 'Dermatologista', 'Endocrinologista',
-  'Ginecologista', 'Nutricionista', 'Oftalmologista', 'Outros',
-  'Psicólogo', 'Psiquiatra',
+  'Ginecologista', 'Nutricionista', 'Oftalmologista', 'Psicólogo',
+  'Psiquiatra', 'Outros',
 ]
 
 const CUSTOM_OPTION = '__custom__'
@@ -229,7 +229,7 @@ export function AddWeightDialog({ open, onClose, editId }: { open: boolean; onCl
           </div>
           <div>
             <label className="text-sm font-medium mb-1.5 block">Observação</label>
-            <Input value={notes} onChange={(e) => setNotes(e.target.value)} />
+            <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} />
           </div>
           <div className="flex justify-end gap-2 pt-1">
             <Button variant="outline" onClick={onClose} className="rounded-xl">Cancelar</Button>
@@ -312,8 +312,100 @@ export function AddMeasurementDialog({ open, onClose, editId }: { open: boolean;
           </div>
           <div>
             <label className="text-sm font-medium mb-1.5 block">Observação</label>
-            <Input value={notes} onChange={(e) => setNotes(e.target.value)} />
+            <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} />
           </div>
+          <div className="flex justify-end gap-2 pt-1">
+            <Button variant="outline" onClick={onClose} className="rounded-xl">Cancelar</Button>
+            <Button onClick={handleSave} className="rounded-xl shadow-md">Salvar</Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+export function AddBioimpedanceDialog({ open, onClose, editId }: { open: boolean; onClose: () => void; editId?: string }) {
+  const addBioimpedance = useHealthStore((s) => s.addBioimpedance)
+  const updateBioimpedance = useHealthStore((s) => s.updateBioimpedance)
+  const existing = useHealthStore((s) => s.bioimpedances.find((item) => item.id === editId))
+  const [date, setDate] = useState(dayStr())
+  const [bodyFatPercentage, setBodyFatPercentage] = useState('')
+  const [muscleMass, setMuscleMass] = useState('')
+  const [visceralFat, setVisceralFat] = useState('')
+  const [bodyWaterPercentage, setBodyWaterPercentage] = useState('')
+  const [basalMetabolicRate, setBasalMetabolicRate] = useState('')
+  const [boneMass, setBoneMass] = useState('')
+  const [metabolicAge, setMetabolicAge] = useState('')
+  const [notes, setNotes] = useState('')
+
+  useEffect(() => {
+    if (!open) return
+    if (editId && existing) {
+      setDate(existing.date)
+      setBodyFatPercentage(existing.bodyFatPercentage?.toString() ?? '')
+      setMuscleMass(existing.muscleMass?.toString() ?? '')
+      setVisceralFat(existing.visceralFat?.toString() ?? '')
+      setBodyWaterPercentage(existing.bodyWaterPercentage?.toString() ?? '')
+      setBasalMetabolicRate(existing.basalMetabolicRate?.toString() ?? '')
+      setBoneMass(existing.boneMass?.toString() ?? '')
+      setMetabolicAge(existing.metabolicAge?.toString() ?? '')
+      setNotes(existing.notes ?? '')
+    } else if (!editId) {
+      setDate(dayStr()); setBodyFatPercentage(''); setMuscleMass(''); setVisceralFat('')
+      setBodyWaterPercentage(''); setBasalMetabolicRate(''); setBoneMass(''); setMetabolicAge(''); setNotes('')
+    }
+  }, [open, editId, existing])
+
+  const handleSave = () => {
+    const values = [bodyFatPercentage, muscleMass, visceralFat, bodyWaterPercentage, basalMetabolicRate, boneMass, metabolicAge]
+    const numberValue = (value: string) => {
+      if (!value.trim()) return undefined
+      const parsed = parseFloat(value.replace(',', '.'))
+      return Number.isFinite(parsed) ? parsed : undefined
+    }
+    if (!values.some((value) => numberValue(value) !== undefined)) {
+      toast({ title: 'Preencha ao menos uma informação', variant: 'error' })
+      return
+    }
+    const data = {
+      date,
+      bodyFatPercentage: numberValue(bodyFatPercentage),
+      muscleMass: numberValue(muscleMass),
+      visceralFat: numberValue(visceralFat),
+      bodyWaterPercentage: numberValue(bodyWaterPercentage),
+      basalMetabolicRate: numberValue(basalMetabolicRate),
+      boneMass: numberValue(boneMass),
+      metabolicAge: numberValue(metabolicAge),
+      notes: notes.trim() || undefined,
+    }
+    if (editId) {
+      updateBioimpedance(editId, data)
+      toast({ title: 'Bioimpedância atualizada!', variant: 'success' })
+    } else {
+      addBioimpedance(data)
+      toast({ title: 'Bioimpedância registrada!', variant: 'success' })
+    }
+    onClose()
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent title={editId ? 'Editar bioimpedância' : 'Nova bioimpedância'}>
+        <div className="flex flex-col gap-4">
+          <div>
+            <label className="text-sm font-medium mb-1.5 block">Data</label>
+            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div><label className="text-sm font-medium mb-1.5 block">Gordura corporal (%)</label><Input type="number" step="0.1" min="0" value={bodyFatPercentage} onChange={(e) => setBodyFatPercentage(e.target.value)} /></div>
+            <div><label className="text-sm font-medium mb-1.5 block">Massa muscular (kg)</label><Input type="number" step="0.1" min="0" value={muscleMass} onChange={(e) => setMuscleMass(e.target.value)} /></div>
+            <div><label className="text-sm font-medium mb-1.5 block">Gordura visceral</label><Input type="number" step="0.1" min="0" value={visceralFat} onChange={(e) => setVisceralFat(e.target.value)} /></div>
+            <div><label className="text-sm font-medium mb-1.5 block">Água corporal (%)</label><Input type="number" step="0.1" min="0" value={bodyWaterPercentage} onChange={(e) => setBodyWaterPercentage(e.target.value)} /></div>
+            <div><label className="text-sm font-medium mb-1.5 block">Metabolismo basal (kcal)</label><Input type="number" step="1" min="0" value={basalMetabolicRate} onChange={(e) => setBasalMetabolicRate(e.target.value)} /></div>
+            <div><label className="text-sm font-medium mb-1.5 block">Massa óssea (kg)</label><Input type="number" step="0.1" min="0" value={boneMass} onChange={(e) => setBoneMass(e.target.value)} /></div>
+            <div className="col-span-2"><label className="text-sm font-medium mb-1.5 block">Idade metabólica</label><Input type="number" step="1" min="0" value={metabolicAge} onChange={(e) => setMetabolicAge(e.target.value)} /></div>
+          </div>
+          <div><label className="text-sm font-medium mb-1.5 block">Observação</label><Textarea value={notes} onChange={(e) => setNotes(e.target.value)} /></div>
           <div className="flex justify-end gap-2 pt-1">
             <Button variant="outline" onClick={onClose} className="rounded-xl">Cancelar</Button>
             <Button onClick={handleSave} className="rounded-xl shadow-md">Salvar</Button>
@@ -381,7 +473,7 @@ export function AddSymptomDialog({ open, onClose, editId }: { open: boolean; onC
           </div>
           <div>
             <label className="text-sm font-medium mb-1.5 block">Observação</label>
-            <Input value={notes} onChange={(e) => setNotes(e.target.value)} />
+            <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} />
           </div>
           <div className="flex justify-end gap-2 pt-1">
             <Button variant="outline" onClick={onClose} className="rounded-xl">Cancelar</Button>
@@ -404,7 +496,6 @@ export function AddMedicationDialog({ open, onClose, editId }: { open: boolean; 
   const [firstTime, setFirstTime] = useState('08:00')
   const [startDate, setStartDate] = useState(dayStr())
   const [notes, setNotes] = useState('')
-  const [reminderEnabled, setReminderEnabled] = useState(false)
 
   useEffect(() => {
     if (!open) return
@@ -415,12 +506,10 @@ export function AddMedicationDialog({ open, onClose, editId }: { open: boolean; 
       setDurationDays(String(parsedDurationDays)); setIntervalHours(String(existing.intervalHours ?? 24))
       setFirstTime(storedTimes[0]?.match(/^\d{2}:\d{2}$/)?.[0] ?? '08:00')
       setStartDate(existing.startDate); setNotes(existing.notes ?? '')
-      setReminderEnabled(existing.reminderEnabled === true)
     } else if (!editId) {
       const today = dayStr()
       setName(''); setDosage(''); setDurationDays('1'); setIntervalHours('24')
       setFirstTime('08:00'); setStartDate(today); setNotes('')
-      setReminderEnabled(false)
     }
   }, [open, editId, existing])
 
@@ -450,7 +539,6 @@ export function AddMedicationDialog({ open, onClose, editId }: { open: boolean; 
       startDate,
       endDate: addDaysToDate(startDate, days - 1),
       notes: notes.trim() || undefined,
-      reminderEnabled,
     }
     if (editId) {
       updateMedication(editId, data)
@@ -459,7 +547,7 @@ export function AddMedicationDialog({ open, onClose, editId }: { open: boolean; 
       addMedication(data)
       toast({ title: 'Medicamento adicionado!', variant: 'success' })
     }
-    setName(''); setDosage(''); setDurationDays('1'); setIntervalHours('24'); setFirstTime('08:00'); setStartDate(dayStr()); setNotes(''); setReminderEnabled(false); onClose()
+    setName(''); setDosage(''); setDurationDays('1'); setIntervalHours('24'); setFirstTime('08:00'); setStartDate(dayStr()); setNotes(''); onClose()
   }
 
   const calculatedTimes = calculateMedicationTimes(firstTime, Number(intervalHours))
@@ -497,12 +585,7 @@ export function AddMedicationDialog({ open, onClose, editId }: { open: boolean; 
               ))}
             </div>
           </div>
-          <div><label className="text-sm font-medium mb-1.5 block">Observação</label><Input value={notes} onChange={(e) => setNotes(e.target.value)} /></div>
-          <ReminderButton
-            enabled={reminderEnabled}
-            onEnabledChange={setReminderEnabled}
-            description="Avisar nos horários programados do medicamento"
-          />
+          <div><label className="text-sm font-medium mb-1.5 block">Observação</label><Textarea value={notes} onChange={(e) => setNotes(e.target.value)} /></div>
           <div className="flex justify-end gap-2 pt-1">
             <Button variant="outline" onClick={onClose} className="rounded-xl">Cancelar</Button>
             <Button onClick={handleSave} className="rounded-xl shadow-md">Salvar</Button>
@@ -589,7 +672,7 @@ export function AddCycleDialog({ open, onClose, editId }: { open: boolean; onClo
               ))}
             </div>
           </div>
-          <div><label className="text-sm font-medium mb-1.5 block">Observação</label><Input value={notes} onChange={(e) => setNotes(e.target.value)} /></div>
+          <div><label className="text-sm font-medium mb-1.5 block">Observação</label><Textarea value={notes} onChange={(e) => setNotes(e.target.value)} /></div>
           <div className="flex justify-end gap-2 pt-1">
             <Button variant="outline" onClick={onClose} className="rounded-xl">Cancelar</Button>
             <Button onClick={handleSave} className="rounded-xl shadow-md">Salvar</Button>
@@ -655,7 +738,7 @@ export function AddDoctorDialog({ open, onClose, editId }: { open: boolean; onCl
           </div>
           <div>
             <label className="text-sm font-medium mb-1.5 block">Observação</label>
-            <Input value={notes} onChange={(e) => setNotes(e.target.value)} />
+            <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} />
           </div>
           <div className="flex justify-end gap-2 pt-1">
             <Button variant="outline" onClick={onClose} className="rounded-xl">Cancelar</Button>
@@ -748,15 +831,15 @@ export function AddAppointmentDialog({ open, onClose, doctors, editId }: { open:
           </div>
           <div>
             <label className="text-sm font-medium mb-1.5 block">O que levar</label>
-            <Input value={whatToBring} onChange={(e) => setWhatToBring(e.target.value)} placeholder="Ex: Pedidos de exames, documentos" />
+            <Textarea value={whatToBring} onChange={(e) => setWhatToBring(e.target.value)} placeholder="Ex: Pedidos de exames, documentos" />
           </div>
           <div>
             <label className="text-sm font-medium mb-1.5 block">Perguntas para o médico</label>
-            <Input value={questions} onChange={(e) => setQuestions(e.target.value)} placeholder="Ex: Preciso de acompanhamento mensal?" />
+            <Textarea value={questions} onChange={(e) => setQuestions(e.target.value)} placeholder="Ex: Preciso de acompanhamento mensal?" />
           </div>
           <div>
             <label className="text-sm font-medium mb-1.5 block">Observação</label>
-            <Input value={notes} onChange={(e) => setNotes(e.target.value)} />
+            <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} />
           </div>
           <ReminderButton
             enabled={reminderEnabled}
@@ -856,7 +939,7 @@ export function AddExamDialog({ open, onClose, editId }: { open: boolean; onClos
           </div>
           <div>
             <label className="text-sm font-medium mb-1.5 block">Observação</label>
-            <Input value={notes} onChange={(e) => setNotes(e.target.value)} />
+            <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} />
           </div>
           <ReminderButton
             enabled={reminderEnabled}

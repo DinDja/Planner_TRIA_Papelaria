@@ -41,7 +41,7 @@ interface HabitsState {
   habits: Habit[]
   logs: HabitLog[]
 
-  addHabit: (data: { name: string; description?: string; color?: string; frequency: HabitFrequency; weekdays?: Weekday[]; dayOfMonth?: number; reminderTime?: string }) => void
+  addHabit: (data: { name: string; description?: string; color?: string; frequency: HabitFrequency; weekdays?: Weekday[]; dayOfMonth?: number; reminderTime?: string; reminderIntervalHours?: number }) => void
   updateHabit: (id: string, patch: Partial<Habit>) => void
   archiveHabit: (id: string) => void
   deleteHabit: (id: string) => void

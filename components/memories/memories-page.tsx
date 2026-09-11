@@ -7,6 +7,7 @@ import {
   Archive,
   Angry,
   Frown,
+  List,
   Meh,
   Plus,
   Pencil,

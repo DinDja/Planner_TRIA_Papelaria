@@ -102,7 +102,7 @@ export function SettingsDialog({ open, onClose }: Props) {
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent
         title="Configurações do sistema"
-        description="Personalize a aparência e comportamento da TRIA."
+        description="Personalize a aparência e comportamento do App."
         className="max-w-2xl"
       >
         <div className="flex flex-col gap-7">
@@ -110,7 +110,7 @@ export function SettingsDialog({ open, onClose }: Props) {
           <Section
             icon={ContactRound}
             title="Dados da conta"
-            desc="Como você é identificado dentro da TRIA. As alterações são salvas automaticamente."
+            desc="Como você é identificado dentro do App. As alterações são salvas automaticamente."
           >
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="flex flex-col gap-1.5 text-xs font-medium" htmlFor="settings-account-name">

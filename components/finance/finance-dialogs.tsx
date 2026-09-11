@@ -20,7 +20,7 @@ import { Check } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Button } from '../ui/button'
 import { Dialog, DialogContent } from '../ui/overlays'
-import { Input } from '../ui/primitives'
+import { Input, Textarea } from '../ui/primitives'
 import { toast } from '../ui/toaster'
 
 const COLORS = ['#d1bdb8', '#b76f06', '#6a634d', '#ddd6c6']
@@ -271,7 +271,7 @@ export function AddTransactionDialog({
 
           <div>
             <label className="text-sm font-medium mb-1.5 block">Observação</label>
-            <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Detalhes (opcional)" />
+            <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Detalhes (opcional)" />
           </div>
 
           <div className="flex justify-end gap-2 pt-1">

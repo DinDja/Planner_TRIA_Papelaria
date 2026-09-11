@@ -125,6 +125,7 @@ const COL_BINDINGS: ColBinding[] = [
   { store: useBirthdaysStore as unknown as StoreLike, field: 'entries', collection: 'birthdays', read: true, write: true },
   { store: useHealthStore as unknown as StoreLike, field: 'weights', collection: 'weights', read: true, write: true },
   { store: useHealthStore as unknown as StoreLike, field: 'measurements', collection: 'bodyMeasurements', read: true, write: true },
+  { store: useHealthStore as unknown as StoreLike, field: 'bioimpedances', collection: 'bioimpedances', read: true, write: true },
   { store: useHealthStore as unknown as StoreLike, field: 'symptoms', collection: 'symptomLogs', read: true, write: true },
   { store: useHealthStore as unknown as StoreLike, field: 'medications', collection: 'medications', read: true, write: true },
   { store: useHealthStore as unknown as StoreLike, field: 'cycles', collection: 'cycleRecords', read: true, write: true },

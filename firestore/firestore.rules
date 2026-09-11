@@ -110,7 +110,7 @@ service cloud.firestore {
     // Subcollections diretas:
     //   diarios, planners, plannerPages, noteFolders (não — embed no root),
     //   notes, shoppingLists, checklists, quotes, memories, passwords, wishlist,
-    //   weightRecords, bodyMeasurements, symptomLogs, medications, cycleRecords,
+    //   weights, bodyMeasurements, bioimpedances, symptomLogs, medications, cycleRecords,
     //   doctors, appointments, exams, habits, habitLogs, tasks, recurringTasks,
     //   pendingItems, routineSlots, calendarEvents, financialAccounts, transactions, fixedBills,
     //   subscriptions, creditCards, installments, financialGoals, goalDeposits,
@@ -311,7 +311,7 @@ service cloud.firestore {
         allow read, write: if owns(uid);
       }
 
-      // ─── Saúde (useHealthStore) ─ 8 subcollections ──────────────────────
+      // ─── Saúde (useHealthStore) ─ 9 subcollections ──────────────────────
       // /users/{uid}/weights/{recordId}
       //   id, date, weight: number (kg), notes?, createdAt
       match /weights/{recordId} {
@@ -320,6 +320,12 @@ service cloud.firestore {
       // /users/{uid}/bodyMeasurements/{recordId}
       //   id, date, bust?, waist?, abdomen?, hips?, arm?, thigh?, calf?, notes?, createdAt
       match /bodyMeasurements/{recordId} {
+        allow read, write: if owns(uid);
+      }
+      // /users/{uid}/bioimpedances/{recordId}
+      //   id, date, bodyFatPercentage?, muscleMass?, visceralFat?,
+      //   bodyWaterPercentage?, basalMetabolicRate?, boneMass?, metabolicAge?, notes?, createdAt
+      match /bioimpedances/{recordId} {
         allow read, write: if owns(uid);
       }
       // /users/{uid}/symptomLogs/{recordId}
@@ -362,7 +368,8 @@ service cloud.firestore {
       // ─── Hábitos (useHabitsStore) ──────────────────────────────────────
       // /users/{uid}/habits/{habitId}
       //   id, name, description?, color, frequency: 'daily'|'weekly'|'monthly',
-      //   weekdays?: list<int>, dayOfMonth?: int, createdAt, archived: bool
+      //   weekdays?: list<int>, dayOfMonth?: int, reminderTime?: 'HH:mm', reminderIntervalHours?: int,
+      //   reminderEnabled?: bool, createdAt, archived: bool
       match /habits/{habitId} {
         allow read, write: if owns(uid);
       }

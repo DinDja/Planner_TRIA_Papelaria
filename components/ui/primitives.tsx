@@ -48,7 +48,25 @@ export function Input({
   return (
     <input
       className={cn(
-        'flex h-9 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm shadow-sm outline-none transition-colors',
+        'flex h-9 min-w-0 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm shadow-sm outline-none transition-colors overflow-hidden whitespace-normal break-words',
+        'placeholder:text-muted-foreground/60',
+        'focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/20',
+        'disabled:cursor-not-allowed disabled:opacity-50',
+        className,
+      )}
+      {...props}
+    />
+  )
+}
+
+export function Textarea({
+  className,
+  ...props
+}: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  return (
+    <textarea
+      className={cn(
+        'flex min-h-20 min-w-0 w-full resize-y rounded-xl border border-border bg-background px-3 py-2 text-sm shadow-sm outline-none transition-colors whitespace-pre-wrap break-words overflow-wrap-anywhere',
         'placeholder:text-muted-foreground/60',
         'focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/20',
         'disabled:cursor-not-allowed disabled:opacity-50',

@@ -42,7 +42,7 @@
 | `usePasswordsStore`                    | `users/{uid}/passwords`                   | ⚠️ ver nota de segurança |
 | `useWishlistStore`                     | `users/{uid}/wishlist`                    |       |
 | `useHealthStore` (escalares)           | `users/{uid}` (height, goalWeight, sex, onboarded) |       |
-| `useHealthStore` (records)             | `weights`, `bodyMeasurements`, `symptomLogs`, `medications`, `cycleRecords`, `doctors`, `appointments`, `exams` | 8 subcollections |
+| `useHealthStore` (records)             | `weights`, `bodyMeasurements`, `bioimpedances`, `symptomLogs`, `medications`, `cycleRecords`, `doctors`, `appointments`, `exams` | 9 subcollections |
 | `useHabitsStore`                       | `users/{uid}/habits` + `users/{uid}/habitLogs` |       |
 | `useRoutineStore`                      | `tasks`, `recurringTasks`, `pendingItems`, `routineSlots` | 4 subcollections |
 | `useCalendarStore`                     | `users/{uid}/calendarEvents`              |       |
@@ -277,11 +277,12 @@ users/{uid}/wishlist/{itemId} {
 }
 ```
 
-### Saúde (8 subcollections)
+### Saúde (9 subcollections)
 
 ```
 weights/{id}            { id, date, weight: number (kg), notes?, source?: 'health-onboarding', createdAt }
 bodyMeasurements/{id}  { id, date, bust?, waist?, abdomen?, hips?, arm?, thigh?, calf?, notes?, createdAt }
+bioimpedances/{id}     { id, date, bodyFatPercentage?, muscleMass?, visceralFat?, bodyWaterPercentage?, basalMetabolicRate?, boneMass?, metabolicAge?, notes?, createdAt }
 symptomLogs/{id}       { id, date, symptom, time?: 'HH:mm', possibleCause?, severity: int 1..5, notes?, createdAt }
 medications/{id}       { id, name, dosage, frequency, times?: list<string>, startDate, endDate?, reason?, notes?, color, createdAt }
 cycleRecords/{id}      { id, startDate, endDate?, flow: 'light'|'medium'|'heavy', symptoms: list<string>, notes?, createdAt }
@@ -293,7 +294,7 @@ exams/{id}             { id, name, date, time?, doctor?, laboratory?, address?, 
 ### Hábitos
 
 ```
-habits/{id}    { id, name, description?, color, frequency: 'daily'|'weekly'|'monthly', weekdays?: list<int>, dayOfMonth?: int, createdAt, archived: bool }
+habits/{id}    { id, name, description?, color, frequency: 'daily'|'weekly'|'monthly', weekdays?: list<int>, dayOfMonth?: int, reminderTime?: string, reminderIntervalHours?: int, reminderEnabled?: bool, createdAt, archived: bool }
 habitLogs/{id} { id, habitId, date, completed: bool, createdAt }
 ```
 

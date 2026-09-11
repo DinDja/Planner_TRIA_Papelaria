@@ -22,9 +22,6 @@ import {
   type PaymentClaimInput,
 } from '@/lib/subscriptions/client'
 
-const FONT_HAND = 'var(--font-caveat), "Segoe Script", cursive'
-const FONT_SERIF = 'var(--font-instrument), Georgia, serif'
-
 async function authenticatedPost<T>(user: User, path: string, body?: unknown): Promise<T> {
   const token = await user.getIdToken()
   const response = await fetch(path, {
@@ -197,16 +194,10 @@ function PricingPage() {
   return (
     <div className="mx-auto max-w-[1200px] p-6 lg:p-8">
       <div className="mb-9 max-w-2xl">
-        <p
-          className="text-sm text-muted-foreground"
-          style={{ fontFamily: FONT_HAND, fontSize: '1.15rem' }}
-        >
+        <p className="text-sm text-muted-foreground">
           um jeito simples de começar
         </p>
-        <h1
-          className="mt-1 text-3xl tracking-tight sm:text-4xl"
-          style={{ fontFamily: FONT_SERIF }}
-        >
+        <h1 className="mt-1 text-3xl tracking-tight sm:text-4xl">
           A Tria inteira, no tempo que fizer sentido para você.
         </h1>
         <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">
@@ -264,14 +255,20 @@ function PricingPage() {
                   </div>
 
                   <div className="mb-6 border-b border-border/50 pb-5">
-                    <div className="flex items-end gap-2">
-                      <span className="text-3xl font-semibold tracking-tight" style={{ fontFamily: FONT_SERIF }}>
-                        {id === 'trial' ? 'Grátis' : formatBRL(plan.price)}
-                      </span>
-                      <span className="pb-1 text-xs text-muted-foreground">{plan.period}</span>
-                    </div>
-                    {id === 'annual' && (
-                      <p className="mt-1 text-xs text-warning">12x de {formatBRL(plan.price / 12)}</p>
+                    {id === 'annual' ? (
+                      <div className="flex flex-col items-start gap-0.5">
+                        <span className="text-3xl font-semibold tracking-tight">
+                          12x de {formatBRL(plan.price / 12)}
+                        </span>
+                        <span className="text-xs text-muted-foreground">{formatBRL(plan.price)} por ano</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-end gap-2">
+                        <span className="text-3xl font-semibold tracking-tight">
+                          {id === 'trial' ? 'Grátis' : formatBRL(plan.price)}
+                        </span>
+                        <span className="pb-1 text-xs text-muted-foreground">{plan.period}</span>
+                      </div>
                     )}
                   </div>
 

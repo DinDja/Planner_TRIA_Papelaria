@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type {
   Appointment,
+  BioimpedanceRecord,
   BodyMeasurement,
   CycleRecord,
   Doctor,
@@ -68,6 +69,7 @@ const seedExams: ExamRecord[] = [
 interface HealthState {
   weights: WeightRecord[]
   measurements: BodyMeasurement[]
+  bioimpedances: BioimpedanceRecord[]
   symptoms: SymptomLog[]
   medications: Medication[]
   cycles: CycleRecord[]
@@ -89,6 +91,10 @@ interface HealthState {
   addMeasurement: (data: { date: string; bust?: number; waist?: number; abdomen?: number; hips?: number; arm?: number; thigh?: number; calf?: number; notes?: string }) => void
   updateMeasurement: (id: string, patch: Partial<BodyMeasurement>) => void
   deleteMeasurement: (id: string) => void
+
+  addBioimpedance: (data: Omit<BioimpedanceRecord, 'id' | 'createdAt'>) => void
+  updateBioimpedance: (id: string, patch: Partial<BioimpedanceRecord>) => void
+  deleteBioimpedance: (id: string) => void
 
   addSymptom: (data: { date: string; symptom: string; time?: string; possibleCause?: string; severity: 1 | 2 | 3 | 4 | 5; notes?: string }) => void
   updateSymptom: (id: string, patch: Partial<SymptomLog>) => void
@@ -139,6 +145,7 @@ export const useHealthStore = create<HealthState>()(
     (set) => ({
       weights: [],
       measurements: [],
+      bioimpedances: [],
       symptoms: [],
       medications: [],
       cycles: [],
@@ -165,6 +172,13 @@ export const useHealthStore = create<HealthState>()(
         set((s) => ({ measurements: s.measurements.map((m) => (m.id === id ? { ...m, ...patch } : m)) })),
       deleteMeasurement: (id) =>
         set((s) => ({ measurements: s.measurements.filter((m) => m.id !== id) })),
+
+      addBioimpedance: (data) =>
+        set((s) => ({ bioimpedances: [{ id: `bio-${uid()}`, ...data, createdAt: nowISO() }, ...s.bioimpedances] })),
+      updateBioimpedance: (id, patch) =>
+        set((s) => ({ bioimpedances: s.bioimpedances.map((record) => (record.id === id ? { ...record, ...patch } : record)) })),
+      deleteBioimpedance: (id) =>
+        set((s) => ({ bioimpedances: s.bioimpedances.filter((record) => record.id !== id) })),
 
       addSymptom: (data) =>
         set((s) => ({ symptoms: [{ id: `sym-${uid()}`, ...data, createdAt: nowISO() }, ...s.symptoms] })),

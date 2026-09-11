@@ -34,12 +34,11 @@ const always: string[] = [] // coleções que sempre precisamos? nenhuma — roo
 // ── Mapa pathname -> plano ──────────────────────────────────────────
 
 const PLAN: Array<{ match: RegExp; plan: RouteCollectionPlan }> = [
-  // Dashboard agrega sinta do diário + calendário + metas + planners.
-  // Não quantitativamente barato, mas honesto sobre o que a home mostra.
+  // Dashboard agrega tarefas, favoritos, aniversários e saúde mensal.
   {
     match: /^\/(|dashboard)$/,
     plan: {
-      collections: ['planners', 'diarios', 'calendarEvents', 'financialGoals'],
+      collections: ['planners', 'calendarEvents', 'appointments', 'exams'],
       rootFields: ['name', 'avatar', 'theme', 'modules'],
     },
   },
@@ -105,6 +104,7 @@ const PLAN: Array<{ match: RegExp; plan: RouteCollectionPlan }> = [
       collections: [
         'weights',
         'bodyMeasurements',
+        'bioimpedances',
         'symptomLogs',
         'medications',
         'cycleRecords',

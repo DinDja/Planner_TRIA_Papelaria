@@ -33,11 +33,10 @@ export function UserMenu({ onOpenSettings }: UserMenuProps) {
         render={
           <button
             type="button"
-            className="flex items-center gap-2 rounded-xl px-2.5 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-all cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+            className="flex items-center rounded-xl px-2.5 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-all cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
             aria-label="Menu da conta"
           >
-            <span className="text-base leading-none">{profile.avatar}</span>
-            <span className="hidden sm:inline max-w-[110px] truncate">
+            <span className="max-w-[110px] truncate">
               {profile.name || 'Meu Perfil'}
             </span>
           </button>

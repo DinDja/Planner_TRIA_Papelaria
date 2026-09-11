@@ -171,7 +171,7 @@ export function WishlistPage() {
   const allCategories = useMemo(() => {
     const cats = new Set<string>()
     items.forEach((i) => i.category && cats.add(i.category))
-    return [...cats].sort()
+    return [...cats].filter((category) => category.toLowerCase() !== 'roupa').sort()
   }, [items])
 
   const totalCost = useMemo(

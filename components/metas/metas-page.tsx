@@ -18,7 +18,7 @@ import { Button } from '../ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { Badge } from '../ui/primitives'
 import { Dialog, DialogContent } from '../ui/overlays'
-import { Input } from '../ui/primitives'
+import { Input, Textarea } from '../ui/primitives'
 import { toast } from '../ui/toaster'
 import { GoalDialog } from '../finance/finance-dialogs'
 
@@ -152,7 +152,7 @@ function DepositDialog({
           </div>
           <div>
             <label className="text-sm font-medium mb-1.5 block">Descrição (opcional)</label>
-            <Input
+            <Textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder={type === 'deposit' ? 'Ex: Depósito do mês...' : 'Ex: Resgate emergência...'}
@@ -165,7 +165,6 @@ function DepositDialog({
             <Button
               onClick={handleDeposit}
               className="rounded-xl shadow-md"
-              style={{ backgroundColor: type === 'withdraw' ? '#d1bdb8' : '#6a634d' }}
             >
               {editId ? 'Salvar alterações' : type === 'withdraw' ? 'Registrar retirada' : 'Adicionar aporte'}
             </Button>

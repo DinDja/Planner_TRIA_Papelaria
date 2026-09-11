@@ -8,7 +8,7 @@ import { Check, Plus, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Button } from '../ui/button'
 import { Dialog, DialogContent } from '../ui/overlays'
-import { Input } from '../ui/primitives'
+import { Input, Textarea } from '../ui/primitives'
 import { toast } from '../ui/toaster'
 import { ListKindIcon } from './list-kind-icon'
 
@@ -175,7 +175,7 @@ export function AddListDialog({
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Ex: Compra da semana, Medicamentos do mês..."
+              placeholder="Ex: Compras da semana, Medicamentos do mês..."
               onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
               autoFocus
             />
@@ -316,7 +316,6 @@ export function AddItemDialog({
                     {categorySuggestions.map((c) => (
                       <option key={c} value={c} />
                     ))}
-                    <option value="Outros" />
                   </datalist>
                 </div>
               </div>
@@ -366,7 +365,7 @@ export function AddItemDialog({
               )}
               <div>
                 <label className="text-sm font-medium mb-1.5 block">Observação</label>
-                <Input
+                <Textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                 />

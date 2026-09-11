@@ -7,7 +7,7 @@ import { Check, CheckCircle2, Circle, Pencil, Repeat, Trash2 } from 'lucide-reac
 import { useEffect, useState } from 'react'
 import { Button } from '../ui/button'
 import { Dialog, DialogContent } from '../ui/overlays'
-import { Input } from '../ui/primitives'
+import { Input, Textarea } from '../ui/primitives'
 import { toast } from '../ui/toaster'
 import {
   PRIORITY_COLORS,
@@ -241,7 +241,7 @@ export function AddTaskDialog({
 
           <div>
             <label className="text-sm font-medium mb-1.5 block">Observação</label>
-            <Input
+            <Textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
             />
@@ -693,7 +693,7 @@ export function AddPendingDialog({
           </div>
           <div>
             <label className="text-sm font-medium mb-1.5 block">Observações</label>
-            <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Detalhes da pendência..." />
+            <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Detalhes da pendência..." />
           </div>
           <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end">
             <Button variant="outline" onClick={onClose} className="rounded-xl">

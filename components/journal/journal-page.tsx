@@ -8,18 +8,13 @@ import {
   CalendarDays,
   ChevronRight,
   Feather,
-  Flame,
   Hash,
   Heart,
-  Moon,
   Pencil,
   Pin,
   Plus,
-  Search,
   Sparkles,
-  Sun,
   Trash2,
-  Zap,
 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Button } from '../ui/button'
@@ -51,14 +46,6 @@ function formatDateRelative(dateStr: string): string {
   if (diff > 1 && diff < 7) return `Há ${diff} dias`
   if (diff >= 7 && diff < 14) return 'Semana passada'
   return formatDate(dateStr)
-}
-
-function getGreeting(): { text: string; icon: typeof Sun } {
-  const h = new Date().getHours()
-  if (h >= 5 && h < 12) return { text: 'Bom dia', icon: Sun }
-  if (h >= 12 && h < 17) return { text: 'Boa tarde', icon: Zap }
-  if (h >= 17 && h < 21) return { text: 'Boa noite', icon: Moon }
-  return { text: 'Boa noite', icon: Moon }
 }
 
 function EmotionBadge({ emotion, size = 'sm' }: { emotion: JournalEmotion; size?: 'sm' | 'lg' }) {
@@ -228,71 +215,25 @@ function EntryCard({ entry, onDelete, onView, index = 0 }: {
   )
 }
 
-function StatCard({ icon: Icon, value, label, color }: { icon: typeof Flame; value: number | string; label: string; color: string }) {
-  return (
-    <Card className="flex-1 min-w-[120px]">
-      <CardContent className="p-3 flex items-center gap-3">
-        <div
-          className="size-9 rounded-xl flex items-center justify-center shrink-0"
-          style={{ backgroundColor: color + '20' }}
-        >
-          <Icon size={16} style={{ color }} />
-        </div>
-        <div className="leading-tight min-w-0">
-          <p className="text-lg font-bold truncate">{value}</p>
-          <p className="text-[10px] text-muted-foreground truncate">{label}</p>
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
-
 export function JournalPage() {
   const entries = useJournalStore((s) => s.entries)
   const deleteEntry = useJournalStore((s) => s.deleteEntry)
-  const getMoodStats = useJournalStore((s) => s.getMoodStats)
-  const getEmotionTimeline = useJournalStore((s) => s.getEmotionTimeline)
   const getPrompt = useJournalStore((s) => s.getPrompt)
 
   const [addOpen, setAddOpen] = useState(false)
-  const [search, setSearch] = useState('')
   const [viewEntry, setViewEntry] = useState<JournalEntry | null>(null)
 
-  const stats = useMemo(() => getMoodStats(), [entries])
-  const timeline = useMemo(() => getEmotionTimeline(14), [entries])
   const todayPrompt = useMemo(() => getPrompt(), [])
-
-  const greeting = getGreeting()
-  const GreetingIcon = greeting.icon
 
   const hasTodayEntry = entries.some((e) => e.date === todayISO())
 
   const filteredEntries = useMemo(() => {
-    let filtered = [...entries]
-    if (search.trim()) {
-      const q = search.toLowerCase()
-      filtered = filtered.filter(
-        (e) =>
-          e.title.toLowerCase().includes(q) ||
-          e.content.toLowerCase().includes(q) ||
-          e.mood.note?.toLowerCase().includes(q) ||
-          e.tags.some((t) => t.toLowerCase().includes(q)),
-      )
-    }
-    return filtered.sort((a, b) => {
+    return [...entries].sort((a, b) => {
       if (a.pinned && !b.pinned) return -1
       if (!a.pinned && b.pinned) return 1
       return b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt)
     })
-  }, [entries, search])
-
-  const topEmotions = useMemo(() => {
-    const counts = stats.emotionCounts
-    return Object.entries(counts)
-      .sort(([, a], [, b]) => (b as number) - (a as number))
-      .slice(0, 4)
-      .map(([emotion]) => emotion as JournalEmotion)
-  }, [stats])
+  }, [entries])
 
   const handleDelete = (id: string) => {
     const entry = entries.find((e) => e.id === id)
@@ -307,10 +248,6 @@ export function JournalPage() {
         {/* Header */}
         <div className={cn('flex flex-wrap items-start justify-between gap-4', enter)}>
           <div>
-            <div className="flex items-center gap-2 mb-1">
-              <GreetingIcon size={20} className="text-primary" />
-              <span className="text-sm font-medium text-muted-foreground">{greeting.text}</span>
-            </div>
             <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
               <div
                 className="size-11 rounded-2xl flex items-center justify-center"
@@ -328,53 +265,11 @@ export function JournalPage() {
           </div>
           <Button
             className="rounded-xl gap-2 shadow-md"
-            style={{ background: 'linear-gradient(135deg, #d1bdb8 0%, #b76f06 100%)' }}
             onClick={() => setAddOpen(true)}
           >
             <Plus size={16} />
             {hasTodayEntry ? 'Nova entrada' : 'Escrever hoje'}
           </Button>
-        </div>
-
-        {/* Mood Timeline + Stats */}
-        <div className={cn('grid grid-cols-1 lg:grid-cols-3 gap-4', enter)}>
-          {/* Timeline */}
-          <Card className="lg:col-span-2">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-sm font-semibold flex items-center gap-2">
-                  <Sparkles size={14} className="text-primary" />
-                  Humor dos últimos dias
-                </h2>
-              </div>
-              {timeline.length > 0 ? (
-                <MoodTimeline timeline={timeline} />
-              ) : (
-                <p className="text-xs text-muted-foreground py-4 text-center">
-                  Continue escrevendo para ver seu humor aqui
-                </p>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Quick Stats */}
-          <div className="space-y-3">
-            <StatCard icon={Flame} value={stats.streak} label="dias seguidos" color="#d1bdb8" />
-            <StatCard icon={Feather} value={stats.totalEntries} label="entradas" color="#6a634d" />
-
-            {topEmotions.length > 0 && (
-              <Card>
-                <CardContent className="p-3">
-                  <p className="text-[10px] text-muted-foreground mb-2">emoções mais frequentes</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {topEmotions.map((e) => (
-                      <EmotionBadge key={e} emotion={e} size="lg" />
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
         </div>
 
         {/* Today's Prompt */}
@@ -399,18 +294,6 @@ export function JournalPage() {
           </Card>
         )}
 
-        {/* Search */}
-        <div className={cn('relative', enter)}>
-          <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar no diário..."
-            className="flex w-full h-10 pl-9 pr-4 rounded-xl border border-border/60 bg-background text-sm shadow-sm outline-none transition-colors placeholder:text-muted-foreground/60 focus-visible:border-primary/50"
-          />
-        </div>
-
         {/* Entries */}
         <div className={enter}>
           {filteredEntries.length > 0 ? (
@@ -429,20 +312,18 @@ export function JournalPage() {
             <div className="text-center py-16 rounded-2xl bg-muted/20">
               <BookOpen size={40} className="mx-auto text-muted-foreground/30 mb-4" />
               <p className="text-muted-foreground">
-                {search ? 'Nenhum resultado encontrado.' : 'Nenhuma entrada ainda.'}
+                Nenhuma entrada ainda.
               </p>
-              {!search && (
-                <Button variant="outline" className="mt-4 rounded-xl" onClick={() => setAddOpen(true)}>
-                  <Plus size={14} className="mr-1.5" />
-                  Começar a escrever
-                </Button>
-              )}
+              <Button variant="outline" className="mt-4 rounded-xl" onClick={() => setAddOpen(true)}>
+                <Plus size={14} className="mr-1.5" />
+                Começar a escrever
+              </Button>
             </div>
           )}
         </div>
       </div>
 
-      <AddEntryDialog open={addOpen} onClose={() => setAddOpen(false)} defaultPrompt={todayPrompt} />
+      <AddEntryDialog open={addOpen} onClose={() => setAddOpen(false)} />
       <ViewEntryDialog entry={viewEntry} open={!!viewEntry} onClose={() => setViewEntry(null)} />
     </div>
   )

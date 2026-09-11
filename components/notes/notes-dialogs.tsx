@@ -2,7 +2,7 @@
 
 import { useNotesStore } from '@/lib/store/use-notes-store'
 import { cn } from '@/lib/utils'
-import { Check, X } from 'lucide-react'
+import { Check } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Button } from '../ui/button'
 import { Dialog, DialogContent } from '../ui/overlays'
@@ -64,7 +64,6 @@ export function AddNoteDialog({
   const [content, setContent] = useState('')
   const [folderId, setFolderId] = useState<string | null>(defaultFolderId ?? null)
   const [tags, setTags] = useState<string[]>([])
-  const [tagInput, setTagInput] = useState('')
   const [color, setColor] = useState(NOTE_COLORS[Math.floor(Math.random() * NOTE_COLORS.length)])
 
   useEffect(() => {
@@ -74,7 +73,6 @@ export function AddNoteDialog({
       setContent(existing.content)
       setFolderId(existing.folderId)
       setTags(existing.tags)
-      setTagInput('')
       setColor(existing.color)
     } else if (!editId) {
       reset()
@@ -86,15 +84,7 @@ export function AddNoteDialog({
     setContent('')
     setFolderId(defaultFolderId ?? null)
     setTags([])
-    setTagInput('')
     setColor(NOTE_COLORS[Math.floor(Math.random() * NOTE_COLORS.length)])
-  }
-
-  const handleAddTag = () => {
-    const t = tagInput.trim().toLowerCase()
-    if (!t || tags.includes(t)) return
-    setTags([...tags, t])
-    setTagInput('')
   }
 
   const handleCreate = () => {
@@ -172,46 +162,6 @@ export function AddNoteDialog({
                 </button>
               ))}
             </div>
-          </div>
-
-          <div>
-            <label className="text-sm font-medium mb-1.5 block">Tags</label>
-            <div className="flex gap-2 mb-2">
-              <Input
-                value={tagInput}
-                onChange={(e) => setTagInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
-                placeholder="Digite e pressione Enter"
-              />
-              <Button
-                variant="outline"
-                size="sm"
-                className="rounded-xl shrink-0"
-                onClick={handleAddTag}
-                disabled={!tagInput.trim()}
-              >
-                Adicionar
-              </Button>
-            </div>
-            {tags.length > 0 && (
-              <div className="flex flex-wrap gap-1.5">
-                {tags.map((t) => (
-                  <span
-                    key={t}
-                    className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-2.5 py-0.5 text-[11px] font-medium"
-                  >
-                    {t}
-                    <button
-                      type="button"
-                      onClick={() => setTags(tags.filter((x) => x !== t))}
-                      className="cursor-pointer hover:text-destructive"
-                    >
-                      <X size={12} />
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
           </div>
 
           <div>

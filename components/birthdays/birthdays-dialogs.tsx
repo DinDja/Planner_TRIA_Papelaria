@@ -7,16 +7,33 @@ import { Check } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Button } from '../ui/button'
 import { Dialog, DialogContent } from '../ui/overlays'
-import { Input } from '../ui/primitives'
+import { Input, Textarea } from '../ui/primitives'
 import { toast } from '../ui/toaster'
 import { ReminderButton } from '../notifications/reminder-button'
+
+function formatBirthdayInput(value: string) {
+  const [, month, day] = value.split('-')
+  return month && day ? `${day}/${month}` : ''
+}
+
+function maskBirthdayInput(value: string) {
+  const digits = value.replace(/\D/g, '').slice(0, 4)
+  return digits.length > 2 ? `${digits.slice(0, 2)}/${digits.slice(2)}` : digits
+}
+
+function toStoredBirthdayDate(value: string, year: number) {
+  const [day, month] = value.split('/').map(Number)
+  const candidate = new Date(2000, month - 1, day)
+  if (!day || !month || candidate.getDate() !== day || candidate.getMonth() !== month - 1) return null
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+}
 
 export function AddBirthdayDialog({ open, onClose, editId }: { open: boolean; onClose: () => void; editId?: string }) {
   const addEntry = useBirthdaysStore((s) => s.addEntry)
   const updateEntry = useBirthdaysStore((s) => s.updateEntry)
   const existing = useBirthdaysStore((s) => editId ? s.entries.find((e) => e.id === editId) : undefined)
   const [name, setName] = useState('')
-  const [date, setDate] = useState('')
+  const [dateInput, setDateInput] = useState('')
   const [notes, setNotes] = useState('')
   const [color, setColor] = useState(BIRTHDAY_COLORS[0])
   const [reminderEnabled, setReminderEnabled] = useState(false)
@@ -25,7 +42,7 @@ export function AddBirthdayDialog({ open, onClose, editId }: { open: boolean; on
     if (!open) return
     if (existing) {
       setName(existing.name)
-      setDate(existing.date)
+      setDateInput(formatBirthdayInput(existing.date))
       setNotes(existing.notes ?? '')
       setColor(existing.color)
       setReminderEnabled(existing.reminderEnabled === true)
@@ -36,7 +53,7 @@ export function AddBirthdayDialog({ open, onClose, editId }: { open: boolean; on
 
   const reset = () => {
     setName('')
-    setDate('')
+    setDateInput('')
     setNotes('')
     setColor(BIRTHDAY_COLORS[0])
     setReminderEnabled(false)
@@ -47,6 +64,8 @@ export function AddBirthdayDialog({ open, onClose, editId }: { open: boolean; on
       toast({ title: 'Digite o nome', variant: 'error' })
       return
     }
+    const existingYear = existing?.date.split('-')[0]
+    const date = toStoredBirthdayDate(dateInput, Number(existingYear) || new Date().getFullYear())
     if (!date) {
       toast({ title: 'Informe a data de aniversário', variant: 'error' })
       return
@@ -79,11 +98,18 @@ export function AddBirthdayDialog({ open, onClose, editId }: { open: boolean; on
           </div>
           <div>
             <label className="text-sm font-medium mb-1.5 block">Data de aniversário</label>
-            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+            <Input
+              type="text"
+              inputMode="numeric"
+              value={dateInput}
+              onChange={(e) => setDateInput(maskBirthdayInput(e.target.value))}
+              placeholder="DD/MM"
+              maxLength={5}
+            />
           </div>
           <div>
             <label className="text-sm font-medium mb-1.5 block">Observação</label>
-            <Input value={notes} onChange={(e) => setNotes(e.target.value)} />
+            <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} />
           </div>
           <div>
             <label className="text-sm font-medium mb-2 block">Cor</label>

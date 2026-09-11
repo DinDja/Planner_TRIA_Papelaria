@@ -5,37 +5,28 @@ import { useAppStore } from '@/lib/store/use-app-store'
 import type { Planner } from '@/lib/types'
 import { useCalendarStore } from '@/lib/store/use-calendar-store'
 import { useBirthdaysStore } from '@/lib/store/use-birthdays-store'
-import { useFinanceStore } from '@/lib/store/use-finance-store'
 import { useHabitsStore } from '@/lib/store/use-habits-store'
 import { useHealthStore } from '@/lib/store/use-health-store'
 import { useRoutineStore } from '@/lib/store/use-routine-store'
-import { isoDia, useDiarioStore } from '@/lib/diario/use-diario-store'
+import { isoDia } from '@/lib/diario/use-diario-store'
+import { useProfileStore } from '@/lib/store/use-profile-store'
+import { useAuth } from '@/lib/auth/auth-context'
 import { cn } from '@/lib/utils'
 import {
   ArrowUpRight,
   Calendar,
   CheckCircle2,
-  Clock,
   HeartPulse,
   NotebookPen,
   Pencil,
   Star,
-  Target,
   Trash2,
 } from 'lucide-react'
 import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { DeletePlannerDialog } from '../planners/delete-planner-dialog'
 import { CalendarEventDialog } from '../calendar/calendar-dialogs'
-import { GoalDialog } from '../finance/finance-dialogs'
 import { CreatePlannerDialog } from './create-planner-dialog'
-
-const formatBRL = (centavos: number) =>
-  (centavos / 100).toLocaleString('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-    maximumFractionDigits: 0,
-  })
 
 function HabitsSummary({ todayISO }: { todayISO: string }) {
   const habits = useHabitsStore((s) => s.habits)
@@ -102,21 +93,15 @@ function HabitsSummary({ todayISO }: { todayISO: string }) {
 }
 
 export function DashboardPage() {
+  const { user } = useAuth()
+  const profileName = useProfileStore((s) => s.name)
   const planners = useAppStore((s) => s.planners)
   const [editTarget, setEditTarget] = useState<Planner | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Planner | null>(null)
   const favorites = planners.filter((p) => p.favorite)
-  const recents = [...planners].sort(
-    (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
-  )
-
-  const registros = useDiarioStore((s) => s.registros)
   const calendarEvents = useCalendarStore((s) => s.events)
   const deleteEvent = useCalendarStore((s) => s.deleteEvent)
   const birthdays = useBirthdaysStore((s) => s.entries)
-  const fixedBills = useFinanceStore((s) => s.fixedBills)
-  const goals = useFinanceStore((s) => s.goals)
-  const deleteGoal = useFinanceStore((s) => s.deleteGoal)
   const tasks = useRoutineStore((s) => s.tasks)
   const recurringTasks = useRoutineStore((s) => s.recurringTasks)
   const pendingItems = useRoutineStore((s) => s.pendingItems)
@@ -124,7 +109,10 @@ export function DashboardPage() {
   const appointments = useHealthStore((s) => s.appointments)
   const exams = useHealthStore((s) => s.exams)
   const [eventEditId, setEventEditId] = useState<string | undefined>()
-  const [goalEditId, setGoalEditId] = useState<string | undefined>()
+  const [healthMonth, setHealthMonth] = useState(() => {
+    const date = new Date()
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+  })
 
   const now = new Date()
   const todayISO = isoDia(now)
@@ -166,19 +154,19 @@ export function DashboardPage() {
       .slice(0, 5)
   }, [birthdays, todayISO])
 
-  const upcomingHealthRecords = useMemo(() => [
+  const monthlyHealthRecords = useMemo(() => [
     ...appointments
-      .filter((appointment) => appointment.date >= todayISO && appointment.status === 'scheduled')
+      .filter((appointment) => appointment.date.startsWith(healthMonth))
       .map((appointment) => ({
         id: `appointment-${appointment.id}`,
         title: appointment.doctorName,
         detail: `Consulta · ${appointment.specialty}`,
         date: appointment.date,
         time: appointment.time,
-        color: '#6a634d',
+        color: 'var(--primary)',
       })),
     ...exams
-      .filter((exam) => exam.date >= todayISO && exam.status === 'pending')
+      .filter((exam) => exam.date.startsWith(healthMonth))
       .map((exam) => ({
         id: `exam-${exam.id}`,
         title: exam.name,
@@ -187,33 +175,17 @@ export function DashboardPage() {
         time: exam.time,
         color: exam.color,
       })),
-  ].sort((a, b) => `${a.date} ${a.time ?? ''}`.localeCompare(`${b.date} ${b.time ?? ''}`)).slice(0, 5),
-    [appointments, exams, todayISO],
+  ].sort((a, b) => `${a.date} ${a.time ?? ''}`.localeCompare(`${b.date} ${b.time ?? ''}`)).slice(0, 8),
+    [appointments, exams, healthMonth],
   )
-
-  const activity = useMemo(
-    () =>
-      Array.from({ length: 7 }, (_, index) => {
-        const date = new Date(now)
-        date.setHours(12, 0, 0, 0)
-        date.setDate(now.getDate() - (6 - index))
-        const dateISO = isoDia(date)
-        return {
-          day: date.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', ''),
-          count: registros.filter((registro) => registro.data === dateISO).length,
-        }
-      }),
-    [registros, todayISO],
-  )
-  const maxActivity = Math.max(...activity.map((day) => day.count), 1)
 
   const taskCount = tasks.length + recurringTasks.filter((task) => task.active).length + pendingItems.length
-  const activeBillCount = fixedBills.filter((bill) => bill.active).length
-  const healthRecordCount = appointments.length + exams.length
+  const healthRecordCount = monthlyHealthRecords.length
 
   const hour = new Date().getHours()
   const greeting =
     hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite'
+  const displayName = profileName.trim() || user?.displayName?.trim() || user?.email?.split('@')[0] || 'usuário'
 
   return (
     <div className="p-6 lg:p-8 max-w-[1400px] mx-auto">
@@ -221,7 +193,7 @@ export function DashboardPage() {
       <div className="flex items-start justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
-            {greeting}, <span className="text-primary">usuário</span>
+            {greeting}, <span className="text-primary">{displayName}</span>
           </h1>
           <p className="text-muted-foreground mt-1">
             {(new Date()).toLocaleDateString('pt-BR', {
@@ -235,11 +207,10 @@ export function DashboardPage() {
       </div>
 
       {/* Stats row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
         {[
           { label: 'Tarefas', value: taskCount, icon: CheckCircle2, color: '#d1bdb8' },
           { label: 'Aniversários', value: birthdays.length, icon: NotebookPen, color: '#6a634d' },
-          { label: 'Contas', value: activeBillCount, icon: Clock, color: '#b76f06' },
           { label: 'Consultas e Exames', value: healthRecordCount, icon: HeartPulse, color: '#d1bdb8' },
         ].map((stat) => (
           <Card key={stat.label} glass hover className="relative h-full overflow-hidden">
@@ -261,64 +232,8 @@ export function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-        {/* Coluna esquerda: planners, tarefas, diário e hábitos */}
+        {/* Coluna esquerda: tarefas, favoritos e hábitos */}
         <div className="min-w-0 space-y-6">
-          {/* Recents */}
-          <Card glass>
-            <CardHeader className="flex-row items-center justify-between pb-0">
-              <CardTitle className="text-base">Planners recentes</CardTitle>
-              <Link href="/planners" className="text-xs text-primary hover:underline flex items-center gap-1">
-                Ver todos <ArrowUpRight size={12} />
-              </Link>
-            </CardHeader>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-5 pt-3">
-              {recents.length > 0 ? (
-                recents.slice(0, 6).map((planner) => (
-                  <Link
-                    key={planner.id}
-                    href={`/planner/${planner.id}`}
-                    className="group relative flex flex-col items-start gap-3 rounded-2xl border border-border/60 p-4 hover:shadow-md hover:border-border transition-all duration-200"
-                  >
-                    <div className="absolute right-2 top-2 z-10 flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
-                      <button
-                        type="button"
-                        onClick={(event) => { event.preventDefault(); event.stopPropagation(); setEditTarget(planner) }}
-                        className="rounded-lg bg-background/90 p-1.5 text-muted-foreground shadow-sm hover:text-primary cursor-pointer"
-                        aria-label={`Editar ${planner.name}`}
-                      >
-                        <Pencil size={13} />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(event) => { event.preventDefault(); event.stopPropagation(); setDeleteTarget(planner) }}
-                        className="rounded-lg bg-background/90 p-1.5 text-muted-foreground shadow-sm hover:text-destructive cursor-pointer"
-                        aria-label={`Excluir ${planner.name}`}
-                      >
-                        <Trash2 size={13} />
-                      </button>
-                    </div>
-                    <div
-                      className="flex size-12 items-center justify-center rounded-2xl text-white text-lg font-bold group-hover:scale-105 transition-transform"
-                      style={{ backgroundColor: planner.color }}
-                    >
-                      {planner.name[0]}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold truncate">{planner.name}</p>
-                      <p className="text-[11px] text-muted-foreground mt-0.5">
-                        {planner.pages.length} páginas
-                      </p>
-                    </div>
-                  </Link>
-                ))
-              ) : (
-                <p className="col-span-full text-sm text-muted-foreground text-center py-4">
-                  Nenhum planner cadastrado.
-                </p>
-              )}
-            </div>
-          </Card>
-
           {/* Tarefas de hoje */}
           <Card glass>
             <CardHeader className="flex-row items-center justify-between pb-0">
@@ -405,36 +320,6 @@ export function DashboardPage() {
               </div>
             </Card>
           )}
-
-          {/* Activity chart */}
-          <Card glass className="min-h-[220px]">
-            <CardHeader>
-                <CardTitle className="text-base">Atividade do diário</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-end gap-3 h-32">
-                {activity.map((day) => {
-                  const h = (day.count / maxActivity) * 100
-                  return (
-                    <div key={day.day} className="flex-1 flex flex-col items-center gap-1.5">
-                      <span className="text-[11px] font-medium text-muted-foreground">
-                        {day.count} {day.count === 1 ? 'registro' : 'registros'}
-                      </span>
-                      <div
-                        className="w-full rounded-t-xl transition-all duration-500"
-                        style={{
-                          height: `${h}%`,
-                          backgroundColor: day.count > 0 ? '#6a634d' : '#ddd6c6',
-                          opacity: 0.8,
-                        }}
-                      />
-                      <span className="text-[11px] text-muted-foreground">{day.day}</span>
-                    </div>
-                  )
-                })}
-              </div>
-            </CardContent>
-          </Card>
 
           <HabitsSummary todayISO={todayISO} />
         </div>
@@ -564,12 +449,21 @@ export function DashboardPage() {
                 <HeartPulse size={16} className="text-primary" />
                 Consultas e exames
               </CardTitle>
-              <Link href="/saude" className="text-xs text-primary hover:underline">Ver saúde</Link>
+              <div className="flex items-center gap-2">
+                <input
+                  type="month"
+                  value={healthMonth}
+                  onChange={(event) => setHealthMonth(event.target.value)}
+                  className="h-8 rounded-lg border border-border/60 bg-background px-2 text-xs outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
+                  aria-label="Mês das consultas e exames"
+                />
+                <Link href="/saude" className="text-xs text-primary hover:underline">Ver saúde</Link>
+              </div>
             </CardHeader>
             <div className="px-5 py-3">
-              {upcomingHealthRecords.length > 0 ? (
+              {monthlyHealthRecords.length > 0 ? (
                 <div className="space-y-1">
-                  {upcomingHealthRecords.map((record) => (
+                  {monthlyHealthRecords.map((record) => (
                     <div key={record.id} className="flex items-center gap-3 rounded-xl p-2.5 hover:bg-muted/40">
                       <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: record.color }} />
                       <div className="min-w-0 flex-1">
@@ -584,100 +478,11 @@ export function DashboardPage() {
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground text-center py-4">Nenhuma consulta ou exame próximo.</p>
+                <p className="text-sm text-muted-foreground text-center py-4">Nenhuma consulta ou exame neste mês.</p>
               )}
             </div>
           </Card>
 
-          {/* Contas */}
-          <Card glass>
-            <CardHeader className="flex-row items-center justify-between pb-0">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Clock size={16} className="text-warning" />
-                Contas
-              </CardTitle>
-              <Link href="/financas" className="text-xs text-primary hover:underline">Ver finanças</Link>
-            </CardHeader>
-            <div className="px-5 py-3">
-              {fixedBills.filter((bill) => bill.active).length > 0 ? (
-                <div className="space-y-1">
-                  {[...fixedBills]
-                    .filter((bill) => bill.active)
-                    .sort((a, b) => a.dayOfMonth - b.dayOfMonth)
-                    .slice(0, 5)
-                    .map((bill) => (
-                      <div key={bill.id} className="flex items-center gap-3 rounded-xl p-2.5 hover:bg-muted/40">
-                        <span className="min-w-0 flex-1 truncate text-sm">{bill.title}</span>
-                        <span className="text-[11px] text-muted-foreground">dia {bill.dayOfMonth}</span>
-                        <span className="shrink-0 text-xs font-medium">{formatBRL(bill.amount)}</span>
-                      </div>
-                    ))}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground text-center py-4">Nenhuma conta cadastrada.</p>
-              )}
-            </div>
-          </Card>
-
-          {/* Metas */}
-          <Card glass>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <Target size={16} className="text-success" />
-                Metas
-              </CardTitle>
-            </CardHeader>
-            <div className="px-5 pb-3 space-y-3">
-              {goals.length > 0 ? (
-                goals.map((goal) => {
-                  const pct = goal.targetAmount > 0
-                    ? Math.round((goal.currentAmount / goal.targetAmount) * 100)
-                    : 0
-                  return (
-                    <div key={goal.id} className="group">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="min-w-0 truncate text-xs font-medium">{goal.title}</span>
-                        <div className="flex shrink-0 items-center gap-1">
-                          <span className="text-[11px] text-muted-foreground">
-                            {formatBRL(goal.currentAmount)}/{formatBRL(goal.targetAmount)}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => setGoalEditId(goal.id)}
-                            className="rounded-md p-1 text-muted-foreground/0 group-hover:text-muted-foreground/60 hover:bg-primary/10 hover:text-primary cursor-pointer"
-                            aria-label={`Editar ${goal.title}`}
-                          >
-                            <Pencil size={11} />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => deleteGoal(goal.id)}
-                            className="rounded-md p-1 text-muted-foreground/0 group-hover:text-muted-foreground/60 hover:bg-destructive/10 hover:text-destructive cursor-pointer"
-                            aria-label={`Excluir ${goal.title}`}
-                          >
-                            <Trash2 size={11} />
-                          </button>
-                        </div>
-                      </div>
-                      <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                        <div
-                          className="h-full rounded-full transition-all duration-700"
-                          style={{
-                            width: `${Math.min(pct, 100)}%`,
-                            backgroundColor: goal.color,
-                          }}
-                        />
-                      </div>
-                    </div>
-                  )
-                })
-              ) : (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  Nenhum objetivo cadastrado.
-                </p>
-              )}
-            </div>
-          </Card>
         </div>
       </div>
       <CreatePlannerDialog
@@ -690,11 +495,6 @@ export function DashboardPage() {
         open={eventEditId !== undefined}
         editId={eventEditId}
         onClose={() => setEventEditId(undefined)}
-      />
-      <GoalDialog
-        open={goalEditId !== undefined}
-        editId={goalEditId}
-        onClose={() => setGoalEditId(undefined)}
       />
     </div>
   )

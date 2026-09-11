@@ -1,7 +1,7 @@
 'use client'
 
 import { useHealthStore } from '@/lib/store/use-health-store'
-import type { BodyMeasurement } from '@/lib/types'
+import type { BioimpedanceRecord, BodyMeasurement } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import {
   Activity,
@@ -13,6 +13,7 @@ import {
   Pill,
   Pencil,
   Plus,
+  Scale,
   Stethoscope,
   Target,
   Trash2,
@@ -25,7 +26,7 @@ import { Button } from '../ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { Badge, Input } from '../ui/primitives'
 import { Tab, TabList, TabPanel, Tabs } from '../ui/overlays'
-import { AddWeightDialog, AddSymptomDialog, AddMedicationDialog, AddCycleDialog, AddDoctorDialog, AddAppointmentDialog, AddExamDialog, AddMeasurementDialog } from './health-dialogs'
+import { AddWeightDialog, AddSymptomDialog, AddMedicationDialog, AddCycleDialog, AddDoctorDialog, AddAppointmentDialog, AddExamDialog, AddMeasurementDialog, AddBioimpedanceDialog } from './health-dialogs'
 import { HealthOnboarding } from './health-onboarding'
 import { ReminderButton } from '../notifications/reminder-button'
 
@@ -138,6 +139,22 @@ const measurementMetrics: { key: MeasurementMetric; label: string }[] = [
   { key: 'calf', label: 'Panturrilha' },
 ]
 
+type BioimpedanceMetric = keyof Pick<
+  BioimpedanceRecord,
+  'bodyFatPercentage' | 'muscleMass' | 'visceralFat' | 'bodyWaterPercentage'
+  | 'basalMetabolicRate' | 'boneMass' | 'metabolicAge'
+>
+
+const bioimpedanceMetrics: { key: BioimpedanceMetric; label: string; unit: string }[] = [
+  { key: 'bodyFatPercentage', label: 'Gordura corporal', unit: '%' },
+  { key: 'muscleMass', label: 'Massa muscular', unit: 'kg' },
+  { key: 'visceralFat', label: 'Gordura visceral', unit: '' },
+  { key: 'bodyWaterPercentage', label: 'Água corporal', unit: '%' },
+  { key: 'basalMetabolicRate', label: 'Metabolismo basal', unit: 'kcal' },
+  { key: 'boneMass', label: 'Massa óssea', unit: 'kg' },
+  { key: 'metabolicAge', label: 'Idade metabólica', unit: 'anos' },
+]
+
 function MeasurementChart({ measurements, metric }: { measurements: BodyMeasurement[]; metric: MeasurementMetric }) {
   const sorted = measurements
     .filter((measurement) => typeof measurement[metric] === 'number')
@@ -166,6 +183,63 @@ function MeasurementChart({ measurements, metric }: { measurements: BodyMeasurem
 
   return (
     <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-auto" role="img" aria-label={`Gráfico histórico de ${label.toLowerCase()}`}>
+      {yLabels.map((value) => (
+        <g key={value}>
+          <line x1={pad.left} y1={yScale(value)} x2={w - pad.right} y2={yScale(value)} stroke="var(--border)" strokeWidth="0.5" />
+          <text x={pad.left - 4} y={yScale(value) + 3} textAnchor="end" fill="var(--muted-foreground)" fontSize="8">
+            {value.toFixed(1)}
+          </text>
+        </g>
+      ))}
+      <polygon
+        points={`${xScale(0)},${h - pad.bottom} ${points} ${xScale(sorted.length - 1)},${h - pad.bottom}`}
+        fill="var(--primary)"
+        fillOpacity="0.08"
+      />
+      <polyline points={points} fill="none" stroke="var(--primary)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+      {values.map((value, index) => (
+        <circle
+          key={`${sorted[index].id}-${metric}`}
+          cx={xScale(index)}
+          cy={yScale(value)}
+          r="3"
+          fill="hsl(var(--primary))"
+          stroke="var(--card)"
+          strokeWidth="1.5"
+        />
+      ))}
+    </svg>
+  )
+}
+
+function BioimpedanceChart({ records, metric }: { records: BioimpedanceRecord[]; metric: BioimpedanceMetric }) {
+  const sorted = records
+    .filter((record) => typeof record[metric] === 'number')
+    .sort((a, b) => a.date.localeCompare(b.date))
+
+  const metricInfo = bioimpedanceMetrics.find((item) => item.key === metric)
+  if (sorted.length < 2) {
+    return (
+      <p className="py-8 text-center text-xs text-muted-foreground">
+        Registre ao menos duas avaliações de {metricInfo?.label.toLowerCase()} para ver o histórico.
+      </p>
+    )
+  }
+
+  const w = 340
+  const h = 140
+  const pad = { top: 12, right: 10, bottom: 20, left: 44 }
+  const values = sorted.map((record) => record[metric] as number)
+  const minValue = Math.min(...values) - 2
+  const maxValue = Math.max(...values) + 2
+  const range = maxValue - minValue || 1
+  const xScale = (index: number) => pad.left + (index / (sorted.length - 1)) * (w - pad.left - pad.right)
+  const yScale = (value: number) => pad.top + ((maxValue - value) / range) * (h - pad.top - pad.bottom)
+  const points = values.map((value, index) => `${xScale(index)},${yScale(value)}`).join(' ')
+  const yLabels = Array.from({ length: 5 }, (_, index) => minValue + (range / 4) * index)
+
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} className="h-auto w-full" role="img" aria-label={`Gráfico histórico de ${metricInfo?.label.toLowerCase()}`}>
       {yLabels.map((value) => (
         <g key={value}>
           <line x1={pad.left} y1={yScale(value)} x2={w - pad.right} y2={yScale(value)} stroke="var(--border)" strokeWidth="0.5" />
@@ -481,7 +555,6 @@ function SymptomsTab() {
 
 function MedicationsTab() {
   const medications = useHealthStore((s) => s.medications)
-  const updateMedication = useHealthStore((s) => s.updateMedication)
   const deleteMedication = useHealthStore((s) => s.deleteMedication)
   const [addOpen, setAddOpen] = useState(false)
   const [editId, setEditId] = useState<string | undefined>()
@@ -499,7 +572,7 @@ function MedicationsTab() {
         {sorted.map((m) => (
           <div key={m.id} className="group flex items-start gap-3 rounded-xl px-3 py-2.5 hover:bg-muted/40 transition-colors">
             <div className="flex size-9 shrink-0 items-center justify-center rounded-xl" style={{ backgroundColor: `${m.color}18` }}>
-              <Pill size={16} style={{ color: m.color }} />
+              <Pill size={16} className="text-primary" />
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
@@ -522,11 +595,6 @@ function MedicationsTab() {
               {m.notes && <p className="text-xs text-muted-foreground/70 mt-1">{m.notes}</p>}
             </div>
             <div className="flex items-center gap-0.5 shrink-0">
-              <ReminderButton
-                enabled={m.reminderEnabled === true}
-                onEnabledChange={(enabled) => updateMedication(m.id, { reminderEnabled: enabled })}
-                compact
-              />
               <button onClick={() => { setEditId(m.id); setAddOpen(true) }} className="rounded-md p-1 text-muted-foreground/50 opacity-0 group-hover:opacity-100 hover:text-primary cursor-pointer" aria-label="Editar medicamento">
                 <Pencil size={12} />
               </button>
@@ -937,7 +1005,7 @@ function OverviewTab({ sex }: { sex: 'male' | 'female' | null }) {
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-semibold tracking-tight">Como você está</h2>
-        <p className="mt-1 text-sm text-muted-foreground">um resumo carinhoso do que você registrou até aqui</p>
+        <p className="mt-1 text-sm text-muted-foreground">Um resumo do que você registrou até aqui</p>
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -1011,6 +1079,7 @@ export function HealthPage() {
           <Tab value="geral"><HeartPulse size={14} className="mr-1.5" />Visão geral</Tab>
           <Tab value="peso"><Weight size={14} className="mr-1.5" />Peso</Tab>
           <Tab value="medidas"><Activity size={14} className="mr-1.5" />Medidas</Tab>
+          <Tab value="bioimpedancia"><Scale size={14} className="mr-1.5" />Bioimpedância</Tab>
           <Tab value="sintomas"><Cigarette size={14} className="mr-1.5" />Sintomas</Tab>
           <Tab value="medicamentos"><Pill size={14} className="mr-1.5" />Medicamentos</Tab>
           {sex !== 'male' && (
@@ -1024,6 +1093,7 @@ export function HealthPage() {
         <TabPanel value="geral"><OverviewTab sex={sex} /></TabPanel>
         <TabPanel value="peso"><WeightTab /></TabPanel>
         <TabPanel value="medidas"><MeasurementsTab /></TabPanel>
+        <TabPanel value="bioimpedancia"><BioimpedanceTab /></TabPanel>
         <TabPanel value="sintomas"><SymptomsTab /></TabPanel>
         <TabPanel value="medicamentos"><MedicationsTab /></TabPanel>
         {sex !== 'male' && (
@@ -1120,6 +1190,92 @@ function MeasurementsTab() {
         <p className="text-sm text-muted-foreground text-center py-8">Nenhuma medida corporal registrada ainda.</p>
       )}
       <AddMeasurementDialog open={addOpen} editId={editId} onClose={() => { setAddOpen(false); setEditId(undefined) }} />
+    </div>
+  )
+}
+
+function BioimpedanceTab() {
+  const records = useHealthStore((s) => s.bioimpedances)
+  const deleteBioimpedance = useHealthStore((s) => s.deleteBioimpedance)
+  const [addOpen, setAddOpen] = useState(false)
+  const [editId, setEditId] = useState<string | undefined>()
+  const [selectedMetric, setSelectedMetric] = useState<BioimpedanceMetric>('bodyFatPercentage')
+  const sorted = [...records].sort((a, b) => b.date.localeCompare(a.date))
+  const availableMetrics = useMemo(
+    () => bioimpedanceMetrics
+      .filter(({ key }) => records.some((record) => typeof record[key] === 'number'))
+      .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR')),
+    [records],
+  )
+  const activeMetric = availableMetrics.some(({ key }) => key === selectedMetric)
+    ? selectedMetric
+    : availableMetrics[0]?.key
+
+  const details = (record: BioimpedanceRecord) => bioimpedanceMetrics
+    .filter(({ key }) => typeof record[key] === 'number')
+    .map(({ key, label, unit }) => `${label}: ${record[key]}${unit ? ` ${unit}` : ''}`)
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-sm text-muted-foreground">{sorted.length} registros</p>
+        <Button size="sm" className="rounded-xl gap-1.5" onClick={() => setAddOpen(true)}>
+          <Plus size={14} /> Nova bioimpedância
+        </Button>
+      </div>
+      <Card glass className="mb-4">
+        <CardHeader className="pb-1">
+          <div className="flex items-center justify-between gap-3">
+            <CardTitle className="text-sm">Histórico de bioimpedância</CardTitle>
+            {availableMetrics.length > 0 && (
+              <select
+                value={activeMetric}
+                onChange={(event) => setSelectedMetric(event.target.value as BioimpedanceMetric)}
+                className="h-8 rounded-lg border border-border/60 bg-background px-2 text-xs outline-none focus:ring-2 focus:ring-primary/30"
+                aria-label="Escolha o indicador do gráfico"
+              >
+                {availableMetrics.map(({ key, label }) => <option key={key} value={key}>{label}</option>)}
+              </select>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent className="pt-1">
+          {activeMetric ? (
+            <BioimpedanceChart records={records} metric={activeMetric} />
+          ) : (
+            <p className="py-8 text-center text-xs text-muted-foreground">
+              Registre uma avaliação de bioimpedância para começar o histórico.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+      {sorted.length > 0 ? (
+        <div className="space-y-1">
+          {sorted.map((record) => (
+            <div key={record.id} className="group flex items-start gap-3 rounded-xl px-3 py-2.5 hover:bg-muted/40 transition-colors">
+              <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+                <Scale size={16} className="text-primary" />
+              </div>
+              <span className="w-20 shrink-0 text-xs text-muted-foreground">{formatDate(record.date)}</span>
+              <div className="min-w-0 flex-1 flex flex-wrap gap-x-3 gap-y-1 text-sm break-words">
+                {details(record).map((detail) => <span key={detail}>{detail}</span>)}
+                {record.notes && <span className="w-full text-xs text-muted-foreground/70 whitespace-pre-wrap break-words">{record.notes}</span>}
+              </div>
+              <div className="flex shrink-0 items-center gap-0.5">
+                <button onClick={() => { setEditId(record.id); setAddOpen(true) }} className="rounded-md p-1 text-muted-foreground/50 opacity-0 group-hover:opacity-100 hover:text-primary cursor-pointer" aria-label="Editar bioimpedância">
+                  <Pencil size={12} />
+                </button>
+                <button onClick={() => deleteBioimpedance(record.id)} className="rounded-md p-1 text-muted-foreground/30 opacity-0 group-hover:opacity-100 hover:text-destructive cursor-pointer" aria-label="Excluir bioimpedância">
+                  <Trash2 size={12} />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="py-8 text-center text-sm text-muted-foreground">Nenhuma bioimpedância registrada ainda.</p>
+      )}
+      <AddBioimpedanceDialog open={addOpen} editId={editId} onClose={() => { setAddOpen(false); setEditId(undefined) }} />
     </div>
   )
 }

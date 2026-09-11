@@ -83,8 +83,8 @@
   --card-foreground: var(--foreground);
   --popover: color-mix(in oklab, var(--brand-beige) 18%, white);
   --popover-foreground: var(--foreground);
-  --primary: var(--brand-mustard);
-  --primary-foreground: #211a12;
+  --primary: var(--brand-rose);
+  --primary-foreground: #332c2b;
   --secondary: var(--brand-beige);
   --secondary-foreground: color-mix(in oklab, var(--brand-green) 78%, #24211b);
   --muted: color-mix(in oklab, var(--brand-rose) 38%, #f7f4ed);
@@ -96,7 +96,7 @@
   --warning: var(--brand-mustard);
   --border: color-mix(in oklab, var(--brand-green) 34%, var(--brand-beige));
   --input: color-mix(in oklab, var(--brand-green) 18%, var(--brand-beige));
-  --ring: var(--brand-mustard);
+  --ring: var(--brand-rose);
   --paper: color-mix(in oklab, var(--brand-beige) 22%, white);
   --chart-1: var(--brand-rose);
   --chart-2: var(--brand-mustard);
@@ -106,8 +106,8 @@
   --radius: 0.75rem;
   --sidebar: color-mix(in oklab, var(--brand-rose) 50%, #fbf8f4);
   --sidebar-foreground: var(--foreground);
-  --sidebar-primary: var(--brand-mustard);
-  --sidebar-primary-foreground: #211a12;
+  --sidebar-primary: var(--brand-rose);
+  --sidebar-primary-foreground: #332c2b;
   --sidebar-accent: var(--brand-rose);
   --sidebar-accent-foreground: var(--foreground);
   --sidebar-border: color-mix(in oklab, var(--brand-green) 20%, var(--brand-rose));
@@ -122,8 +122,8 @@
   --card-foreground: var(--foreground);
   --popover: color-mix(in oklab, var(--brand-rose) 20%, #28221f);
   --popover-foreground: var(--foreground);
-  --primary: color-mix(in oklab, var(--brand-mustard) 82%, var(--brand-beige));
-  --primary-foreground: #241e16;
+  --primary: var(--brand-rose);
+  --primary-foreground: #332c2b;
   --secondary: color-mix(in oklab, var(--brand-green) 45%, #28251f);
   --secondary-foreground: var(--brand-beige);
   --muted: color-mix(in oklab, var(--brand-rose) 14%, #2b2622);
@@ -144,8 +144,8 @@
   --chart-5: color-mix(in oklab, var(--brand-rose) 64%, var(--brand-green));
   --sidebar: color-mix(in oklab, var(--brand-rose) 18%, var(--background));
   --sidebar-foreground: var(--brand-beige);
-  --sidebar-primary: color-mix(in oklab, var(--brand-mustard) 82%, var(--brand-beige));
-  --sidebar-primary-foreground: #241e16;
+  --sidebar-primary: var(--brand-rose);
+  --sidebar-primary-foreground: #332c2b;
   --sidebar-accent: color-mix(in oklab, var(--brand-rose) 30%, var(--background));
   --sidebar-accent-foreground: var(--brand-beige);
   --sidebar-border: color-mix(in oklab, var(--brand-rose) 24%, transparent);
@@ -161,8 +161,8 @@
     --card-foreground: var(--foreground);
     --popover: color-mix(in oklab, var(--brand-rose) 20%, #28221f);
     --popover-foreground: var(--foreground);
-    --primary: color-mix(in oklab, var(--brand-mustard) 82%, var(--brand-beige));
-    --primary-foreground: #241e16;
+    --primary: var(--brand-rose);
+    --primary-foreground: #332c2b;
     --secondary: color-mix(in oklab, var(--brand-green) 45%, #28251f);
     --secondary-foreground: var(--brand-beige);
     --muted: color-mix(in oklab, var(--brand-rose) 14%, #2b2622);
@@ -183,8 +183,8 @@
     --chart-5: color-mix(in oklab, var(--brand-rose) 64%, var(--brand-green));
     --sidebar: color-mix(in oklab, var(--brand-rose) 18%, var(--background));
     --sidebar-foreground: var(--brand-beige);
-    --sidebar-primary: color-mix(in oklab, var(--brand-mustard) 82%, var(--brand-beige));
-    --sidebar-primary-foreground: #241e16;
+    --sidebar-primary: var(--brand-rose);
+    --sidebar-primary-foreground: #332c2b;
     --sidebar-accent: color-mix(in oklab, var(--brand-rose) 30%, var(--background));
     --sidebar-accent-foreground: var(--brand-beige);
     --sidebar-border: color-mix(in oklab, var(--brand-rose) 24%, transparent);
@@ -199,6 +199,24 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Ícones de interface seguem a cor de ação do App. Ícones dentro de botões
+   continuam herdando a cor do próprio botão para manter contraste. */
+svg.lucide {
+  color: var(--primary) !important;
+}
+
+button svg.lucide,
+[role='button'] svg.lucide,
+[role='tab'] svg.lucide {
+  color: inherit !important;
+}
+
+textarea {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
 }
 
 /* A landing usa a mesma identidade cromática do aplicativo. */

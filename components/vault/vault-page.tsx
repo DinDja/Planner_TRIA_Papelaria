@@ -281,13 +281,6 @@ export function VaultPage() {
     toast({ title: 'Senha definida com sucesso!', variant: 'success' })
   }
 
-  const handleRemovePin = () => {
-    setMasterPin('')
-    setLocked(false)
-    setSettingPin(true)
-    toast({ title: 'Proteção removida', variant: 'success' })
-  }
-
   // Tela de bloqueio
   if (locked) {
     return (
@@ -416,11 +409,6 @@ export function VaultPage() {
             <Lock size={14} />
             Bloquear
           </Button>
-          {masterPin && (
-            <Button variant="ghost" size="sm" className="rounded-xl text-xs text-muted-foreground" onClick={handleRemovePin}>
-              Remover senha
-            </Button>
-          )}
           <Button className="rounded-xl gap-1.5 shadow-md" onClick={() => setAddOpen(true)}>
             <Plus size={15} />
             Nova senha

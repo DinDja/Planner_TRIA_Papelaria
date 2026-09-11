@@ -438,7 +438,7 @@ export type TransactionRecurrence = (typeof TRANSACTION_RECURRENCE)[number]
 
 /** Formas de recebimento e pagamento. */
 export const PAYMENT_METHODS = [
-  'Conta bancária', 'Crédito', 'Débito', 'Dinheiro', 'Pix', 'Transferência', 'Outro',
+  'Conta bancária', 'Crédito', 'Débito', 'Dinheiro', 'Pix', 'Transferência', 'Outros',
 ] as const
 
 /** Bandeiras de cartão. */
@@ -573,8 +573,10 @@ export interface Habit {
   weekdays?: Weekday[]
   /** Dia do mês para monthly (1–31) */
   dayOfMonth?: number
-  /** Horário do aviso, no formato HH:mm. */
+  /** Horário inicial dos avisos do hábito, no formato HH:mm. */
   reminderTime?: string
+  /** Intervalo dos avisos em horas, contado a partir de reminderTime. */
+  reminderIntervalHours?: number
   /** Ativa um aviso local na ocorrência do hábito. */
   reminderEnabled?: boolean
   createdAt: string
@@ -969,6 +971,29 @@ export interface BirthdayRecord {
   color: string
   /** Ativa um aviso anual na data do aniversário. */
   reminderEnabled?: boolean
+  createdAt: string
+}
+
+/** Registro de uma avaliação de bioimpedância. Valores opcionais permitem
+ * salvar relatórios de aparelhos com diferentes conjuntos de métricas. */
+export interface BioimpedanceRecord {
+  id: string
+  date: string
+  /** percentual de gordura corporal */
+  bodyFatPercentage?: number
+  /** massa muscular em kg */
+  muscleMass?: number
+  /** gordura visceral em nível ou índice do aparelho */
+  visceralFat?: number
+  /** percentual de água corporal */
+  bodyWaterPercentage?: number
+  /** taxa metabólica basal em kcal */
+  basalMetabolicRate?: number
+  /** massa óssea em kg */
+  boneMass?: number
+  /** idade metabólica em anos */
+  metabolicAge?: number
+  notes?: string
   createdAt: string
 }
 

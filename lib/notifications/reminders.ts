@@ -13,6 +13,31 @@ export interface Reminder {
 
 const DEFAULT_TIME = '09:00'
 
+function normalizeReminderTime(time: string | undefined): string {
+  if (!time || !/^\d{2}:\d{2}$/.test(time)) return DEFAULT_TIME
+  const [hours, minutes] = time.split(':').map(Number)
+  return hours <= 23 && minutes <= 59 ? time : DEFAULT_TIME
+}
+
+/** Gera os horários do hábito dentro do mesmo dia, a partir do horário inicial. */
+export function buildHabitReminderTimes(startTime: string | undefined, intervalHours: number | undefined): string[] {
+  const firstTime = normalizeReminderTime(startTime)
+  const validInterval = typeof intervalHours === 'number'
+    && Number.isInteger(intervalHours)
+    && intervalHours >= 1
+    && intervalHours <= 24
+
+  if (!validInterval) return [firstTime]
+
+  const [startHours, startMinutes] = firstTime.split(':').map(Number)
+  const startTotalMinutes = startHours * 60 + startMinutes
+  const times: string[] = []
+  for (let totalMinutes = startTotalMinutes; totalMinutes < 24 * 60; totalMinutes += intervalHours * 60) {
+    times.push(`${String(Math.floor(totalMinutes / 60)).padStart(2, '0')}:${String(totalMinutes % 60).padStart(2, '0')}`)
+  }
+  return times
+}
+
 function localDate(date: string, time = DEFAULT_TIME): Date | null {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null
   const value = new Date(`${date}T${/^\d{2}:\d{2}$/.test(time) ? time : DEFAULT_TIME}:00`)
@@ -127,15 +152,18 @@ export function buildReminders({
       || (habit.frequency === 'weekly' && (habit.weekdays ?? []).includes(currentDay as Weekday))
       || (habit.frequency === 'monthly' && habit.dayOfMonth === monthDay)
     if (!occursToday) continue
-    const dueAt = localDate(today, habit.reminderTime ?? DEFAULT_TIME)
-    if (dueAt) reminders.push({
-      id: `habit-${habit.id}`,
-      kind: 'habit',
-      title: `Hora do hábito: ${habit.name}`,
-      body: 'Reserve alguns minutos para manter sua sequência.',
-      dueAt,
-      occurrenceKey: today,
-    })
+    const times = buildHabitReminderTimes(habit.reminderTime, habit.reminderIntervalHours)
+    for (const time of times) {
+      const dueAt = localDate(today, time)
+      if (dueAt) reminders.push({
+        id: `habit-${habit.id}-${time}`,
+        kind: 'habit',
+        title: `Hora do hábito: ${habit.name}`,
+        body: `Reserve alguns minutos para manter sua sequência. · ${time}`,
+        dueAt,
+        occurrenceKey: today,
+      })
+    }
   }
 
   return reminders

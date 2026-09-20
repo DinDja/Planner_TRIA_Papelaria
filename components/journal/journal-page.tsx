@@ -250,10 +250,9 @@ export function JournalPage() {
           <div>
             <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
               <div
-                className="size-11 rounded-2xl flex items-center justify-center"
-                style={{ backgroundColor: 'rgba(106, 99, 77, 0.094)' }}
+                className="size-11 rounded-2xl flex items-center justify-center bg-primary/10"
               >
-                <Heart size={22} style={{ color: '#6a634d' }} />
+                <Heart size={22} className="text-primary" />
               </div>
               Meu Diário
             </h1>
@@ -280,7 +279,7 @@ export function JournalPage() {
                 className="size-12 rounded-2xl flex items-center justify-center shrink-0"
                 style={{ background: 'linear-gradient(135deg, #d1bdb820, #b76f0620)' }}
               >
-                <Sparkles size={20} style={{ color: '#d1bdb8' }} />
+                <Sparkles size={20} className="text-primary" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-[10px] text-muted-foreground mb-0.5">PROMPT DO DIA</p>

@@ -92,6 +92,13 @@ const PLAN: Array<{ match: RegExp; plan: RouteCollectionPlan }> = [
     },
   },
   {
+    match: /^\/avaliacao$/,
+    plan: {
+      collections: ['evaluations'],
+      rootFields: ['theme'],
+    },
+  },
+  {
     match: /^\/cofre$/,
     plan: {
       collections: ['passwords'],

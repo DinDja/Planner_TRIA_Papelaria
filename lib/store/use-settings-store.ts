@@ -2,9 +2,11 @@
 
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { FontScale, GradientArea, RadiusPreset, SystemSettings } from '../types'
+import type { FontScale, GradientArea, RadiusPreset, SystemSettings, SystemPalette } from '../types'
+import { DEFAULT_SYSTEM_PALETTE } from '../theme'
 
 export const DEFAULT_SETTINGS: SystemSettings = {
+  palette: DEFAULT_SYSTEM_PALETTE,
   gradients: {
     dashboard: true,
     covers: true,
@@ -50,6 +52,7 @@ export function gradFlag(
 }
 
 interface SettingsState extends SystemSettings {
+  setPalette: (palette: SystemPalette) => void
   setGradient: (area: GradientArea, value: boolean) => void
   setGradients: (value: boolean) => void
   setRadius: (r: RadiusPreset) => void
@@ -68,6 +71,7 @@ export const useSettingsStore = create<SettingsState>()(
     (set) => ({
       ...DEFAULT_SETTINGS,
 
+      setPalette: (palette) => set({ palette }),
       setGradient: (area, value) =>
         set((s) => ({ gradients: { ...s.gradients, [area]: value } })),
       setGradients: (value) =>

@@ -223,14 +223,14 @@ function GoalCard({
           <button
             onClick={(e) => { e.stopPropagation(); onEdit(goal.id) }}
             aria-label="Editar meta"
-            className="rounded-lg p-1.5 text-muted-foreground/60 opacity-0 group-hover:opacity-100 hover:bg-primary/10 hover:text-primary transition-all cursor-pointer"
+              className="rounded-lg p-1.5 text-muted-foreground/60 hover:bg-primary/10 hover:text-primary transition-all cursor-pointer"
           >
             <Pencil size={14} />
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); onDelete(goal.id) }}
             aria-label="Excluir meta"
-            className="rounded-lg p-1.5 text-muted-foreground/50 opacity-0 group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive transition-all cursor-pointer"
+              className="rounded-lg p-1.5 text-muted-foreground/60 hover:bg-destructive/10 hover:text-destructive transition-all cursor-pointer"
           >
             <Trash2 size={14} />
           </button>
@@ -278,7 +278,7 @@ function GoalCard({
             <Button
               variant="default"
               size="xs"
-              className="rounded-xl gap-1 text-[10px] h-7 px-2.5 opacity-0 group-hover:opacity-100 transition-opacity"
+              className="rounded-xl gap-1 text-[10px] h-7 px-2.5"
               onClick={(e) => { e.stopPropagation(); onDeposit(goal.id) }}
             >
               <Plus size={11} />
@@ -350,7 +350,7 @@ function DepositTimeline({ goalId, onEdit, onDelete }: { goalId: string; onEdit:
               {new Date(dep.date + 'T12:00:00').toLocaleDateString('pt-BR')}
             </p>
           </div>
-          <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex items-center gap-0.5">
             <button type="button" onClick={(event) => { event.stopPropagation(); onEdit(dep.id) }} className="rounded-md p-1 text-muted-foreground/60 hover:text-primary cursor-pointer" aria-label="Editar movimentação">
               <Pencil size={12} />
             </button>
@@ -427,10 +427,9 @@ export function MetasPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
             <span
-              className="flex size-11 items-center justify-center rounded-2xl"
-              style={{ backgroundColor: 'rgba(106, 99, 77, 0.094)' }}
+              className="flex size-11 items-center justify-center rounded-2xl bg-primary/10"
             >
-              <Target size={22} style={{ color: '#6a634d' }} />
+              <Target size={22} className="text-primary" />
             </span>
             Metas Financeiras
           </h1>

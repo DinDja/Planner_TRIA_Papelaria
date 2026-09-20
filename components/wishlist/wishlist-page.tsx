@@ -95,7 +95,7 @@ function WishCard({
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex items-center gap-0.5 shrink-0">
           <button
             onClick={() => onEdit(item.id)}
             className="rounded-lg p-1 text-muted-foreground/40 hover:text-primary transition-colors cursor-pointer"
@@ -222,10 +222,9 @@ export function WishlistPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
             <span
-              className="flex size-11 items-center justify-center rounded-2xl"
-              style={{ backgroundColor: 'rgba(106, 99, 77, 0.094)' }}
+              className="flex size-11 items-center justify-center rounded-2xl bg-primary/10"
             >
-              <Heart size={22} style={{ color: '#6a634d' }} />
+              <Heart size={22} className="text-primary" />
             </span>
             Wishlist
           </h1>

@@ -288,7 +288,7 @@ export function DashboardPage() {
                     href={`/planner/${planner.id}`}
                     className="group relative flex shrink-0 flex-col items-center gap-2 rounded-2xl border border-border/60 p-4 w-28 hover:shadow-md hover:border-border transition-all duration-200"
                   >
-                    <div className="absolute right-1.5 top-1.5 z-10 flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+                    <div className="absolute right-1.5 top-1.5 z-10 flex items-center gap-0.5">
                       <button
                         type="button"
                         onClick={(event) => { event.preventDefault(); event.stopPropagation(); setEditTarget(planner) }}
@@ -387,7 +387,7 @@ export function DashboardPage() {
                       </div>
                       <div className="w-0.5 h-8 rounded-full shrink-0" style={{ backgroundColor: event.color }} />
                       <span className="min-w-0 flex-1 truncate text-sm">{event.title}</span>
-                      <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+                      <div className="flex shrink-0 items-center gap-0.5">
                         <button
                           type="button"
                           onClick={() => setEventEditId(event.id)}

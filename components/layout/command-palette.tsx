@@ -48,6 +48,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
     { id: 'checklists',    label: 'Checklists',            iconId: 'checklists',    href: '/checklists',    section: 'Navegação' },
     { id: 'frases',        label: 'Frases Favoritas',      iconId: 'frases',        href: '/frases',        section: 'Navegação' },
     { id: 'memorias',      label: 'Caixa de Memórias',     iconId: 'memorias',      href: '/memorias',      section: 'Navegação' },
+    { id: 'avaliacao',     label: 'Avaliação',              iconId: 'avaliacao',     href: '/avaliacao',     section: 'Navegação' },
     { id: 'cofre',         label: 'Senhas',              iconId: 'cofre',         href: '/cofre',         section: 'Navegação' },
     { id: 'saude',         label: 'Saúde',                 iconId: 'saude',         href: '/saude',         section: 'Navegação' },
     { id: 'wishlist',     label: 'Wishlist',              iconId: 'wishlist',      href: '/wishlist',      section: 'Navegação' },

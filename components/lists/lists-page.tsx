@@ -200,14 +200,14 @@ function ListCard({
                     )}
                     <button
                       onClick={() => onEditItem(list.id, item.id)}
-                      className="shrink-0 rounded-md p-1 text-muted-foreground/30 opacity-0 group-hover:opacity-100 hover:text-primary transition-all cursor-pointer"
+                      className="shrink-0 rounded-md p-1 text-muted-foreground/60 hover:text-primary transition-all cursor-pointer"
                       aria-label={`Editar ${item.name}`}
                     >
                       <Pencil size={12} />
                     </button>
                     <button
                       onClick={() => onDeleteItem(list.id, item.id)}
-                      className="shrink-0 rounded-md p-1 text-muted-foreground/30 opacity-0 group-hover:opacity-100 hover:text-destructive transition-all cursor-pointer"
+                      className="shrink-0 rounded-md p-1 text-muted-foreground/60 hover:text-destructive transition-all cursor-pointer"
                     >
                       <Trash2 size={12} />
                     </button>
@@ -360,10 +360,9 @@ export function ListsPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
             <span
-              className="flex size-11 items-center justify-center rounded-2xl"
-              style={{ backgroundColor: 'rgba(106, 99, 77, 0.094)' }}
+              className="flex size-11 items-center justify-center rounded-2xl bg-primary/10"
             >
-              <List size={22} style={{ color: '#6a634d' }} />
+              <List size={22} className="text-primary" />
             </span>
             Listas
           </h1>

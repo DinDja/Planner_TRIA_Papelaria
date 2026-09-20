@@ -307,7 +307,7 @@ function MonthlyCalendarView({
                     <button
                       type="button"
                       onClick={() => onAdd(key)}
-                      className="absolute bottom-1 right-1 flex size-5 items-center justify-center rounded-md opacity-0 transition-all group-hover:opacity-100 hover:bg-muted cursor-pointer"
+                      className="absolute bottom-1 right-1 flex size-5 items-center justify-center rounded-md hover:bg-muted cursor-pointer"
                       aria-label="Adicionar evento"
                     >
                       <Plus size={12} className="text-muted-foreground" />
@@ -377,7 +377,7 @@ function PlannerDayBlock({
         <button
           type="button"
           onClick={() => onAdd(key)}
-          className="flex size-6 items-center justify-center rounded-sm text-muted-foreground/45 opacity-0 transition-all hover:bg-primary/[0.06] hover:text-foreground group-hover:opacity-100 cursor-pointer"
+          className="flex size-6 items-center justify-center rounded-sm text-muted-foreground/60 hover:bg-primary/[0.06] hover:text-foreground cursor-pointer"
           aria-label="Adicionar evento"
         >
           <Plus size={13} />

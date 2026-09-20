@@ -243,7 +243,7 @@ export function Folha({
         </div>
 
         {/* Ações — discretas, só no hover/foco. Não são "botões de card". */}
-        <div className="pointer-events-none absolute right-0 top-3 flex translate-y-0 items-center gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100">
+        <div className="absolute right-0 top-3 flex translate-y-0 items-center gap-1">
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); onAbrir?.(r) }}

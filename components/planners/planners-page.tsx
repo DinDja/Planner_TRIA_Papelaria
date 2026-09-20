@@ -38,10 +38,9 @@ export function PlannersPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
             <span
-              className="flex size-11 items-center justify-center rounded-2xl"
-              style={{ backgroundColor: 'rgba(106, 99, 77, 0.094)' }}
+              className="flex size-11 items-center justify-center rounded-2xl bg-primary/10"
             >
-              <span className="size-3 rounded-md" style={{ backgroundColor: '#6a634d' }} />
+              <span className="size-3 rounded-md bg-primary" />
             </span>
             Meus Planners
           </h1>
@@ -92,7 +91,7 @@ export function PlannersPage() {
                     setCreateOpen(true)
                   }}
                   aria-label={`Editar ${planner.name}`}
-                  className="absolute right-11 top-2 z-10 flex size-8 items-center justify-center rounded-xl bg-black/45 text-white opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100 hover:bg-primary focus-visible:opacity-100 cursor-pointer"
+                  className="absolute right-11 top-2 z-10 flex size-8 items-center justify-center rounded-xl bg-black/45 text-white backdrop-blur-sm hover:bg-primary cursor-pointer"
                 >
                   <Pencil size={14} />
                 </button>
@@ -103,7 +102,7 @@ export function PlannersPage() {
                     setDeleteTarget(planner)
                   }}
                   aria-label={`Excluir ${planner.name}`}
-                  className="absolute right-2 top-2 z-10 flex size-8 items-center justify-center rounded-xl bg-black/45 text-white opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100 hover:bg-destructive focus-visible:opacity-100 cursor-pointer"
+                  className="absolute right-2 top-2 z-10 flex size-8 items-center justify-center rounded-xl bg-black/45 text-white backdrop-blur-sm hover:bg-destructive cursor-pointer"
                 >
                   <Trash2 size={14} />
                 </button>

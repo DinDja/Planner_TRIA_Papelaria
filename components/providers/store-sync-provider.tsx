@@ -26,6 +26,7 @@ import { useListsStore } from '@/lib/store/use-lists-store'
 import { useChecklistsStore } from '@/lib/store/use-checklists-store'
 import { useQuotesStore } from '@/lib/store/use-quotes-store'
 import { useMemoriesStore } from '@/lib/store/use-memories-store'
+import { useEvaluationStore } from '@/lib/store/use-evaluation-store'
 import { usePasswordsStore } from '@/lib/store/use-passwords-store'
 import { useWishlistStore } from '@/lib/store/use-wishlist-store'
 import { useHealthStore } from '@/lib/store/use-health-store'
@@ -103,6 +104,7 @@ const COL_BINDINGS: ColBinding[] = [
   { store: useChecklistsStore as unknown as StoreLike, field: 'checklists', collection: 'checklists', read: true, write: true },
   { store: useQuotesStore as unknown as StoreLike, field: 'quotes', collection: 'quotes', read: true, write: true },
   { store: useMemoriesStore as unknown as StoreLike, field: 'entries', collection: 'memories', read: true, write: true },
+  { store: useEvaluationStore as unknown as StoreLike, field: 'entries', collection: 'evaluations', read: true, write: true },
   { store: usePasswordsStore as unknown as StoreLike, field: 'entries', collection: 'passwords', read: true, write: true },
   { store: useWishlistStore as unknown as StoreLike, field: 'items', collection: 'wishlist', read: true, write: true },
   { store: useTrashStore as unknown as StoreLike, field: 'items', collection: 'trashItems', read: true, write: true },

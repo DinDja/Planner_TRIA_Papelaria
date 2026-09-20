@@ -2321,7 +2321,7 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
                       <Button
                         variant="ghost"
                         size="icon-xs"
-                        className="opacity-0 group-hover:opacity-100 rounded-lg"
+                        className="rounded-lg"
                         onClick={(e) => { e.stopPropagation(); handleDeletePageAt(i) }}
                       >
                         <X size={12} />

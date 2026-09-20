@@ -49,7 +49,7 @@ const currentMonthStr = () => {
 
 function DeleteButton({ onClick, onEdit }: { onClick: () => void; onEdit?: () => void }) {
   return (
-    <div className="flex shrink-0 items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+    <div className="flex shrink-0 items-center gap-0.5">
       {onEdit && (
         <button onClick={(event) => { event.stopPropagation(); onEdit() }}
           className="rounded-lg p-1.5 text-muted-foreground/60 hover:bg-primary/10 hover:text-primary transition-colors cursor-pointer"
@@ -303,8 +303,8 @@ export function FinancePage() {
       <div className={cn('flex flex-wrap items-end justify-between gap-4 mb-8', enter)}>
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
-            <span className="flex size-11 items-center justify-center rounded-2xl" style={{ backgroundColor: 'rgba(106, 99, 77, 0.094)' }}>
-              <Wallet size={22} style={{ color: '#6a634d' }} />
+            <span className="flex size-11 items-center justify-center rounded-2xl bg-primary/10">
+              <Wallet size={22} className="text-primary" />
             </span>
             Finanças
           </h1>

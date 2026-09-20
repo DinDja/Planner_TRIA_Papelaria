@@ -124,7 +124,7 @@ export function HealthOnboarding({
                   className={cn(
                     'flex flex-col items-center gap-2 rounded-2xl border px-4 py-6 text-sm font-medium transition-all cursor-pointer',
                     sex === 'female'
-                      ? 'border-brand-rose bg-brand-rose/45 text-foreground shadow-sm'
+                      ? 'border-primary bg-primary/15 text-primary shadow-sm'
                       : 'border-border/60 text-muted-foreground hover:bg-muted/50',
                   )}
                 >

@@ -77,7 +77,7 @@ function MemoryCard({
               </div>
             </div>
           </div>
-          <div className="flex gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex gap-1 shrink-0">
             <button
               onClick={() => onEdit(entry.id)}
               className="rounded-lg p-1.5 text-muted-foreground/50 hover:bg-primary/10 hover:text-primary transition-all cursor-pointer"
@@ -143,10 +143,9 @@ export function MemoriesPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
             <span
-              className="flex size-11 items-center justify-center rounded-2xl"
-              style={{ backgroundColor: 'rgba(106, 99, 77, 0.094)' }}
+              className="flex size-11 items-center justify-center rounded-2xl bg-primary/10"
             >
-              <Archive size={22} style={{ color: '#6a634d' }} />
+              <Archive size={22} className="text-primary" />
             </span>
             Caixa de Memórias
           </h1>

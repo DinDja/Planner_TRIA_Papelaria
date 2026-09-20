@@ -62,13 +62,12 @@ export function FilteredPlannersPage({
         </Link>
         <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
           <span
-            className="flex size-11 items-center justify-center rounded-2xl"
-            style={{ backgroundColor: 'rgba(106, 99, 77, 0.094)' }}
+            className="flex size-11 items-center justify-center rounded-2xl bg-primary/10"
           >
             {kind === 'folder' ? (
-              <FolderIcon size={22} style={{ color: '#6a634d' }} />
+              <FolderIcon size={22} className="text-primary" />
             ) : (
-              <TagIcon size={22} style={{ color: '#6a634d' }} />
+              <TagIcon size={22} className="text-primary" />
             )}
           </span>
           {title}
@@ -114,7 +113,7 @@ const PlannerMiniCard = forwardRef<
 >(function PlannerMiniCard({ planner, index, onEdit, onDelete }, _ref) {
   return (
     <Link href={`/planner/${planner.id}`} className="block group relative" style={{ animationDelay: `${index * 50}ms` }}>
-      <div className="absolute right-2 top-2 z-10 flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+      <div className="absolute right-2 top-2 z-10 flex items-center gap-0.5">
         <button type="button" onClick={(event) => { event.preventDefault(); event.stopPropagation(); onEdit() }} className="rounded-lg bg-background/90 p-1.5 text-muted-foreground shadow-sm hover:text-primary cursor-pointer" aria-label={`Editar ${planner.name}`}>
           <Pencil size={13} />
         </button>

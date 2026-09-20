@@ -33,6 +33,7 @@ export type ModuloId =
   | 'checklists'
   | 'frases'
   | 'memorias'
+  | 'avaliacao'
   | 'cofre'
   | 'saude'
   | 'wishlist'
@@ -133,6 +134,16 @@ export function MemoriasIcon({ size, ...p }: P) {
     <svg {...svgProps(size)} {...p}>
       <path d="M3 8 L17 8 L17 17 L3 17 Z" />
       <path d="M10 8 Q10 4 14 4 Q16 4 16 5.5" />
+    </svg>
+  )
+}
+
+export function AvaliacaoIcon({ size, ...p }: P) {
+  // Estrela marcada por uma pequena linha de avaliação.
+  return (
+    <svg {...svgProps(size)} {...p}>
+      <path d="M10 3 L11.9 7.2 L16.5 7.7 L13 10.9 L14 15.5 L10 13.2 L6 15.5 L7 10.9 L3.5 7.7 L8.1 7.2 Z" />
+      <path d="M5 17 L15 17" />
     </svg>
   )
 }
@@ -283,6 +294,7 @@ export const MODULO_ICONS: Record<ModuloId, (p: P) => JSX.Element> = {
   checklists: ChecklistsIcon,
   frases: FrasesIcon,
   memorias: MemoriasIcon,
+  avaliacao: AvaliacaoIcon,
   cofre: CofreIcon,
   saude: SaudeIcon,
   wishlist: WishlistIcon,

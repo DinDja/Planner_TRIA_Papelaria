@@ -282,6 +282,13 @@ service cloud.firestore {
         allow read, write: if owns(uid);
       }
 
+      // Avaliações
+      // /users/{uid}/evaluations/{evaluationId}
+      //   id, type, name, rating, seasons?, publisher?, observation?, createdAt, updatedAt
+      match /evaluations/{evaluationId} {
+        allow read, write: if owns(uid);
+      }
+
       // ─── Cofre de senhas (usePasswordsStore) ───────────────────────────
       //   ⚠️ ATENÇÃO: armazenar segredes em plaintext no Firestore não é recomendado
       // para produção. O cliente hoje guarda `masterPin` em localStorage; o schema
@@ -323,8 +330,8 @@ service cloud.firestore {
         allow read, write: if owns(uid);
       }
       // /users/{uid}/bioimpedances/{recordId}
-      //   id, date, bodyFatPercentage?, muscleMass?, visceralFat?,
-      //   bodyWaterPercentage?, basalMetabolicRate?, boneMass?, metabolicAge?, notes?, createdAt
+      //   id, date, totalBodyWaterPercentage?, bmi?, fatMass?, skeletalMuscleMass?, minerals?,
+      //   bodyFatPercentage?, weight?, score?, protein?, basalMetabolicRate?, notes?, createdAt
       match /bioimpedances/{recordId} {
         allow read, write: if owns(uid);
       }

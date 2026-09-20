@@ -88,7 +88,7 @@ function TaskRow({ task, onEdit }: { task: Task; onEdit: (id: string) => void })
       >
         {PRIORITY_LABELS[task.priority]}
       </Badge>
-      <div className="flex shrink-0 items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="flex shrink-0 items-center gap-0.5">
         <button
           onClick={() => onEdit(task.id)}
           className="rounded-lg p-1.5 text-muted-foreground/60 hover:bg-primary/10 hover:text-primary transition-colors cursor-pointer"
@@ -201,7 +201,7 @@ function RecurringRow({ task, compact, onEdit }: { task: RecurringTask; compact?
           >
             {PRIORITY_LABELS[task.priority]}
           </Badge>
-          <div className="flex shrink-0 items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex shrink-0 items-center gap-0.5">
             <button
               onClick={() => onEdit(task.id)}
               className="rounded-lg p-1.5 text-muted-foreground/60 hover:bg-primary/10 hover:text-primary transition-colors cursor-pointer"
@@ -225,7 +225,7 @@ function RecurringRow({ task, compact, onEdit }: { task: RecurringTask; compact?
             onCheckedChange={() => toggleRecurringActive(task.id)}
             aria-label={task.active ? 'Pausar recorrência' : 'Ativar recorrência'}
           />
-          <div className="flex shrink-0 items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex shrink-0 items-center gap-0.5">
             <button
               onClick={() => onEdit(task.id)}
               className="rounded-lg p-1.5 text-muted-foreground/60 hover:bg-primary/10 hover:text-primary transition-colors cursor-pointer"
@@ -269,21 +269,21 @@ function PendingRow({ item, onSchedule, onEdit }: { item: PendingItem; onSchedul
       <Button
         variant="ghost"
         size="sm"
-        className="shrink-0 rounded-xl gap-1 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+        className="shrink-0 rounded-xl gap-1 text-xs"
         onClick={() => onSchedule(item.id)}
       >
         Agendar <ArrowRight size={12} />
       </Button>
       <button
         onClick={() => onEdit(item.id)}
-        className="shrink-0 rounded-lg p-1.5 text-muted-foreground/60 opacity-0 group-hover:opacity-100 hover:bg-primary/10 hover:text-primary transition-all cursor-pointer"
+        className="shrink-0 rounded-lg p-1.5 text-muted-foreground/60 hover:bg-primary/10 hover:text-primary transition-all cursor-pointer"
         aria-label="Editar pendência"
       >
         <Pencil size={14} />
       </button>
       <button
         onClick={() => deletePending(item.id)}
-        className="shrink-0 rounded-lg p-1.5 text-muted-foreground/50 opacity-0 group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive transition-all cursor-pointer"
+        className="shrink-0 rounded-lg p-1.5 text-muted-foreground/60 hover:bg-destructive/10 hover:text-destructive transition-all cursor-pointer"
         aria-label="Excluir pendência"
       >
         <Trash2 size={14} />
@@ -345,10 +345,9 @@ export function RoutinePage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
             <span
-              className="flex size-11 items-center justify-center rounded-2xl"
-              style={{ backgroundColor: 'rgba(106, 99, 77, 0.094)' }}
+              className="flex size-11 items-center justify-center rounded-2xl bg-primary/10"
             >
-              <ClipboardList size={22} style={{ color: '#6a634d' }} />
+              <ClipboardList size={22} className="text-primary" />
             </span>
             Rotina
           </h1>
@@ -637,14 +636,14 @@ export function RoutinePage() {
                       </div>
                       <button
                         onClick={() => handleEditSlot(slot.id)}
-                        className="shrink-0 rounded-lg p-1.5 text-muted-foreground/60 opacity-0 group-hover:opacity-100 hover:bg-primary/10 hover:text-primary transition-all cursor-pointer"
+                        className="shrink-0 rounded-lg p-1.5 text-muted-foreground/60 hover:bg-primary/10 hover:text-primary transition-all cursor-pointer"
                         aria-label="Editar bloco"
                       >
                         <Pencil size={14} />
                       </button>
                       <button
                         onClick={() => deleteRoutineSlot(slot.id)}
-                        className="shrink-0 rounded-lg p-1.5 text-muted-foreground/50 opacity-0 group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive transition-all cursor-pointer"
+                        className="shrink-0 rounded-lg p-1.5 text-muted-foreground/60 hover:bg-destructive/10 hover:text-destructive transition-all cursor-pointer"
                         aria-label="Excluir bloco"
                       >
                         <Trash2 size={14} />

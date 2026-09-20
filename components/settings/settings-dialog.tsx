@@ -3,9 +3,11 @@
 import { useSettingsStore } from '@/lib/store/use-settings-store'
 import { useProfileStore } from '@/lib/store/use-profile-store'
 import type { FontScale, RadiusPreset } from '@/lib/types'
+import { SYSTEM_PALETTES } from '@/lib/theme'
 import { cn } from '@/lib/utils'
 import {
   ContactRound,
+  Check,
   Palette,
   RotateCcw,
   Settings2,
@@ -21,13 +23,6 @@ interface Props {
   open: boolean
   onClose: () => void
 }
-
-const BRAND_COLORS = [
-  { label: 'Rosa', value: '#d1bdb8' },
-  { label: 'Mostarda', value: '#b76f06' },
-  { label: 'Verde', value: '#6a634d' },
-  { label: 'Bege', value: '#ddd6c6' },
-] as const
 
 const RADIUS_OPTIONS: { id: RadiusPreset; label: string }[] = [
   { id: 'sharp', label: 'Reto' },
@@ -141,12 +136,22 @@ export function SettingsDialog({ open, onClose }: Props) {
           <Separator />
 
           {/* ── Paleta de cores ──────────────────────────────────────── */}
-          <Section icon={Palette} title="Paleta" desc="Identidade fixa do sistema, com predominância do rosa.">
+          <Section icon={Palette} title="Paleta" desc="Escolha a cor principal usada nas ações, ícones e destaques do sistema.">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {BRAND_COLORS.map((color) => (
-                <div
-                  key={color.value}
-                  className="flex items-center gap-2.5 rounded-2xl border border-border/60 bg-card p-2.5"
+              {SYSTEM_PALETTES.map((color) => {
+                const isActive = s.palette === color.id
+                return (
+                <button
+                  key={color.id}
+                  type="button"
+                  aria-pressed={isActive}
+                  onClick={() => s.setPalette(color.id)}
+                  className={cn(
+                    'flex items-center gap-2.5 rounded-2xl border bg-card p-2.5 text-left transition-colors cursor-pointer',
+                    isActive
+                      ? 'border-primary ring-2 ring-primary/20'
+                      : 'border-border/60 hover:border-primary/40',
+                  )}
                 >
                   <span
                     className="size-9 shrink-0 rounded-xl border border-foreground/10"
@@ -156,8 +161,10 @@ export function SettingsDialog({ open, onClose }: Props) {
                     <p className="text-xs font-semibold leading-tight">{color.label}</p>
                     <p className="text-[10px] text-muted-foreground uppercase">{color.value}</p>
                   </div>
-                </div>
-              ))}
+                  {isActive && <Check size={14} className="ml-auto shrink-0 text-primary" aria-hidden="true" />}
+                </button>
+                )
+              })}
             </div>
           </Section>
 

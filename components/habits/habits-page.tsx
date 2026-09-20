@@ -165,7 +165,7 @@ function HabitCard({
         </div>
 
         {/* Actions */}
-        <div className="flex gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+        <div className="flex gap-1 opacity-100">
           <ReminderButton
             enabled={habit.reminderEnabled === true}
             onEnabledChange={(enabled) => updateHabit(habit.id, { reminderEnabled: enabled })}
@@ -247,8 +247,8 @@ export function HabitsPage() {
       <div className={cn('flex flex-wrap items-end justify-between gap-4 mb-8', enter)}>
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
-            <span className="flex size-11 items-center justify-center rounded-2xl" style={{ backgroundColor: 'rgba(106, 99, 77, 0.094)' }}>
-              <Target size={22} style={{ color: '#6a634d' }} />
+            <span className="flex size-11 items-center justify-center rounded-2xl bg-primary/10">
+              <Target size={22} className="text-primary" />
             </span>
             Hábitos
           </h1>

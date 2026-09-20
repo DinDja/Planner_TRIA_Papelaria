@@ -39,6 +39,7 @@
 | `useChecklistsStore`                   | `users/{uid}/checklists`                  | items embutidos |
 | `useQuotesStore`                       | `users/{uid}/quotes`                      |       |
 | `useMemoriesStore`                     | `users/{uid}/memories`                    |       |
+| `useEvaluationStore`                   | `users/{uid}/evaluations`                 |       |
 | `usePasswordsStore`                    | `users/{uid}/passwords`                   | ⚠️ ver nota de segurança |
 | `useWishlistStore`                     | `users/{uid}/wishlist`                    |       |
 | `useHealthStore` (escalares)           | `users/{uid}` (height, goalWeight, sex, onboarded) |       |
@@ -248,6 +249,10 @@ users/{uid}/memories/{memoryId} {
   id, title, description, date, mood: 'great'|'good'|'neutral'|'bad'|'tough',
   tags: list<string>, color, createdAt
 }
+users/{uid}/evaluations/{evaluationId} {
+  id, type: 'filme'|'serie'|'livro', name, rating: 1..5,
+  seasons?, publisher?, observation?, createdAt, updatedAt
+}
 ```
 
 ### Cofre de senhas ⚠️
@@ -282,7 +287,7 @@ users/{uid}/wishlist/{itemId} {
 ```
 weights/{id}            { id, date, weight: number (kg), notes?, source?: 'health-onboarding', createdAt }
 bodyMeasurements/{id}  { id, date, bust?, waist?, abdomen?, hips?, arm?, thigh?, calf?, notes?, createdAt }
-bioimpedances/{id}     { id, date, bodyFatPercentage?, muscleMass?, visceralFat?, bodyWaterPercentage?, basalMetabolicRate?, boneMass?, metabolicAge?, notes?, createdAt }
+bioimpedances/{id}     { id, date, totalBodyWaterPercentage?, bmi?, fatMass?, skeletalMuscleMass?, minerals?, bodyFatPercentage?, weight?, score?, protein?, basalMetabolicRate?, notes?, createdAt }
 symptomLogs/{id}       { id, date, symptom, time?: 'HH:mm', possibleCause?, severity: int 1..5, notes?, createdAt }
 medications/{id}       { id, name, dosage, frequency, times?: list<string>, startDate, endDate?, reason?, notes?, color, createdAt }
 cycleRecords/{id}      { id, startDate, endDate?, flow: 'light'|'medium'|'heavy', symptoms: list<string>, notes?, createdAt }

@@ -283,7 +283,10 @@ export type RadiusPreset = 'sharp' | 'soft' | 'rounded' | 'pill'
 
 export type FontScale = 'sm' | 'base' | 'lg'
 
+export type SystemPalette = 'rose' | 'mustard' | 'green' | 'beige'
+
 export interface SystemSettings {
+  palette: SystemPalette
   /** Áreas onde usar gradientes (liga/desliga por local) */
   gradients: Record<GradientArea, boolean>
   /** Raio de borda global */
@@ -826,6 +829,22 @@ export interface MemoryEntry {
   createdAt: string
 }
 
+// ─── Módulo de Avaliações ────────────────────────────────────────────────────
+
+export type EvaluationType = 'filme' | 'serie' | 'livro'
+
+export interface EvaluationEntry {
+  id: string
+  type: EvaluationType
+  name: string
+  rating: 1 | 2 | 3 | 4 | 5
+  seasons?: number
+  publisher?: string
+  observation?: string
+  createdAt: string
+  updatedAt: string
+}
+
 // ─── Módulo de Saúde ──────────────────────────────────────────────────────────
 
 export interface WeightRecord {
@@ -979,20 +998,18 @@ export interface BirthdayRecord {
 export interface BioimpedanceRecord {
   id: string
   date: string
+  totalBodyWaterPercentage?: number
+  bmi?: number
+  fatMass?: number
+  skeletalMuscleMass?: number
+  minerals?: number
   /** percentual de gordura corporal */
   bodyFatPercentage?: number
-  /** massa muscular em kg */
-  muscleMass?: number
-  /** gordura visceral em nível ou índice do aparelho */
-  visceralFat?: number
-  /** percentual de água corporal */
-  bodyWaterPercentage?: number
+  weight?: number
+  score?: number
+  protein?: number
   /** taxa metabólica basal em kcal */
   basalMetabolicRate?: number
-  /** massa óssea em kg */
-  boneMass?: number
-  /** idade metabólica em anos */
-  metabolicAge?: number
   notes?: string
   createdAt: string
 }

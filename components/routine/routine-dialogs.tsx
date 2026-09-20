@@ -275,7 +275,7 @@ function TodayTaskRow({ task, onEdit }: { task: Task; onEdit?: (id: string) => v
       {onEdit && <button
         type="button"
         onClick={() => onEdit(task.id)}
-        className="shrink-0 rounded-lg p-1.5 text-muted-foreground/50 opacity-0 transition-all hover:bg-primary/10 hover:text-primary group-hover:opacity-100 cursor-pointer"
+        className="shrink-0 rounded-lg p-1.5 text-muted-foreground/60 transition-all hover:bg-primary/10 hover:text-primary cursor-pointer"
         aria-label="Editar tarefa"
       >
         <Pencil size={14} />
@@ -307,7 +307,7 @@ function TodayTaskRow({ task, onEdit }: { task: Task; onEdit?: (id: string) => v
       <button
         type="button"
         onClick={() => deleteTask(task.id)}
-        className="shrink-0 rounded-lg p-1.5 text-muted-foreground/50 opacity-0 transition-all hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100 cursor-pointer"
+        className="shrink-0 rounded-lg p-1.5 text-muted-foreground/60 transition-all hover:bg-destructive/10 hover:text-destructive cursor-pointer"
         aria-label="Excluir tarefa"
       >
         <Trash2 size={14} />
@@ -325,7 +325,7 @@ function TodayRecurringRow({ task, onEdit }: { task: RecurringTask; onEdit?: (id
       {onEdit && <button
         type="button"
         onClick={() => onEdit(task.id)}
-        className="shrink-0 rounded-lg p-1.5 text-muted-foreground/50 opacity-0 transition-all hover:bg-primary/10 hover:text-primary group-hover:opacity-100 cursor-pointer"
+        className="shrink-0 rounded-lg p-1.5 text-muted-foreground/60 transition-all hover:bg-primary/10 hover:text-primary cursor-pointer"
         aria-label="Editar recorrência"
       >
         <Pencil size={14} />
@@ -355,7 +355,7 @@ function TodayRecurringRow({ task, onEdit }: { task: RecurringTask; onEdit?: (id
       <button
         type="button"
         onClick={() => deleteRecurring(task.id)}
-        className="shrink-0 rounded-lg p-1.5 text-muted-foreground/50 opacity-0 transition-all hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100 cursor-pointer"
+        className="shrink-0 rounded-lg p-1.5 text-muted-foreground/60 transition-all hover:bg-destructive/10 hover:text-destructive cursor-pointer"
         aria-label="Excluir recorrência"
       >
         <Trash2 size={14} />

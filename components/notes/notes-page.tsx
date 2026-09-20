@@ -78,7 +78,7 @@ function NoteCard({
               {note.title}
             </h3>
           </div>
-          <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex items-center gap-0.5 shrink-0">
             <button
               onClick={() => onTogglePin(note.id)}
               className="rounded-lg p-1 transition-colors cursor-pointer"
@@ -288,14 +288,14 @@ export function NotesPage() {
                   </button>
                   <button
                     onClick={() => { setEditFolderId(f.id); setAddFolderOpen(true) }}
-                    className="shrink-0 rounded-lg p-1.5 text-muted-foreground/30 opacity-0 group-hover:opacity-100 hover:text-primary transition-all cursor-pointer"
+                    className="shrink-0 rounded-lg p-1.5 text-muted-foreground/60 hover:text-primary transition-all cursor-pointer"
                     aria-label={`Editar pasta ${f.name}`}
                   >
                     <Pencil size={12} />
                   </button>
                   <button
                     onClick={() => deleteFolder(f.id)}
-                    className="shrink-0 rounded-lg p-1.5 text-muted-foreground/30 opacity-0 group-hover:opacity-100 hover:text-destructive transition-all cursor-pointer"
+                    className="shrink-0 rounded-lg p-1.5 text-muted-foreground/60 hover:text-destructive transition-all cursor-pointer"
                     aria-label={`Excluir pasta ${f.name}`}
                   >
                     <Trash2 size={12} />
@@ -338,10 +338,9 @@ export function NotesPage() {
           <div>
             <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
               <span
-                className="flex size-11 items-center justify-center rounded-2xl"
-                style={{ backgroundColor: 'rgba(106, 99, 77, 0.094)' }}
+                className="flex size-11 items-center justify-center rounded-2xl bg-primary/10"
               >
-                <FileText size={22} style={{ color: '#6a634d' }} />
+                <FileText size={22} className="text-primary" />
               </span>
               Notas
             </h1>

@@ -22,6 +22,7 @@ const MODULE_HREFS: Partial<Record<ModuloId, string>> = {
   wishlist: '/wishlist',
   frases: '/frases',
   memorias: '/memorias',
+  avaliacao: '/avaliacao',
   cofre: '/cofre',
   saude: '/saude',
   calendario: '/calendario',
@@ -35,7 +36,7 @@ const MODULE_HREFS: Partial<Record<ModuloId, string>> = {
 const DEFAULT_MODULE_ORDER: readonly ModuloId[] = [
   'dashboard', 'calendario', 'financas', 'saude', 'notas', 'aniversarios',
   'habitos', 'listas', 'checklists', 'wishlist', 'cofre', 'diario',
-  'memorias', 'frases', 'plans', 'admin',
+  'memorias', 'avaliacao', 'frases', 'plans', 'admin',
 ]
 
 const LEGACY_DEFAULT_MODULE_ORDER: readonly ModuloId[] = [
@@ -68,6 +69,18 @@ export function sanitizeModules(modules: ModuleDef[]): ModuleDef[] {
       ...(module.id === 'calendario' ? { label: 'Agenda' } : {}),
     }))
 
+  const existingEvaluation = cleaned.find((module) => module.id === 'avaliacao')
+  if (existingEvaluation) {
+    cleaned.splice(cleaned.indexOf(existingEvaluation), 1)
+  }
+  const memoriasIndex = cleaned.findIndex((module) => module.id === 'memorias')
+  cleaned.splice(memoriasIndex >= 0 ? memoriasIndex + 1 : cleaned.length, 0, existingEvaluation ?? {
+    id: 'avaliacao',
+    href: '/avaliacao',
+    label: 'Avaliação',
+    enabled: true,
+  })
+
   return normalizeStoredOrder(cleaned)
 }
 
@@ -80,6 +93,7 @@ export const DEFAULT_MODULES: ModuleDef[] = orderModules([
   { id: 'wishlist',        href: '/wishlist',       label: 'Wishlist',       enabled: true },
   { id: 'frases',          href: '/frases',         label: 'Frases',         enabled: true },
   { id: 'memorias',        href: '/memorias',       label: 'Memórias',      enabled: true },
+  { id: 'avaliacao',       href: '/avaliacao',      label: 'Avaliação',     enabled: true },
   { id: 'cofre',           href: '/cofre',          label: 'Senhas',         enabled: true },
   { id: 'saude',           href: '/saude',          label: 'Saúde',          enabled: true },
   { id: 'calendario',      href: '/calendario',     label: 'Agenda',         enabled: true },
@@ -122,7 +136,7 @@ export const useMenuStore = create<MenuState>()(
     }),
     {
       name: 'tria-papelaria-menu',
-      version: 8,
+      version: 9,
       // Antes da v2, cada item levava `icon: 'BookHeart'` etc (nome Lucide).
       // O ícone virou derivado de `id` (ver components/icons/modules). Aqui
       // descartamos o campo legado ao reidratar do localStorage.

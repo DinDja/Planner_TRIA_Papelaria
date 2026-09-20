@@ -141,18 +141,22 @@ const measurementMetrics: { key: MeasurementMetric; label: string }[] = [
 
 type BioimpedanceMetric = keyof Pick<
   BioimpedanceRecord,
-  'bodyFatPercentage' | 'muscleMass' | 'visceralFat' | 'bodyWaterPercentage'
-  | 'basalMetabolicRate' | 'boneMass' | 'metabolicAge'
+  'totalBodyWaterPercentage' | 'bmi' | 'fatMass' | 'skeletalMuscleMass'
+  | 'minerals' | 'bodyFatPercentage' | 'weight' | 'score' | 'protein'
+  | 'basalMetabolicRate'
 >
 
 const bioimpedanceMetrics: { key: BioimpedanceMetric; label: string; unit: string }[] = [
-  { key: 'bodyFatPercentage', label: 'Gordura corporal', unit: '%' },
-  { key: 'muscleMass', label: 'Massa muscular', unit: 'kg' },
-  { key: 'visceralFat', label: 'Gordura visceral', unit: '' },
-  { key: 'bodyWaterPercentage', label: 'Água corporal', unit: '%' },
-  { key: 'basalMetabolicRate', label: 'Metabolismo basal', unit: 'kcal' },
-  { key: 'boneMass', label: 'Massa óssea', unit: 'kg' },
-  { key: 'metabolicAge', label: 'Idade metabólica', unit: 'anos' },
+  { key: 'totalBodyWaterPercentage', label: 'Água Corporal Total', unit: '%' },
+  { key: 'bmi', label: 'IMC', unit: '' },
+  { key: 'fatMass', label: 'Massa de Gordura', unit: 'kg' },
+  { key: 'skeletalMuscleMass', label: 'Massa Muscular Esquelética', unit: 'kg' },
+  { key: 'minerals', label: 'Minerais', unit: 'kg' },
+  { key: 'bodyFatPercentage', label: 'Percentual de Gordura', unit: '%' },
+  { key: 'weight', label: 'Peso', unit: 'kg' },
+  { key: 'score', label: 'Pontuação', unit: '' },
+  { key: 'protein', label: 'Proteína', unit: '%' },
+  { key: 'basalMetabolicRate', label: 'Taxa Metabólica Basal', unit: 'kcal' },
 ]
 
 function MeasurementChart({ measurements, metric }: { measurements: BodyMeasurement[]; metric: MeasurementMetric }) {
@@ -490,10 +494,10 @@ function WeightTab() {
                 </span>
               )}
               {w.notes && <span className="text-xs text-muted-foreground/70 truncate">{w.notes}</span>}
-              <button onClick={() => { setEditId(w.id); setAddOpen(true) }} className="ml-auto rounded-md p-1 text-muted-foreground/50 opacity-0 group-hover:opacity-100 hover:text-primary cursor-pointer" aria-label="Editar peso">
+              <button onClick={() => { setEditId(w.id); setAddOpen(true) }} className="ml-auto rounded-md p-1 text-muted-foreground/60 hover:text-primary cursor-pointer" aria-label="Editar peso">
                 <Pencil size={12} />
               </button>
-              <button onClick={() => deleteWeight(w.id)} className="rounded-md p-1 text-muted-foreground/30 opacity-0 group-hover:opacity-100 hover:text-destructive cursor-pointer" aria-label="Excluir peso">
+              <button onClick={() => deleteWeight(w.id)} className="rounded-md p-1 text-muted-foreground/60 hover:text-destructive cursor-pointer" aria-label="Excluir peso">
                 <Trash2 size={12} />
               </button>
             </div>
@@ -539,10 +543,10 @@ function SymptomsTab() {
               )}
             </div>
             {s.notes && <span className="text-xs text-muted-foreground/70 truncate max-w-[200px]">{s.notes}</span>}
-            <button onClick={() => { setEditId(s.id); setAddOpen(true) }} className="rounded-md p-1 text-muted-foreground/50 opacity-0 group-hover:opacity-100 hover:text-primary cursor-pointer" aria-label="Editar sintoma">
+            <button onClick={() => { setEditId(s.id); setAddOpen(true) }} className="rounded-md p-1 text-muted-foreground/60 hover:text-primary cursor-pointer" aria-label="Editar sintoma">
               <Pencil size={12} />
             </button>
-            <button onClick={() => deleteSymptom(s.id)} className="rounded-md p-1 text-muted-foreground/30 opacity-0 group-hover:opacity-100 hover:text-destructive cursor-pointer" aria-label="Excluir sintoma">
+            <button onClick={() => deleteSymptom(s.id)} className="rounded-md p-1 text-muted-foreground/60 hover:text-destructive cursor-pointer" aria-label="Excluir sintoma">
               <Trash2 size={12} />
             </button>
           </div>
@@ -595,10 +599,10 @@ function MedicationsTab() {
               {m.notes && <p className="text-xs text-muted-foreground/70 mt-1">{m.notes}</p>}
             </div>
             <div className="flex items-center gap-0.5 shrink-0">
-              <button onClick={() => { setEditId(m.id); setAddOpen(true) }} className="rounded-md p-1 text-muted-foreground/50 opacity-0 group-hover:opacity-100 hover:text-primary cursor-pointer" aria-label="Editar medicamento">
+              <button onClick={() => { setEditId(m.id); setAddOpen(true) }} className="rounded-md p-1 text-muted-foreground/60 hover:text-primary cursor-pointer" aria-label="Editar medicamento">
                 <Pencil size={12} />
               </button>
-              <button onClick={() => deleteMedication(m.id)} className="rounded-md p-1 text-muted-foreground/30 opacity-0 group-hover:opacity-100 hover:text-destructive cursor-pointer" aria-label="Excluir medicamento">
+              <button onClick={() => deleteMedication(m.id)} className="rounded-md p-1 text-muted-foreground/60 hover:text-destructive cursor-pointer" aria-label="Excluir medicamento">
                 <Trash2 size={12} />
               </button>
             </div>
@@ -629,8 +633,8 @@ function CyclesTab() {
       <div className="space-y-2">
         {sorted.map((c) => (
           <div key={c.id} className="group flex items-start gap-3 rounded-xl px-3 py-2.5 hover:bg-muted/40 transition-colors">
-            <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-brand-rose/55 dark:bg-brand-rose/20">
-              <Venus size={16} className="text-foreground dark:text-brand-beige" />
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/15 dark:bg-primary/20">
+              <Venus size={16} className="text-primary" />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium">
@@ -647,10 +651,10 @@ function CyclesTab() {
               </div>
               {c.notes && <p className="text-xs text-muted-foreground/70 mt-1">{c.notes}</p>}
             </div>
-            <button onClick={() => { setEditId(c.id); setAddOpen(true) }} className="rounded-md p-1 text-muted-foreground/50 opacity-0 group-hover:opacity-100 hover:text-primary cursor-pointer" aria-label="Editar ciclo">
+            <button onClick={() => { setEditId(c.id); setAddOpen(true) }} className="rounded-md p-1 text-muted-foreground/60 hover:text-primary cursor-pointer" aria-label="Editar ciclo">
               <Pencil size={12} />
             </button>
-            <button onClick={() => deleteCycle(c.id)} className="rounded-md p-1 text-muted-foreground/30 opacity-0 group-hover:opacity-100 hover:text-destructive cursor-pointer" aria-label="Excluir ciclo">
+            <button onClick={() => deleteCycle(c.id)} className="rounded-md p-1 text-muted-foreground/60 hover:text-destructive cursor-pointer" aria-label="Excluir ciclo">
               <Trash2 size={12} />
             </button>
           </div>
@@ -694,10 +698,10 @@ function DoctorsTab() {
               {d.notes && <p className="text-xs text-muted-foreground/60 mt-1">{d.notes}</p>}
             </div>
             <div className="flex items-center gap-0.5 shrink-0">
-              <button onClick={() => { setEditId(d.id); setAddOpen(true) }} className="rounded-md p-1 text-muted-foreground/50 opacity-0 group-hover:opacity-100 hover:text-primary cursor-pointer" aria-label="Editar médico">
+              <button onClick={() => { setEditId(d.id); setAddOpen(true) }} className="rounded-md p-1 text-muted-foreground/60 hover:text-primary cursor-pointer" aria-label="Editar médico">
                 <Pencil size={12} />
               </button>
-              <button onClick={() => deleteDoctor(d.id)} className="rounded-md p-1 text-muted-foreground/30 opacity-0 group-hover:opacity-100 hover:text-destructive cursor-pointer" aria-label="Excluir médico">
+              <button onClick={() => deleteDoctor(d.id)} className="rounded-md p-1 text-muted-foreground/60 hover:text-destructive cursor-pointer" aria-label="Excluir médico">
                 <Trash2 size={12} />
               </button>
             </div>
@@ -1054,8 +1058,8 @@ export function HealthPage() {
       <div className={cn('flex flex-wrap items-end justify-between gap-4 mb-8', enter)}>
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
-            <span className="flex size-11 items-center justify-center rounded-2xl" style={{ backgroundColor: 'rgba(106, 99, 77, 0.094)' }}>
-              <HeartPulse size={22} style={{ color: '#6a634d' }} />
+            <span className="flex size-11 items-center justify-center rounded-2xl bg-primary/10">
+              <HeartPulse size={22} className="text-primary" />
             </span>
             Saúde
           </h1>
@@ -1177,10 +1181,10 @@ function MeasurementsTab() {
                 {m.calf && <span>Panturrilha: <strong>{m.calf}cm</strong></span>}
               </div>
               {m.notes && <span className="text-xs text-muted-foreground/70 truncate">{m.notes}</span>}
-              <button onClick={() => { setEditId(m.id); setAddOpen(true) }} className="ml-auto rounded-md p-1 text-muted-foreground/50 opacity-0 group-hover:opacity-100 hover:text-primary cursor-pointer" aria-label="Editar medidas">
+              <button onClick={() => { setEditId(m.id); setAddOpen(true) }} className="ml-auto rounded-md p-1 text-muted-foreground/60 hover:text-primary cursor-pointer" aria-label="Editar medidas">
                 <Pencil size={12} />
               </button>
-              <button onClick={() => deleteMeasurement(m.id)} className="rounded-md p-1 text-muted-foreground/30 opacity-0 group-hover:opacity-100 hover:text-destructive cursor-pointer" aria-label="Excluir medidas">
+              <button onClick={() => deleteMeasurement(m.id)} className="rounded-md p-1 text-muted-foreground/60 hover:text-destructive cursor-pointer" aria-label="Excluir medidas">
                 <Trash2 size={12} />
               </button>
             </div>
@@ -1199,12 +1203,10 @@ function BioimpedanceTab() {
   const deleteBioimpedance = useHealthStore((s) => s.deleteBioimpedance)
   const [addOpen, setAddOpen] = useState(false)
   const [editId, setEditId] = useState<string | undefined>()
-  const [selectedMetric, setSelectedMetric] = useState<BioimpedanceMetric>('bodyFatPercentage')
+  const [selectedMetric, setSelectedMetric] = useState<BioimpedanceMetric>('totalBodyWaterPercentage')
   const sorted = [...records].sort((a, b) => b.date.localeCompare(a.date))
   const availableMetrics = useMemo(
-    () => bioimpedanceMetrics
-      .filter(({ key }) => records.some((record) => typeof record[key] === 'number'))
-      .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR')),
+    () => bioimpedanceMetrics.filter(({ key }) => records.some((record) => typeof record[key] === 'number')),
     [records],
   )
   const activeMetric = availableMetrics.some(({ key }) => key === selectedMetric)
@@ -1262,10 +1264,10 @@ function BioimpedanceTab() {
                 {record.notes && <span className="w-full text-xs text-muted-foreground/70 whitespace-pre-wrap break-words">{record.notes}</span>}
               </div>
               <div className="flex shrink-0 items-center gap-0.5">
-                <button onClick={() => { setEditId(record.id); setAddOpen(true) }} className="rounded-md p-1 text-muted-foreground/50 opacity-0 group-hover:opacity-100 hover:text-primary cursor-pointer" aria-label="Editar bioimpedância">
+                <button onClick={() => { setEditId(record.id); setAddOpen(true) }} className="rounded-md p-1 text-muted-foreground/60 hover:text-primary cursor-pointer" aria-label="Editar bioimpedância">
                   <Pencil size={12} />
                 </button>
-                <button onClick={() => deleteBioimpedance(record.id)} className="rounded-md p-1 text-muted-foreground/30 opacity-0 group-hover:opacity-100 hover:text-destructive cursor-pointer" aria-label="Excluir bioimpedância">
+                <button onClick={() => deleteBioimpedance(record.id)} className="rounded-md p-1 text-muted-foreground/60 hover:text-destructive cursor-pointer" aria-label="Excluir bioimpedância">
                   <Trash2 size={12} />
                 </button>
               </div>

@@ -29,6 +29,7 @@ import {
   Quote,
   Settings,
   Shield,
+  Star,
   Sun,
   Trash2,
   Wallet,
@@ -65,6 +66,7 @@ const MODULE_ICONS: Record<string, SidebarIcon> = {
   wishlist: Heart,
   frases: Quote,
   memorias: Archive,
+  avaliacao: Star,
   cofre: KeyRound,
   saude: HeartPulse,
   calendario: Calendar,
@@ -136,7 +138,7 @@ export function AppSidebar({
                 className={cn(
                   'flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-all duration-200',
                   active
-                    ? 'bg-brand-rose/70 text-foreground dark:bg-brand-rose/20 dark:text-brand-beige'
+                    ? 'bg-primary/15 text-primary dark:bg-primary/20'
                     : 'text-muted-foreground hover:text-foreground hover:bg-muted/60',
                   collapsed && 'justify-center px-0 py-2',
                 )}

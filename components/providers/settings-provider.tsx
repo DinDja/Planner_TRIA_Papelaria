@@ -7,6 +7,7 @@ import {
   RADIUS_PRESET_VALUES,
   useSettingsStore,
 } from '@/lib/store/use-settings-store'
+import { SYSTEM_PALETTE_MAP } from '@/lib/theme'
 import { useEffect } from 'react'
 
 /**
@@ -25,10 +26,13 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     const isDark = theme === 'dark'
 
     // ── Paleta ───────────────────────────────────────────
+    const selectedPalette = SYSTEM_PALETTE_MAP[settings.palette] ?? SYSTEM_PALETTE_MAP.rose
     const primary = isDark
-      ? 'color-mix(in oklab, var(--brand-mustard) 82%, var(--brand-beige))'
-      : 'var(--brand-mustard)'
-    const ring = isDark ? 'var(--brand-rose)' : 'var(--brand-mustard)'
+      ? 'color-mix(in oklab, var(--brand-primary) 82%, var(--brand-beige))'
+      : 'var(--brand-primary)'
+    const ring = 'var(--brand-primary)'
+    root.style.setProperty('--brand-primary', selectedPalette.value)
+    root.style.setProperty('--brand-primary-rgb', selectedPalette.rgb)
     root.style.setProperty('--primary', primary)
     root.style.setProperty('--ring', ring)
     root.style.setProperty('--sidebar-primary', primary)
@@ -36,7 +40,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     root.style.setProperty('--sidebar-primary-foreground', isDark
       ? '#241e16'
       : '#211a12')
-    root.style.setProperty('--chart-1', 'var(--brand-rose)')
+    root.style.setProperty('--chart-1', 'var(--brand-primary)')
 
     // ── Raio ─────────────────────────────────────────────
     const radius = RADIUS_PRESET_VALUES[settings.radius]
@@ -57,7 +61,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 
     // ── Cores de destaque (paleta swatch) como RGB ───────
     // Úteis para gradientes dinâmicos (`rgb(${primaryRgb})`)
-    root.style.setProperty('--primary-rgb', '183 111 6')
+    root.style.setProperty('--primary-rgb', selectedPalette.rgb)
 
     return () => {
       // Reset parcial ao desmontar (raro em SPA)
@@ -70,6 +74,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       root.style.removeProperty('--sidebar-primary-foreground')
       root.style.removeProperty('--chart-1')
       root.style.removeProperty('--primary-rgb')
+      root.style.removeProperty('--brand-primary')
+      root.style.removeProperty('--brand-primary-rgb')
       root.style.removeProperty('--radius')
       root.style.removeProperty('font-size')
       root.style.setProperty('--radius', defRadius)

@@ -77,13 +77,15 @@
   --brand-mustard: #b76f06;
   --brand-green: #6a634d;
   --brand-beige: #ddd6c6;
+  --brand-primary: var(--brand-rose);
+  --brand-primary-rgb: 209 189 184;
   --background: color-mix(in oklab, var(--brand-rose) 25%, white);
   --foreground: color-mix(in oklab, var(--brand-green) 72%, #1f1d18);
   --card: color-mix(in oklab, var(--brand-rose) 12%, white);
   --card-foreground: var(--foreground);
   --popover: color-mix(in oklab, var(--brand-beige) 18%, white);
   --popover-foreground: var(--foreground);
-  --primary: var(--brand-rose);
+  --primary: var(--brand-primary);
   --primary-foreground: #332c2b;
   --secondary: var(--brand-beige);
   --secondary-foreground: color-mix(in oklab, var(--brand-green) 78%, #24211b);
@@ -96,9 +98,9 @@
   --warning: var(--brand-mustard);
   --border: color-mix(in oklab, var(--brand-green) 34%, var(--brand-beige));
   --input: color-mix(in oklab, var(--brand-green) 18%, var(--brand-beige));
-  --ring: var(--brand-rose);
+  --ring: var(--brand-primary);
   --paper: color-mix(in oklab, var(--brand-beige) 22%, white);
-  --chart-1: var(--brand-rose);
+  --chart-1: var(--brand-primary);
   --chart-2: var(--brand-mustard);
   --chart-3: var(--brand-green);
   --chart-4: var(--brand-beige);
@@ -106,12 +108,12 @@
   --radius: 0.75rem;
   --sidebar: color-mix(in oklab, var(--brand-rose) 50%, #fbf8f4);
   --sidebar-foreground: var(--foreground);
-  --sidebar-primary: var(--brand-rose);
+  --sidebar-primary: var(--brand-primary);
   --sidebar-primary-foreground: #332c2b;
   --sidebar-accent: var(--brand-rose);
   --sidebar-accent-foreground: var(--foreground);
   --sidebar-border: color-mix(in oklab, var(--brand-green) 20%, var(--brand-rose));
-  --sidebar-ring: var(--brand-mustard);
+  --sidebar-ring: var(--brand-primary);
 }
 
 .dark {
@@ -122,7 +124,7 @@
   --card-foreground: var(--foreground);
   --popover: color-mix(in oklab, var(--brand-rose) 20%, #28221f);
   --popover-foreground: var(--foreground);
-  --primary: var(--brand-rose);
+  --primary: var(--brand-primary);
   --primary-foreground: #332c2b;
   --secondary: color-mix(in oklab, var(--brand-green) 45%, #28251f);
   --secondary-foreground: var(--brand-beige);
@@ -135,21 +137,21 @@
   --warning: color-mix(in oklab, var(--brand-mustard) 82%, var(--brand-beige));
   --border: color-mix(in oklab, var(--brand-beige) 18%, transparent);
   --input: color-mix(in oklab, var(--brand-beige) 23%, transparent);
-  --ring: var(--brand-rose);
+  --ring: var(--brand-primary);
   --paper: color-mix(in oklab, var(--brand-beige) 10%, #2b2822);
-  --chart-1: var(--brand-rose);
+  --chart-1: var(--brand-primary);
   --chart-2: color-mix(in oklab, var(--brand-mustard) 82%, var(--brand-beige));
   --chart-3: color-mix(in oklab, var(--brand-green) 72%, var(--brand-beige));
   --chart-4: var(--brand-beige);
   --chart-5: color-mix(in oklab, var(--brand-rose) 64%, var(--brand-green));
   --sidebar: color-mix(in oklab, var(--brand-rose) 18%, var(--background));
   --sidebar-foreground: var(--brand-beige);
-  --sidebar-primary: var(--brand-rose);
+  --sidebar-primary: var(--brand-primary);
   --sidebar-primary-foreground: #332c2b;
   --sidebar-accent: color-mix(in oklab, var(--brand-rose) 30%, var(--background));
   --sidebar-accent-foreground: var(--brand-beige);
   --sidebar-border: color-mix(in oklab, var(--brand-rose) 24%, transparent);
-  --sidebar-ring: var(--brand-rose);
+  --sidebar-ring: var(--brand-primary);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -161,7 +163,7 @@
     --card-foreground: var(--foreground);
     --popover: color-mix(in oklab, var(--brand-rose) 20%, #28221f);
     --popover-foreground: var(--foreground);
-    --primary: var(--brand-rose);
+    --primary: var(--brand-primary);
     --primary-foreground: #332c2b;
     --secondary: color-mix(in oklab, var(--brand-green) 45%, #28251f);
     --secondary-foreground: var(--brand-beige);
@@ -174,21 +176,21 @@
     --warning: color-mix(in oklab, var(--brand-mustard) 82%, var(--brand-beige));
     --border: color-mix(in oklab, var(--brand-beige) 18%, transparent);
     --input: color-mix(in oklab, var(--brand-beige) 23%, transparent);
-    --ring: var(--brand-rose);
+    --ring: var(--brand-primary);
     --paper: color-mix(in oklab, var(--brand-beige) 10%, #2b2822);
-    --chart-1: var(--brand-rose);
+    --chart-1: var(--brand-primary);
     --chart-2: color-mix(in oklab, var(--brand-mustard) 82%, var(--brand-beige));
     --chart-3: color-mix(in oklab, var(--brand-green) 72%, var(--brand-beige));
     --chart-4: var(--brand-beige);
     --chart-5: color-mix(in oklab, var(--brand-rose) 64%, var(--brand-green));
     --sidebar: color-mix(in oklab, var(--brand-rose) 18%, var(--background));
     --sidebar-foreground: var(--brand-beige);
-    --sidebar-primary: var(--brand-rose);
+    --sidebar-primary: var(--brand-primary);
     --sidebar-primary-foreground: #332c2b;
     --sidebar-accent: color-mix(in oklab, var(--brand-rose) 30%, var(--background));
     --sidebar-accent-foreground: var(--brand-beige);
     --sidebar-border: color-mix(in oklab, var(--brand-rose) 24%, transparent);
-    --sidebar-ring: var(--brand-rose);
+    --sidebar-ring: var(--brand-primary);
   }
 }
 
@@ -230,10 +232,10 @@ textarea {
   --landing-faint: color-mix(in oklab, var(--landing-fg) 34%, transparent);
   --landing-line: color-mix(in oklab, var(--brand-green) 18%, transparent);
   --landing-line-strong: color-mix(in oklab, var(--brand-green) 32%, transparent);
-  --landing-chip: color-mix(in oklab, var(--brand-rose) 52%, transparent);
-  --landing-action-bg: var(--brand-rose);
+  --landing-chip: color-mix(in oklab, var(--brand-primary) 52%, transparent);
+  --landing-action-bg: var(--brand-primary);
   --landing-action-fg: #332c2b;
-  --landing-highlight-bg: var(--brand-rose);
+  --landing-highlight-bg: var(--brand-primary);
   --landing-highlight-fg: color-mix(in oklab, var(--brand-green) 76%, #211f1a);
   background-color: var(--landing-bg);
   color: var(--landing-fg);
@@ -249,10 +251,10 @@ textarea {
   --landing-faint: color-mix(in oklab, var(--brand-beige) 34%, transparent);
   --landing-line: color-mix(in oklab, var(--brand-rose) 22%, transparent);
   --landing-line-strong: color-mix(in oklab, var(--brand-rose) 38%, transparent);
-  --landing-chip: color-mix(in oklab, var(--brand-rose) 22%, transparent);
-  --landing-action-bg: color-mix(in oklab, var(--brand-rose) 84%, var(--brand-beige));
+  --landing-chip: color-mix(in oklab, var(--brand-primary) 22%, transparent);
+  --landing-action-bg: color-mix(in oklab, var(--brand-primary) 84%, var(--brand-beige));
   --landing-action-fg: #332c2b;
-  --landing-highlight-bg: var(--brand-rose);
+  --landing-highlight-bg: var(--brand-primary);
   --landing-highlight-fg: #332e27;
 }
 

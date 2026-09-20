@@ -389,10 +389,9 @@ export function VaultPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
             <span
-              className="flex size-11 items-center justify-center rounded-2xl"
-              style={{ backgroundColor: 'rgba(106, 99, 77, 0.094)' }}
+              className="flex size-11 items-center justify-center rounded-2xl bg-primary/10"
             >
-              <KeyRound size={22} style={{ color: '#6a634d' }} />
+              <KeyRound size={22} className="text-primary" />
             </span>
             Senhas
           </h1>

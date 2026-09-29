@@ -25,11 +25,36 @@ describe('reminder engine', () => {
       now: new Date(2026, 7, 10, 10, 0, 0),
       medications: [], appointments: [], exams: [], events: [], birthdays: [],
       habits: [
-        { id: 'monthly', name: 'Fechar mês', color: '#000', frequency: 'monthly', dayOfMonth: 10, reminderTime: '10:00', reminderEnabled: true, archived: false, createdAt: '' },
+        { id: 'monthly', name: 'Fechar mês', color: '#000', frequency: 'monthly', dayOfMonth: 10, reminderTime: '10:00', reminderIntervalMinutes: 0, reminderEnabled: true, archived: false, createdAt: '' },
         { id: 'archived', name: 'Arquivado', color: '#000', frequency: 'daily', reminderTime: '10:00', reminderEnabled: true, archived: true, createdAt: '' },
       ],
     })
 
-    expect(reminders.map((reminder) => reminder.id)).toEqual(['habit-monthly'])
+    expect(reminders.map((reminder) => reminder.id)).toEqual(['habit-monthly-10:00'])
+  })
+
+  it('gera avisos de hábito em intervalos de minutos', () => {
+    const reminders = buildReminders({
+      now: new Date(2026, 7, 10, 9, 30, 0),
+      medications: [], appointments: [], exams: [], events: [], birthdays: [],
+      habits: [{
+        id: 'habit-minutes',
+        name: 'Alongar',
+        color: '#000',
+        frequency: 'daily',
+        reminderTime: '09:00',
+        reminderIntervalMinutes: 30,
+        reminderEnabled: true,
+        archived: false,
+        createdAt: '',
+      }],
+    })
+
+    expect(reminders).toHaveLength(30)
+    expect(reminders.slice(0, 3).map((reminder) => reminder.id)).toEqual([
+      'habit-habit-minutes-09:00',
+      'habit-habit-minutes-09:30',
+      'habit-habit-minutes-10:00',
+    ])
   })
 })

@@ -1,7 +1,7 @@
 'use client'
 
 import { useJournalStore } from '@/lib/store/use-journal-store'
-import { EMOTION_CONFIG, ENTRY_COLORS, TIME_OF_DAY_CONFIG, type JournalEmotion, type JournalEntry, type MoodSnapshot } from '@/lib/types'
+import { EMOTION_CONFIG, ENTRY_COLORS, type JournalEmotion, type JournalEntry, type MoodSnapshot } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import { Feather, Hand, Pencil, Pin, Trash2 } from 'lucide-react'
 import { useState } from 'react'
@@ -161,9 +161,7 @@ export function ViewEntryDialog({
 
   if (!entry) return null
 
-  const wordCount = entry.content.trim().split(/\s+/).filter(Boolean).length
   const lines = entry.content.split('\n').filter(Boolean)
-  const timeConfig = TIME_OF_DAY_CONFIG[entry.timeOfDay]
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -176,9 +174,8 @@ export function ViewEntryDialog({
             </div>
 
             <div>
-              <div className="flex items-center justify-between mb-1.5">
+              <div className="mb-1.5">
                 <label className="text-sm font-medium">Conteúdo</label>
-                <span className="text-[10px] text-muted-foreground">{wordCount} palavras</span>
               </div>
               <textarea
                 value={content}
@@ -206,28 +203,16 @@ export function ViewEntryDialog({
           <div className="space-y-4">
             {/* Header */}
             <div className="flex items-start justify-between gap-3">
-              <div className="flex items-start gap-3 min-w-0 flex-1">
-                <div
-                  className="size-12 rounded-xl shrink-0 flex items-center justify-center text-xl"
-                  style={{ backgroundColor: entry.color + '25' }}
-                >
-                  {timeConfig.icon}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h2 className="text-xl font-bold leading-tight">{entry.title}</h2>
-                  <div className="flex items-center gap-2 mt-1 flex-wrap">
-                    <span className="text-xs text-muted-foreground">
-                      {new Date(entry.date + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
-                    </span>
-                    <span className="text-xs text-muted-foreground">·</span>
-                    <span className="text-xs text-muted-foreground">{timeConfig.label}</span>
-                    <span className="text-xs text-muted-foreground">·</span>
-                    <span className="text-xs text-muted-foreground">{wordCount} palavras</span>
-                  </div>
+              <div className="min-w-0 flex-1">
+                <h2 className="text-xl font-bold leading-tight">{entry.title}</h2>
+                <div className="mt-1">
+                  <span className="text-xs text-muted-foreground">
+                    {new Date(entry.date + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                  </span>
                 </div>
               </div>
 
-              <div className="flex items-center gap-1 shrink-0">
+              <div className="mr-8 flex shrink-0 items-center gap-1">
                 <button
                   onClick={handlePin}
                   className={cn(
@@ -253,12 +238,13 @@ export function ViewEntryDialog({
             </div>
 
             {/* Mood */}
-            <div className="flex flex-wrap items-center gap-2">
-              {entry.mood.emotions.map((e) => (
-                <EmotionBadge key={e} emotion={e} size="lg" />
-              ))}
-              <EnergyIndicatorSimple level={entry.mood.energy} />
-            </div>
+            {entry.mood.emotions.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2">
+                {entry.mood.emotions.map((e) => (
+                  <EmotionBadge key={e} emotion={e} size="lg" />
+                ))}
+              </div>
+            )}
 
             {entry.mood.note && (
               <p className="text-sm text-muted-foreground/80 italic bg-muted/30 rounded-xl p-3">
@@ -325,26 +311,6 @@ function EmotionBadge({ emotion, size = 'sm' }: { emotion: JournalEmotion; size?
       <span>{config.emoji}</span>
       {config.label}
     </span>
-  )
-}
-
-function EnergyIndicatorSimple({ level }: { level: number }) {
-  return (
-    <div className="flex items-center gap-1 ml-auto">
-      <span className="text-[10px] text-muted-foreground">energia</span>
-      {[1, 2, 3, 4, 5].map((bar) => (
-        <div
-          key={bar}
-          className="w-1.5 rounded-full"
-          style={{
-            height: `${6 + bar * 2}px`,
-            backgroundColor: bar <= level
-              ? level <= 2 ? '#d1bdb8' : level <= 3 ? '#b76f06' : '#6a634d'
-              : 'var(--muted)',
-          }}
-        />
-      ))}
-    </div>
   )
 }
 

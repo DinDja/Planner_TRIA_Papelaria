@@ -248,6 +248,9 @@ export function AddItemDialog({
     .sort((a, b) => {
       return a.localeCompare(b, 'pt-BR', { sensitivity: 'base' })
     })
+  if (kindMeta.kind === 'supermercado' || kindMeta.kind === 'mala' || kindMeta.kind === 'farmacia') {
+    categorySuggestions.push('Outros')
+  }
 
   const reset = () => {
     setName('')

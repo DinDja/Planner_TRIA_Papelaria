@@ -565,6 +565,7 @@ export interface SavingsBox {
 // ─── Módulo de Hábitos ────────────────────────────────────────────────────────
 
 export type HabitFrequency = 'daily' | 'weekly' | 'monthly'
+export type HabitReminderIntervalUnit = 'minutes' | 'hours'
 
 export interface Habit {
   id: string
@@ -576,9 +577,13 @@ export interface Habit {
   weekdays?: Weekday[]
   /** Dia do mês para monthly (1–31) */
   dayOfMonth?: number
+  /** Mês de referência para monthly (1–12). */
+  referenceMonth?: number
   /** Horário inicial dos avisos do hábito, no formato HH:mm. */
   reminderTime?: string
-  /** Intervalo dos avisos em horas, contado a partir de reminderTime. */
+  /** Intervalo dos avisos em minutos, contado a partir de reminderTime. */
+  reminderIntervalMinutes?: number
+  /** Campo legado: intervalos antigos eram armazenados em horas. */
   reminderIntervalHours?: number
   /** Ativa um aviso local na ocorrência do hábito. */
   reminderEnabled?: boolean

@@ -284,7 +284,7 @@ export function LandingPage() {
       {/* ── HERO ────────────────────────────────────────────────────────── */}
       <section className="relative mt-16 h-[calc(100svh-4rem)] min-h-[780px] sm:min-h-[700px] lg:min-h-[640px] overflow-hidden">
         {/* Livro do produto — ao lado do título no desktop e acima dele no mobile. */}
-        <div className="absolute z-20 top-0 right-[-18%] h-[42%] w-[92%] sm:right-[-8%] sm:h-[48%] sm:w-[70%] lg:top-auto lg:right-[-2%] lg:bottom-[8%] lg:h-[76%] lg:w-[54%] xl:right-[2%] xl:w-[52%]">
+        <div className="absolute z-20 top-0 right-[-18%] hidden h-[42%] w-[92%] sm:right-[-8%] sm:h-[48%] sm:w-[70%] md:block lg:top-auto lg:right-[-2%] lg:bottom-[8%] lg:h-[76%] lg:w-[54%] xl:right-[2%] xl:w-[52%]">
           <InfiniteBook ready={heroReady} />
         </div>
 

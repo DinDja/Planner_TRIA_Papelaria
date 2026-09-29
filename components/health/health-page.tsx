@@ -44,10 +44,10 @@ function calcBMI(weightKg: number, heightCm: number): number {
 }
 
 function bmiCategory(bmi: number): { label: string; color: string } {
-  if (bmi < 18.5) return { label: 'Abaixo do peso', color: '#6a634d' }
-  if (bmi < 25) return { label: 'Peso normal', color: '#6a634d' }
-  if (bmi < 30) return { label: 'Sobrepeso', color: '#b76f06' }
-  return { label: 'Obesidade', color: '#d1bdb8' }
+  if (bmi < 18.5) return { label: 'Abaixo do peso', color: 'var(--warning)' }
+  if (bmi < 25) return { label: 'Peso normal', color: 'var(--success)' }
+  if (bmi < 30) return { label: 'Sobrepeso', color: 'var(--warning)' }
+  return { label: 'Obesidade', color: 'var(--destructive)' }
 }
 
 function WeightChart({ weights }: { weights: { date: string; weight: number }[] }) {
@@ -333,7 +333,10 @@ function WeightTab() {
         <div>
           <div
             className="flex items-center gap-2 rounded-2xl border px-4 py-3 shadow-sm h-full cursor-pointer hover:brightness-95 transition-all"
-            style={{ borderColor: bmiInfo.color + '40', backgroundColor: bmiInfo.color + '10' }}
+            style={{
+              borderColor: `color-mix(in oklab, ${bmiInfo.color} 25%, transparent)`,
+              backgroundColor: `color-mix(in oklab, ${bmiInfo.color} 10%, transparent)`,
+            }}
             onClick={() => { setEditingHeight(true); setHeightInput(String(height)) }}
             title="Clique para ajustar altura"
           >
@@ -470,7 +473,11 @@ function WeightTab() {
       <div className="flex items-center justify-between mb-2">
         <p className="text-sm text-muted-foreground">
           {sorted.length} {sorted.length === 1 ? 'registro' : 'registros'}
-          {height > 0 && latest && <span className="ml-2 text-[11px]">· IMC {bmi.toFixed(1)} — {bmiInfo.label}</span>}
+          {height > 0 && latest && (
+            <span className="ml-2 text-[11px]" style={{ color: bmiInfo.color }}>
+              · IMC {bmi.toFixed(1)} — {bmiInfo.label}
+            </span>
+          )}
         </p>
         <Button size="sm" className="rounded-xl gap-1.5" onClick={() => setAddOpen(true)}>
           <Plus size={14} /> Registrar peso
@@ -575,8 +582,8 @@ function MedicationsTab() {
       <div className="space-y-2">
         {sorted.map((m) => (
           <div key={m.id} className="group flex items-start gap-3 rounded-xl px-3 py-2.5 hover:bg-muted/40 transition-colors">
-            <div className="flex size-9 shrink-0 items-center justify-center rounded-xl" style={{ backgroundColor: `${m.color}18` }}>
-              <Pill size={16} className="text-primary" />
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+              <Pill size={16} style={{ color: 'var(--primary)' }} />
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
@@ -1085,7 +1092,7 @@ export function HealthPage() {
           <Tab value="medidas"><Activity size={14} className="mr-1.5" />Medidas</Tab>
           <Tab value="bioimpedancia"><Scale size={14} className="mr-1.5" />Bioimpedância</Tab>
           <Tab value="sintomas"><Cigarette size={14} className="mr-1.5" />Sintomas</Tab>
-          <Tab value="medicamentos"><Pill size={14} className="mr-1.5" />Medicamentos</Tab>
+          <Tab value="medicamentos"><Pill size={14} className="mr-1.5 text-primary" />Medicamentos</Tab>
           {sex !== 'male' && (
             <Tab value="ciclo"><Venus size={14} className="mr-1.5" />Ciclo</Tab>
           )}

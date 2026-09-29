@@ -100,14 +100,14 @@ function EvaluationCard({
           <button
             onClick={() => onEdit(entry.id)}
             className="rounded-lg p-1.5 text-muted-foreground/50 hover:bg-primary/10 hover:text-primary transition-all cursor-pointer"
-            aria-label={`Editar avaliação de ${entry.name}`}
+            aria-label={`Editar catálogo de ${entry.name}`}
           >
             <Pencil size={13} />
           </button>
           <button
             onClick={() => onDelete(entry.id)}
             className="rounded-lg p-1.5 text-muted-foreground/50 hover:bg-destructive/10 hover:text-destructive transition-all cursor-pointer"
-            aria-label={`Excluir avaliação de ${entry.name}`}
+            aria-label={`Excluir catálogo de ${entry.name}`}
           >
             <Trash2 size={13} />
           </button>
@@ -167,7 +167,7 @@ export function EvaluationPage() {
     <div className="flex h-full">
       <aside className="hidden lg:flex flex-col w-56 shrink-0 border-r border-border/40 p-4 gap-1">
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-          Avaliar
+          Catálogo
         </p>
         <button
           onClick={() => setFilter('all')}
@@ -177,7 +177,7 @@ export function EvaluationPage() {
           )}
         >
           <List size={15} />
-          Todas as avaliações
+          Todos os catálogos
           <span className="ml-auto text-xs text-muted-foreground/60">{counts.all}</span>
         </button>
 
@@ -209,7 +209,7 @@ export function EvaluationPage() {
               <span className="flex size-11 items-center justify-center rounded-2xl bg-primary/10">
                 <Star size={22} className="text-primary" />
               </span>
-              Avaliação
+              Catálogo
             </h1>
             <p className="text-muted-foreground mt-2">
               Guarde suas notas para filmes, séries e livros.
@@ -217,7 +217,7 @@ export function EvaluationPage() {
           </div>
           <Button className="rounded-xl gap-1.5 shadow-md" onClick={openNewEntry}>
             <Plus size={15} />
-            Nova avaliação
+            Novo catálogo
           </Button>
         </div>
 
@@ -226,7 +226,7 @@ export function EvaluationPage() {
           <SearchInput
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Buscar avaliações..."
+            placeholder="Buscar catálogos..."
             className="pl-9 h-10 rounded-xl"
           />
         </div>
@@ -252,11 +252,11 @@ export function EvaluationPage() {
           <div className="text-center py-16">
             <Star size={40} className="mx-auto text-muted-foreground/30 mb-4" />
             <p className="text-muted-foreground">
-              {search ? 'Nenhuma avaliação encontrada.' : 'Nenhuma avaliação registrada ainda.'}
+              {search ? 'Nenhum catálogo encontrado.' : 'Nenhum catálogo registrado ainda.'}
             </p>
             <Button variant="outline" className="mt-4 rounded-xl" onClick={openNewEntry}>
               <Plus size={14} className="mr-1.5" />
-              Registrar primeira avaliação
+              Registrar primeiro catálogo
             </Button>
           </div>
         )}

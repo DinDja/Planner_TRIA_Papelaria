@@ -33,7 +33,6 @@ export function EvaluationDialog({
   const [name, setName] = useState('')
   const [rating, setRating] = useState<0 | EvaluationEntry['rating']>(0)
   const [seasons, setSeasons] = useState('')
-  const [publisher, setPublisher] = useState('')
   const [observation, setObservation] = useState('')
 
   useEffect(() => {
@@ -43,14 +42,12 @@ export function EvaluationDialog({
       setName(existing.name)
       setRating(existing.rating)
       setSeasons(existing.seasons?.toString() ?? '')
-      setPublisher(existing.publisher ?? '')
       setObservation(existing.observation ?? '')
     } else if (!editId) {
       setType(defaultType)
       setName('')
       setRating(0)
       setSeasons('')
-      setPublisher('')
       setObservation('')
     }
   }, [open, editId, existing, defaultType])
@@ -70,26 +67,20 @@ export function EvaluationDialog({
       toast({ title: 'Informe o número de temporadas', variant: 'error' })
       return
     }
-    if (type === 'livro' && !publisher.trim()) {
-      toast({ title: 'Informe o nome da editora', variant: 'error' })
-      return
-    }
-
     const data = {
       type,
       name: name.trim(),
       rating,
       ...(type === 'serie' ? { seasons: parsedSeasons } : {}),
-      ...(type === 'livro' ? { publisher: publisher.trim() } : {}),
       observation: observation.trim() || undefined,
     }
 
     if (editId) {
       updateEntry(editId, data)
-      toast({ title: 'Avaliação atualizada!', variant: 'success' })
+      toast({ title: 'Catálogo atualizado!', variant: 'success' })
     } else {
       addEntry(data)
-      toast({ title: 'Avaliação registrada!', variant: 'success' })
+      toast({ title: 'Catálogo registrado!', variant: 'success' })
     }
     onClose()
   }
@@ -97,7 +88,7 @@ export function EvaluationDialog({
   return (
     <Dialog open={open} onOpenChange={(value) => !value && onClose()}>
       <DialogContent
-        title={editId ? 'Editar avaliação' : `Avaliar ${TYPE_LABELS[type].toLowerCase()}`}
+        title={editId ? 'Editar catálogo' : `Catalogar ${TYPE_LABELS[type].toLowerCase()}`}
         description="Registre sua opinião para consultar depois."
       >
         <div className="flex flex-col gap-4">
@@ -163,23 +154,13 @@ export function EvaluationDialog({
                 value={seasons}
                 onChange={(event) => setSeasons(event.target.value)}
                 placeholder="Ex: 3"
-              />
-            </div>
-          )}
-
-          {type === 'livro' && (
-            <div>
-              <label className="text-sm font-medium mb-1.5 block">Editora</label>
-              <Input
-                value={publisher}
-                onChange={(event) => setPublisher(event.target.value)}
-                placeholder="Nome da editora"
+                className="[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
               />
             </div>
           )}
 
           <div>
-            <label className="text-sm font-medium mb-1.5 block">Observação (opcional)</label>
+            <label className="text-sm font-medium mb-1.5 block">Observação</label>
             <Textarea
               value={observation}
               onChange={(event) => setObservation(event.target.value)}
@@ -191,7 +172,7 @@ export function EvaluationDialog({
           <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end">
             <Button variant="outline" onClick={onClose} className="rounded-xl">Cancelar</Button>
             <Button onClick={handleSave} className="rounded-xl shadow-md">
-              {editId ? 'Salvar alterações' : 'Registrar avaliação'}
+              {editId ? 'Salvar alterações' : 'Registrar catálogo'}
             </Button>
           </div>
         </div>

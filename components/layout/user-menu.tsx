@@ -33,12 +33,12 @@ export function UserMenu({ onOpenSettings }: UserMenuProps) {
         render={
           <button
             type="button"
-            className="flex items-center rounded-xl px-2.5 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-all cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+            className="flex size-9 items-center justify-center rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-all cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
             aria-label="Menu da conta"
           >
-            <span className="max-w-[110px] truncate">
-              {profile.name || 'Meu Perfil'}
-            </span>
+            <svg viewBox="0 0 16 16" className="size-5" fill="currentColor" aria-hidden="true">
+              <path fillRule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5" />
+            </svg>
           </button>
         }
       />

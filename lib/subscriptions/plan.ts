@@ -50,7 +50,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     period: 'por 1 mês',
     description: 'Um mês para experimentar a Tria por inteiro.',
     features: [...SHARED_FEATURES, 'Não precisa de cartão para testar'],
-    color: '#6a634d',
+    color: '#d1bdb8',
   },
 }
 

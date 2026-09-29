@@ -1,9 +1,8 @@
 'use client'
 
 import { useHabitsStore } from '@/lib/store/use-habits-store'
-import type { HabitFrequency, Weekday } from '@/lib/types'
+import type { HabitReminderIntervalUnit, HabitFrequency, Weekday } from '@/lib/types'
 import { cn } from '@/lib/utils'
-import { buildHabitReminderTimes } from '@/lib/notifications/reminders'
 import { Check } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Button } from '../ui/button'
@@ -15,6 +14,7 @@ import { ReminderButton } from '../notifications/reminder-button'
 const COLORS = ['#d1bdb8', '#b76f06', '#6a634d', '#ddd6c6']
 const WEEKDAY_SHORT: Record<Weekday, string> = { 0: 'Seg', 1: 'Ter', 2: 'Qua', 3: 'Qui', 4: 'Sex', 5: 'Sáb', 6: 'Dom' }
 const DEFAULT_HABIT_TIME = '08:00'
+const DEFAULT_REFERENCE_MONTH = new Date().getMonth() + 1
 
 export function AddHabitDialog({ open, onClose, editId }: { open: boolean; onClose: () => void; editId?: string }) {
   const addHabit = useHabitsStore((s) => s.addHabit)
@@ -22,10 +22,12 @@ export function AddHabitDialog({ open, onClose, editId }: { open: boolean; onClo
   const existing = useHabitsStore((s) => editId ? s.habits.find((h) => h.id === editId) : undefined)
   const [name, setName] = useState('')
   const [frequency, setFrequency] = useState<HabitFrequency>('daily')
-  const [weekdays, setWeekdays] = useState<Weekday[]>([0, 1, 2, 3, 4])
+  const [weekdays, setWeekdays] = useState<Weekday[]>([])
   const [dayOfMonth, setDayOfMonth] = useState(1)
+  const [referenceMonth, setReferenceMonth] = useState(DEFAULT_REFERENCE_MONTH)
   const [reminderTime, setReminderTime] = useState(DEFAULT_HABIT_TIME)
-  const [reminderIntervalHours, setReminderIntervalHours] = useState('1')
+  const [reminderIntervalValue, setReminderIntervalValue] = useState('0')
+  const [reminderIntervalUnit, setReminderIntervalUnit] = useState<HabitReminderIntervalUnit>('hours')
   const [color, setColor] = useState(COLORS[2])
   const [reminderEnabled, setReminderEnabled] = useState(false)
 
@@ -34,19 +36,34 @@ export function AddHabitDialog({ open, onClose, editId }: { open: boolean; onClo
     if (existing) {
       setName(existing.name)
       setFrequency(existing.frequency)
-      setWeekdays(existing.weekdays ?? [0, 1, 2, 3, 4])
+      setWeekdays(existing.weekdays ?? [])
       setDayOfMonth(existing.dayOfMonth ?? 1)
+      setReferenceMonth(existing.referenceMonth ?? DEFAULT_REFERENCE_MONTH)
       setReminderTime(existing.reminderTime ?? DEFAULT_HABIT_TIME)
-      setReminderIntervalHours(String(existing.reminderIntervalHours ?? 1))
+      const intervalMinutes = existing.reminderIntervalMinutes
+      if (typeof intervalMinutes === 'number' && intervalMinutes >= 0) {
+        if (intervalMinutes % 60 === 0) {
+          setReminderIntervalValue(String(intervalMinutes / 60))
+          setReminderIntervalUnit('hours')
+        } else {
+          setReminderIntervalValue(String(intervalMinutes))
+          setReminderIntervalUnit('minutes')
+        }
+      } else {
+        setReminderIntervalValue(String(existing.reminderIntervalHours ?? 0))
+        setReminderIntervalUnit('hours')
+      }
       setColor(existing.color)
       setReminderEnabled(existing.reminderEnabled === true)
     } else if (!editId) {
       setName('')
       setFrequency('daily')
-      setWeekdays([0, 1, 2, 3, 4])
+      setWeekdays([])
       setDayOfMonth(1)
+      setReferenceMonth(DEFAULT_REFERENCE_MONTH)
       setReminderTime(DEFAULT_HABIT_TIME)
-      setReminderIntervalHours('1')
+      setReminderIntervalValue('0')
+      setReminderIntervalUnit('hours')
       setColor(COLORS[2])
       setReminderEnabled(false)
     }
@@ -68,9 +85,10 @@ export function AddHabitDialog({ open, onClose, editId }: { open: boolean; onClo
       toast({ title: 'Informe um horário inicial válido', variant: 'error' })
       return
     }
-    const intervalHours = Number(reminderIntervalHours)
-    if (!Number.isInteger(intervalHours) || intervalHours < 1 || intervalHours > 24) {
-      toast({ title: 'Escolha um intervalo entre 1 e 24 horas', variant: 'error' })
+    const intervalValue = Number(reminderIntervalValue)
+    const intervalMinutes = reminderIntervalUnit === 'hours' ? intervalValue * 60 : intervalValue
+    if (!Number.isSafeInteger(intervalMinutes) || intervalMinutes < 0) {
+      toast({ title: 'Informe um intervalo inteiro igual ou maior que zero', variant: 'error' })
       return
     }
     const data = {
@@ -78,8 +96,9 @@ export function AddHabitDialog({ open, onClose, editId }: { open: boolean; onClo
       frequency,
       weekdays: frequency === 'weekly' ? weekdays : undefined,
       dayOfMonth: frequency === 'monthly' ? dayOfMonth : undefined,
+      referenceMonth: frequency === 'monthly' ? referenceMonth : undefined,
       reminderTime,
-      reminderIntervalHours: intervalHours,
+      reminderIntervalMinutes: intervalMinutes,
       reminderEnabled,
       color,
     }
@@ -92,10 +111,12 @@ export function AddHabitDialog({ open, onClose, editId }: { open: boolean; onClo
     }
     setName('')
     setFrequency('daily')
-    setWeekdays([0, 1, 2, 3, 4])
+    setWeekdays([])
     setDayOfMonth(1)
+    setReferenceMonth(DEFAULT_REFERENCE_MONTH)
     setReminderTime(DEFAULT_HABIT_TIME)
-    setReminderIntervalHours('1')
+    setReminderIntervalValue('0')
+    setReminderIntervalUnit('hours')
     setColor(COLORS[2])
     setReminderEnabled(false)
     onClose()
@@ -142,13 +163,23 @@ export function AddHabitDialog({ open, onClose, editId }: { open: boolean; onClo
 
           {frequency === 'monthly' && (
             <div>
-              <label className="text-sm font-medium mb-1.5 block">Dia do mês</label>
-              <Input type="number" min={1} max={31} value={dayOfMonth}
-                onChange={(e) => setDayOfMonth(Math.min(31, Math.max(1, Number(e.target.value) || 1)))} />
+              <label className="text-sm font-medium mb-1.5 block">Data de referência</label>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <span className="mb-1 block text-xs text-muted-foreground">Dia</span>
+                  <Input type="number" min={1} max={31} value={dayOfMonth}
+                    onChange={(e) => setDayOfMonth(Math.min(31, Math.max(1, Number(e.target.value) || 1)))} />
+                </div>
+                <div>
+                  <span className="mb-1 block text-xs text-muted-foreground">Mês</span>
+                  <Input type="number" min={1} max={12} value={referenceMonth}
+                    onChange={(e) => setReferenceMonth(Math.min(12, Math.max(1, Number(e.target.value) || 1)))} />
+                </div>
+              </div>
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] gap-3">
             <div>
               <label className="text-sm font-medium mb-1.5 block">Horário inicial</label>
               <Input
@@ -159,18 +190,33 @@ export function AddHabitDialog({ open, onClose, editId }: { open: boolean; onClo
               />
             </div>
             <div>
-              <label className="text-sm font-medium mb-1.5 block">Intervalo</label>
-              <select
-                value={reminderIntervalHours}
-                onChange={(e) => setReminderIntervalHours(e.target.value)}
-                className="flex h-9 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm shadow-sm outline-none transition-colors focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/20"
-                aria-label="Intervalo entre os avisos"
-              >
-                {Array.from({ length: 24 }, (_, index) => {
-                  const hours = index + 1
-                  return <option key={hours} value={hours}>{`A cada ${hours} ${hours === 1 ? 'hora' : 'horas'}`}</option>
-                })}
-              </select>
+              <label className="text-sm font-medium mb-1.5 block">Intervalo dos avisos</label>
+              <div className="flex h-9 min-w-0 w-full overflow-hidden rounded-xl border border-border bg-background shadow-sm transition-colors focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20">
+                <Input
+                  type="number"
+                  min={0}
+                  step={1}
+                  value={reminderIntervalValue}
+                  onChange={(e) => setReminderIntervalValue(e.target.value)}
+                  className="h-full min-w-0 flex-1 rounded-none border-0 bg-transparent shadow-none [appearance:textfield] focus-visible:border-0 focus-visible:ring-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                  aria-label={`Intervalo entre os avisos em ${reminderIntervalUnit === 'hours' ? 'horas' : 'minutos'}`}
+                />
+                <div className="flex shrink-0 border-l border-border/60 bg-muted/30">
+                  {(['minutes', 'hours'] as const).map((unit) => (
+                    <button
+                      key={unit}
+                      type="button"
+                      onClick={() => setReminderIntervalUnit(unit)}
+                      className={cn(
+                        'h-full min-w-9 px-2 text-xs font-semibold transition-colors cursor-pointer',
+                        reminderIntervalUnit === unit ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground',
+                      )}
+                    >
+                      {unit === 'hours' ? 'h' : 'min'}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -187,10 +233,6 @@ export function AddHabitDialog({ open, onClose, editId }: { open: boolean; onClo
               ))}
             </div>
           </div>
-
-          <p className="-mt-2 text-xs text-muted-foreground">
-            Próximos avisos: {buildHabitReminderTimes(reminderTime, Number(reminderIntervalHours)).join(' · ')}
-          </p>
 
           <ReminderButton
             enabled={reminderEnabled}

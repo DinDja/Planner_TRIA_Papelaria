@@ -67,6 +67,7 @@ export function sanitizeModules(modules: ModuleDef[]): ModuleDef[] {
       ...module,
       href: MODULE_HREFS[module.id] ?? module.href,
       ...(module.id === 'calendario' ? { label: 'Agenda' } : {}),
+      ...(module.id === 'avaliacao' ? { label: 'Catálogo' } : {}),
     }))
 
   const existingEvaluation = cleaned.find((module) => module.id === 'avaliacao')
@@ -77,7 +78,7 @@ export function sanitizeModules(modules: ModuleDef[]): ModuleDef[] {
   cleaned.splice(memoriasIndex >= 0 ? memoriasIndex + 1 : cleaned.length, 0, existingEvaluation ?? {
     id: 'avaliacao',
     href: '/avaliacao',
-    label: 'Avaliação',
+    label: 'Catálogo',
     enabled: true,
   })
 
@@ -93,7 +94,7 @@ export const DEFAULT_MODULES: ModuleDef[] = orderModules([
   { id: 'wishlist',        href: '/wishlist',       label: 'Wishlist',       enabled: true },
   { id: 'frases',          href: '/frases',         label: 'Frases',         enabled: true },
   { id: 'memorias',        href: '/memorias',       label: 'Memórias',      enabled: true },
-  { id: 'avaliacao',       href: '/avaliacao',      label: 'Avaliação',     enabled: true },
+  { id: 'avaliacao',       href: '/avaliacao',      label: 'Catálogo',      enabled: true },
   { id: 'cofre',           href: '/cofre',          label: 'Senhas',         enabled: true },
   { id: 'saude',           href: '/saude',          label: 'Saúde',          enabled: true },
   { id: 'calendario',      href: '/calendario',     label: 'Agenda',         enabled: true },
@@ -136,7 +137,7 @@ export const useMenuStore = create<MenuState>()(
     }),
     {
       name: 'tria-papelaria-menu',
-      version: 9,
+      version: 10,
       // Antes da v2, cada item levava `icon: 'BookHeart'` etc (nome Lucide).
       // O ícone virou derivado de `id` (ver components/icons/modules). Aqui
       // descartamos o campo legado ao reidratar do localStorage.

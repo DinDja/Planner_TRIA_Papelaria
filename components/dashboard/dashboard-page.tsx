@@ -109,15 +109,13 @@ export function DashboardPage() {
   const appointments = useHealthStore((s) => s.appointments)
   const exams = useHealthStore((s) => s.exams)
   const [eventEditId, setEventEditId] = useState<string | undefined>()
-  const [healthMonth, setHealthMonth] = useState(() => {
-    const date = new Date()
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
-  })
 
   const now = new Date()
   const todayISO = isoDia(now)
   const monthName = now.toLocaleDateString('pt-BR', { month: 'long' })
   const year = now.getFullYear()
+  const currentMonth = now.getMonth() + 1
+  const currentMonthKey = `${year}-${String(currentMonth).padStart(2, '0')}`
   const daysInMonth = new Date(year, now.getMonth() + 1, 0).getDate()
   const firstDay = (new Date(year, now.getMonth(), 1).getDay() + 6) % 7
   const today = now.getDate()
@@ -141,22 +139,20 @@ export function DashboardPage() {
     [recurringTasks, tasks, todayISO],
   )
 
-  const upcomingBirthdays = useMemo(() => {
-    const todayStart = new Date(year, now.getMonth(), now.getDate())
+  const monthlyBirthdays = useMemo(() => {
     return birthdays
       .map((entry) => {
         const [, month, day] = entry.date.split('-').map(Number)
-        const date = new Date(year, month - 1, day)
-        if (date < todayStart) date.setFullYear(year + 1)
-        return { ...entry, nextDate: date }
+        return { ...entry, month, day }
       })
-      .sort((a, b) => a.nextDate.getTime() - b.nextDate.getTime())
+      .filter((entry) => entry.month === currentMonth)
+      .sort((a, b) => a.day - b.day)
       .slice(0, 5)
-  }, [birthdays, todayISO])
+  }, [birthdays, currentMonth])
 
   const monthlyHealthRecords = useMemo(() => [
     ...appointments
-      .filter((appointment) => appointment.date.startsWith(healthMonth))
+      .filter((appointment) => appointment.date.startsWith(currentMonthKey))
       .map((appointment) => ({
         id: `appointment-${appointment.id}`,
         title: appointment.doctorName,
@@ -166,7 +162,7 @@ export function DashboardPage() {
         color: 'var(--primary)',
       })),
     ...exams
-      .filter((exam) => exam.date.startsWith(healthMonth))
+      .filter((exam) => exam.date.startsWith(currentMonthKey))
       .map((exam) => ({
         id: `exam-${exam.id}`,
         title: exam.name,
@@ -176,7 +172,7 @@ export function DashboardPage() {
         color: exam.color,
       })),
   ].sort((a, b) => `${a.date} ${a.time ?? ''}`.localeCompare(`${b.date} ${b.time ?? ''}`)).slice(0, 8),
-    [appointments, exams, healthMonth],
+    [appointments, exams, currentMonthKey],
   )
 
   const taskCount = tasks.length + recurringTasks.filter((task) => task.active).length + pendingItems.length
@@ -210,7 +206,7 @@ export function DashboardPage() {
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
         {[
           { label: 'Tarefas', value: taskCount, icon: CheckCircle2, color: '#d1bdb8' },
-          { label: 'Aniversários', value: birthdays.length, icon: NotebookPen, color: '#6a634d' },
+          { label: 'Aniversários', value: monthlyBirthdays.length, icon: NotebookPen, color: '#6a634d' },
           { label: 'Consultas e Exames', value: healthRecordCount, icon: HeartPulse, color: '#d1bdb8' },
         ].map((stat) => (
           <Card key={stat.label} glass hover className="relative h-full overflow-hidden">
@@ -232,8 +228,60 @@ export function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-        {/* Coluna esquerda: tarefas, favoritos e hábitos */}
+        {/* Coluna esquerda: agenda, tarefas, favoritos e hábitos */}
         <div className="min-w-0 space-y-6">
+          {/* Agenda diária */}
+          <Card glass>
+            <CardHeader className="flex-row items-center justify-between pb-0">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Calendar size={16} className="text-primary" />
+                Agenda diária
+              </CardTitle>
+              <Link href="/calendario" className="text-xs text-primary hover:underline">Ver agenda</Link>
+            </CardHeader>
+            <div className="px-5 py-3">
+              {todayEvents.length > 0 ? (
+                <div className="space-y-2">
+                  {todayEvents.map((event) => (
+                    <div
+                      key={event.id}
+                      className="group flex items-center gap-3 rounded-xl p-2.5 hover:bg-muted/40 transition-colors"
+                    >
+                      <div className="flex flex-col items-center shrink-0 w-12">
+                        <span className="text-xs font-semibold">{event.startTime}</span>
+                        <span className="text-[10px] text-muted-foreground">
+                          {event.allDay ? 'dia todo' : event.endTime ?? ''}
+                        </span>
+                      </div>
+                      <div className="w-0.5 h-8 rounded-full shrink-0" style={{ backgroundColor: event.color }} />
+                      <span className="min-w-0 flex-1 truncate text-sm">{event.title}</span>
+                      <div className="flex shrink-0 items-center gap-0.5">
+                        <button
+                          type="button"
+                          onClick={() => setEventEditId(event.id)}
+                          className="rounded-md p-1 text-muted-foreground hover:bg-primary/10 hover:text-primary cursor-pointer"
+                          aria-label={`Editar ${event.title}`}
+                        >
+                          <Pencil size={12} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => deleteEvent(event.id)}
+                          className="rounded-md p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive cursor-pointer"
+                          aria-label={`Excluir ${event.title}`}
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">Nenhum evento para hoje.</p>
+              )}
+            </div>
+          </Card>
+
           {/* Tarefas de hoje */}
           <Card glass>
             <CardHeader className="flex-row items-center justify-between pb-0">
@@ -362,58 +410,6 @@ export function DashboardPage() {
             </div>
           </Card>
 
-          {/* Agenda diária */}
-          <Card glass>
-            <CardHeader className="flex-row items-center justify-between pb-0">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Calendar size={16} className="text-primary" />
-                Agenda diária
-              </CardTitle>
-              <Link href="/calendario" className="text-xs text-primary hover:underline">Ver agenda</Link>
-            </CardHeader>
-            <div className="px-5 py-3">
-              {todayEvents.length > 0 ? (
-                <div className="space-y-2">
-                  {todayEvents.map((event) => (
-                    <div
-                      key={event.id}
-                      className="group flex items-center gap-3 rounded-xl p-2.5 hover:bg-muted/40 transition-colors"
-                    >
-                      <div className="flex flex-col items-center shrink-0 w-12">
-                        <span className="text-xs font-semibold">{event.startTime}</span>
-                        <span className="text-[10px] text-muted-foreground">
-                          {event.allDay ? 'dia todo' : event.endTime ?? ''}
-                        </span>
-                      </div>
-                      <div className="w-0.5 h-8 rounded-full shrink-0" style={{ backgroundColor: event.color }} />
-                      <span className="min-w-0 flex-1 truncate text-sm">{event.title}</span>
-                      <div className="flex shrink-0 items-center gap-0.5">
-                        <button
-                          type="button"
-                          onClick={() => setEventEditId(event.id)}
-                          className="rounded-md p-1 text-muted-foreground hover:bg-primary/10 hover:text-primary cursor-pointer"
-                          aria-label={`Editar ${event.title}`}
-                        >
-                          <Pencil size={12} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => deleteEvent(event.id)}
-                          className="rounded-md p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive cursor-pointer"
-                          aria-label={`Excluir ${event.title}`}
-                        >
-                          <Trash2 size={12} />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground text-center py-4">Nenhum evento para hoje.</p>
-              )}
-            </div>
-          </Card>
-
           {/* Aniversários */}
           <Card glass>
             <CardHeader className="flex-row items-center justify-between pb-0">
@@ -424,14 +420,14 @@ export function DashboardPage() {
               <Link href="/aniversarios" className="text-xs text-primary hover:underline">Ver todos</Link>
             </CardHeader>
             <div className="px-5 py-3">
-              {upcomingBirthdays.length > 0 ? (
+              {monthlyBirthdays.length > 0 ? (
                 <div className="space-y-1">
-                  {upcomingBirthdays.map((birthday) => (
+                  {monthlyBirthdays.map((birthday) => (
                     <div key={birthday.id} className="flex items-center gap-3 rounded-xl p-2.5 hover:bg-muted/40">
                       <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: birthday.color }} />
                       <span className="min-w-0 flex-1 truncate text-sm">{birthday.name}</span>
                       <span className="shrink-0 text-[11px] text-muted-foreground">
-                        {birthday.nextDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+                        {`${String(birthday.day).padStart(2, '0')}/${String(birthday.month).padStart(2, '0')}`}
                       </span>
                     </div>
                   ))}
@@ -449,16 +445,7 @@ export function DashboardPage() {
                 <HeartPulse size={16} className="text-primary" />
                 Consultas e exames
               </CardTitle>
-              <div className="flex items-center gap-2">
-                <input
-                  type="month"
-                  value={healthMonth}
-                  onChange={(event) => setHealthMonth(event.target.value)}
-                  className="h-8 rounded-lg border border-border/60 bg-background px-2 text-xs outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
-                  aria-label="Mês das consultas e exames"
-                />
-                <Link href="/saude" className="text-xs text-primary hover:underline">Ver saúde</Link>
-              </div>
+              <Link href="/saude" className="text-xs text-primary hover:underline">Ver todos</Link>
             </CardHeader>
             <div className="px-5 py-3">
               {monthlyHealthRecords.length > 0 ? (

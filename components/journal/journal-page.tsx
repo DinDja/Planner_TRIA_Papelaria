@@ -1,7 +1,7 @@
 'use client'
 
 import { useJournalStore } from '@/lib/store/use-journal-store'
-import { EMOTION_CONFIG, ENTRY_COLORS, TIME_OF_DAY_CONFIG, type JournalEmotion, type JournalEntry } from '@/lib/types'
+import { EMOTION_CONFIG, ENTRY_COLORS, type JournalEmotion, type JournalEntry } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import {
   BookOpen,
@@ -64,28 +64,6 @@ function EmotionBadge({ emotion, size = 'sm' }: { emotion: JournalEmotion; size?
   )
 }
 
-function EnergyIndicator({ level }: { level: number }) {
-  const bars = [1, 2, 3, 4, 5]
-  return (
-    <div className="flex items-center gap-0.5">
-      {bars.map((bar) => (
-        <div
-          key={bar}
-          className={cn(
-            'w-1.5 rounded-full transition-all',
-            bar <= level ? 'h-3' : 'h-2',
-          )}
-          style={{
-            backgroundColor: bar <= level
-              ? level <= 2 ? '#d1bdb8' : level <= 3 ? '#b76f06' : '#6a634d'
-              : 'var(--muted)',
-          }}
-        />
-      ))}
-    </div>
-  )
-}
-
 function MoodTimeline({ timeline }: { timeline: { date: string; emotions: JournalEmotion[]; energy: number }[] }) {
   if (timeline.length === 0) return null
 
@@ -123,9 +101,6 @@ function EntryCard({ entry, onDelete, onView, index = 0 }: {
   onView: (entry: JournalEntry) => void
   index?: number
 }) {
-  const wordCount = entry.content.trim().split(/\s+/).filter(Boolean).length
-  const timeConfig = TIME_OF_DAY_CONFIG[entry.timeOfDay]
-
   return (
     <div
       className={cn('animate-in fade-in slide-in-from-bottom-2 duration-400 fill-mode-both')}
@@ -140,30 +115,23 @@ function EntryCard({ entry, onDelete, onView, index = 0 }: {
         <CardContent className="p-4">
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                <span
-                  className="text-[10px] font-medium px-2 py-0.5 rounded-full"
-                  style={{ backgroundColor: entry.color + '20', color: entry.color }}
-                >
-                  {timeConfig.icon} {timeConfig.label}
-                </span>
-                {entry.pinned && (
+              {entry.pinned && (
+                <div className="mb-1.5">
                   <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
                     <Pin size={10} className="fill-primary" /> fixado
                   </span>
-                )}
-              </div>
+                </div>
+              )}
 
               <h3 className="font-semibold text-foreground leading-tight line-clamp-1">{entry.title}</h3>
 
-              <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                <div className="flex gap-1 flex-wrap">
+              {entry.mood.emotions.length > 0 && (
+                <div className="mt-1.5 flex flex-wrap gap-1">
                   {entry.mood.emotions.slice(0, 3).map((e) => (
                     <EmotionBadge key={e} emotion={e} />
                   ))}
                 </div>
-                <EnergyIndicator level={entry.mood.energy} />
-              </div>
+              )}
 
               {entry.prompt && (
                 <p className="text-xs text-muted-foreground/70 mt-2 italic flex items-center gap-1">
@@ -181,7 +149,6 @@ function EntryCard({ entry, onDelete, onView, index = 0 }: {
                   <CalendarDays size={10} />
                   {formatDateRelative(entry.date)}
                 </span>
-                <span className="text-[10px] text-muted-foreground">{wordCount} palavras</span>
                 {entry.tags.length > 0 && (
                   <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
                     <Hash size={10} />
@@ -272,7 +239,7 @@ export function JournalPage() {
         </div>
 
         {/* Today's Prompt */}
-        {!hasTodayEntry && (
+        {entries.length > 0 && !hasTodayEntry && (
           <Card className={cn('border-dashed border-2', enter)} style={{ borderColor: '#d1bdb840' }}>
             <CardContent className="p-5 flex items-center gap-4">
               <div

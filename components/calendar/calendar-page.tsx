@@ -673,15 +673,12 @@ export function CalendarPage() {
         </div>
         <div className="flex items-center gap-2">
           <Button
-            variant={view === 'month' ? 'default' : 'outline'}
+            variant="default"
             onClick={() => {
               setRoutineTaskEditId(undefined)
               setRoutineTaskOpen(true)
             }}
-            className={cn(
-              'rounded-xl gap-1.5 text-sm',
-              view !== 'month' && 'rounded-sm border-primary/20 bg-transparent text-xs font-normal shadow-none hover:bg-primary/[0.05]',
-            )}
+            className="rounded-xl gap-1.5 text-sm"
           >
             <Plus size={14} />
             Nova Tarefa

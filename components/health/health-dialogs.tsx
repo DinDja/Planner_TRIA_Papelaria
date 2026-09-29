@@ -512,6 +512,7 @@ export function AddMedicationDialog({ open, onClose, editId }: { open: boolean; 
   const [firstTime, setFirstTime] = useState('08:00')
   const [startDate, setStartDate] = useState(dayStr())
   const [notes, setNotes] = useState('')
+  const [reminderEnabled, setReminderEnabled] = useState(false)
 
   useEffect(() => {
     if (!open) return
@@ -522,10 +523,11 @@ export function AddMedicationDialog({ open, onClose, editId }: { open: boolean; 
       setDurationDays(String(parsedDurationDays)); setIntervalHours(String(existing.intervalHours ?? 24))
       setFirstTime(storedTimes[0]?.match(/^\d{2}:\d{2}$/)?.[0] ?? '08:00')
       setStartDate(existing.startDate); setNotes(existing.notes ?? '')
+      setReminderEnabled(existing.reminderEnabled === true)
     } else if (!editId) {
       const today = dayStr()
       setName(''); setDosage(''); setDurationDays('1'); setIntervalHours('24')
-      setFirstTime('08:00'); setStartDate(today); setNotes('')
+      setFirstTime('08:00'); setStartDate(today); setNotes(''); setReminderEnabled(false)
     }
   }, [open, editId, existing])
 
@@ -555,6 +557,7 @@ export function AddMedicationDialog({ open, onClose, editId }: { open: boolean; 
       startDate,
       endDate: addDaysToDate(startDate, days - 1),
       notes: notes.trim() || undefined,
+      reminderEnabled,
     }
     if (editId) {
       updateMedication(editId, data)
@@ -563,7 +566,7 @@ export function AddMedicationDialog({ open, onClose, editId }: { open: boolean; 
       addMedication(data)
       toast({ title: 'Medicamento adicionado!', variant: 'success' })
     }
-    setName(''); setDosage(''); setDurationDays('1'); setIntervalHours('24'); setFirstTime('08:00'); setStartDate(dayStr()); setNotes(''); onClose()
+    setName(''); setDosage(''); setDurationDays('1'); setIntervalHours('24'); setFirstTime('08:00'); setStartDate(dayStr()); setNotes(''); setReminderEnabled(false); onClose()
   }
 
   const calculatedTimes = calculateMedicationTimes(firstTime, Number(intervalHours))
@@ -601,6 +604,11 @@ export function AddMedicationDialog({ open, onClose, editId }: { open: boolean; 
               ))}
             </div>
           </div>
+          <ReminderButton
+            enabled={reminderEnabled}
+            onEnabledChange={setReminderEnabled}
+            description="Avisar nos horários das doses durante o tratamento"
+          />
           <div><label className="text-sm font-medium mb-1.5 block">Observação</label><Textarea value={notes} onChange={(e) => setNotes(e.target.value)} /></div>
           <div className="flex justify-end gap-2 pt-1">
             <Button variant="outline" onClick={onClose} className="rounded-xl">Cancelar</Button>

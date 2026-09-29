@@ -20,22 +20,38 @@ function normalizeReminderTime(time: string | undefined): string {
 }
 
 /** Gera os horários do hábito dentro do mesmo dia, a partir do horário inicial. */
-export function buildHabitReminderTimes(startTime: string | undefined, intervalHours: number | undefined): string[] {
+export function buildHabitReminderTimes(startTime: string | undefined, intervalMinutes: number | undefined): string[] {
   const firstTime = normalizeReminderTime(startTime)
-  const validInterval = typeof intervalHours === 'number'
-    && Number.isInteger(intervalHours)
-    && intervalHours >= 1
-    && intervalHours <= 24
+  const validInterval = typeof intervalMinutes === 'number'
+    && Number.isSafeInteger(intervalMinutes)
+    && intervalMinutes >= 1
 
   if (!validInterval) return [firstTime]
 
   const [startHours, startMinutes] = firstTime.split(':').map(Number)
   const startTotalMinutes = startHours * 60 + startMinutes
   const times: string[] = []
-  for (let totalMinutes = startTotalMinutes; totalMinutes < 24 * 60; totalMinutes += intervalHours * 60) {
+  for (let totalMinutes = startTotalMinutes; totalMinutes < 24 * 60; totalMinutes += intervalMinutes) {
     times.push(`${String(Math.floor(totalMinutes / 60)).padStart(2, '0')}:${String(totalMinutes % 60).padStart(2, '0')}`)
   }
   return times
+}
+
+function getHabitReminderIntervalMinutes(habit: Habit): number | undefined {
+  if (typeof habit.reminderIntervalMinutes === 'number'
+    && Number.isSafeInteger(habit.reminderIntervalMinutes)
+    && habit.reminderIntervalMinutes >= 1) {
+    return habit.reminderIntervalMinutes
+  }
+
+  if (typeof habit.reminderIntervalHours === 'number'
+    && Number.isSafeInteger(habit.reminderIntervalHours)
+    && habit.reminderIntervalHours >= 1
+    && habit.reminderIntervalHours <= Number.MAX_SAFE_INTEGER / 60) {
+    return habit.reminderIntervalHours * 60
+  }
+
+  return undefined
 }
 
 function localDate(date: string, time = DEFAULT_TIME): Date | null {
@@ -152,7 +168,7 @@ export function buildReminders({
       || (habit.frequency === 'weekly' && (habit.weekdays ?? []).includes(currentDay as Weekday))
       || (habit.frequency === 'monthly' && habit.dayOfMonth === monthDay)
     if (!occursToday) continue
-    const times = buildHabitReminderTimes(habit.reminderTime, habit.reminderIntervalHours)
+    const times = buildHabitReminderTimes(habit.reminderTime, getHabitReminderIntervalMinutes(habit))
     for (const time of times) {
       const dueAt = localDate(today, time)
       if (dueAt) reminders.push({

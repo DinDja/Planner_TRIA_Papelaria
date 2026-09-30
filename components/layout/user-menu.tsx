@@ -2,9 +2,8 @@
 
 import { Menu as BaseMenu } from '@base-ui/react/menu'
 import { useProfileStore } from '@/lib/store/use-profile-store'
-import { useAuth } from '@/lib/auth/auth-context'
 import { CircleHelp, LogOut, Settings } from 'lucide-react'
-import { toast } from '@/components/ui/toaster'
+import { useAccountLogout } from './use-account-logout'
 
 interface UserMenuProps {
   onOpenSettings: () => void
@@ -15,17 +14,7 @@ const itemClass =
 
 export function UserMenu({ onOpenSettings }: UserMenuProps) {
   const profile = useProfileStore()
-  const { logout } = useAuth()
-
-  const handleLogout = async () => {
-    try {
-      await logout()
-      toast({ title: 'Você saiu da conta', variant: 'default' })
-      window.location.replace('/')
-    } catch {
-      toast({ title: 'Não foi possível sair agora', variant: 'error' })
-    }
-  }
+  const handleLogout = useAccountLogout()
 
   return (
     <BaseMenu.Root>

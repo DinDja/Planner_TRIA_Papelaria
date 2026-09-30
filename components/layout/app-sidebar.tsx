@@ -14,6 +14,7 @@ import {
   CalendarClock,
   CheckCircle2,
   Circle,
+  CircleHelp,
   FileText,
   Gift,
   Heart,
@@ -22,6 +23,7 @@ import {
   LayoutDashboard,
   List,
   ListChecks,
+  LogOut,
   Menu,
   Moon,
   PanelLeftClose,
@@ -31,7 +33,6 @@ import {
   Shield,
   Star,
   Sun,
-  Trash2,
   Wallet,
   X,
 } from 'lucide-react'
@@ -41,6 +42,7 @@ import { useTheme } from '../providers/theme-provider'
 import { Button } from '../ui/button'
 import { ScrollArea, Separator } from '../ui/primitives'
 import { BrandLogo } from '../brand-logo'
+import { useAccountLogout } from './use-account-logout'
 
 interface SidebarProps {
   collapsed: boolean
@@ -92,6 +94,7 @@ export function AppSidebar({
 }: SidebarProps) {
   const { theme, toggle } = useTheme()
   const { user, role } = useAuth()
+  const handleLogout = useAccountLogout()
   const subscriptionRole = useSubscriptionStore((s) => s.role)
   const pathname = usePathname()
   const menuModules = useMenuStore((s) => s.modules)
@@ -175,7 +178,7 @@ export function AppSidebar({
           {collapsed ? <PanelLeftOpen size={15} /> : <PanelLeftClose size={15} />}
         </Button>
         <ToolLink href="/menu" label="Menu" icon={Menu} onClick={closeMobileSidebar} />
-        <ToolLink href="/lixeira" label="Lixeira" icon={Trash2} onClick={closeMobileSidebar} />
+        <ToolLink href="/conta" label="Ajuda" icon={CircleHelp} onClick={closeMobileSidebar} />
         <Button
           variant="ghost"
           size="icon-sm"
@@ -188,6 +191,19 @@ export function AppSidebar({
           aria-label="Configurações"
         >
           <Settings size={16} />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          onClick={() => {
+            closeMobileSidebar()
+            void handleLogout()
+          }}
+          title="Sair da conta"
+          className="rounded-xl shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
+          aria-label="Sair da conta"
+        >
+          <LogOut size={16} />
         </Button>
       </div>
     </div>

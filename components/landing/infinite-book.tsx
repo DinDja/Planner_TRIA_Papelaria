@@ -10,7 +10,7 @@ export function InfiniteBook({ ready = true }: InfiniteBookProps) {
   return (
     <div
       role="img"
-      aria-label="Mockup do planner"
+      aria-label="Mockup do caderno"
       className="h-full w-full"
       style={{
         opacity: ready ? 1 : 0,
@@ -22,7 +22,7 @@ export function InfiniteBook({ ready = true }: InfiniteBookProps) {
     >
       <Image
         src="/Mockup.png"
-        alt="Mockup do planner"
+        alt="Mockup do caderno"
         fill
         priority
         sizes="(max-width: 640px) 92vw, (max-width: 1024px) 70vw, 54vw"

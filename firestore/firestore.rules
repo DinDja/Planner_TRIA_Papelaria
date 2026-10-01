@@ -186,7 +186,7 @@ service cloud.firestore {
       // ─── Planners (useAppStore) ─────────────────────────────────────────
       // /users/{uid}/planners/{plannerId}
       // Esquema:
-      //   id, name, description?, category, color, icon, favorite, folderId|null,
+      //   id, name, description?, color, favorite, folderId,
       //   tags: list<string>, createdAt, updatedAt,
       //   pages?: list          // LEGADO: pode existir se importado de localStorage,
       //                         // mas a fonte canonical passa a ser /plannerPages.

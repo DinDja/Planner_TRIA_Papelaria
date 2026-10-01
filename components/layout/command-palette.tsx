@@ -67,8 +67,8 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
     label: p.name,
     dotColor: p.color,
     href: `/planner/${p.id}`,
-    section: 'Seus planners',
-    tag: 'Planner',
+    section: 'Seus cadernos',
+    tag: 'Caderno',
   }))
 
   const allItems: PaletteItem[] = [...baseActions, ...plannerActions]
@@ -155,7 +155,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
               setSelectedIdx(0)
             }}
             onKeyDown={onKeyDown}
-            placeholder="Buscar planners e páginas..."
+            placeholder="Buscar cadernos e páginas..."
             className="flex-1 bg-transparent text-[15px] outline-none placeholder:text-muted-foreground/60"
           />
           <kbd className="inline-flex items-center gap-0.5 rounded-lg border border-border bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">

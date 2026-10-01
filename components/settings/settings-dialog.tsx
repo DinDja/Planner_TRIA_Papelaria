@@ -272,7 +272,7 @@ export function SettingsDialog({ open, onClose }: Props) {
             <div className="flex flex-col divide-y divide-border/40">
               <ToggleRow
                 label="Confirmar exclusões"
-                desc="Sempre pedir confirmação ao excluir planners e páginas."
+                desc="Sempre pedir confirmação ao excluir cadernos e páginas."
                 checked={s.confirmDelete}
                 onChange={s.setConfirmDelete}
               />

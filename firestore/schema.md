@@ -174,8 +174,7 @@ users/{uid}/retroEntries/{entryId} {
 
 ```
 users/{uid}/planners/{plannerId} {
-  id, name, description?, category: 'diario'|'estudos'|'trabalho'|'fitness'|'financas'|'bullet',
-  color, icon, favorite: bool, folderId: string|null,
+  id, name, description?, color, favorite: bool, folderId: string,
   tags: list<string>, createdAt, updatedAt
 }
 

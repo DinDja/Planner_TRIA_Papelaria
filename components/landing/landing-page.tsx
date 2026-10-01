@@ -56,7 +56,7 @@ const NAV_LINKS = [
 ]
 
 const HERO_STATS = [
-  { value: '50K+', label: 'Planners' },
+  { value: '50K+', label: 'Cadernos' },
   { value: '99,9%', label: 'No navegador' },
   { value: '180+', label: 'Stickers' },
 ]
@@ -341,7 +341,7 @@ export function LandingPage() {
             ))}
           </div>
 
-          {/* CTA — inicia o planner */}
+          {/* CTA — inicia o caderno */}
           <div className="mt-10">
             <Link
               href="/auth/login"
@@ -522,12 +522,12 @@ export function LandingPage() {
             className="text-4xl md:text-5xl lg:text-6xl font-light tracking-tight leading-[1.05] mb-6"
             style={{ fontFamily: 'var(--font-plex), sans-serif' }}
           >
-            Comece seu planner
+            Comece seu caderno
             <br />
             agora mesmo.
           </h2>
           <p className="landing-copy-muted text-sm leading-relaxed mb-10 max-w-md mx-auto">
-            Entre com sua conta e seus planners sincronizam em qualquer dispositivo. Pronto em segundos.
+            Entre com sua conta e seus cadernos sincronizam em qualquer dispositivo. Pronto em segundos.
           </p>
           <Link
             href="/auth/login"

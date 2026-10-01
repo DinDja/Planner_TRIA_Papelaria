@@ -215,6 +215,10 @@ button svg.lucide,
   color: inherit !important;
 }
 
+a[data-sidebar-tool] svg.lucide {
+  color: inherit !important;
+}
+
 textarea {
   max-width: 100%;
   overflow-wrap: anywhere;

@@ -27,6 +27,7 @@ import type { SVGProps } from 'react'
 
 export type ModuloId =
   | 'dashboard'
+  | 'caderno'
   | 'diario'
   | 'notas'
   | 'listas'
@@ -78,6 +79,17 @@ export function DiarioIcon({ size, ...p }: P) {
       <path d="M5 4.5 L5 16.5" />
       <path d="M5 4.5 L15 4.5" />
       <path d="M5 11 Q7.5 9 10 11 T15 11" />
+    </svg>
+  )
+}
+
+export function CadernoIcon({ size, ...p }: P) {
+  // Caderno com lombada e furos de encadernação: identifica a coleção de planners.
+  return (
+    <svg {...svgProps(size)} {...p}>
+      <path d="M7 3.5 L16.5 3.5 L16.5 16.5 L7 16.5 Z" />
+      <path d="M6 3.5 L6 16.5" />
+      <path d="M3.5 5 L6 5 M3.5 8.3 L6 8.3 M3.5 11.6 L6 11.6 M3.5 14.9 L6 14.9" />
     </svg>
   )
 }
@@ -288,6 +300,7 @@ export function DashboardIcon({ size, ...p }: P) {
 
 export const MODULO_ICONS: Record<ModuloId, (p: P) => JSX.Element> = {
   dashboard: DashboardIcon,
+  caderno: CadernoIcon,
   diario: DiarioIcon,
   notas: NotasIcon,
   listas: ListasIcon,

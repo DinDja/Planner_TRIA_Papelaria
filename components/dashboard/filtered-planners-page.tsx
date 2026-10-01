@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { forwardRef, useState } from 'react'
+import { PlannerPagePreview } from '../planner-page-preview'
 import { Card, CardContent } from '../ui/card'
 import { CreatePlannerDialog } from './create-planner-dialog'
 import { DeletePlannerDialog } from '../planners/delete-planner-dialog'
@@ -26,15 +27,6 @@ interface FilteredPlannersPageProps {
   description?: string
 }
 
-const CATEGORY_LABELS: Record<Planner['category'], string> = {
-  diario: 'Diário',
-  estudos: 'Estudos',
-  trabalho: 'Trabalho',
-  fitness: 'Fitness',
-  financas: 'Finanças',
-  bullet: 'Bullet',
-}
-
 export function FilteredPlannersPage({
   kind,
   id,
@@ -43,6 +35,7 @@ export function FilteredPlannersPage({
   description,
 }: FilteredPlannersPageProps) {
   const planners = useAppStore((s) => s.planners)
+  const folders = useAppStore((s) => s.folders)
   const [editTarget, setEditTarget] = useState<Planner | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Planner | null>(null)
 
@@ -57,11 +50,12 @@ export function FilteredPlannersPage({
           href="/dashboard"
           className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-4 transition-colors"
         >
-          <ArrowLeft size={15} />
+          <ArrowLeft size={15} aria-hidden />
           Voltar ao Dashboard
         </Link>
         <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
           <span
+            aria-hidden="true"
             className="flex size-11 items-center justify-center rounded-2xl bg-primary/10"
           >
             {kind === 'folder' ? (
@@ -73,7 +67,7 @@ export function FilteredPlannersPage({
           {title}
         </h1>
         <p className="text-muted-foreground mt-2">
-          {description ?? `${filtered.length} planner(s) nesta ${kind === 'folder' ? 'pasta' : 'tag'}.`}
+          {description ?? `${filtered.length} caderno(s) nesta ${kind === 'folder' ? 'pasta' : 'tag'}.`}
         </p>
       </div>
 
@@ -93,7 +87,7 @@ export function FilteredPlannersPage({
         <div className="text-center py-16">
           <FolderIcon size={40} className="mx-auto text-muted-foreground/30 mb-4" />
           <p className="text-muted-foreground">
-            Nenhum planner nesta {kind === 'folder' ? 'pasta' : 'tag'} ainda.
+            Nenhum caderno nesta {kind === 'folder' ? 'pasta' : 'tag'} ainda.
           </p>
         </div>
       )}
@@ -115,27 +109,22 @@ const PlannerMiniCard = forwardRef<
     <Link href={`/planner/${planner.id}`} className="block group relative" style={{ animationDelay: `${index * 50}ms` }}>
       <div className="absolute right-2 top-2 z-10 flex items-center gap-0.5">
         <button type="button" onClick={(event) => { event.preventDefault(); event.stopPropagation(); onEdit() }} className="rounded-lg bg-background/90 p-1.5 text-muted-foreground shadow-sm hover:text-primary cursor-pointer" aria-label={`Editar ${planner.name}`}>
-          <Pencil size={13} />
+        <Pencil size={13} aria-hidden />
         </button>
         <button type="button" onClick={(event) => { event.preventDefault(); event.stopPropagation(); onDelete() }} className="rounded-lg bg-background/90 p-1.5 text-muted-foreground shadow-sm hover:text-destructive cursor-pointer" aria-label={`Excluir ${planner.name}`}>
-          <Trash2 size={13} />
+        <Trash2 size={13} aria-hidden />
         </button>
       </div>
       <Card glass hover className="h-full">
         <CardContent className="p-4 flex flex-col gap-2">
-          <div
-            className="flex size-11 shrink-0 items-center justify-center rounded-2xl"
-            style={{ backgroundColor: planner.color + '18' }}
-          >
-            <span
-              className="size-3 rounded-md"
-              style={{ backgroundColor: planner.color }}
-            />
-          </div>
+          <PlannerPagePreview
+            page={planner.pages?.[0]}
+            className="w-full rounded-md ring-1 ring-black/[0.07] shadow-sm"
+          />
           <div className="min-w-0">
             <p className="font-semibold text-sm truncate">{planner.name}</p>
             <p className="text-[11px] text-muted-foreground">
-              {CATEGORY_LABELS[planner.category]} · {planner.pages.length} pág.
+              {folders.find((folder) => folder.id === planner.folderId)?.name ?? 'Pasta não definida'} · {planner.pages.length} pág.
             </p>
           </div>
           {planner.tags.length > 0 && (

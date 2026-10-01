@@ -89,6 +89,14 @@ Adotamos um sistema **próprio** de ícones de módulo. Justificativas:
 
 A cada um: significado, por que este desenho, contexto de uso.
 
+### `caderno` — Folha com lombada encadernada
+
+`Desenho`: folha vertical com lombada e quatro marcas de encadernação.
+
+Por que: identifica o Caderno como lugar dos planners digitais, distinguindo-o
+da página escrita do Diário e do papel avulso de Notas. É específico ao objeto
+de uso e aparece tanto na sidebar quanto em Personalizar menu.
+
 ### `diario` — Página aberta com linha de tinta
 
 `Desenho`: folha com margem (traço superior) e linha de tinta ondulada atravessando-a.

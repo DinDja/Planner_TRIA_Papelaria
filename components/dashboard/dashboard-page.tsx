@@ -12,6 +12,8 @@ import { isoDia } from '@/lib/diario/use-diario-store'
 import { useProfileStore } from '@/lib/store/use-profile-store'
 import { useAuth } from '@/lib/auth/auth-context'
 import { cn } from '@/lib/utils'
+import { ModuloIcon } from '@/components/icons/modules'
+import { PlannerPagePreview } from '@/components/planner-page-preview'
 import {
   ArrowUpRight,
   Calendar,
@@ -37,7 +39,10 @@ function HabitsSummary({ todayISO }: { todayISO: string }) {
   return (
     <Card glass className="min-h-[220px]">
       <CardHeader className="flex-row items-center justify-between pb-0">
-        <CardTitle className="text-base">Hábitos</CardTitle>
+        <CardTitle className="flex items-center gap-2 text-base">
+          <ModuloIcon name="habitos" size={18} aria-hidden="true" />
+          Hábitos
+        </CardTitle>
         <Link href="/habitos" className="flex items-center gap-1 text-xs text-primary hover:underline">
           Ver todos <ArrowUpRight size={12} />
         </Link>
@@ -283,7 +288,7 @@ export function DashboardPage() {
                   <Link
                     key={planner.id}
                     href={`/planner/${planner.id}`}
-                    className="group relative flex shrink-0 flex-col items-center gap-2 rounded-2xl border border-border/60 p-4 w-28 hover:shadow-md hover:border-border transition-all duration-200"
+                    className="group relative flex shrink-0 flex-col items-center gap-2 rounded-2xl border border-border/60 p-3 w-28 hover:shadow-md hover:border-border transition-all duration-200"
                   >
                     <div className="absolute right-1.5 top-1.5 z-10 flex items-center gap-0.5">
                       <button
@@ -303,12 +308,10 @@ export function DashboardPage() {
                         <Trash2 size={11} />
                       </button>
                     </div>
-                    <div
-                      className="flex size-14 items-center justify-center rounded-2xl text-white text-xl font-bold"
-                      style={{ backgroundColor: planner.color }}
-                    >
-                      {planner.name[0]}
-                    </div>
+                    <PlannerPagePreview
+                      page={planner.pages?.[0]}
+                      className="w-full rounded-md ring-1 ring-black/[0.07] shadow-sm"
+                    />
                     <p className="text-[11px] font-medium text-center truncate w-full">
                       {planner.name}
                     </p>

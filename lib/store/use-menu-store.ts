@@ -15,6 +15,7 @@ const REMOVED_MODULE_IDS = new Set(['retrospectiva', 'templates', 'rotina', 'per
 // O Dashboard vive em /dashboard. O / raiz Ã© reservado para a landing pÃºblica.
 const MODULE_HREFS: Partial<Record<ModuloId, string>> = {
   dashboard: '/dashboard',
+  caderno: '/planners',
   diario: '/diario',
   notas: '/notas',
   listas: '/listas',
@@ -35,7 +36,7 @@ const MODULE_HREFS: Partial<Record<ModuloId, string>> = {
 
 const DEFAULT_MODULE_ORDER: readonly ModuloId[] = [
   'dashboard', 'calendario', 'financas', 'saude', 'notas', 'aniversarios',
-  'habitos', 'listas', 'checklists', 'wishlist', 'cofre', 'diario',
+  'habitos', 'listas', 'checklists', 'wishlist', 'cofre', 'diario', 'caderno',
   'memorias', 'avaliacao', 'frases', 'plans', 'admin',
 ]
 
@@ -66,6 +67,7 @@ export function sanitizeModules(modules: ModuleDef[]): ModuleDef[] {
     .map((module) => ({
       ...module,
       href: MODULE_HREFS[module.id] ?? module.href,
+      ...(module.id === 'caderno' ? { label: 'Caderno' } : {}),
       ...(module.id === 'calendario' ? { label: 'Agenda' } : {}),
       ...(module.id === 'avaliacao' ? { label: 'Estante e Tela' } : {}),
     }))
@@ -82,11 +84,22 @@ export function sanitizeModules(modules: ModuleDef[]): ModuleDef[] {
     enabled: true,
   })
 
+  if (!cleaned.some((module) => module.id === 'caderno')) {
+    const diarioIndex = cleaned.findIndex((module) => module.id === 'diario')
+    cleaned.splice(diarioIndex >= 0 ? diarioIndex + 1 : cleaned.length, 0, {
+      id: 'caderno',
+      href: '/planners',
+      label: 'Caderno',
+      enabled: true,
+    })
+  }
+
   return normalizeStoredOrder(cleaned)
 }
 
 export const DEFAULT_MODULES: ModuleDef[] = orderModules([
   { id: 'dashboard',       href: '/dashboard',     label: 'Dashboard',      enabled: true },
+  { id: 'caderno',         href: '/planners',      label: 'Caderno',        enabled: true },
   { id: 'diario',          href: '/diario',        label: 'Diário',         enabled: true },
   { id: 'notas',           href: '/notas',         label: 'Notas',          enabled: true },
   { id: 'listas',          href: '/listas',        label: 'Listas',         enabled: true },
@@ -137,7 +150,7 @@ export const useMenuStore = create<MenuState>()(
     }),
     {
       name: 'tria-papelaria-menu',
-      version: 10,
+      version: 11,
       // Antes da v2, cada item levava `icon: 'BookHeart'` etc (nome Lucide).
       // O ícone virou derivado de `id` (ver components/icons/modules). Aqui
       // descartamos o campo legado ao reidratar do localStorage.
@@ -148,6 +161,7 @@ export const useMenuStore = create<MenuState>()(
       // v4: Retrospectiva e Templates deixaram de ser módulos do menu.
       // v5: Rotina foi incorporada à Agenda e deixou de ser item separado.
       // v8: Perfil deixou de ser módulo; nome e e-mail passaram para Configurações.
+      // v11: Caderno passou a ser um módulo do menu e reentra em menus salvos.
       //
       // `migrate` (não `merge`) é o lugar correto: roda só quando a `version`
       // muda, recebe o estado velho, e devolve apenas os campos persistidos.

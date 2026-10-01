@@ -34,13 +34,13 @@ export function DeletePlannerDialog({
         await deleteItem(user, 'planners', planner.id)
       } catch {}
     }
-    toast({ title: 'Planner excluído', variant: 'error' })
+    toast({ title: 'Caderno excluído', variant: 'error' })
     onClose()
   }
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent title="Excluir planner" description="Esta ação não pode ser desfeita.">
+      <DialogContent title="Excluir caderno" description="Esta ação não pode ser desfeita.">
         <div className="flex flex-col gap-4">
           <p className="text-sm text-muted-foreground">
             Tem certeza que deseja excluir{' '}

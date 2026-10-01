@@ -33,7 +33,7 @@ export default function TagPage() {
       id={tagObj.id}
       title={`#${tagObj.name}`}
       color={tagObj.color}
-      description={`${count} planner${count === 1 ? '' : 's'} com esta tag.`}
+      description={`${count} caderno${count === 1 ? '' : 's'} com esta tag.`}
     />
   )
 }

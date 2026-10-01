@@ -3,37 +3,19 @@
 import { useMenuStore } from '@/lib/store/use-menu-store'
 import { useAuth } from '@/lib/auth/auth-context'
 import { useSubscriptionStore } from '@/lib/subscriptions/use-subscription-store'
+import { ModuloIcon } from '@/components/icons/modules'
 import { cn } from '@/lib/utils'
 import { AnimatePresence, motion } from 'framer-motion'
 import type { ComponentType } from 'react'
 import {
-  Archive,
-  BookOpen,
-  BriefcaseBusiness,
-  Calendar,
-  CalendarClock,
-  CheckCircle2,
-  Circle,
   CircleHelp,
-  FileText,
-  Gift,
-  Heart,
-  HeartPulse,
-  KeyRound,
-  LayoutDashboard,
-  List,
-  ListChecks,
   LogOut,
   Menu,
   Moon,
   PanelLeftClose,
   PanelLeftOpen,
-  Quote,
   Settings,
-  Shield,
-  Star,
   Sun,
-  Wallet,
   X,
 } from 'lucide-react'
 import Link from 'next/link'
@@ -58,33 +40,6 @@ type SidebarIcon = ComponentType<{
   'aria-hidden'?: boolean
 }>
 
-/** Ícones Lucide, seguindo o traço e a escala usados pela sidebar original. */
-const MODULE_ICONS: Record<string, SidebarIcon> = {
-  dashboard: LayoutDashboard,
-  diario: BookOpen,
-  notas: FileText,
-  listas: List,
-  checklists: ListChecks,
-  wishlist: Heart,
-  frases: Quote,
-  memorias: Archive,
-  avaliacao: Star,
-  cofre: KeyRound,
-  saude: HeartPulse,
-  calendario: Calendar,
-  financas: Wallet,
-  aniversarios: Gift,
-  habitos: CheckCircle2,
-  rotina: CalendarClock,
-  plans: BriefcaseBusiness,
-  admin: Shield,
-}
-
-function ModuleIcon({ id, size }: { id: string; size: number }) {
-  const Icon = MODULE_ICONS[id] ?? Circle
-  return <Icon size={size} aria-hidden />
-}
-
 export function AppSidebar({
   collapsed,
   setCollapsed,
@@ -93,6 +48,9 @@ export function AppSidebar({
   onOpenSettings,
 }: SidebarProps) {
   const { theme, toggle } = useTheme()
+  const lightFooterActionClass = theme === 'light'
+    ? 'text-muted-foreground hover:bg-muted hover:text-foreground'
+    : undefined
   const { user, role } = useAuth()
   const handleLogout = useAccountLogout()
   const subscriptionRole = useSubscriptionStore((s) => s.role)
@@ -146,7 +104,7 @@ export function AppSidebar({
                   collapsed && 'justify-center px-0 py-2',
                 )}
               >
-                <ModuleIcon id={item.id} size={collapsed ? 20 : 18} />
+                <ModuloIcon name={item.id} size={collapsed ? 20 : 18} />
                 {!collapsed && <span>{item.label}</span>}
               </Link>
             )
@@ -161,7 +119,7 @@ export function AppSidebar({
           variant="ghost"
           size="icon-sm"
           onClick={toggle}
-          className="rounded-xl"
+          className={cn('rounded-xl', lightFooterActionClass)}
           aria-label={theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
           title={theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
         >
@@ -172,7 +130,7 @@ export function AppSidebar({
           size="icon-sm"
           onClick={() => setCollapsed(!collapsed)}
           title={collapsed ? 'Expandir sidebar' : 'Recolher sidebar'}
-          className="rounded-xl hidden md:flex"
+          className={cn('rounded-xl hidden md:flex', lightFooterActionClass)}
           aria-label={collapsed ? 'Expandir sidebar' : 'Recolher sidebar'}
         >
           {collapsed ? <PanelLeftOpen size={15} /> : <PanelLeftClose size={15} />}
@@ -187,7 +145,7 @@ export function AppSidebar({
             onOpenSettings()
           }}
           title="Abrir configurações"
-          className="rounded-xl shrink-0"
+          className={cn('rounded-xl shrink-0', lightFooterActionClass)}
           aria-label="Configurações"
         >
           <Settings size={16} />
@@ -200,7 +158,11 @@ export function AppSidebar({
             void handleLogout()
           }}
           title="Sair da conta"
-          className="rounded-xl shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
+          className={cn(
+            'rounded-xl shrink-0',
+            lightFooterActionClass,
+            theme === 'dark' && 'text-destructive hover:bg-destructive/10 hover:text-destructive',
+          )}
           aria-label="Sair da conta"
         >
           <LogOut size={16} />
@@ -262,7 +224,8 @@ function ToolLink({
   return (
     <Link
       href={href}
-      className="inline-flex items-center justify-center size-8 shrink-0 rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+      data-sidebar-tool
+      className="inline-flex items-center justify-center size-7 shrink-0 rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
       aria-label={label}
       title={label}
       onClick={onClick}

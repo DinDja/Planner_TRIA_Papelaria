@@ -32,7 +32,7 @@ export default function FolderPage() {
       id={folder.id}
       title={folder.name}
       color={folder.color}
-      description={`${count} planner${count === 1 ? '' : 's'} nesta pasta.`}
+      description={`${count} caderno${count === 1 ? '' : 's'} nesta pasta.`}
     />
   )
 }

@@ -23,9 +23,9 @@ const plex = IBM_Plex_Sans({
 })
 
 export const metadata: Metadata = {
-  title: 'Tria Papelaria — Seu planner digital',
+  title: 'Tria Papelaria — Seu caderno digital',
   description:
-    'Planner digital premium com escrita à mão, stickers e templates. Organize sua vida com fluidez e beleza.',
+    'Caderno digital premium com escrita à mão, stickers e templates. Organize sua vida com fluidez e beleza.',
   icons: {
     icon: '/triaprojeto.png',
     apple: '/triaprojeto.png',

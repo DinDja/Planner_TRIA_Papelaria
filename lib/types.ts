@@ -209,25 +209,17 @@ export interface PlannerPage {
   title: string
   template: PageTemplateId
   data: CanvasData
+  /** Texto corrido do caderno; opcional para manter compatibilidade com páginas antigas. */
+  content?: string
 }
 
 // ─── Planners / Organização ──────────────────────────────────────────────────
-
-export type PlannerCategory =
-  | 'diario'
-  | 'estudos'
-  | 'trabalho'
-  | 'fitness'
-  | 'financas'
-  | 'bullet'
 
 export interface Planner {
   id: string
   name: string
   description?: string
-  category: PlannerCategory
   color: string
-  icon: string // nome de ícone lucide
   favorite: boolean
   folderId: string | null
   tags: string[]

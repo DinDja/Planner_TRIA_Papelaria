@@ -7,10 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 const enter = 'animate-in fade-in slide-in-from-bottom-3 duration-500 fill-mode-both'
 
 const FAQS = [
-  { q: 'Como criar um novo planner?', a: 'Clique em "Novo planner" no menu lateral ou use o atalho Ctrl+K para abrir a paleta de comandos.' },
+  { q: 'Como criar um novo caderno?', a: 'Abra Caderno pelo menu lateral e selecione "Novo caderno".' },
   { q: 'Como faço backup dos meus dados?', a: 'Seus dados são sincronizados com a sua conta e mantidos em cache no navegador para uso mais rápido.' },
   { q: 'Os dados ficam salvos em nuvem?', a: 'Sim. A conta usa o Firestore como fonte principal e mantém uma cópia local para funcionamento offline.' },
-  { q: 'Como apagar um planner?', a: 'No dashboard, clique no ⋮ (mais opções) do planner e selecione "Excluir".' },
+  { q: 'Como apagar um caderno?', a: 'No dashboard, clique no ⋮ (mais opções) do caderno e selecione "Excluir".' },
 ]
 
 export function AccountPage() {
@@ -54,7 +54,7 @@ export function AccountPage() {
               {[
                 { keys: 'Ctrl+K', desc: 'Abrir paleta de comandos' },
                 { keys: 'Ctrl+B', desc: 'Alternar sidebar' },
-                { keys: 'Ctrl+Enter', desc: 'Criar novo planner' },
+                { keys: 'Ctrl+Enter', desc: 'Criar novo caderno' },
                 { keys: 'Esc', desc: 'Fechar modal / paleta' },
               ].map((shortcut) => (
                 <div key={shortcut.keys} className="flex items-center justify-between rounded-xl bg-muted/50 px-4 py-2">
@@ -74,7 +74,7 @@ export function AccountPage() {
           </CardHeader>
           <CardContent className="flex flex-col gap-2 text-sm text-muted-foreground">
             <p><strong className="text-foreground">Tria Papelaria</strong> — v1.0.0</p>
-            <p>Planner digital pessoal com editor em canvas e módulos de organização e acompanhamento.</p>
+            <p>Caderno digital pessoal com editor em canvas e módulos de organização e acompanhamento.</p>
             <p className="text-xs mt-2">Os dados são sincronizados com a conta e mantidos em cache no navegador.</p>
           </CardContent>
         </Card>

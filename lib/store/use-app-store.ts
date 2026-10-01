@@ -5,6 +5,12 @@ import { persist } from 'zustand/middleware'
 import type { CanvasData, Folder, Planner, PlannerPage, Tag } from '../types'
 import { EMPTY_CANVAS } from '../types'
 
+type NewPlannerInput = Pick<Planner, 'name' | 'color'> & {
+  folderId: string | null
+  description?: string
+  tags?: string[]
+}
+
 const uid = () => Math.random().toString(36).slice(2, 10)
 const nowISO = () => new Date().toISOString()
 
@@ -16,11 +22,9 @@ interface AppState {
 
   setTheme: (t: 'light' | 'dark') => void
 
-  addPlanner: (
-    p: Pick<Planner, 'name' | 'category' | 'color' | 'icon'> & Partial<Planner>,
-  ) => string
+  addPlanner: (p: NewPlannerInput) => string
   addPlannerWithPages: (
-    p: Pick<Planner, 'name' | 'category' | 'color' | 'icon'> & Partial<Planner>,
+    p: NewPlannerInput,
     pages: { title: string; template: PlannerPage['template'] }[],
   ) => string
   updatePlanner: (id: string, patch: Partial<Planner>) => void
@@ -32,7 +36,8 @@ interface AppState {
   updatePageData: (plannerId: string, pageId: string, data: CanvasData) => void
   updatePageTemplate: (plannerId: string, pageId: string, template: PlannerPage['template']) => void
 
-  addFolder: (name: string, color: string) => void
+  addFolder: (name: string, color: string) => string
+  updateFolder: (id: string, patch: Partial<Folder>) => void
   deleteFolder: (id: string) => void
 
   addTag: (name: string, color: string) => void
@@ -56,7 +61,7 @@ export const useAppStore = create<AppState>()(
           ...data,
           id,
           favorite: false,
-          folderId: data.folderId ?? null,
+          folderId: data.folderId,
           tags: data.tags ?? [],
           pages: [],
           createdAt: now,
@@ -79,7 +84,7 @@ export const useAppStore = create<AppState>()(
           ...data,
           id,
           favorite: false,
-          folderId: data.folderId ?? null,
+          folderId: data.folderId,
           tags: data.tags ?? [],
           pages: plannerPages,
           createdAt: now,
@@ -110,7 +115,6 @@ export const useAppStore = create<AppState>()(
         set((s) => ({
           planners: s.planners.map((p) => {
             if (p.id !== plannerId) return p
-            const idx = p.pages.length
             return {
               ...p,
               updatedAt: nowISO(),
@@ -118,7 +122,7 @@ export const useAppStore = create<AppState>()(
                 ...p.pages,
                 {
                   id: `pg-${uid()}`,
-                  title: `Página ${idx + 1}`,
+                  title: '',
                   template,
                   data: { ...EMPTY_CANVAS },
                 },
@@ -167,10 +171,18 @@ export const useAppStore = create<AppState>()(
         })),
 
       addFolder: (name, color) =>
-        set((s) => {
+        {
           const id = `fld-${uid()}`
-          return { folders: [...s.folders, { id, name, color }] }
-        }),
+          set((s) => ({ folders: [...s.folders, { id, name, color }] }))
+          return id
+        },
+
+      updateFolder: (id, patch) =>
+        set((s) => ({
+          folders: s.folders.map((folder) =>
+            folder.id === id ? { ...folder, ...patch } : folder,
+          ),
+        })),
 
       deleteFolder: (id) =>
         set((s) => ({

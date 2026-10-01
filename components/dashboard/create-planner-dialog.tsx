@@ -1,156 +1,142 @@
 'use client'
 
 import { useAppStore } from '@/lib/store/use-app-store'
-import type { PlannerCategory } from '@/lib/types'
+import { SYSTEM_PALETTES, SYSTEM_PALETTE_MAP } from '@/lib/theme'
+import { useSettingsStore } from '@/lib/store/use-settings-store'
 import { cn } from '@/lib/utils'
-import {
-  BookHeart,
-  BriefcaseBusiness,
-  Calculator,
-  Dumbbell,
-  GraduationCap,
-  NotebookPen,
-} from 'lucide-react'
+import { Check } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Button } from '../ui/button'
-import { Input } from '../ui/primitives'
 import { Dialog, DialogContent } from '../ui/overlays'
+import { Input } from '../ui/primitives'
 import { toast } from '../ui/toaster'
+import { FolderPicker } from '../folders/folder-picker'
 
 interface Props {
   open: boolean
   onClose: () => void
   editId?: string
+  initialFolderId?: string | null
 }
 
-function CreatePlannerDialog({ open, onClose, editId }: Props) {
+function ColorPicker({ value, onChange }: { value: string; onChange: (color: string) => void }) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {SYSTEM_PALETTES.map((color) => (
+        <button
+          key={color.id}
+          type="button"
+          aria-label={`Selecionar cor ${color.label}`}
+          aria-pressed={value === color.value}
+          onClick={() => onChange(color.value)}
+          className={cn(
+            'inline-flex size-7 cursor-pointer items-center justify-center rounded-full transition-all duration-200',
+            value === color.value
+              ? 'scale-110 ring-2 ring-foreground/70 ring-offset-2 ring-offset-popover'
+              : 'hover:scale-110 hover:shadow-md',
+          )}
+          style={{ backgroundColor: color.value }}
+        >
+          {value === color.value && (
+            <Check size={12} strokeWidth={3} className="text-white drop-shadow-sm" aria-hidden />
+          )}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+function CreatePlannerDialog({ open, onClose, editId, initialFolderId }: Props) {
   const addPlanner = useAppStore((s) => s.addPlanner)
   const updatePlanner = useAppStore((s) => s.updatePlanner)
+  const folders = useAppStore((s) => s.folders)
   const existing = useAppStore((s) => s.planners.find((planner) => planner.id === editId))
+  const selectedPalette = useSettingsStore((s) => s.palette)
+  const defaultColor = SYSTEM_PALETTE_MAP[selectedPalette].value
   const [name, setName] = useState('')
-  const [category, setCategory] = useState<PlannerCategory>('diario')
-  const [color, setColor] = useState('#d1bdb8')
-
-  const categories: { id: PlannerCategory; label: string; icon: typeof NotebookPen; color: string }[] = [
-    { id: 'diario', label: 'Diário', icon: NotebookPen, color: '#d1bdb8' },
-    { id: 'estudos', label: 'Estudos', icon: GraduationCap, color: '#6a634d' },
-    { id: 'trabalho', label: 'Trabalho', icon: BriefcaseBusiness, color: '#ddd6c6' },
-    { id: 'fitness', label: 'Fitness', icon: Dumbbell, color: '#6a634d' },
-    { id: 'financas', label: 'Finanças', icon: Calculator, color: '#b76f06' },
-    { id: 'bullet', label: 'Bullet Journal', icon: BookHeart, color: '#d1bdb8' },
-  ]
-
-  const colors = ['#d1bdb8', '#b76f06', '#6a634d', '#ddd6c6']
+  const [color, setColor] = useState(defaultColor)
+  const [folderId, setFolderId] = useState<string | null>(null)
 
   useEffect(() => {
     if (!open) return
     if (editId && existing) {
-      setName(existing.name); setCategory(existing.category); setColor(existing.color)
+      setName(existing.name)
+      setColor(existing.color)
+      setFolderId(existing.folderId)
     } else if (!editId) {
-      setName(''); setCategory('diario'); setColor('#d1bdb8')
+      setName('')
+      setColor(defaultColor)
+      setFolderId(initialFolderId ?? null)
     }
-  }, [open, editId, existing])
+  }, [open, editId, existing, initialFolderId, defaultColor])
 
   const handleCreate = () => {
     if (!name.trim()) {
-      toast({ title: 'Digite um nome para o planner', variant: 'error' })
+      toast({ title: 'Digite um nome para o caderno', variant: 'error' })
       return
     }
-    const cat = categories.find((c) => c.id === category)!
+    const selectedFolderId = folderId && folders.some((folder) => folder.id === folderId)
+      ? folderId
+      : null
     if (editId) {
-      updatePlanner(editId, { name: name.trim(), category, color, icon: cat.icon.displayName ?? 'NotebookPen' })
-      toast({ title: 'Planner atualizado!', variant: 'success' })
+      updatePlanner(editId, {
+        name: name.trim(),
+        color,
+        folderId: selectedFolderId,
+      })
+      toast({ title: 'Caderno atualizado!', variant: 'success' })
     } else {
-      addPlanner({ name: name.trim(), category, color, icon: cat.icon.displayName ?? 'NotebookPen' })
-      toast({ title: 'Planner criado!', variant: 'success' })
+      addPlanner({
+        name: name.trim(),
+        color,
+        folderId: selectedFolderId,
+      })
+      toast({ title: 'Caderno criado!', variant: 'success' })
     }
     setName('')
     onClose()
   }
 
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent title={editId ? 'Editar planner' : 'Novo planner'} description="Escolha o tipo, cor e nome para começar.">
-        <div className="flex flex-col gap-5">
-          {/* Nome */}
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
+      <DialogContent
+        title={editId ? 'Editar caderno' : 'Novo caderno'}
+        description="Dê um nome ao caderno e, se quiser, escolha uma pasta."
+      >
+        <div className="flex flex-col gap-4">
           <div>
-            <label className="text-sm font-medium mb-1.5 block">Nome</label>
+            <label className="mb-1.5 block text-sm font-medium" htmlFor="planner-name">
+              Nome do caderno
+            </label>
             <Input
+              id="planner-name"
               value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Meu planner..."
-              onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
+              onChange={(event) => setName(event.target.value)}
+              placeholder="Digite o nome do caderno"
+              onKeyDown={(event) => event.key === 'Enter' && handleCreate()}
               autoFocus
             />
           </div>
 
-          {/* Categoria */}
           <div>
-            <label className="text-sm font-medium mb-2 block">Categoria</label>
-            <div className="grid grid-cols-3 gap-2">
-              {categories.map((cat) => (
-                <button
-                  key={cat.id}
-                  onClick={() => {
-                    setCategory(cat.id)
-                    setColor(cat.color)
-                  }}
-                  className={cn(
-                    'flex flex-col items-center gap-1.5 rounded-2xl border p-3 transition-all duration-200',
-                    category === cat.id
-                      ? 'border-primary bg-primary/10 shadow-sm'
-                      : 'border-border/60 hover:border-border hover:bg-muted/40',
-                  )}
-                >
-                  <div
-                    className="flex size-10 items-center justify-center rounded-xl"
-                    style={{ backgroundColor: cat.color + '20' }}
-                  >
-                    <cat.icon size={20} style={{ color: cat.color }} />
-                  </div>
-                  <span className="text-[11px] font-medium">{cat.label}</span>
-                </button>
-              ))}
-            </div>
+            <FolderPicker folders={folders} value={folderId} onChange={setFolderId} />
           </div>
 
-          {/* Cor */}
           <div>
-            <label className="text-sm font-medium mb-2 block">Cor de capa</label>
-            <div className="flex gap-2 flex-wrap">
-              {colors.map((c) => (
-                <button
-                  key={c}
-                  onClick={() => setColor(c)}
-                  className={cn(
-                    'size-8 rounded-full border-2 transition-all',
-                    color === c ? 'border-foreground scale-110' : 'border-transparent hover:scale-105',
-                  )}
-                  style={{ backgroundColor: c }}
-                />
-              ))}
-            </div>
+            <label className="mb-2 block text-sm font-medium">Cor da capa</label>
+            <ColorPicker value={color} onChange={setColor} />
           </div>
 
-          {/* Preview */}
-          <div
-            className="h-24 rounded-2xl flex items-center justify-center transition-all duration-300"
-            style={{ backgroundColor: color + '18', border: `2px dashed ${color}40` }}
-          >
-            <div className="text-center">
-              <p className="text-sm font-semibold" style={{ color }}>
-                {name || 'Meu planner'}
-              </p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">{categories.find((c) => c.id === category)?.label}</p>
-            </div>
-          </div>
-
-          <div className="flex justify-end gap-2">
+          <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end">
             <Button variant="outline" onClick={onClose} className="rounded-xl">
               Cancelar
             </Button>
-            <Button onClick={handleCreate} className="rounded-xl">
-              {editId ? 'Salvar alterações' : 'Criar planner'}
+            <Button
+              onClick={handleCreate}
+              disabled={!name.trim()}
+              className="rounded-xl shadow-md"
+            >
+              {editId ? 'Salvar alterações' : 'Criar caderno'}
             </Button>
           </div>
         </div>

@@ -77,10 +77,10 @@ export function EvaluationDialog({
 
     if (editId) {
       updateEntry(editId, data)
-      toast({ title: 'Catálogo atualizado!', variant: 'success' })
+      toast({ title: 'Registro atualizado!', variant: 'success' })
     } else {
       addEntry(data)
-      toast({ title: 'Catálogo registrado!', variant: 'success' })
+      toast({ title: 'Registro salvo!', variant: 'success' })
     }
     onClose()
   }
@@ -88,7 +88,7 @@ export function EvaluationDialog({
   return (
     <Dialog open={open} onOpenChange={(value) => !value && onClose()}>
       <DialogContent
-        title={editId ? 'Editar catálogo' : `Catalogar ${TYPE_LABELS[type].toLowerCase()}`}
+        title={editId ? 'Editar registro' : `Adicionar ${TYPE_LABELS[type].toLowerCase()}`}
         description="Registre sua opinião para consultar depois."
       >
         <div className="flex flex-col gap-4">
@@ -172,7 +172,7 @@ export function EvaluationDialog({
           <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end">
             <Button variant="outline" onClick={onClose} className="rounded-xl">Cancelar</Button>
             <Button onClick={handleSave} className="rounded-xl shadow-md">
-              {editId ? 'Salvar alterações' : 'Registrar catálogo'}
+              {editId ? 'Salvar alterações' : 'Salvar registro'}
             </Button>
           </div>
         </div>

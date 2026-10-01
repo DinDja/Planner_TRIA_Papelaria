@@ -4,6 +4,7 @@ import { useNotesStore } from '@/lib/store/use-notes-store'
 import { cn } from '@/lib/utils'
 import { Check } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { FolderPicker } from '../folders/folder-picker'
 import { Button } from '../ui/button'
 import { Dialog, DialogContent } from '../ui/overlays'
 import { Input } from '../ui/primitives'
@@ -130,39 +131,7 @@ export function AddNoteDialog({
             />
           </div>
 
-          <div>
-            <label className="text-sm font-medium mb-1.5 block">Pasta</label>
-            <div className="flex gap-2 flex-wrap">
-              <button
-                type="button"
-                onClick={() => setFolderId(null)}
-                className={cn(
-                  'rounded-xl border px-3 py-1.5 text-xs font-medium transition-all duration-200 cursor-pointer',
-                  folderId === null
-                    ? 'border-primary/50 bg-primary/10 text-primary'
-                    : 'border-border/60 text-muted-foreground hover:bg-muted/50',
-                )}
-              >
-                Sem pasta
-              </button>
-              {folders.map((f) => (
-                <button
-                  key={f.id}
-                  type="button"
-                  onClick={() => setFolderId(f.id)}
-                  className={cn(
-                    'rounded-xl border px-3 py-1.5 text-xs font-medium transition-all duration-200 cursor-pointer flex items-center gap-1.5',
-                    folderId === f.id
-                      ? 'border-primary/50 bg-primary/10 text-primary'
-                      : 'border-border/60 text-muted-foreground hover:bg-muted/50',
-                  )}
-                >
-                  <span className="size-2 rounded-full" style={{ backgroundColor: f.color }} />
-                  {f.name}
-                </button>
-              ))}
-            </div>
-          </div>
+          <FolderPicker folders={folders} value={folderId} onChange={setFolderId} />
 
           <div>
             <label className="text-sm font-medium mb-2 block">Cor</label>

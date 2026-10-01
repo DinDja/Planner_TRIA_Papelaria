@@ -67,7 +67,7 @@ export function sanitizeModules(modules: ModuleDef[]): ModuleDef[] {
       ...module,
       href: MODULE_HREFS[module.id] ?? module.href,
       ...(module.id === 'calendario' ? { label: 'Agenda' } : {}),
-      ...(module.id === 'avaliacao' ? { label: 'Catálogo' } : {}),
+      ...(module.id === 'avaliacao' ? { label: 'Estante e Tela' } : {}),
     }))
 
   const existingEvaluation = cleaned.find((module) => module.id === 'avaliacao')
@@ -78,7 +78,7 @@ export function sanitizeModules(modules: ModuleDef[]): ModuleDef[] {
   cleaned.splice(memoriasIndex >= 0 ? memoriasIndex + 1 : cleaned.length, 0, existingEvaluation ?? {
     id: 'avaliacao',
     href: '/avaliacao',
-    label: 'Catálogo',
+    label: 'Estante e Tela',
     enabled: true,
   })
 
@@ -94,7 +94,7 @@ export const DEFAULT_MODULES: ModuleDef[] = orderModules([
   { id: 'wishlist',        href: '/wishlist',       label: 'Wishlist',       enabled: true },
   { id: 'frases',          href: '/frases',         label: 'Frases',         enabled: true },
   { id: 'memorias',        href: '/memorias',       label: 'Memórias',      enabled: true },
-  { id: 'avaliacao',       href: '/avaliacao',      label: 'Catálogo',      enabled: true },
+  { id: 'avaliacao',       href: '/avaliacao',      label: 'Estante e Tela', enabled: true },
   { id: 'cofre',           href: '/cofre',          label: 'Senhas',         enabled: true },
   { id: 'saude',           href: '/saude',          label: 'Saúde',          enabled: true },
   { id: 'calendario',      href: '/calendario',     label: 'Agenda',         enabled: true },

@@ -105,7 +105,6 @@ export function DashboardPage() {
   const tasks = useRoutineStore((s) => s.tasks)
   const recurringTasks = useRoutineStore((s) => s.recurringTasks)
   const pendingItems = useRoutineStore((s) => s.pendingItems)
-  const toggleTask = useRoutineStore((s) => s.toggleTask)
   const appointments = useHealthStore((s) => s.appointments)
   const exams = useHealthStore((s) => s.exams)
   const [eventEditId, setEventEditId] = useState<string | undefined>()
@@ -125,18 +124,6 @@ export function DashboardPage() {
         .filter((event) => event.date === todayISO)
         .sort((a, b) => a.startTime.localeCompare(b.startTime)),
     [calendarEvents, todayISO],
-  )
-
-  const todayTasks = useMemo(
-    () => [
-      ...tasks
-        .filter((task) => task.date === todayISO)
-        .map((task) => ({ id: task.id, title: task.title, time: task.time, done: task.done, recurring: false })),
-      ...recurringTasks
-        .filter((task) => task.active && task.nextDue === todayISO)
-        .map((task) => ({ id: task.id, title: task.title, time: task.time, done: false, recurring: true })),
-    ].sort((a, b) => (a.time ?? '99:99').localeCompare(b.time ?? '99:99')),
-    [recurringTasks, tasks, todayISO],
   )
 
   const monthlyBirthdays = useMemo(() => {
@@ -280,44 +267,6 @@ export function DashboardPage() {
                 <p className="text-sm text-muted-foreground text-center py-4">Nenhum evento para hoje.</p>
               )}
             </div>
-          </Card>
-
-          {/* Tarefas de hoje */}
-          <Card glass>
-            <CardHeader className="flex-row items-center justify-between pb-0">
-              <CardTitle className="text-base">Tarefas de hoje</CardTitle>
-              <Link href="/calendario" className="text-xs text-primary hover:underline flex items-center gap-1">
-                Ver agenda <ArrowUpRight size={12} />
-              </Link>
-            </CardHeader>
-            <CardContent className="pt-3">
-              {todayTasks.length > 0 ? (
-                <div className="space-y-1">
-                  {todayTasks.map((task) => (
-                    <button
-                      key={task.id}
-                      type="button"
-                      disabled={task.recurring}
-                      onClick={() => !task.recurring && toggleTask(task.id)}
-                      className="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left transition-colors hover:bg-muted/40 disabled:cursor-default"
-                      aria-label={task.recurring ? task.title : `${task.done ? 'Desmarcar' : 'Marcar'} ${task.title}`}
-                    >
-                      {task.done ? (
-                        <CheckCircle2 size={18} className="text-success" />
-                      ) : (
-                        <span className="size-[18px] shrink-0 rounded-full border-2 border-border" />
-                      )}
-                      <span className={cn('min-w-0 flex-1 truncate text-sm', task.done && 'text-muted-foreground line-through')}>
-                        {task.title}
-                      </span>
-                      {task.time && <span className="shrink-0 text-[11px] text-muted-foreground">{task.time}</span>}
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <p className="py-4 text-center text-sm text-muted-foreground">Nenhuma tarefa para hoje.</p>
-              )}
-            </CardContent>
           </Card>
 
           {/* Favorites */}

@@ -54,7 +54,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
   },
 }
 
-export const PLAN_ORDER: PlanId[] = ['monthly', 'annual', 'trial']
+export const PLAN_ORDER: PlanId[] = ['trial', 'monthly', 'annual']
 
 export function isPaidPlanId(value: unknown): value is PaidPlanId {
   return value === 'monthly' || value === 'annual'

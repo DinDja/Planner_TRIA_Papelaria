@@ -1,11 +1,13 @@
 'use client'
 
+import { useState } from 'react'
 import { useSettingsStore } from '@/lib/store/use-settings-store'
 import { useProfileStore } from '@/lib/store/use-profile-store'
 import type { FontScale, RadiusPreset } from '@/lib/types'
 import { SYSTEM_PALETTES } from '@/lib/theme'
 import { cn } from '@/lib/utils'
 import {
+  BellRing,
   ContactRound,
   Check,
   Palette,
@@ -18,6 +20,7 @@ import { Dialog, DialogContent } from '../ui/overlays'
 import { Button } from '../ui/button'
 import { Input, Separator, Switch } from '../ui/primitives'
 import { toast } from '../ui/toaster'
+import { requestNotificationPermission } from '../notifications/reminder-button'
 
 interface Props {
   open: boolean
@@ -69,11 +72,13 @@ function ToggleRow({
   desc,
   checked,
   onChange,
+  disabled = false,
 }: {
   label: string
   desc?: string
   checked: boolean
   onChange: (v: boolean) => void
+  disabled?: boolean
 }) {
   return (
     <div className="flex items-center justify-between gap-3 py-2">
@@ -81,7 +86,7 @@ function ToggleRow({
         <p className="text-sm font-medium leading-tight">{label}</p>
         {desc && <p className="text-xs text-muted-foreground mt-0.5 leading-tight">{desc}</p>}
       </div>
-      <Switch checked={checked} onCheckedChange={onChange} aria-label={label} />
+      <Switch checked={checked} onCheckedChange={onChange} aria-label={label} disabled={disabled} />
     </div>
   )
 }
@@ -92,6 +97,25 @@ export function SettingsDialog({ open, onClose }: Props) {
   const email = useProfileStore((state) => state.email)
   const setName = useProfileStore((state) => state.setName)
   const setEmail = useProfileStore((state) => state.setEmail)
+  const [requestingNotifications, setRequestingNotifications] = useState(false)
+
+  const handleNotificationsChange = async (enabled: boolean) => {
+    if (!enabled) {
+      s.setNotificationsEnabled(false)
+      toast({ title: 'Notificações desativadas' })
+      return
+    }
+
+    setRequestingNotifications(true)
+    try {
+      if (await requestNotificationPermission()) {
+        s.setNotificationsEnabled(true)
+        toast({ title: 'Notificações ativadas', variant: 'success' })
+      }
+    } finally {
+      setRequestingNotifications(false)
+    }
+  }
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
@@ -264,6 +288,22 @@ export function SettingsDialog({ open, onClose }: Props) {
           <Separator />
 
           {/* ── Ações ─────────────────────────────────────────────── */}
+          <Section
+            icon={BellRing}
+            title="Notificações"
+            desc="Pause os avisos de lembretes do Tria neste dispositivo."
+          >
+            <ToggleRow
+              label="Ativar notificações e lembretes"
+              desc="Ao ativar, o navegador pode pedir permissão para exibir avisos."
+              checked={s.notificationsEnabled}
+              onChange={handleNotificationsChange}
+              disabled={requestingNotifications}
+            />
+          </Section>
+
+          <Separator />
+
           <div className="flex flex-wrap items-center justify-between gap-3">
             <Button
               variant="ghost"

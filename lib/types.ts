@@ -305,6 +305,8 @@ export interface SystemSettings {
   confirmDelete: boolean
   /** Auto-salvar a cada mudança (sempre true por ora; reservado) */
   autoSave: boolean
+  /** Permitir que o Tria exiba lembretes e notificações */
+  notificationsEnabled: boolean
 }
 
 // ─── Módulo de Calendário ─────────────────────────────────────────────────────

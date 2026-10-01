@@ -198,7 +198,7 @@ function PricingPage() {
           um jeito simples de começar
         </p>
         <h1 className="mt-1 text-3xl tracking-tight sm:text-4xl">
-          A Tria inteira, no tempo que fizer sentido para você.
+          App Tria
         </h1>
         <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">
           Os três caminhos liberam todos os módulos e todas as atualizações.

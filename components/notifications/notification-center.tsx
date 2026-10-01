@@ -7,6 +7,7 @@ import { useBirthdaysStore } from '@/lib/store/use-birthdays-store'
 import { useCalendarStore } from '@/lib/store/use-calendar-store'
 import { useHabitsStore } from '@/lib/store/use-habits-store'
 import { useHealthStore } from '@/lib/store/use-health-store'
+import { useSettingsStore } from '@/lib/store/use-settings-store'
 import { buildReminders, reminderStorageKey } from '@/lib/notifications/reminders'
 import { toast } from '../ui/toaster'
 
@@ -49,6 +50,7 @@ export function NotificationCenter() {
   const events = useCalendarStore((s) => s.events)
   const birthdays = useBirthdaysStore((s) => s.entries)
   const habits = useHabitsStore((s) => s.habits)
+  const notificationsEnabled = useSettingsStore((s) => s.notificationsEnabled)
   const [remoteItems, setRemoteItems] = useState<Record<string, RemoteItem[]>>({})
 
   // O restante do app usa carregamento por rota. Os avisos precisam conhecer
@@ -96,6 +98,7 @@ export function NotificationCenter() {
       for (const reminder of due) {
         const key = reminderStorageKey(reminder)
         fired[key] = now.getTime()
+        if (!notificationsEnabled) continue
         toast({ title: reminder.title, description: reminder.body, variant: 'success' })
         if ('Notification' in window && Notification.permission === 'granted') {
           const notification = new Notification(reminder.title, {
@@ -119,7 +122,7 @@ export function NotificationCenter() {
       window.removeEventListener('focus', check)
       document.removeEventListener('visibilitychange', check)
     }
-  }, [appointments, birthdays, events, exams, habits, medications, reminderAppointments, reminderBirthdays, reminderEvents, reminderExams, reminderHabits, reminderMedications])
+  }, [appointments, birthdays, events, exams, habits, medications, notificationsEnabled, reminderAppointments, reminderBirthdays, reminderEvents, reminderExams, reminderHabits, reminderMedications])
 
   return null
 }

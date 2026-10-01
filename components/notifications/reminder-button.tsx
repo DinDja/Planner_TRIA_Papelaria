@@ -1,7 +1,8 @@
 'use client'
 
 import { Bell, BellRing } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useSettingsStore } from '@/lib/store/use-settings-store'
 import { Button } from '../ui/button'
 import { toast } from '../ui/toaster'
 
@@ -61,12 +62,21 @@ export async function requestNotificationPermission(): Promise<boolean> {
 
 export function NotificationPermissionButton() {
   const [requesting, setRequesting] = useState(false)
-  const [active, setActive] = useState(false)
+  const [permissionGranted, setPermissionGranted] = useState(false)
+  const notificationsEnabled = useSettingsStore((s) => s.notificationsEnabled)
+  const setNotificationsEnabled = useSettingsStore((s) => s.setNotificationsEnabled)
+  const active = notificationsEnabled && permissionGranted
+
+  useEffect(() => {
+    setPermissionGranted(typeof Notification !== 'undefined' && Notification.permission === 'granted')
+  }, [notificationsEnabled])
 
   const handleClick = async () => {
     setRequesting(true)
     try {
-      setActive(await requestNotificationPermission())
+      const granted = await requestNotificationPermission()
+      setPermissionGranted(granted)
+      if (granted) setNotificationsEnabled(true)
     } finally {
       setRequesting(false)
     }
@@ -78,7 +88,7 @@ export function NotificationPermissionButton() {
       variant={active ? 'secondary' : 'outline'}
       size="sm"
       onClick={handleClick}
-      disabled={requesting}
+      disabled={requesting || active}
       className="mt-3 w-full rounded-xl gap-2"
     >
       {active ? <BellRing size={14} /> : <Bell size={14} />}

@@ -21,6 +21,7 @@ export const DEFAULT_SETTINGS: SystemSettings = {
   reduceMotion: false,
   confirmDelete: true,
   autoSave: true,
+  notificationsEnabled: true,
 }
 
 export const RADIUS_PRESET_VALUES: Record<RadiusPreset, string> = {
@@ -63,6 +64,7 @@ interface SettingsState extends SystemSettings {
   setReduceMotion: (v: boolean) => void
   setConfirmDelete: (v: boolean) => void
   setAutoSave: (v: boolean) => void
+  setNotificationsEnabled: (v: boolean) => void
   reset: () => void
 }
 
@@ -91,6 +93,7 @@ export const useSettingsStore = create<SettingsState>()(
       setReduceMotion: (reduceMotion) => set({ reduceMotion }),
       setConfirmDelete: (confirmDelete) => set({ confirmDelete }),
       setAutoSave: (autoSave) => set({ autoSave }),
+      setNotificationsEnabled: (notificationsEnabled) => set({ notificationsEnabled }),
       reset: () => set({ ...DEFAULT_SETTINGS }),
     }),
     {

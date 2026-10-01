@@ -170,7 +170,7 @@ function EntryCard({ entry, onDelete, onView, index = 0 }: {
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); onDelete(entry.id) }}
-              className="shrink-0 rounded-lg p-1.5 text-muted-foreground/0 group-hover:text-muted-foreground/40 hover:bg-destructive/10 hover:text-destructive transition-all cursor-pointer"
+              className="shrink-0 rounded-lg p-1.5 text-muted-foreground/40 hover:bg-destructive/10 hover:text-destructive transition-all cursor-pointer"
               aria-label="Excluir"
             >
               <Trash2 size={14} />

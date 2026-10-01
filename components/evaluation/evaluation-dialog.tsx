@@ -117,7 +117,7 @@ export function EvaluationDialog({
             <Input
               value={name}
               onChange={(event) => setName(event.target.value)}
-              placeholder={`Nome do ${TYPE_LABELS[type].toLowerCase()}`}
+              placeholder={type === 'serie' ? 'Nome da série' : `Nome do ${TYPE_LABELS[type].toLowerCase()}`}
               autoFocus
             />
           </div>

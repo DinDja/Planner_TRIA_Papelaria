@@ -604,12 +604,12 @@ export function AddMedicationDialog({ open, onClose, editId }: { open: boolean; 
               ))}
             </div>
           </div>
+          <div><label className="text-sm font-medium mb-1.5 block">Observação</label><Textarea value={notes} onChange={(e) => setNotes(e.target.value)} /></div>
           <ReminderButton
             enabled={reminderEnabled}
             onEnabledChange={setReminderEnabled}
             description="Avisar nos horários das doses durante o tratamento"
           />
-          <div><label className="text-sm font-medium mb-1.5 block">Observação</label><Textarea value={notes} onChange={(e) => setNotes(e.target.value)} /></div>
           <div className="flex justify-end gap-2 pt-1">
             <Button variant="outline" onClick={onClose} className="rounded-xl">Cancelar</Button>
             <Button onClick={handleSave} className="rounded-xl shadow-md">Salvar</Button>

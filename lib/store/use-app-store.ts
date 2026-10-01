@@ -32,6 +32,7 @@ interface AppState {
   toggleFavorite: (id: string) => void
 
   addPage: (plannerId: string, template?: PlannerPage['template']) => void
+  paginatePage: (plannerId: string, pageId: string, contents: string[]) => string[]
   deletePage: (plannerId: string, pageId: string) => void
   updatePageData: (plannerId: string, pageId: string, data: CanvasData) => void
   updatePageTemplate: (plannerId: string, pageId: string, template: PlannerPage['template']) => void
@@ -130,6 +131,31 @@ export const useAppStore = create<AppState>()(
             }
           }),
         })),
+
+      paginatePage: (plannerId, pageId, contents) => {
+        const continuationIds = contents.slice(1).map(() => `pg-${uid()}`)
+        set((s) => ({
+          planners: s.planners.map((p) => {
+            if (p.id !== plannerId) return p
+            const pageIndex = p.pages.findIndex((page) => page.id === pageId)
+            if (pageIndex < 0) return p
+
+            const source = p.pages[pageIndex]
+            const updatedPages = [...p.pages]
+            updatedPages[pageIndex] = { ...source, content: contents[0] ?? '' }
+            const continuations: PlannerPage[] = contents.slice(1).map((content, index) => ({
+              id: continuationIds[index],
+              title: source.title,
+              template: source.template,
+              data: { ...EMPTY_CANVAS },
+              content,
+            }))
+            updatedPages.splice(pageIndex + 1, 0, ...continuations)
+            return { ...p, pages: updatedPages, updatedAt: nowISO() }
+          }),
+        }))
+        return [pageId, ...continuationIds]
+      },
 
       deletePage: (plannerId, pageId) =>
         set((s) => ({

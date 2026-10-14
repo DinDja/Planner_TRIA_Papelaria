@@ -997,6 +997,8 @@ export interface BirthdayRecord {
 export interface BioimpedanceRecord {
   id: string
   date: string
+  totalBodyWaterLiters?: number
+  /** @deprecated Valores antigos salvos em porcentagem; preservar sem conversão. */
   totalBodyWaterPercentage?: number
   bmi?: number
   fatMass?: number

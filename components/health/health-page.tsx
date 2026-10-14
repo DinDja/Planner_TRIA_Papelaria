@@ -141,14 +141,15 @@ const measurementMetrics: { key: MeasurementMetric; label: string }[] = [
 
 type BioimpedanceMetric = keyof Pick<
   BioimpedanceRecord,
-  'totalBodyWaterPercentage' | 'bmi' | 'fatMass' | 'skeletalMuscleMass'
+  'totalBodyWaterLiters' | 'totalBodyWaterPercentage' | 'bmi' | 'fatMass' | 'skeletalMuscleMass'
   | 'minerals' | 'bodyFatPercentage' | 'weight' | 'score' | 'protein'
   | 'basalMetabolicRate'
 >
 
 const bioimpedanceMetrics: { key: BioimpedanceMetric; label: string; unit: string }[] = [
-  { key: 'totalBodyWaterPercentage', label: 'Água Corporal Total', unit: '%' },
-  { key: 'bmi', label: 'IMC', unit: '' },
+  { key: 'totalBodyWaterLiters', label: 'Água Corporal Total', unit: 'L' },
+  { key: 'totalBodyWaterPercentage', label: 'Água Corporal (registro antigo)', unit: '%' },
+  { key: 'bmi', label: 'IMC', unit: 'kg/m²' },
   { key: 'fatMass', label: 'Massa de Gordura', unit: 'kg' },
   { key: 'skeletalMuscleMass', label: 'Massa Muscular Esquelética', unit: 'kg' },
   { key: 'minerals', label: 'Minerais', unit: 'kg' },
@@ -341,7 +342,9 @@ function WeightTab() {
             title="Clique para ajustar altura"
           >
             <div className="leading-tight min-w-0">
-              <p className="text-lg font-bold tabular-nums" style={{ color: bmiInfo.color }}>{bmi.toFixed(1)}</p>
+              <p className="text-lg font-bold tabular-nums" style={{ color: bmiInfo.color }}>
+                {bmi.toFixed(1)} <span className="text-xs">kg/m²</span>
+              </p>
               <p className="text-[10px] font-medium" style={{ color: bmiInfo.color }}>IMC · {bmiInfo.label}</p>
             </div>
           </div>
@@ -475,7 +478,7 @@ function WeightTab() {
           {sorted.length} {sorted.length === 1 ? 'registro' : 'registros'}
           {height > 0 && latest && (
             <span className="ml-2 text-[11px]" style={{ color: bmiInfo.color }}>
-              · IMC {bmi.toFixed(1)} — {bmiInfo.label}
+              · IMC {bmi.toFixed(1)} kg/m² — {bmiInfo.label}
             </span>
           )}
         </p>
@@ -497,7 +500,7 @@ function WeightTab() {
               <span className="text-sm font-bold tabular-nums">{w.weight} kg</span>
               {wBmiInfo && (
                 <span className="text-[10px] tabular-nums" style={{ color: wBmiInfo.color }}>
-                  IMC {wBmi.toFixed(1)}
+                  IMC {wBmi.toFixed(1)} kg/m²
                 </span>
               )}
               {w.notes && <span className="text-xs text-muted-foreground/70 truncate">{w.notes}</span>}
@@ -1210,7 +1213,7 @@ function BioimpedanceTab() {
   const deleteBioimpedance = useHealthStore((s) => s.deleteBioimpedance)
   const [addOpen, setAddOpen] = useState(false)
   const [editId, setEditId] = useState<string | undefined>()
-  const [selectedMetric, setSelectedMetric] = useState<BioimpedanceMetric>('totalBodyWaterPercentage')
+  const [selectedMetric, setSelectedMetric] = useState<BioimpedanceMetric>('totalBodyWaterLiters')
   const sorted = [...records].sort((a, b) => b.date.localeCompare(a.date))
   const availableMetrics = useMemo(
     () => bioimpedanceMetrics.filter(({ key }) => records.some((record) => typeof record[key] === 'number')),
@@ -1243,7 +1246,7 @@ function BioimpedanceTab() {
                 className="h-8 rounded-lg border border-border/60 bg-background px-2 text-xs outline-none focus:ring-2 focus:ring-primary/30"
                 aria-label="Escolha o indicador do gráfico"
               >
-                {availableMetrics.map(({ key, label }) => <option key={key} value={key}>{label}</option>)}
+                {availableMetrics.map(({ key, label, unit }) => <option key={key} value={key}>{label}{unit ? ` (${unit})` : ''}</option>)}
               </select>
             )}
           </div>

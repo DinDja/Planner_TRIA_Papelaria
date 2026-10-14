@@ -7,7 +7,6 @@ import { FolderPlus, Pencil, Star, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 import { CreatePlannerDialog } from '../dashboard/create-planner-dialog'
-import { PlannerPagePreview } from '../planner-page-preview'
 import { Button } from '../ui/button'
 import { Tab, TabList, Tabs } from '../ui/overlays'
 import { DeletePlannerDialog } from './delete-planner-dialog'
@@ -147,75 +146,68 @@ export function PlannersPage() {
           </div>
 
           {filteredPlanners.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-              {filteredPlanners.map((planner, i) => {
-                const firstPage = planner.pages?.[0]
+            <ul className="divide-y divide-border/50 overflow-hidden rounded-2xl border border-border/60 bg-card/50">
+              {filteredPlanners.map((planner) => {
+                const pageCount = planner.pages?.length ?? 0
                 return (
-                  <Link
-                    key={planner.id}
-                    href={`/planner/${planner.id}`}
-                    className="group relative flex flex-col rounded-2xl border border-border/60 overflow-hidden transition-all duration-300 hover:shadow-lift hover:border-transparent hover:-translate-y-1"
-                    style={{ animationDelay: `${i * 50}ms` }}
-                  >
-                    {/* Capa */}
-                    <div className="relative bg-[color:light-dark(#ddd6c6,#211f1a)] px-2 pt-2 overflow-hidden">
-                      <PlannerPagePreview
-                        page={firstPage}
-                        className="w-full rounded-[4px] ring-1 ring-black/[0.07] shadow-sm"
-                      />
-                      {/* Favorito — estrela preenchida só para leitura rápida. */}
-                      {planner.favorite && (
-                        <span
-                          role="img"
-                          aria-label="Caderno favorito"
-                          className="absolute right-3.5 top-3.5 flex size-6 items-center justify-center rounded-full bg-warning/90 text-primary-foreground shadow-sm"
-                        >
-                          <Star size={12} className="fill-current" aria-hidden />
+                  <li key={planner.id} className="flex items-center gap-2 px-3 py-2.5 transition-colors hover:bg-muted/30 sm:px-4">
+                    <Link
+                      href={'/planner/' + planner.id}
+                      className="flex min-w-0 flex-1 items-center gap-3 rounded-lg py-1 text-left outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                    >
+                      <span className="min-w-0 flex-1">
+                        <span className="flex min-w-0 items-center gap-2">
+                          <span className="truncate text-sm font-semibold">{planner.name}</span>
+                          {planner.favorite && (
+                            <span
+                              role="img"
+                              aria-label="Caderno favorito"
+                              title="Caderno favorito"
+                              className="flex size-5 shrink-0 items-center justify-center rounded-full bg-warning/25 text-warning"
+                            >
+                              <Star size={11} className="fill-current" aria-hidden />
+                            </span>
+                          )}
                         </span>
-                      )}
-                    </div>
-
-                    {/* Ação de excluir — revelada no hover, sem navegar (botão fora do Link de abertura). */}
+                        <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+                          {folderName(planner.folderId) ?? 'Sem pasta'}
+                        </span>
+                      </span>
+                      <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+                        {pageCount} {pageCount === 1 ? 'página' : 'páginas'}
+                      </span>
+                    </Link>
+                    <Link
+                      href={'/planner/' + planner.id}
+                      className="flex h-8 shrink-0 items-center justify-center rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                    >
+                      Entrar
+                    </Link>
                     <button
-                      onClick={(e) => {
-                        e.preventDefault()
-                        e.stopPropagation()
+                      type="button"
+                      onClick={() => {
                         setEditTarget(planner)
                         setCreateOpen(true)
                       }}
-                      aria-label={`Editar ${planner.name}`}
-                      className="absolute right-11 top-2 z-10 flex size-8 items-center justify-center rounded-xl bg-black/45 text-white backdrop-blur-sm hover:bg-primary cursor-pointer"
+                      aria-label={'Editar ' + planner.name}
+                      title={'Editar ' + planner.name}
+                      className="flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                     >
-                      <Pencil size={14} aria-hidden />
+                      <Pencil size={15} aria-hidden />
                     </button>
                     <button
-                      onClick={(e) => {
-                        e.preventDefault()
-                        e.stopPropagation()
-                        setDeleteTarget(planner)
-                      }}
-                      aria-label={`Excluir ${planner.name}`}
-                      className="absolute right-2 top-2 z-10 flex size-8 items-center justify-center rounded-xl bg-black/45 text-white backdrop-blur-sm hover:bg-destructive cursor-pointer"
+                      type="button"
+                      onClick={() => setDeleteTarget(planner)}
+                      aria-label={'Excluir ' + planner.name}
+                      title={'Excluir ' + planner.name}
+                      className="flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/40"
                     >
-                      <Trash2 size={14} aria-hidden />
+                      <Trash2 size={15} aria-hidden />
                     </button>
-
-                    {/* Rótulo */}
-                    <div className="flex items-center justify-between gap-2 px-3 py-2.5">
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold truncate">{planner.name}</p>
-                        <p className="text-[11px] text-muted-foreground truncate">
-                          {folderName(planner.folderId) ?? 'Sem pasta'}
-                        </p>
-                      </div>
-                      <span className="shrink-0 text-[10px] text-muted-foreground tabular-nums">
-                        {planner.pages?.length ?? 0} pág.
-                      </span>
-                    </div>
-                  </Link>
+                  </li>
                 )
               })}
-            </div>
+            </ul>
           ) : (
             <div className="text-center py-16">
               <p className="text-muted-foreground">

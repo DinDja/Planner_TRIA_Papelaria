@@ -329,7 +329,7 @@ export function AddBioimpedanceDialog({ open, onClose, editId }: { open: boolean
   const updateBioimpedance = useHealthStore((s) => s.updateBioimpedance)
   const existing = useHealthStore((s) => s.bioimpedances.find((item) => item.id === editId))
   const [date, setDate] = useState(dayStr())
-  const [totalBodyWaterPercentage, setTotalBodyWaterPercentage] = useState('')
+  const [totalBodyWaterLiters, setTotalBodyWaterLiters] = useState('')
   const [bmi, setBmi] = useState('')
   const [fatMass, setFatMass] = useState('')
   const [skeletalMuscleMass, setSkeletalMuscleMass] = useState('')
@@ -345,7 +345,7 @@ export function AddBioimpedanceDialog({ open, onClose, editId }: { open: boolean
     if (!open) return
     if (editId && existing) {
       setDate(existing.date)
-      setTotalBodyWaterPercentage(existing.totalBodyWaterPercentage?.toString() ?? '')
+      setTotalBodyWaterLiters(existing.totalBodyWaterLiters?.toString() ?? '')
       setBmi(existing.bmi?.toString() ?? '')
       setFatMass(existing.fatMass?.toString() ?? '')
       setSkeletalMuscleMass(existing.skeletalMuscleMass?.toString() ?? '')
@@ -357,7 +357,7 @@ export function AddBioimpedanceDialog({ open, onClose, editId }: { open: boolean
       setBasalMetabolicRate(existing.basalMetabolicRate?.toString() ?? '')
       setNotes(existing.notes ?? '')
     } else if (!editId) {
-      setDate(dayStr()); setTotalBodyWaterPercentage(''); setBmi(''); setFatMass('')
+      setDate(dayStr()); setTotalBodyWaterLiters(''); setBmi(''); setFatMass('')
       setSkeletalMuscleMass(''); setMinerals(''); setBodyFatPercentage(''); setWeight('')
       setScore(''); setProtein(''); setBasalMetabolicRate(''); setNotes('')
     }
@@ -365,7 +365,7 @@ export function AddBioimpedanceDialog({ open, onClose, editId }: { open: boolean
 
   const handleSave = () => {
     const values = [
-      totalBodyWaterPercentage, bmi, fatMass, skeletalMuscleMass, minerals,
+      totalBodyWaterLiters, bmi, fatMass, skeletalMuscleMass, minerals,
       bodyFatPercentage, weight, score, protein, basalMetabolicRate,
     ]
     const numberValue = (value: string) => {
@@ -379,7 +379,7 @@ export function AddBioimpedanceDialog({ open, onClose, editId }: { open: boolean
     }
     const data = {
       date,
-      totalBodyWaterPercentage: numberValue(totalBodyWaterPercentage),
+      totalBodyWaterLiters: numberValue(totalBodyWaterLiters),
       bmi: numberValue(bmi),
       fatMass: numberValue(fatMass),
       skeletalMuscleMass: numberValue(skeletalMuscleMass),
@@ -410,8 +410,16 @@ export function AddBioimpedanceDialog({ open, onClose, editId }: { open: boolean
             <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div><label className="text-sm font-medium mb-1.5 block">Água Corporal Total (%)</label><Input type="number" step="0.1" min="0" value={totalBodyWaterPercentage} onChange={(e) => setTotalBodyWaterPercentage(e.target.value)} /></div>
-            <div><label className="text-sm font-medium mb-1.5 block">IMC</label><Input type="number" step="0.1" min="0" value={bmi} onChange={(e) => setBmi(e.target.value)} /></div>
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Água Corporal Total (L)</label>
+              <Input type="number" step="0.1" min="0" value={totalBodyWaterLiters} onChange={(e) => setTotalBodyWaterLiters(e.target.value)} />
+              {existing?.totalBodyWaterPercentage !== undefined && existing.totalBodyWaterLiters === undefined && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Este registro mantém o valor anterior de {existing.totalBodyWaterPercentage}% separado, sem conversão.
+                </p>
+              )}
+            </div>
+            <div><label className="text-sm font-medium mb-1.5 block">IMC (kg/m²)</label><Input type="number" step="0.1" min="0" value={bmi} onChange={(e) => setBmi(e.target.value)} /></div>
             <div><label className="text-sm font-medium mb-1.5 block">Massa de Gordura (kg)</label><Input type="number" step="0.1" min="0" value={fatMass} onChange={(e) => setFatMass(e.target.value)} /></div>
             <div><label className="text-sm font-medium mb-1.5 block">Massa Muscular Esquelética (kg)</label><Input type="number" step="0.1" min="0" value={skeletalMuscleMass} onChange={(e) => setSkeletalMuscleMass(e.target.value)} /></div>
             <div><label className="text-sm font-medium mb-1.5 block">Minerais (kg)</label><Input type="number" step="0.1" min="0" value={minerals} onChange={(e) => setMinerals(e.target.value)} /></div>

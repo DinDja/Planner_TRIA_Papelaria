@@ -286,7 +286,7 @@ users/{uid}/wishlist/{itemId} {
 ```
 weights/{id}            { id, date, weight: number (kg), notes?, source?: 'health-onboarding', createdAt }
 bodyMeasurements/{id}  { id, date, bust?, waist?, abdomen?, hips?, arm?, thigh?, calf?, notes?, createdAt }
-bioimpedances/{id}     { id, date, totalBodyWaterPercentage?, bmi?, fatMass?, skeletalMuscleMass?, minerals?, bodyFatPercentage?, weight?, score?, protein?, basalMetabolicRate?, notes?, createdAt }
+bioimpedances/{id}     { id, date, totalBodyWaterLiters?, totalBodyWaterPercentage? (legacy), bmi?, fatMass?, skeletalMuscleMass?, minerals?, bodyFatPercentage?, weight?, score?, protein?, basalMetabolicRate?, notes?, createdAt }
 symptomLogs/{id}       { id, date, symptom, time?: 'HH:mm', possibleCause?, severity: int 1..5, notes?, createdAt }
 medications/{id}       { id, name, dosage, frequency, times?: list<string>, startDate, endDate?, reason?, notes?, color, createdAt }
 cycleRecords/{id}      { id, startDate, endDate?, flow: 'light'|'medium'|'heavy', symptoms: list<string>, notes?, createdAt }

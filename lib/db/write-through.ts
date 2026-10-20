@@ -37,6 +37,10 @@ export function withRemoteStoreUpdate<T>(fn: () => T): T {
   }
 }
 
+export function isRemoteStoreUpdateActive() {
+  return remoteStoreUpdateDepth > 0
+}
+
 interface CollectionBinding<T extends WithId> {
   store: { getState: () => Record<string, any>; subscribe: any }
   field: string

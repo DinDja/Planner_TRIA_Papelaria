@@ -310,7 +310,7 @@ export function ListsPage() {
   }, [lists, tab])
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-full min-w-0">
       <aside className="hidden lg:flex w-56 shrink-0 flex-col gap-1 border-r border-border/40 p-4">
         <div className="mb-2 flex items-center gap-2">
           <FolderIcon size={14} className="text-muted-foreground" />
@@ -354,7 +354,7 @@ export function ListsPage() {
           })}
         </div>
       </aside>
-      <div className="flex-1 overflow-auto p-6 lg:p-8">
+      <div className="min-w-0 flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
         <div className="mx-auto max-w-[1200px]">
       <div className={cn('flex flex-wrap items-end justify-between gap-4 mb-8', enter)}>
         <div>

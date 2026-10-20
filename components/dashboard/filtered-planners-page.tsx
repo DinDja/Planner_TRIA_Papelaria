@@ -44,7 +44,7 @@ export function FilteredPlannersPage({
   )
 
   return (
-    <div className="p-6 lg:p-8 max-w-[1100px] mx-auto">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-[1100px] mx-auto">
       <div className={cn('mb-8', enter)}>
         <Link
           href="/dashboard"
@@ -77,6 +77,7 @@ export function FilteredPlannersPage({
             <PlannerMiniCard
               key={planner.id}
               planner={planner}
+              folderName={folders.find((folder) => folder.id === planner.folderId)?.name}
               index={i}
               onEdit={() => setEditTarget(planner)}
               onDelete={() => setDeleteTarget(planner)}
@@ -103,8 +104,8 @@ export function FilteredPlannersPage({
 
 const PlannerMiniCard = forwardRef<
   HTMLAnchorElement,
-  { planner: Planner; index: number; onEdit: () => void; onDelete: () => void }
->(function PlannerMiniCard({ planner, index, onEdit, onDelete }, _ref) {
+  { planner: Planner; folderName?: string; index: number; onEdit: () => void; onDelete: () => void }
+>(function PlannerMiniCard({ planner, folderName, index, onEdit, onDelete }, _ref) {
   return (
     <Link href={`/planner/${planner.id}`} className="block group relative" style={{ animationDelay: `${index * 50}ms` }}>
       <div className="absolute right-2 top-2 z-10 flex items-center gap-0.5">
@@ -124,7 +125,7 @@ const PlannerMiniCard = forwardRef<
           <div className="min-w-0">
             <p className="font-semibold text-sm truncate">{planner.name}</p>
             <p className="text-[11px] text-muted-foreground">
-              {folders.find((folder) => folder.id === planner.folderId)?.name ?? 'Pasta não definida'} · {planner.pages.length} pág.
+              {folderName ?? 'Pasta não definida'} · {planner.pageCount ?? planner.pages.length} pág.
             </p>
           </div>
           {planner.tags.length > 0 && (

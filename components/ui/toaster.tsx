@@ -43,7 +43,7 @@ export function Toaster({ children }: { children?: React.ReactNode }) {
     <ToastContext value={{ toasts, toast, dismiss }}>
       <ToastBinder />
       {children}
-      <div className="fixed bottom-6 right-6 z-[9999] flex flex-col gap-3 pointer-events-none">
+      <div className="pointer-events-none fixed inset-x-4 bottom-4 z-[9999] flex flex-col items-stretch gap-3 sm:bottom-6 sm:left-auto sm:right-6 sm:items-end">
         <AnimatePresence>
           {toasts.map((t) => (
             <motion.div
@@ -53,7 +53,7 @@ export function Toaster({ children }: { children?: React.ReactNode }) {
               exit={{ opacity: 0, y: -10, scale: 0.95 }}
               transition={{ duration: 0.2 }}
               className={cn(
-                'pointer-events-auto flex items-start gap-3 rounded-2xl border border-border/60 p-4 shadow-lg glass min-w-[300px] max-w-[420px]',
+                'pointer-events-auto flex w-full min-w-0 max-w-[420px] items-start gap-3 rounded-2xl border border-border/60 p-4 shadow-lg glass sm:w-auto',
               )}
             >
               <span className="mt-0.5 shrink-0">
@@ -66,9 +66,9 @@ export function Toaster({ children }: { children?: React.ReactNode }) {
                 )}
               </span>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold">{t.title}</p>
+                <p className="break-words text-sm font-semibold [overflow-wrap:anywhere]">{t.title}</p>
                 {t.description && (
-                  <p className="text-xs text-muted-foreground mt-0.5">{t.description}</p>
+                  <p className="mt-0.5 break-words text-xs text-muted-foreground [overflow-wrap:anywhere]">{t.description}</p>
                 )}
               </div>
               <button

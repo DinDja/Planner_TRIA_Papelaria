@@ -13,7 +13,7 @@
  * Stroke 1.5, butt joints — coerência com components/icons/modules.
  */
 
-import type { SVGProps } from 'react'
+import type { JSX, SVGProps } from 'react'
 
 const COMMON = {
   fill: 'none',

@@ -23,7 +23,7 @@
  * use a prop `size` e crie outro preço visual fora deste sistema.
  */
 
-import type { SVGProps } from 'react'
+import type { JSX, SVGProps } from 'react'
 
 export type ModuloId =
   | 'dashboard'

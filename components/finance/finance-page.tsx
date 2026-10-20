@@ -298,7 +298,7 @@ export function FinancePage() {
   const openEditBox = (id: string) => { setBoxEditId(id); setBoxOpen(true) }
 
   return (
-    <div className="p-6 lg:p-8 max-w-[1200px] mx-auto">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-[1200px] mx-auto">
       {/* Header */}
       <div className={cn('flex flex-wrap items-end justify-between gap-4 mb-8', enter)}>
         <div>
@@ -341,8 +341,7 @@ export function FinancePage() {
       />
 
       <Tabs value={tab} onValueChange={setTab} className={enter}>
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
-          <TabList className="flex-nowrap overflow-x-auto scrollbar-thin max-w-full">
+        <TabList className="mb-4 flex w-full flex-wrap items-center justify-start gap-1 overflow-visible">
             <Tab value="resumo">Resumo</Tab>
             <Tab value="transacoes">Transações</Tab>
             <Tab value="contas">Contas Fixas</Tab>
@@ -350,12 +349,11 @@ export function FinancePage() {
             <Tab value="cartoes">Cartões</Tab>
             <Tab value="metas">Metas</Tab>
             <Tab value="caixinhas">Caixinhas</Tab>
-          </TabList>
-        </div>
+        </TabList>
 
         {/* ── Resumo ───────────────────────────────────────────── */}
         <TabPanel value="resumo">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div className="mb-6 grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 md:grid-cols-4 md:gap-4">
             {[
               { label: 'Receitas do mês', value: monthIncome, icon: TrendingUp, color: '#6a634d' },
               { label: 'Despesas do mês', value: monthExpense, icon: TrendingDown, color: '#d1bdb8' },
@@ -364,9 +362,9 @@ export function FinancePage() {
             ].map((s) => (
               <Card key={s.label} glass hover className="relative overflow-hidden">
                 <div className="flex items-start justify-between">
-                  <div>
+                  <div className="min-w-0 flex-1">
                     <p className="text-sm text-muted-foreground">{s.label}</p>
-                    <p className="text-2xl font-bold mt-0.5 tabular-nums">{formatBRL(s.value)}</p>
+                    <p className="mt-0.5 break-words text-xl font-bold tabular-nums sm:text-2xl [overflow-wrap:anywhere]">{formatBRL(s.value)}</p>
                   </div>
                   <div className="flex size-10 items-center justify-center rounded-xl"
                     style={{ backgroundColor: s.color + '18' }}>

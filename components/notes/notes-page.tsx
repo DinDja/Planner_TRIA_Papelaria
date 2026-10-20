@@ -235,7 +235,7 @@ export function NotesPage() {
   }, [notes, search, tab])
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-full min-w-0">
       {/* Sidebar de pastas */}
       <aside className="hidden lg:flex flex-col w-56 shrink-0 border-r border-border/40 p-4 gap-1">
         <div className="flex items-center justify-between mb-2">
@@ -333,7 +333,7 @@ export function NotesPage() {
       </aside>
 
       {/* Main content */}
-      <div className="flex-1 p-6 lg:p-8 overflow-auto">
+      <div className="min-w-0 flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
         <div className={cn('flex flex-wrap items-end justify-between gap-4 mb-6', enter)}>
           <div>
             <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">

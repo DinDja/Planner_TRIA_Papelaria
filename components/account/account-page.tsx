@@ -15,7 +15,7 @@ const FAQS = [
 
 export function AccountPage() {
   return (
-    <div className="p-6 lg:p-8 max-w-[700px] mx-auto">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-[700px] mx-auto">
       <header className={cn('mb-8', enter)}>
         <h1 className="text-3xl font-bold tracking-tight">Ajuda</h1>
         <p className="text-muted-foreground mt-1">

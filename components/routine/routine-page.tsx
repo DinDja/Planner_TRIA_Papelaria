@@ -339,7 +339,7 @@ export function RoutinePage() {
   const handleEditSlot = (id: string) => { setEditSlotId(id); setAddSlotOpen(true) }
 
   return (
-    <div className="p-6 lg:p-8 max-w-[1200px] mx-auto">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-[1200px] mx-auto">
       {/* Header */}
       <div className={cn('flex flex-wrap items-end justify-between gap-4 mb-8', enter)}>
         <div>

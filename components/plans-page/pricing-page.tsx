@@ -192,7 +192,7 @@ function PricingPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[1200px] p-6 lg:p-8">
+    <div className="mx-auto max-w-[1200px] p-4 sm:p-6 lg:p-8">
       <div className="mb-9 max-w-2xl">
         <p className="text-sm text-muted-foreground">
           um jeito simples de começar

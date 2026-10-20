@@ -209,6 +209,8 @@ export interface PlannerPage {
   title: string
   template: PageTemplateId
   data: CanvasData
+  /** Índice persistido para reconstituir a ordem das páginas no Firestore. */
+  pageOrder?: number
   /** Texto corrido do caderno; opcional para manter compatibilidade com páginas antigas. */
   content?: string
 }
@@ -224,6 +226,9 @@ export interface Planner {
   folderId: string | null
   tags: string[]
   pages: PlannerPage[]
+  /** Metadados usados pela sincronização das subcoleções de cadernos. */
+  order?: number
+  pageCount?: number
   createdAt: string
   updatedAt: string
 }
@@ -1000,6 +1005,9 @@ export interface BioimpedanceRecord {
   totalBodyWaterLiters?: number
   /** @deprecated Valores antigos salvos em porcentagem; preservar sem conversão. */
   totalBodyWaterPercentage?: number
+  proteinKg?: number
+  /** @deprecated Valores antigos salvos em porcentagem; preservar sem conversão. */
+  protein?: number
   bmi?: number
   fatMass?: number
   skeletalMuscleMass?: number
@@ -1008,7 +1016,6 @@ export interface BioimpedanceRecord {
   bodyFatPercentage?: number
   weight?: number
   score?: number
-  protein?: number
   /** taxa metabólica basal em kcal */
   basalMetabolicRate?: number
   notes?: string

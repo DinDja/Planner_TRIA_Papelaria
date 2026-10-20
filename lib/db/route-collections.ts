@@ -34,6 +34,13 @@ const always: string[] = [] // coleções que sempre precisamos? nenhuma — roo
 // ── Mapa pathname -> plano ──────────────────────────────────────────
 
 const PLAN: Array<{ match: RegExp; plan: RouteCollectionPlan }> = [
+  {
+    match: /^\/planners$/,
+    plan: {
+      collections: ['planners'],
+      rootFields: ['folders', 'plannerTags', 'theme'],
+    },
+  },
   // Dashboard agrega tarefas, favoritos, aniversários e saúde mensal.
   {
     match: /^\/(|dashboard)$/,

@@ -156,7 +156,7 @@ function RevealFeature({
   return (
     <div
       ref={ref}
-      className="landing-card group relative rounded-2xl border overflow-hidden p-8 transition-all duration-700"
+      className="landing-card group relative overflow-hidden rounded-2xl border p-5 transition-all duration-700 sm:p-8"
       style={{
         opacity: inView ? 1 : 0,
         transform: inView ? 'translateY(0)' : 'translateY(28px)',
@@ -249,12 +249,12 @@ export function LandingPage() {
 
   return (
     <div
-      className="landing-page min-h-screen antialiased"
+      className="landing-page min-h-dvh antialiased"
       style={{ fontFamily: 'var(--font-plex), sans-serif', scrollBehavior: 'smooth' }}
     >
       {/* ── STICKY NAV ─────────────────────────────────────────────────── */}
       <nav className="landing-nav fixed top-0 inset-x-0 z-50 backdrop-blur-md">
-        <div className="max-w-6xl mx-auto px-6 md:px-12 lg:px-20 h-16 flex items-center justify-between">
+        <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 sm:px-6 md:px-12 lg:px-20">
           <Link href="/" className="flex items-center">
             <BrandLogo className="h-14 w-36" />
           </Link>
@@ -282,7 +282,7 @@ export function LandingPage() {
       </nav>
 
       {/* ── HERO ────────────────────────────────────────────────────────── */}
-      <section className="relative mt-16 h-[calc(100svh-4rem)] min-h-[780px] sm:min-h-[700px] lg:min-h-[640px] overflow-hidden">
+      <section className="relative mt-16 flex min-h-[calc(100svh-4rem)] flex-col justify-end overflow-hidden sm:block sm:h-[calc(100svh-4rem)] sm:min-h-[700px] lg:min-h-[640px]">
         {/* Livro do produto — ao lado do título no desktop e acima dele no mobile. */}
         <div className="absolute z-20 top-0 right-[-18%] hidden h-[42%] w-[92%] sm:right-[-8%] sm:h-[48%] sm:w-[70%] md:block lg:top-auto lg:right-[-2%] lg:bottom-[8%] lg:h-[76%] lg:w-[54%] xl:right-[2%] xl:w-[52%]">
           <InfiniteBook ready={heroReady} />
@@ -290,14 +290,14 @@ export function LandingPage() {
 
         {/* Título + métricas — ancorados no canto inferior esquerdo, com parallax invertido */}
         <div
-          className="absolute inset-x-0 bottom-0 z-30 flex flex-col px-6 md:px-12 pb-12 max-w-3xl"
+          className="relative z-30 mx-auto flex w-full max-w-3xl flex-col px-4 pb-8 pt-10 sm:absolute sm:inset-x-0 sm:bottom-0 sm:px-6 sm:pb-12 sm:pt-0 md:px-12"
           style={{
             transform: `translateY(${heroOffset * -0.15}px)`,
             opacity: 1 - heroOffset / (typeof window !== 'undefined' ? window.innerHeight : 1000) * 1.2,
           }}
         >
           <h1
-            className="landing-heading text-6xl sm:text-7xl md:text-8xl font-light leading-[1.0] tracking-tight mb-10"
+            className="landing-heading mb-8 text-[clamp(2.75rem,13vw,3.75rem)] font-light leading-[1.0] tracking-tight sm:mb-10 sm:text-7xl md:text-8xl"
             style={{
               fontFamily: 'var(--font-plex), sans-serif',
               opacity: heroReady ? 1 : 0,
@@ -314,10 +314,11 @@ export function LandingPage() {
           </h1>
 
           {/* 3 métricas — staggered após o título */}
-          <div className="flex gap-8 sm:gap-12">
+          <div className="flex gap-4 sm:gap-12">
             {HERO_STATS.map((stat, i) => (
               <div
                 key={i}
+                className="min-w-0 flex-1"
                 style={{
                   opacity: heroReady ? 1 : 0,
                   filter: heroReady ? 'blur(0px)' : 'blur(16px)',
@@ -332,7 +333,7 @@ export function LandingPage() {
                   {stat.value}
                 </div>
                 <div
-                  className="landing-copy-subtle text-xs tracking-widest uppercase mt-1"
+                  className="landing-copy-subtle mt-1 break-words text-[10px] uppercase tracking-wider sm:text-xs sm:tracking-widest [overflow-wrap:anywhere]"
                   style={{ fontFamily: 'var(--font-plex), sans-serif' }}
                 >
                   {stat.label}
@@ -342,7 +343,7 @@ export function LandingPage() {
           </div>
 
           {/* CTA — inicia o caderno */}
-          <div className="mt-10">
+          <div className="mt-8 sm:mt-10">
             <Link
               href="/auth/login"
               className="landing-action inline-flex items-center gap-2 px-8 py-3 rounded-xl text-sm tracking-widest transition-colors"
@@ -375,7 +376,7 @@ export function LandingPage() {
       </div>
 
       {/* ── PLATAFORMA (bento resumido) ────────────────────────────────── */}
-      <section id="plataforma" className="py-32 px-6 md:px-12 lg:px-20">
+      <section id="plataforma" className="px-4 py-16 sm:px-6 sm:py-20 md:px-12 lg:px-20 lg:py-32">
         <div className="max-w-6xl mx-auto">
           <Reveal className="mb-16">
             <span className="landing-chip inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] tracking-widest">
@@ -406,7 +407,7 @@ export function LandingPage() {
       </section>
 
       {/* ── TEMPLATES ──────────────────────────────────────────────────── */}
-      <section id="templates" className="landing-border py-32 px-6 md:px-12 lg:px-20 border-t">
+      <section id="templates" className="landing-border border-t px-4 py-16 sm:px-6 sm:py-20 md:px-12 lg:px-20 lg:py-32">
         <div className="max-w-6xl mx-auto">
           <Reveal className="mb-16 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
             <div>
@@ -436,7 +437,7 @@ export function LandingPage() {
       </section>
 
       {/* ── PREÇOS ─────────────────────────────────────────────────────── */}
-      <section id="precos" className="landing-border py-32 px-6 md:px-12 lg:px-20 border-t">
+      <section id="precos" className="landing-border border-t px-4 py-16 sm:px-6 sm:py-20 md:px-12 lg:px-20 lg:py-32">
         <div className="max-w-6xl mx-auto">
           <Reveal className="mb-16 text-center">
             <span className="landing-chip inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] tracking-widest">
@@ -458,7 +459,7 @@ export function LandingPage() {
               return (
               <Reveal key={p.id} delay={i * 100}>
                 <div
-                  className={`relative rounded-2xl border p-8 h-full transition-all duration-500 hover:-translate-y-1 ${
+                  className={`relative h-full rounded-2xl border p-5 transition-all duration-500 hover:-translate-y-1 sm:p-8 ${
                     highlight
                        ? 'landing-action-card border'
                        : 'landing-surface landing-border border'
@@ -516,7 +517,7 @@ export function LandingPage() {
       </section>
 
       {/* ── CTA final ────────────────────────────────────────────────────── */}
-      <section className="landing-border py-32 px-6 md:px-12 lg:px-20 border-t">
+      <section className="landing-border border-t px-4 py-16 sm:px-6 sm:py-20 md:px-12 lg:px-20 lg:py-32">
         <div className="relative z-10 max-w-2xl mx-auto text-center">
           <h2
             className="text-4xl md:text-5xl lg:text-6xl font-light tracking-tight leading-[1.05] mb-6"
@@ -540,7 +541,7 @@ export function LandingPage() {
       </section>
 
       {/* ── FOOTER ───────────────────────────────────────────────────────── */}
-      <footer className="landing-border py-10 px-6 md:px-12 lg:px-20 border-t">
+      <footer className="landing-border border-t px-4 py-8 sm:px-6 sm:py-10 md:px-12 lg:px-20">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
           <span
             className="landing-copy-muted text-xs tracking-[0.25em]"

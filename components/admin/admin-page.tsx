@@ -110,7 +110,7 @@ export function AdminPage() {
   }, [users])
 
   return (
-    <div className="p-6 lg:p-8 max-w-[1200px] mx-auto">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-[1200px] mx-auto">
       {/* Cabeçalho — sem ícone SaaS genérico */}
       <div className={cn('mb-8', enter)}>
         <p
@@ -190,10 +190,10 @@ export function AdminPage() {
         <AssinantesTab
           users={users}
           currentUid={user?.uid ?? ''}
-          onPromote={(t) => user && promoteToAdmin(user, t).then(() => toast({ title: 'Promovida a admina' }))}
-          onDemote={(t) => user && demoteFromAdmin(user, t).then(() => toast({ title: 'Rebaixada para assinante' }))}
-          onBlock={(t) => user && blockUser(user, t).then(() => toast({ title: 'Usuária bloqueada', variant: 'error' }))}
-          onUnblock={(t) => user && unblockUser(user, t).then(() => toast({ title: 'Usuária desbloqueada' }))}
+          onPromote={(t) => user ? promoteToAdmin(user, t).then(() => toast({ title: 'Promovida a admina' })) : undefined}
+          onDemote={(t) => user ? demoteFromAdmin(user, t).then(() => toast({ title: 'Rebaixada para assinante' })) : undefined}
+          onBlock={(t) => user ? blockUser(user, t).then(() => toast({ title: 'Usuária bloqueada', variant: 'error' })) : undefined}
+          onUnblock={(t) => user ? unblockUser(user, t).then(() => toast({ title: 'Usuária desbloqueada' })) : undefined}
         />
       )}
 
@@ -201,10 +201,10 @@ export function AdminPage() {
         <CobrancaTab
           users={users}
           onMarkPayment={(t, plan, paidUntil) =>
-            user && markPayment(user, t, plan, paidUntil).then(() => toast({ title: 'Pagamento registrado' }))
+            user ? markPayment(user, t, plan, paidUntil).then(() => toast({ title: 'Pagamento registrado' })) : undefined
           }
-          onPause={(t) => user && pauseSubscription(user, t).then(() => toast({ title: 'Assinatura pausada', variant: 'error' }))}
-          onCancel={(t) => user && cancelSubscription(user, t).then(() => toast({ title: 'Assinatura cancelada', variant: 'error' }))}
+          onPause={(t) => user ? pauseSubscription(user, t).then(() => toast({ title: 'Assinatura pausada', variant: 'error' })) : undefined}
+          onCancel={(t) => user ? cancelSubscription(user, t).then(() => toast({ title: 'Assinatura cancelada', variant: 'error' })) : undefined}
         />
       )}
 
@@ -255,7 +255,7 @@ function Stat({
   label: string
   value: string
   color: string
-  icon: React.ComponentType<{ size?: number }>
+  icon: React.ComponentType<{ size?: number; style?: React.CSSProperties }>
   index: number
 }) {
   return (
@@ -287,8 +287,8 @@ function TabelaSimples(props: {
     )
   }
   return (
-    <div className="overflow-hidden rounded-2xl border border-border/40">
-      <table className="w-full text-sm">
+    <div className="max-w-full overflow-x-auto overscroll-x-contain rounded-2xl border border-border/40">
+      <table className="w-full min-w-[680px] text-sm">
         <thead>
           <tr className="bg-muted/40 border-b border-border/40">
             {props.headers.map((h, i) => (
@@ -359,8 +359,8 @@ function AssinantesTab({
     </Badge>,
     <Badge
       key="b"
-      variant={u.blocked ? 'destructive' : 'outline'}
-      className="text-[10px]"
+      variant="outline"
+      className={cn('text-[10px]', u.blocked && 'border-destructive/40 text-destructive')}
     >
       {u.blocked ? 'Bloqueada' : 'Ativa'}
     </Badge>,

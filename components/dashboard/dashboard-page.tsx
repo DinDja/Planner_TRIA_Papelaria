@@ -87,9 +87,6 @@ function HabitsSummary({ todayISO }: { todayISO: string }) {
         ) : (
           <div className="flex min-h-[155px] flex-col items-center justify-center text-center">
             <p className="text-sm text-muted-foreground">Nenhum hábito cadastrado.</p>
-            <Link href="/habitos" className="mt-2 text-xs text-primary hover:underline">
-              Criar primeiro hábito
-            </Link>
           </div>
         )}
       </CardContent>
@@ -176,7 +173,7 @@ export function DashboardPage() {
   const displayName = profileName.trim() || user?.displayName?.trim() || user?.email?.split('@')[0] || 'usuário'
 
   return (
-    <div className="p-6 lg:p-8 max-w-[1400px] mx-auto">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-[1400px] mx-auto">
       {/* Header */}
       <div className="flex items-start justify-between mb-8">
         <div>

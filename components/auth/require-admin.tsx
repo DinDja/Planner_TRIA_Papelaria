@@ -34,7 +34,7 @@ export function RequireAdmin({ children }: { children: React.ReactNode }) {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center">
+      <div className="flex min-h-dvh items-center justify-center">
         <Loader2 className="size-6 animate-spin text-muted-foreground" />
       </div>
     )
@@ -44,7 +44,7 @@ export function RequireAdmin({ children }: { children: React.ReactNode }) {
 
   if (!isAdminRole) {
     return (
-      <div className="flex h-screen flex-col items-center justify-center gap-3 text-center px-6">
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-3 px-4 py-8 text-center sm:px-6">
         <ShieldAlert size={28} className="text-muted-foreground" />
         <p className="text-sm text-muted-foreground max-w-sm">
           Esta área é restrita à administração da Tria Papelaria.

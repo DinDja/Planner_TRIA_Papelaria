@@ -8,6 +8,8 @@ import {
   sendPasswordResetEmail,
   signInWithPopup,
   GoogleAuthProvider,
+  browserLocalPersistence,
+  setPersistence,
   updateProfile,
   signOut,
   type User,
@@ -36,6 +38,37 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 // um novo login real dispara novamente. Isto evita repetir seedUserDoc
 // + writeUserManifest em todo refresh/redirect do onAuthStateChanged.
 const SEED_FLAG_PREFIX = 'tria-papelaria:seeded:'
+const SESSION_ACTIVITY_PREFIX = 'tria-papelaria-auth-last-activity:'
+const SESSION_INACTIVITY_LIMIT_MS = 7 * 24 * 60 * 60 * 1000
+
+function sessionActivityKey(uid: string) {
+  return SESSION_ACTIVITY_PREFIX + uid
+}
+
+function recordSessionActivity(uid: string, at = Date.now()) {
+  try {
+    localStorage.setItem(sessionActivityKey(uid), String(at))
+  } catch {}
+}
+
+function sessionHasExpired(uid: string, now = Date.now()): boolean {
+  try {
+    const key = sessionActivityKey(uid)
+    const raw = localStorage.getItem(key)
+    const lastActivity = raw === null ? NaN : Number(raw)
+
+    // Sessões já existentes antes desta regra ganham o primeiro prazo a
+    // partir do próximo acesso. Valores inválidos também são reiniciados.
+    if (!Number.isFinite(lastActivity) || lastActivity <= 0) {
+      recordSessionActivity(uid, now)
+      return false
+    }
+
+    return now - lastActivity >= SESSION_INACTIVITY_LIMIT_MS
+  } catch {
+    return false
+  }
+}
 
 function seededThisSession(uid: string): boolean {
   try {
@@ -116,6 +149,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return
       }
 
+      // A sessão continua válida entre acessos por até sete dias. Cada
+      // retorno ao sistema reinicia a janela; atividade na tela a mantém viva.
+      if (sessionHasExpired(u.uid)) {
+        void signOut(auth).finally(clearLocalCache)
+        return
+      }
+      recordSessionActivity(u.uid)
+
       // seeding/manifest são responsabilidade dos pontos de cadastro/signIn,
       // não do onAuthStateChanged (que dispara a cada refresh/redirect e
       // causava read+write em todo carregamento de página). Mantemos aqui
@@ -131,7 +172,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const signIn = async (email: string, password: string) => {
+    await setPersistence(auth, browserLocalPersistence)
     const cred = await signInWithEmailAndPassword(auth, email, password)
+    recordSessionActivity(cred.user.uid)
     setRole(getSyncedRole(cred.user))
     setUser(cred.user)
     setLoading(false)
@@ -144,7 +187,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const signUp = async (name: string, email: string, password: string) => {
+    await setPersistence(auth, browserLocalPersistence)
     const cred = await createUserWithEmailAndPassword(auth, email, password)
+    recordSessionActivity(cred.user.uid)
     await updateProfile(cred.user, { displayName: name })
     setRole(getSyncedRole(cred.user))
     setUser(cred.user)
@@ -170,7 +215,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const signInWithGoogle = async () => {
+    await setPersistence(auth, browserLocalPersistence)
     const cred = await signInWithPopup(auth, new GoogleAuthProvider())
+    recordSessionActivity(cred.user.uid)
     setRole(getSyncedRole(cred.user))
     setUser(cred.user)
     setLoading(false)
@@ -200,6 +247,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       clearLocalCache()
     }
   }
+
+  useEffect(() => {
+    if (!user) return
+
+    let expirationStarted = false
+    const expireIfInactive = () => {
+      if (expirationStarted || !sessionHasExpired(user.uid)) return false
+      expirationStarted = true
+      void signOut(auth).finally(clearLocalCache)
+      return true
+    }
+
+    const markActivity = () => {
+      if (expireIfInactive()) return
+      recordSessionActivity(user.uid)
+    }
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') markActivity()
+    }
+
+    const timer = window.setInterval(expireIfInactive, 60_000)
+    window.addEventListener('pointerdown', markActivity)
+    window.addEventListener('keydown', markActivity)
+    window.addEventListener('touchstart', markActivity)
+    window.addEventListener('wheel', markActivity)
+    document.addEventListener('visibilitychange', onVisibilityChange)
+
+    return () => {
+      window.clearInterval(timer)
+      window.removeEventListener('pointerdown', markActivity)
+      window.removeEventListener('keydown', markActivity)
+      window.removeEventListener('touchstart', markActivity)
+      window.removeEventListener('wheel', markActivity)
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+    }
+  }, [user])
 
   return (
     <AuthContext.Provider

@@ -3,12 +3,14 @@
 import { useAppStore } from '@/lib/store/use-app-store'
 import type { Planner } from '@/lib/types'
 import { cn } from '@/lib/utils'
-import { FolderPlus, Pencil, Star, Trash2 } from 'lucide-react'
+import { BookOpen, Folder as FolderIcon, FolderPlus, Pencil, Star, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 import { CreatePlannerDialog } from '../dashboard/create-planner-dialog'
-import { Button } from '../ui/button'
+import { Button, buttonVariants } from '../ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { Tab, TabList, Tabs } from '../ui/overlays'
+import { CadernoIcon } from '../icons/modules'
 import { DeletePlannerDialog } from './delete-planner-dialog'
 import { PlannerFolderDialog } from './planner-folder-dialog'
 
@@ -36,7 +38,7 @@ export function PlannersPage() {
     : planners
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-full min-w-0">
       <aside className="hidden w-56 shrink-0 flex-col gap-1 border-r border-border/40 p-4 lg:flex" aria-label="Filtros de cadernos">
         <button
           type="button"
@@ -107,11 +109,16 @@ export function PlannersPage() {
         )}
       </aside>
 
-      <div className="min-w-0 flex-1 overflow-auto p-6 lg:p-8">
+      <div className="min-w-0 flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
         <div className="mx-auto max-w-[1200px]">
           <div className={cn('flex flex-wrap items-end justify-between gap-4 mb-8', enter)}>
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">Meus Cadernos</h1>
+              <h1 className="flex items-center gap-3 text-3xl font-bold tracking-tight">
+                <span className="flex size-11 items-center justify-center rounded-2xl bg-primary/10">
+                  <CadernoIcon size={22} className="text-primary" aria-hidden />
+                </span>
+                Meus Cadernos
+              </h1>
               <p className="text-muted-foreground mt-2">
                 {planners.length === 0
                   ? 'Nenhum caderno ainda.'
@@ -139,75 +146,106 @@ export function PlannersPage() {
                   </span>
                 </Tab>
                 {folders.map((folder) => (
-                  <Tab key={folder.id} value={`folder-${folder.id}`}>{folder.name}</Tab>
+                  <Tab key={folder.id} value={`folder-${folder.id}`}>
+                    <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: folder.color }} />
+                    {folder.name}
+                  </Tab>
                 ))}
               </TabList>
             </Tabs>
           </div>
 
           {filteredPlanners.length > 0 ? (
-            <ul className="divide-y divide-border/50 overflow-hidden rounded-2xl border border-border/60 bg-card/50">
+            <div className="space-y-4">
               {filteredPlanners.map((planner) => {
-                const pageCount = planner.pages?.length ?? 0
+                const pageCount = planner.pageCount ?? planner.pages?.length ?? 0
+                const plannerFolderName = folderName(planner.folderId)
+
                 return (
-                  <li key={planner.id} className="flex items-center gap-2 px-3 py-2.5 transition-colors hover:bg-muted/30 sm:px-4">
-                    <Link
-                      href={'/planner/' + planner.id}
-                      className="flex min-w-0 flex-1 items-center gap-3 rounded-lg py-1 text-left outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-                    >
-                      <span className="min-w-0 flex-1">
-                        <span className="flex min-w-0 items-center gap-2">
-                          <span className="truncate text-sm font-semibold">{planner.name}</span>
-                          {planner.favorite && (
-                            <span
-                              role="img"
-                              aria-label="Caderno favorito"
-                              title="Caderno favorito"
-                              className="flex size-5 shrink-0 items-center justify-center rounded-full bg-warning/25 text-warning"
-                            >
-                              <Star size={11} className="fill-current" aria-hidden />
+                  <Card
+                    key={planner.id}
+                    glass
+                    className="overflow-hidden"
+                    style={{ borderTopColor: planner.color, borderTopWidth: 3 }}
+                  >
+                    <CardHeader className="flex-row items-start justify-between gap-3 pb-0">
+                      <Link
+                        href={'/planner/' + planner.id}
+                        className="flex min-w-0 items-center gap-3 rounded-lg text-left outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                      >
+                        <span
+                          className="flex size-10 shrink-0 items-center justify-center rounded-xl"
+                          style={{ backgroundColor: planner.color + '18', color: planner.color }}
+                        >
+                          <CadernoIcon size={18} aria-hidden />
+                        </span>
+                        <div className="min-w-0">
+                          <div className="flex min-w-0 items-center gap-2">
+                            <CardTitle className="truncate text-base">{planner.name}</CardTitle>
+                            {planner.favorite && (
+                              <span
+                                role="img"
+                                aria-label="Caderno favorito"
+                                title="Caderno favorito"
+                                className="flex size-5 shrink-0 items-center justify-center rounded-full bg-warning/25 text-warning"
+                              >
+                                <Star size={11} className="fill-current" aria-hidden />
+                              </span>
+                            )}
+                          </div>
+                          <span className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              {plannerFolderName ? <FolderIcon size={11} aria-hidden /> : null}
+                              {plannerFolderName ?? 'Sem pasta'}
                             </span>
-                          )}
-                        </span>
-                        <span className="mt-0.5 block truncate text-xs text-muted-foreground">
-                          {folderName(planner.folderId) ?? 'Sem pasta'}
-                        </span>
-                      </span>
-                      <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
-                        {pageCount} {pageCount === 1 ? 'página' : 'páginas'}
-                      </span>
-                    </Link>
-                    <Link
-                      href={'/planner/' + planner.id}
-                      className="flex h-8 shrink-0 items-center justify-center rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-                    >
-                      Entrar
-                    </Link>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEditTarget(planner)
-                        setCreateOpen(true)
-                      }}
-                      aria-label={'Editar ' + planner.name}
-                      title={'Editar ' + planner.name}
-                      className="flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-                    >
-                      <Pencil size={15} aria-hidden />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setDeleteTarget(planner)}
-                      aria-label={'Excluir ' + planner.name}
-                      title={'Excluir ' + planner.name}
-                      className="flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/40"
-                    >
-                      <Trash2 size={15} aria-hidden />
-                    </button>
-                  </li>
+                            <span>{pageCount} {pageCount === 1 ? 'página' : 'páginas'}</span>
+                          </span>
+                        </div>
+                      </Link>
+                      <div className="flex shrink-0 items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditTarget(planner)
+                            setCreateOpen(true)
+                          }}
+                          aria-label={'Editar ' + planner.name}
+                          title={'Editar ' + planner.name}
+                          className="flex size-9 cursor-pointer items-center justify-center rounded-lg text-muted-foreground/60 transition-colors hover:bg-primary/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                        >
+                          <Pencil size={14} aria-hidden />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDeleteTarget(planner)}
+                          aria-label={'Excluir ' + planner.name}
+                          title={'Excluir ' + planner.name}
+                          className="flex size-9 cursor-pointer items-center justify-center rounded-lg text-muted-foreground/60 transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/40"
+                        >
+                          <Trash2 size={14} aria-hidden />
+                        </button>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="pt-3">
+                      {planner.description && (
+                        <p className="line-clamp-2 text-xs text-muted-foreground">{planner.description}</p>
+                      )}
+                      <Link
+                        href={'/planner/' + planner.id}
+                        className={buttonVariants({
+                          variant: 'ghost',
+                          size: 'sm',
+                          className: 'mt-3 w-full rounded-xl text-xs gap-1 text-muted-foreground hover:text-foreground',
+                        })}
+                      >
+                        <BookOpen size={13} aria-hidden />
+                        Abrir caderno
+                      </Link>
+                    </CardContent>
+                  </Card>
                 )
               })}
-            </ul>
+            </div>
           ) : (
             <div className="text-center py-16">
               <p className="text-muted-foreground">

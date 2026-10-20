@@ -141,22 +141,23 @@ const measurementMetrics: { key: MeasurementMetric; label: string }[] = [
 
 type BioimpedanceMetric = keyof Pick<
   BioimpedanceRecord,
-  'totalBodyWaterLiters' | 'totalBodyWaterPercentage' | 'bmi' | 'fatMass' | 'skeletalMuscleMass'
-  | 'minerals' | 'bodyFatPercentage' | 'weight' | 'score' | 'protein'
+  'totalBodyWaterLiters' | 'totalBodyWaterPercentage' | 'proteinKg' | 'protein' | 'minerals'
+  | 'weight' | 'skeletalMuscleMass' | 'fatMass' | 'bmi' | 'bodyFatPercentage' | 'score'
   | 'basalMetabolicRate'
 >
 
 const bioimpedanceMetrics: { key: BioimpedanceMetric; label: string; unit: string }[] = [
   { key: 'totalBodyWaterLiters', label: 'Água Corporal Total', unit: 'L' },
-  { key: 'totalBodyWaterPercentage', label: 'Água Corporal (registro antigo)', unit: '%' },
-  { key: 'bmi', label: 'IMC', unit: 'kg/m²' },
-  { key: 'fatMass', label: 'Massa de Gordura', unit: 'kg' },
-  { key: 'skeletalMuscleMass', label: 'Massa Muscular Esquelética', unit: 'kg' },
+  { key: 'proteinKg', label: 'Proteína', unit: 'kg' },
   { key: 'minerals', label: 'Minerais', unit: 'kg' },
-  { key: 'bodyFatPercentage', label: 'Percentual de Gordura', unit: '%' },
   { key: 'weight', label: 'Peso', unit: 'kg' },
+  { key: 'skeletalMuscleMass', label: 'Massa Muscular Esquelética', unit: 'kg' },
+  { key: 'fatMass', label: 'Massa de Gordura', unit: 'kg' },
+  { key: 'bmi', label: 'Índice de Massa Corporal', unit: 'kg/m²' },
+  { key: 'bodyFatPercentage', label: 'Percentual de Gordura', unit: '%' },
+  { key: 'totalBodyWaterPercentage', label: 'Água Corporal (registro antigo)', unit: '%' },
+  { key: 'protein', label: 'Proteína (registro antigo)', unit: '%' },
   { key: 'score', label: 'Pontuação', unit: '' },
-  { key: 'protein', label: 'Proteína', unit: '%' },
   { key: 'basalMetabolicRate', label: 'Taxa Metabólica Basal', unit: 'kcal' },
 ]
 
@@ -1064,7 +1065,7 @@ export function HealthPage() {
   }
 
   return (
-    <div className="p-6 lg:p-8 max-w-[1000px] mx-auto">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-[1000px] mx-auto">
       <div className={cn('flex flex-wrap items-end justify-between gap-4 mb-8', enter)}>
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">

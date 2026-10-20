@@ -39,6 +39,7 @@ import { useBirthdaysStore } from '@/lib/store/use-birthdays-store'
 import { useTrashStore } from '@/lib/store/use-trash-store'
 import { useSubscriptionStore } from '@/lib/subscriptions/use-subscription-store'
 import { normalizeShoppingList } from '@/lib/lists'
+import { bindPlannerFirestoreSync } from '@/lib/db/planner-sync'
 
 type StoreLike = {
   getState: () => Record<string, any>
@@ -94,7 +95,6 @@ const ROOT_BINDINGS: RootBinding[] = [
 const GLOBAL_ROOT_KEYS = ['name', 'avatar', 'email'] as const
 
 const COL_BINDINGS: ColBinding[] = [
-  { store: useAppStore as unknown as StoreLike, field: 'planners', collection: 'planners', read: true, write: false },
   { store: useDiarioStore as unknown as StoreLike, field: 'registros', collection: 'diarios', read: true, write: true },
   { store: useJournalStore as unknown as StoreLike, field: 'entries', collection: 'journalEntries', read: true, write: true },
   { store: useNotesStore as unknown as StoreLike, field: 'notes', collection: 'notes', read: true, write: true },
@@ -176,6 +176,13 @@ export function StoreSyncProvider({ children, editorMode = false }: StoreSyncPro
     }
     return () => unsubs.forEach((unsubscribe) => unsubscribe())
   }, [user?.uid])
+
+  const plannerReadActive = plan.collections.includes('planners')
+  const activePagePlannerId = editorMode ? pathname?.split('/').filter(Boolean).at(-1) : undefined
+  useEffect(() => {
+    if (!user) return
+    return bindPlannerFirestoreSync(user, useAppStore, plannerReadActive, activePagePlannerId)
+  }, [user?.uid, plannerReadActive, activePagePlannerId])
 
   useEffect(() => {
     if (!user) return

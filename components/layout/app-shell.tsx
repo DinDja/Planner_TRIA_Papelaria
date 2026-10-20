@@ -34,7 +34,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, [])
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex h-dvh min-h-dvh w-full min-w-0 overflow-hidden">
       <PwaRegister />
       <NotificationCenter />
       <PwaInstallPrompt />
@@ -46,12 +46,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         onOpenSettings={openSettings}
       />
 
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <TopBar
           onToggleSidebar={() => setMobileOpen((v) => !v)}
           onOpenCommand={() => setCmdOpen(true)}
         />
-        <main className="flex-1 overflow-auto">{children}</main>
+        <main className="min-h-0 min-w-0 flex-1 overflow-auto overscroll-contain break-words [overflow-wrap:anywhere]">
+          {children}
+        </main>
       </div>
 
       <CommandPalette open={cmdOpen} onClose={() => setCmdOpen(false)} />

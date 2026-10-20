@@ -176,7 +176,7 @@ export function AppSidebar({
       {/* Desktop sidebar */}
       <aside
         className={cn(
-          'hidden md:flex flex-col h-screen shrink-0 glass border-r border-border/40 transition-all duration-300 z-30 overflow-hidden',
+          'hidden md:flex flex-col h-dvh shrink-0 glass border-r border-border/40 transition-all duration-300 z-30 overflow-hidden',
           collapsed ? 'w-[68px]' : 'w-[260px]',
         )}
       >
@@ -199,7 +199,7 @@ export function AppSidebar({
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className="fixed left-0 top-0 z-50 h-screen w-[280px] border-r border-border/40 bg-background flex flex-col shadow-2xl md:hidden"
+              className="fixed left-0 top-0 z-50 flex h-dvh w-[min(280px,100vw)] max-w-full flex-col border-r border-border/40 bg-background pb-[env(safe-area-inset-bottom)] pt-[env(safe-area-inset-top)] shadow-2xl md:hidden"
             >
               {sidebarContent}
             </motion.aside>

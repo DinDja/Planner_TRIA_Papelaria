@@ -210,7 +210,7 @@ export function JournalPage() {
   }
 
   return (
-    <div className="p-6 lg:p-8 max-w-[1100px] mx-auto">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-[1100px] mx-auto">
       <div className="space-y-6">
         {/* Header */}
         <div className={cn('flex flex-wrap items-start justify-between gap-4', enter)}>

@@ -221,7 +221,7 @@ function MonthlyCalendarView({
   onCompleteRoutine: (item: RoutineCalendarItem) => void
 }) {
   return (
-    <Card glass className="overflow-hidden">
+    <Card glass className="hidden overflow-hidden md:block">
       <div className="grid grid-cols-7 border-b border-border/40 bg-muted/30">
         {DAY_HEADERS.map((day) => (
           <div key={day} className="px-3 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -320,6 +320,171 @@ function MonthlyCalendarView({
         ))}
       </div>
     </Card>
+  )
+}
+
+function MobileMonthlyAgenda({
+  weeks,
+  today,
+  selectedDate,
+  eventsByDate,
+  routineByDate,
+  onSelectDate,
+  onAdd,
+  onEdit,
+  onCompleteRoutine,
+}: {
+  weeks: CalendarCell[][]
+  today: string
+  selectedDate: Date
+  eventsByDate: Map<string, CalendarEvent[]>
+  routineByDate: Map<string, RoutineCalendarItem[]>
+  onSelectDate: (date: string) => void
+  onAdd: (date: string) => void
+  onEdit: (id: string) => void
+  onCompleteRoutine: (item: RoutineCalendarItem) => void
+}) {
+  const selectedKey = toDateKey(selectedDate)
+  const selectedEvents = sortEvents(eventsByDate.get(selectedKey) ?? [])
+  const selectedRoutine = sortRoutineItems(routineByDate.get(selectedKey) ?? [])
+  const selectedTitle = formatDayTitle(selectedDate)
+
+  return (
+    <div className="space-y-4 md:hidden">
+      <Card glass className="overflow-hidden p-0">
+        <div className="grid grid-cols-7 border-b border-border/40 bg-muted/30">
+          {DAY_HEADERS.map((day) => (
+            <div key={day} className="py-2 text-center text-[8px] font-semibold uppercase text-muted-foreground">
+              {day}
+            </div>
+          ))}
+        </div>
+        {weeks.map((week, weekIndex) => (
+          <div key={weekIndex} className="grid grid-cols-7 border-b border-border/20 last:border-0">
+            {week.map((cell) => {
+              const key = dateKey(cell.year, cell.month, cell.day)
+              const dayEvents = eventsByDate.get(key) ?? []
+              const routineItems = routineByDate.get(key) ?? []
+              const itemCount = dayEvents.length + routineItems.length
+              const isToday = key === today
+              const isSelected = key === selectedKey
+              const markers = [
+                ...dayEvents.map((event) => ({ id: event.id, color: event.color })),
+                ...routineItems.map((item) => ({
+                  id: `${item.kind}-${item.task.id}`,
+                  color: PRIORITY_COLORS[item.task.priority],
+                })),
+              ].slice(0, 3)
+
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => onSelectDate(key)}
+                  aria-pressed={isSelected}
+                  aria-label={`${formatDayTitle(new Date(cell.year, cell.month, cell.day, 12))}, ${itemCount} ${itemCount === 1 ? 'item' : 'itens'}`}
+                  className={cn(
+                    'flex min-h-12 min-w-0 flex-col items-center justify-center gap-0.5 border-r border-border/20 py-1 last:border-0',
+                    isSelected && 'bg-primary/[0.06]',
+                  )}
+                >
+                  <span className={cn(
+                    'flex size-7 items-center justify-center rounded-full text-xs tabular-nums',
+                    isToday
+                      ? 'bg-primary font-semibold text-primary-foreground'
+                      : isSelected
+                        ? 'font-semibold text-primary'
+                        : cell.isCurrentMonth
+                          ? 'text-foreground'
+                          : 'text-muted-foreground/45',
+                  )}>
+                    {cell.day}
+                  </span>
+                  <span aria-hidden className="flex h-1 items-center justify-center gap-0.5">
+                    {markers.map((marker) => (
+                      <span key={marker.id} className="size-1 rounded-full" style={{ backgroundColor: marker.color }} />
+                    ))}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        ))}
+      </Card>
+
+      <section aria-label="Agenda do dia selecionado" className="space-y-2">
+        <div className="flex items-center justify-between gap-3 px-1">
+          <div className="min-w-0">
+            <h2 className="truncate text-sm font-semibold capitalize text-foreground">{selectedTitle}</h2>
+            <TaskCount
+              count={selectedRoutine.filter((item) => item.kind === 'recurring' || !item.task.done).length}
+            />
+          </div>
+          <Button variant="outline" size="sm" onClick={() => onAdd(selectedKey)} className="shrink-0 gap-1.5">
+            <Plus size={14} />
+            Evento
+          </Button>
+        </div>
+
+        {selectedEvents.length === 0 && selectedRoutine.length === 0 ? (
+          <Card glass className="px-4 py-5 text-center">
+            <p className="text-sm text-muted-foreground">Nenhum compromisso neste dia.</p>
+            <button
+              type="button"
+              onClick={() => onAdd(selectedKey)}
+              className="mt-1 text-xs font-medium text-primary underline-offset-4 hover:underline"
+            >
+              Adicionar evento
+            </button>
+          </Card>
+        ) : (
+          <div className="space-y-2">
+            {selectedEvents.map((event) => (
+              <button
+                key={event.id}
+                type="button"
+                onClick={() => onEdit(event.id)}
+                className="w-full min-w-0 rounded-sm border-l-[3px] bg-muted/20 px-3 py-2.5 text-left transition-colors hover:bg-muted/40"
+                style={{ borderLeftColor: event.color }}
+              >
+                <span className="block text-[11px] text-muted-foreground">
+                  {event.allDay ? 'Dia inteiro' : event.startTime || 'Horário não definido'}
+                </span>
+                <span className="block break-words text-sm font-medium text-foreground [overflow-wrap:anywhere]">
+                  {event.title}
+                </span>
+              </button>
+            ))}
+            {selectedRoutine.map((item) => {
+              const task = item.task
+              const done = item.kind === 'task' && task.done
+              const color = PRIORITY_COLORS[task.priority]
+              return (
+                <button
+                  key={`${item.kind}-${task.id}`}
+                  type="button"
+                  onClick={() => onCompleteRoutine(item)}
+                  className={cn(
+                    'flex w-full min-w-0 items-start gap-2.5 rounded-sm px-3 py-2.5 text-left transition-colors hover:brightness-95',
+                    (done || selectedKey < today) && 'opacity-60',
+                  )}
+                  style={{ backgroundColor: color + '18', borderLeft: `3px solid ${color}` }}
+                  title={item.kind === 'recurring' ? 'Concluir ocorrência da rotina' : undefined}
+                >
+                  <span aria-hidden className="mt-0.5 shrink-0 text-xs" style={{ color }}>
+                    {item.kind === 'recurring' ? '↻' : done ? '✓' : '○'}
+                  </span>
+                  <span className={cn('min-w-0 flex-1 break-words text-sm font-medium [overflow-wrap:anywhere]', done && 'line-through')}>
+                    {task.time && <span className="mr-1 text-xs font-normal opacity-70">{task.time}</span>}
+                    {task.title}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        )}
+      </section>
+    </div>
   )
 }
 
@@ -654,7 +819,7 @@ export function CalendarPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[1040px] px-6 py-8 lg:px-10 lg:py-12">
+    <div className="mx-auto w-full max-w-[1040px] px-4 py-5 sm:px-6 sm:py-8 lg:px-10 lg:py-12">
       <header className={cn('mb-9 flex flex-wrap items-end justify-between gap-5', enter)}>
         <div>
           {view === 'month' ? (
@@ -697,7 +862,7 @@ export function CalendarPage() {
             <ChevronLeft size={17} />
           </button>
           <span className={cn(
-            'min-w-[180px] text-center capitalize sm:min-w-[250px]',
+            'min-w-0 flex-1 text-center capitalize sm:min-w-[250px] sm:flex-none',
             view === 'month'
               ? 'px-1 text-xl font-bold text-foreground'
               : 'text-xs font-medium tracking-wide text-muted-foreground',
@@ -712,8 +877,8 @@ export function CalendarPage() {
           </button>
         </div>
 
-        <div className="flex items-center gap-2">
-          {view === 'day' && (
+        <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-end">
+          {toDateKey(currentDate) !== today && (
             <Button
               variant="ghost"
               size="sm"
@@ -744,17 +909,35 @@ export function CalendarPage() {
 
       <main className={cn(enter)}>
         {view === 'month' ? (
-          <MonthlyCalendarView
-            weeks={monthWeeks}
-            today={today}
-            eventsByDate={eventsByDate}
-            routineByDate={routineByDate}
-            onAdd={openAdd}
-            onEdit={openEdit}
-            onCompleteRoutine={(item) => item.kind === 'task'
-              ? toggleTask(item.task.id)
-              : completeRecurring(item.task.id)}
-          />
+          <>
+            <MobileMonthlyAgenda
+              weeks={monthWeeks}
+              today={today}
+              selectedDate={currentDate}
+              eventsByDate={eventsByDate}
+              routineByDate={routineByDate}
+              onSelectDate={(date) => {
+                const [year, month, day] = date.split('-').map(Number)
+                setCurrentDate(new Date(year, month - 1, day, 12))
+              }}
+              onAdd={openAdd}
+              onEdit={openEdit}
+              onCompleteRoutine={(item) => item.kind === 'task'
+                ? toggleTask(item.task.id)
+                : completeRecurring(item.task.id)}
+            />
+            <MonthlyCalendarView
+              weeks={monthWeeks}
+              today={today}
+              eventsByDate={eventsByDate}
+              routineByDate={routineByDate}
+              onAdd={openAdd}
+              onEdit={openEdit}
+              onCompleteRoutine={(item) => item.kind === 'task'
+                ? toggleTask(item.task.id)
+                : completeRecurring(item.task.id)}
+            />
+          </>
         ) : (
           <PlannerDays
             days={view === 'day' ? [currentDate] : weekDays}

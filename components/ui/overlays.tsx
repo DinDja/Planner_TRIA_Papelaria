@@ -219,7 +219,7 @@ function TabListW({
   return (
     <Tabs.List
       className={cn(
-        'inline-flex items-center gap-1 rounded-2xl bg-muted/70 border border-border/40 p-1',
+        'inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-2xl border border-border/40 bg-muted/70 p-1 scrollbar-thin',
         className,
       )}
     >

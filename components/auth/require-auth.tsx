@@ -34,7 +34,7 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
 
   if (loading || (user && checkBlock)) {
     return (
-      <div className="flex h-screen items-center justify-center">
+      <div className="flex min-h-dvh items-center justify-center">
         <Loader2 className="size-6 animate-spin text-muted-foreground" />
       </div>
     )
@@ -44,7 +44,7 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
 
   if (blocked) {
     return (
-      <div className="flex h-screen flex-col items-center justify-center gap-3 text-center px-6">
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-3 px-4 py-8 text-center sm:px-6">
         <Ban size={28} className="text-destructive" />
         <p className="text-sm text-muted-foreground max-w-sm">
           Sua conta foi bloqueada pela administração da Tria Papelaria.

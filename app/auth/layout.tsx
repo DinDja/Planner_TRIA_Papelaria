@@ -17,7 +17,7 @@ export default function AuthLayout({
       <ThemeToggle className="absolute right-5 top-5 z-50" />
 
       {/* Form panel */}
-      <div className="flex w-full items-center justify-center px-6 py-12">
+      <div className="flex w-full items-center justify-center px-4 py-8 sm:px-6 sm:py-12">
         <div className="w-full max-w-[420px]">{children}</div>
       </div>
     </div>

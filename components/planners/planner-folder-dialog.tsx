@@ -25,7 +25,7 @@ export function PlannerFolderDialog({ open, onClose, editId, onSaved }: Props) {
   const selectedPalette = useSettingsStore((s) => s.palette)
   const defaultColor = SYSTEM_PALETTE_MAP[selectedPalette].value
   const [name, setName] = useState('')
-  const [color, setColor] = useState(defaultColor)
+  const [color, setColor] = useState<string>(defaultColor)
 
   useEffect(() => {
     if (!open) return

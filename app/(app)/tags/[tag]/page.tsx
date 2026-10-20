@@ -16,8 +16,8 @@ export default function TagPage() {
 
   if (!tagObj) {
     return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="text-center">
+      <div className="flex min-h-full items-center justify-center px-4 py-8">
+        <div className="min-w-0 text-center">
           <p className="text-lg font-semibold">Tag não encontrada</p>
           <Button variant="link" onClick={() => router.push('/dashboard')} className="mt-2">
             Voltar ao Dashboard

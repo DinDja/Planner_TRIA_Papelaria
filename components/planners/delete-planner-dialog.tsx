@@ -45,8 +45,8 @@ export function DeletePlannerDialog({
           <p className="text-sm text-muted-foreground">
             Tem certeza que deseja excluir{' '}
             <strong className="text-foreground">{planner?.name}</strong>
-            {planner && planner.pages.length > 0 && (
-              <> e todas as suas {planner.pages.length} páginas?</>
+            {planner && (planner.pageCount ?? planner.pages.length) > 0 && (
+              <> e todas as suas {planner.pageCount ?? planner.pages.length} páginas?</>
             )}
           </p>
           <div className="flex justify-end gap-2 pt-1">

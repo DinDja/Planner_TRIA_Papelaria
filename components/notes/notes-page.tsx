@@ -380,7 +380,7 @@ export function NotesPage() {
         {/* Mobile folder tabs */}
         <div className="lg:hidden mb-4">
           <Tabs value={tab} onValueChange={setTab}>
-            <TabList className="overflow-auto scrollbar-thin">
+            <TabList>
               <Tab value="all">
                 Todas
                 <span className="ml-1 rounded-full bg-primary/15 text-primary px-1.5 py-0.5 text-[10px] font-bold tabular-nums">

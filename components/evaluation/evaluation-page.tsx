@@ -233,7 +233,7 @@ export function EvaluationPage() {
 
         <div className="lg:hidden mb-4">
           <Tabs value={filter} onValueChange={(value) => setFilter(value as EvaluationFilter)}>
-            <TabList className="overflow-auto scrollbar-thin">
+            <TabList>
               <Tab value="all">Todas <span className="ml-1 rounded-full bg-primary/15 text-primary px-1.5 py-0.5 text-[10px] font-bold">{counts.all}</span></Tab>
               {(Object.keys(TYPE_CONFIG) as EvaluationType[]).map((type) => (
                 <Tab key={type} value={type}>{TYPE_CONFIG[type].plural} <span className="ml-1 rounded-full bg-primary/15 text-primary px-1.5 py-0.5 text-[10px] font-bold">{counts[type]}</span></Tab>

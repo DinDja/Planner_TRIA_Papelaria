@@ -374,7 +374,7 @@ export function RoutinePage() {
       {/* Tabs */}
       <Tabs value={tab} onValueChange={setTab} className={enter}>
         <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
-          <TabList>
+          <TabList className="sm:w-auto">
             <Tab value="hoje">
               <Sun size={14} className="mr-1.5" />
               Hoje

@@ -138,7 +138,7 @@ export function PlannersPage() {
 
           <div className="mb-5 lg:hidden">
             <Tabs value={tab} onValueChange={setTab}>
-              <TabList className="overflow-auto scrollbar-thin">
+              <TabList>
                 <Tab value="all">
                   Todos
                   <span className="ml-1 rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-primary">

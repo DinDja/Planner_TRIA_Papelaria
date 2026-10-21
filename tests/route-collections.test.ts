@@ -24,6 +24,7 @@ describe('route-collections — pathname resolve plano de coleções', () => {
       [
         'weights',
         'bodyMeasurements',
+        'bioimpedances',
         'symptomLogs',
         'medications',
         'cycleRecords',
@@ -63,7 +64,7 @@ describe('route-collections — pathname resolve plano de coleções', () => {
   it('dashboard agrega 4 coleções de 3 módulos diferentes', () => {
     const collections = plan('/').collections
     expect(collections.sort()).toEqual(
-      ['planners', 'diarios', 'calendarEvents', 'financialGoals'].sort(),
+      ['planners', 'calendarEvents', 'appointments', 'exams'].sort(),
     )
   })
 
@@ -110,7 +111,7 @@ describe('route-collections — minimalCollectionSet (Set utility)', () => {
   it('retorna Set de coleções para uso em lookup', () => {
     const fakeUser = { uid: 'x' } as any
     const set = minimalCollectionSet(fakeUser, '/saude')
-    expect(set.size).toBe(8)
+    expect(set.size).toBe(9)
     expect(set.has('weights')).toBe(true)
     expect(set.has('planners')).toBe(false)
   })

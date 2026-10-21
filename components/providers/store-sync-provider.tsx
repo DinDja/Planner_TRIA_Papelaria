@@ -189,7 +189,8 @@ export function StoreSyncProvider({ children, editorMode = false }: StoreSyncPro
     const unsubs: Array<() => void> = []
     const rootRef = doc(db, 'users', user.uid)
     const wantedRootKeys = new Set([...GLOBAL_ROOT_KEYS, ...(plan.rootFields ?? [])])
-    unsubs.push(onSnapshot(rootRef, (snapshot) => {
+    unsubs.push(onSnapshot(rootRef, { includeMetadataChanges: true }, (snapshot) => {
+      if (snapshot.metadata.fromCache) return
       if (!snapshot.exists()) return
       const data = snapshot.data() as Record<string, any>
       for (const binding of ROOT_BINDINGS) {
@@ -203,12 +204,18 @@ export function StoreSyncProvider({ children, editorMode = false }: StoreSyncPro
         if (isOwnRootFieldSnapshot(user.uid, binding.rootKey, normalized)) continue
         withRemoteStoreUpdate(() => binding.store.setState({ [binding.field]: normalized }))
       }
+    }, (error) => {
+      console.error('Falha ao carregar dados do perfil', error)
     }))
 
     const wantedCollections = new Set(plan.collections)
     for (const binding of COL_BINDINGS) {
       if (!binding.read || !wantedCollections.has(binding.collection)) continue
-      unsubs.push(subscribeCollection<any>(user, binding.collection, (items) => {
+      unsubs.push(subscribeCollection<any>(user, binding.collection, (items, metadata) => {
+        // A cache-only snapshot can be empty on a fresh/offline load. Keep the
+        // Zustand localStorage cache until Firestore confirms server state.
+        if (metadata.fromCache) return
+
         const normalizedItems = binding.collection === 'shoppingLists'
           ? items.map((item) => normalizeShoppingList(item))
           : items
@@ -247,6 +254,8 @@ export function StoreSyncProvider({ children, editorMode = false }: StoreSyncPro
           (item, index) => item.id === local[index].id && JSON.stringify(item) === JSON.stringify(local[index]),
         )
         if (!same) withRemoteStoreUpdate(() => binding.store.setState({ [binding.field]: merged }))
+      }, (error) => {
+        console.error(`Falha ao carregar ${binding.collection}`, error)
       }))
     }
     return () => unsubs.forEach((unsubscribe) => unsubscribe())

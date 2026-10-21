@@ -13,7 +13,10 @@ import React from 'react'
 type SnapshotCb = (snap: { exists: () => boolean; data: () => any }) => void
 // O callback de onSnapshot de coleção recebe um "snap" que tem forEach
 // (it: doc)=>void. Em subscribeCollection isso é desembrulhado em items[].
-type CollCb = (snap: { forEach: (cb: (doc: { data: () => any; id: string }) => void) => void }) => void
+type CollCb = (snap: {
+  forEach: (cb: (doc: { data: () => any; id: string }) => void) => void
+  metadata: { fromCache: boolean; hasPendingWrites: boolean }
+}) => void
 
 interface DocHandle {
   ref: any
@@ -27,8 +30,9 @@ interface CollHandle {
 const callbacksDoc: DocHandle[] = []
 const callbacksColl: CollHandle[] = []
 
-function makeCollSnapshot(items: any[]) {
+function makeCollSnapshot(items: any[], fromCache = false) {
   return {
+    metadata: { fromCache, hasPendingWrites: false },
     forEach: (cb: (doc: { data: () => any; id: string }) => void) => {
       for (const it of items) {
         cb({
@@ -49,8 +53,9 @@ beforeEach(() => {
 vi.mock('firebase/firestore', () => ({
   doc: vi.fn((db: any, ...segs: string[]) => `doc:${segs.join('/')}`),
   collection: vi.fn((db: any, ...segs: string[]) => `coll:${segs.join('/')}`),
-  onSnapshot: vi.fn((ref: any, cb: any, errCb?: any) => {
-    if (typeof errCb === 'function') {
+  onSnapshot: vi.fn((ref: any, optionsOrCb: any, cbOrErr?: any, errCb?: any) => {
+    const cb = typeof optionsOrCb === 'function' ? optionsOrCb : cbOrErr
+    if (String(ref).startsWith('coll:')) {
       // Coleção.
       const handle: CollHandle = { ref, cb }
       callbacksColl.push(handle)
@@ -106,6 +111,22 @@ function mount() {
   )
 }
 
+describe('StoreSyncProvider cache snapshot persistence', () => {
+  it('keeps locally persisted data until a server snapshot arrives', async () => {
+    const local = [{ id: 'local-1', titulo: 'Rascunho local', items: [] }]
+    useChecklistsStore.setState({ checklists: local } as any)
+    pathState.value = '/checklists'
+    mount()
+
+    await waitFor(() => expect(callbacksColl.length).toBe(1))
+    callbacksColl[0].cb(makeCollSnapshot([], true))
+    expect(useChecklistsStore.getState().checklists).toEqual(local)
+
+    callbacksColl[0].cb(makeCollSnapshot([]))
+    expect(useChecklistsStore.getState().checklists).toEqual([])
+  })
+})
+
 // ────────────────────────────────────────────────────────────────────
 // Testes
 // ────────────────────────────────────────────────────────────────────
@@ -129,7 +150,7 @@ describe('StoreSyncProvider — lazy loading por pathname', () => {
     await waitFor(() => {
       expect(callbacksDoc.length).toBe(1)
       // Peso, medidas, sintomas, medicações, ciclos, médicos, consultas, exames.
-      expect(callbacksColl.length).toBe(8)
+      expect(callbacksColl.length).toBe(9)
     })
   })
 
@@ -168,7 +189,7 @@ describe('StoreSyncProvider — lazy loading por pathname', () => {
     // Após re-render, o effect [user, plan] roda de novo: 8 coleções
     // (o listener de diarios fechou). Estado final: máximo de 8.
     await waitFor(() => {
-      expect(callbacksColl.length).toBe(8)
+      expect(callbacksColl.length).toBe(9)
     })
   })
 })

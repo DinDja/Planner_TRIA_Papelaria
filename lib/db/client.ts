@@ -12,6 +12,7 @@ import {
   query,
   Timestamp,
   type Unsubscribe,
+  type SnapshotMetadata,
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { stripUndefined } from './write-through'
@@ -49,12 +50,13 @@ export async function getUserDoc(user: User) {
 export function subscribeCollection<T extends WithId>(
   user: User,
   path: string,
-  onData: (items: T[]) => void,
+  onData: (items: T[], metadata: SnapshotMetadata) => void,
   onError?: (err: Error) => void,
 ): Unsubscribe {
   const ref = collection(db, 'users', user.uid, path)
   return onSnapshot(
     ref,
+    { includeMetadataChanges: true },
     (snap) => {
       const items: T[] = []
       snap.forEach((d) => {
@@ -62,7 +64,7 @@ export function subscribeCollection<T extends WithId>(
         if (!data.id) (data as any).id = d.id
         items.push(data)
       })
-      onData(items)
+      onData(items, snap.metadata)
     },
     (err) => onError?.(err as Error),
   )

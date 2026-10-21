@@ -2,7 +2,13 @@
 
 import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app'
 import { getAuth, type Auth } from 'firebase/auth'
-import { getFirestore, type Firestore } from 'firebase/firestore'
+import {
+  getFirestore,
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+  type Firestore,
+} from 'firebase/firestore'
 import { migrateLegacyStorage } from '@/lib/storage/brand-migration'
 
 migrateLegacyStorage()
@@ -24,7 +30,19 @@ let db: Firestore
 if (typeof window !== 'undefined') {
   app = getApps().length ? getApp() : initializeApp(firebaseConfig)
   auth = getAuth(app)
-  db = getFirestore(app)
+  try {
+    // Keep Firestore's write queue in IndexedDB so offline edits survive a
+    // reload and can reach the server when the connection returns.
+    db = initializeFirestore(app, {
+      localCache: persistentLocalCache({
+        tabManager: persistentMultipleTabManager(),
+      }),
+    })
+  } catch {
+    // Reuse an instance created earlier (for example after a client HMR reload)
+    // or fall back when persistent storage is unavailable in this browser.
+    db = getFirestore(app)
+  }
 } else {
   app = getApps().length ? getApp() : initializeApp(firebaseConfig)
   auth = getAuth(app)

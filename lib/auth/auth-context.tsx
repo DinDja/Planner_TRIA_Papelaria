@@ -14,16 +14,19 @@ import {
   signOut,
   type User,
 } from 'firebase/auth'
-import { auth } from '@/lib/firebase'
+import { doc, onSnapshot } from 'firebase/firestore'
+import { auth, db } from '@/lib/firebase'
 import { seedUserDoc } from './seed'
-import { roleFromEmail, type Role } from './roles'
+import { ADMIN_COLLECTION, type Role } from './roles'
 import { useSubscriptionStore } from '@/lib/subscriptions/use-subscription-store'
 import { writeUserManifest } from '@/lib/admin/client'
 
 interface AuthContextValue {
   user: User | null
   loading: boolean
-  role: Role
+  isAdmin: boolean
+  isAdminSystem: boolean
+  adminLoading: boolean
   signIn: (email: string, password: string) => Promise<void>
   signUp: (name: string, email: string, password: string) => Promise<void>
   signInWithGoogle: () => Promise<void>
@@ -94,15 +97,6 @@ function clearLocalCache() {
   } catch {}
 }
 
-function getSyncedRole(user: User | null): Role {
-  const nextRole = roleFromEmail(user?.email)
-  const subStore = useSubscriptionStore.getState()
-  if (subStore.role !== nextRole) {
-    subStore.setSubscription({ role: nextRole })
-  }
-  return nextRole
-}
-
 function syncUserDataInBackground(user: User) {
   if (seededThisSession(user.uid)) return
 
@@ -121,33 +115,36 @@ function syncUserDataInBackground(user: User) {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
-  // Role é derivada do e-mail (definido em lib/auth/roles.ts).
-  // Default 'subscriber'; admina detectada no onAuthStateChanged.
-  const [role, setRole] = useState<Role>('subscriber')
+  const [isAdmin, setIsAdmin] = useState(false)
+  const [isAdminSystem, setIsAdminSystem] = useState(false)
+  const [adminLoading, setAdminLoading] = useState(true)
 
   useEffect(() => {
-    // Aplica a role e sincroniza com a subscription store sempre que o user muda.
-    const syncRole = (u: User | null) => {
-      const r = roleFromEmail(u?.email)
-      setRole(r)
-      const subStore = useSubscriptionStore.getState()
-      // Só atualiza se for diferente para evitar loops.
-      if (subStore.role !== r) {
-        subStore.setSubscription({ role: r })
-      }
-    }
+    let unsubscribeAdmin: (() => void) | undefined
+    let activeUid: string | null = null
 
     const unsub = onAuthStateChanged(auth, (u) => {
       if (!u && auth.currentUser) return
-      // Reset do estado de assinatura local ao deslogar (a store será
-      // re-hidratada do Firestore no próximo login via StoreSyncProvider).
+      unsubscribeAdmin?.()
+      unsubscribeAdmin = undefined
+      // Limpa assinatura e permissão local ao deslogar; ambas são recarregadas
+      // da conta e do vínculo admin no próximo login.
       if (!u) {
+        activeUid = null
         useSubscriptionStore.getState().reset()
-        syncRole(u)
+        setIsAdmin(false)
+        setIsAdminSystem(false)
+        setAdminLoading(false)
         setUser(u)
         setLoading(false)
         return
       }
+
+      activeUid = u.uid
+      setIsAdmin(false)
+      setIsAdminSystem(false)
+      setAdminLoading(true)
+      useSubscriptionStore.getState().setSubscription({ role: 'subscriber' })
 
       // A sessão continua válida entre acessos por até sete dias. Cada
       // retorno ao sistema reinicia a janela; atividade na tela a mantém viva.
@@ -163,19 +160,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // apenas um fallback idempotente para usuários pré-existentes cujo
       // doc-raiz ainda não existe — cobre o caso Google-login-first-time
       // sem cadastro explícito na nossa app.
-      syncRole(u)
       setUser(u)
       setLoading(false)
       syncUserDataInBackground(u)
+
+      unsubscribeAdmin = onSnapshot(
+        doc(db, ADMIN_COLLECTION, u.uid),
+        { includeMetadataChanges: true },
+        (snapshot) => {
+          if (activeUid !== u.uid || snapshot.metadata.fromCache) return
+          const member = snapshot.exists() && snapshot.data()?.isAdmin === true
+          const systemAdmin = member && snapshot.data()?.isAdminSystem === true
+          const role: Role = member ? 'admin' : 'subscriber'
+          setIsAdmin(member)
+          setIsAdminSystem(systemAdmin)
+          setAdminLoading(false)
+          useSubscriptionStore.getState().setSubscription({ role })
+          void writeUserManifest(u, { role }).catch(() => {})
+        },
+        (error) => {
+          if (activeUid !== u.uid) return
+          console.error('Falha ao verificar a permissão administrativa', error)
+          setIsAdmin(false)
+          setIsAdminSystem(false)
+          setAdminLoading(false)
+          useSubscriptionStore.getState().setSubscription({ role: 'subscriber' })
+        },
+      )
     })
-    return () => unsub()
+    return () => {
+      activeUid = null
+      unsubscribeAdmin?.()
+      unsub()
+    }
   }, [])
 
   const signIn = async (email: string, password: string) => {
     await setPersistence(auth, browserLocalPersistence)
     const cred = await signInWithEmailAndPassword(auth, email, password)
     recordSessionActivity(cred.user.uid)
-    setRole(getSyncedRole(cred.user))
     setUser(cred.user)
     setLoading(false)
     // Login de conta já existente: doc-raiz já existe; só atualiza manifest
@@ -191,7 +214,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const cred = await createUserWithEmailAndPassword(auth, email, password)
     recordSessionActivity(cred.user.uid)
     await updateProfile(cred.user, { displayName: name })
-    setRole(getSyncedRole(cred.user))
     setUser(cred.user)
     setLoading(false)
     // Seeding/manifest são best-effort: a conta Auth já foi criada acima.
@@ -208,17 +230,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
       markSeeded(cred.user.uid)
     } catch {}
-    // Define a role imediatamente após cadastro.
-    const r = roleFromEmail(email)
-    useSubscriptionStore.getState().setSubscription({ role: r })
-    setRole(r)
   }
 
   const signInWithGoogle = async () => {
     await setPersistence(auth, browserLocalPersistence)
     const cred = await signInWithPopup(auth, new GoogleAuthProvider())
     recordSessionActivity(cred.user.uid)
-    setRole(getSyncedRole(cred.user))
     setUser(cred.user)
     setLoading(false)
     // Google login não tem "cadastro" separado na nossa app; pode ser
@@ -287,7 +304,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, role, signIn, signUp, signInWithGoogle, resetPassword, logout }}
+      value={{ user, loading, isAdmin, isAdminSystem, adminLoading, signIn, signUp, signInWithGoogle, resetPassword, logout }}
     >
       {children}
     </AuthContext.Provider>

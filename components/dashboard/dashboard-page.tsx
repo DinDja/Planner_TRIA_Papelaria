@@ -37,14 +37,14 @@ function HabitsSummary({ todayISO }: { todayISO: string }) {
   const activeHabits = habits.filter((habit) => !habit.archived)
 
   return (
-    <Card glass className="min-h-[220px]">
+    <Card glass style={{ minHeight: 142 }}>
       <CardHeader className="flex-row items-center justify-between pb-0">
         <CardTitle className="flex items-center gap-2 text-base">
           <ModuloIcon name="habitos" size={18} className="text-primary" aria-hidden="true" />
           Hábitos
         </CardTitle>
         <Link href="/habitos" className="flex items-center gap-1 text-xs text-primary hover:underline">
-          Ver todos <ArrowUpRight size={12} />
+          Ver todos
         </Link>
       </CardHeader>
       <CardContent className="pt-3">
@@ -85,7 +85,7 @@ function HabitsSummary({ todayISO }: { todayISO: string }) {
             )}
           </div>
         ) : (
-          <div className="flex min-h-[155px] flex-col items-center justify-center text-center">
+          <div className="flex flex-col items-center justify-center text-center">
             <p className="text-sm text-muted-foreground">Nenhum hábito cadastrado.</p>
           </div>
         )}

@@ -2,7 +2,6 @@
 
 import { useMenuStore } from '@/lib/store/use-menu-store'
 import { useAuth } from '@/lib/auth/auth-context'
-import { useSubscriptionStore } from '@/lib/subscriptions/use-subscription-store'
 import { ModuloIcon } from '@/components/icons/modules'
 import { cn } from '@/lib/utils'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -51,12 +50,11 @@ export function AppSidebar({
   const lightFooterActionClass = theme === 'light'
     ? 'text-muted-foreground hover:bg-muted hover:text-foreground'
     : undefined
-  const { user, role } = useAuth()
+  const { user, isAdmin, adminLoading } = useAuth()
   const handleLogout = useAccountLogout()
-  const subscriptionRole = useSubscriptionStore((s) => s.role)
   const pathname = usePathname()
   const menuModules = useMenuStore((s) => s.modules)
-  const isAdminUser = Boolean(user) && (role === 'admin' || subscriptionRole === 'admin')
+  const isAdminUser = Boolean(user) && !adminLoading && isAdmin
   const adminModule = menuModules.find((m) => m.id === 'admin') ?? {
     id: 'admin' as const,
     href: '/admin',
@@ -64,8 +62,8 @@ export function AppSidebar({
     enabled: true,
   }
   const enabledModules = menuModules
-    .map((m) => (m.id === 'admin' && isAdminUser ? { ...m, href: '/admin', enabled: true } : m))
-    .filter((m) => m.enabled || (m.id === 'admin' && isAdminUser))
+    .filter((m) => m.id === 'admin' ? isAdminUser : m.enabled)
+    .map((m) => (m.id === 'admin' ? { ...m, href: '/admin', enabled: true } : m))
     .concat(isAdminUser && !menuModules.some((m) => m.id === 'admin') ? [adminModule] : [])
     .map((m) => m.id === 'calendario' ? { ...m, label: 'Agenda' } : m)
   const closeMobileSidebar = () => setMobileOpen(false)

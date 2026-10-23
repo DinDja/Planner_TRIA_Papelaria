@@ -9,8 +9,8 @@ import { isFutureIso } from './period'
 /**
  * Estado da assinatura da usuária atual.
  *
- * A administradora (dona do negócio) tem `role: 'admin'` e acesso automático
- * a tudo — sem cobrança. As assinantes comuns precisam de `plan` ativo.
+ * O papel `admin` espelha o vínculo Firebase em `admin/{uid}` e libera acesso
+ * sem cobrança. Assinantes comuns precisam de `plan` ativo.
  *
  * Persistido em localStorage (cache offline) e sincronizado com Firestore
  * pelo StoreSyncProvider via root-doc field `subscription`.
@@ -33,6 +33,9 @@ export interface Subscription {
   trialStartedAt: string | null
   /** ISO date em que a usuária pediu o cancelamento. */
   cancelledAt: string | null
+  /** Indica se o acesso atual foi concedido gratuitamente pela administração. */
+  gratuityActive?: boolean
+  gratuityIndefinite?: boolean
 }
 
 interface SubscriptionState extends Subscription {
@@ -49,6 +52,8 @@ const EMPTY: Subscription = {
   paidUntil: null,
   trialStartedAt: null,
   cancelledAt: null,
+  gratuityActive: false,
+  gratuityIndefinite: false,
 }
 
 export const useSubscriptionStore = create<SubscriptionState>()(
@@ -72,6 +77,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
 export function hasAccess(sub: Subscription): boolean {
   if (sub.role === 'admin') return true
   if (!sub.plan || (sub.status !== 'active' && sub.status !== 'cancelled')) return false
+  if (sub.status === 'active' && sub.gratuityIndefinite === true) return true
 
   // Assinaturas antigas/manualizadas podem não ter validade salva.
   if (sub.plan !== 'trial' && sub.status === 'active' && !sub.paidUntil) return true
@@ -90,6 +96,8 @@ export function isAdmin(sub: Subscription): boolean {
  */
 export function statusLabel(sub: Subscription): string {
   if (sub.role === 'admin') return 'Dona'
+  if (sub.status === 'active' && sub.gratuityActive === true) return 'Gratuidade'
+  if (sub.status === 'active' && sub.gratuityIndefinite === true) return 'Gratuidade'
   if (sub.status === 'active' && sub.plan === 'trial') return 'Teste grátis'
   if (sub.status === 'active') return 'Ativa'
   if (sub.status === 'cancelled' && isFutureIso(sub.paidUntil)) return 'Cancelada · acesso vigente'

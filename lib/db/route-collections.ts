@@ -187,7 +187,6 @@ const PLAN: Array<{ match: RegExp; plan: RouteCollectionPlan }> = [
     plan: {
       collections: [],
       rootFields: [
-        'subscription.role',
         'subscription.plan',
         'subscription.status',
         'subscription.since',
@@ -202,7 +201,7 @@ const PLAN: Array<{ match: RegExp; plan: RouteCollectionPlan }> = [
     match: /^\/admin$/,
     plan: {
       collections: [],
-      rootFields: ['subscription.role', 'subscription.plan', 'subscription.status'],
+      rootFields: ['subscription.plan', 'subscription.status'],
     },
   },
   {

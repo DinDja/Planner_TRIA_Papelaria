@@ -3,36 +3,32 @@
 import { useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { useAuth } from '@/lib/auth/auth-context'
-import { useSubscriptionStore, isAdmin } from '@/lib/subscriptions/use-subscription-store'
 import { Loader2, ShieldAlert } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 /**
  * Guarda de rota para administradoras (dona do negócio).
  * Redireciona assinantes comuns para o dashboard e mostra loading
- * enquanto a role ainda não foi derivada do onAuthStateChanged.
+ * enquanto consulta o vínculo admin/{uid} no Firestore.
  */
 export function RequireAdmin({ children }: { children: React.ReactNode }) {
-  const { user, loading, role } = useAuth()
-  const sub = useSubscriptionStore()
+  const { user, loading, isAdmin, adminLoading } = useAuth()
   const router = useRouter()
   const pathname = usePathname()
 
-  const isAdminRole = role === 'admin' || isAdmin(sub)
-
   useEffect(() => {
-    if (loading) return
+    if (loading || adminLoading) return
     if (!user) {
       const dest = encodeURIComponent(pathname || '/')
       router.replace(`/auth/login?next=${dest}`)
       return
     }
-    if (!isAdminRole) {
+    if (!isAdmin) {
       router.replace('/dashboard')
     }
-  }, [user, loading, isAdminRole, router, pathname])
+  }, [user, loading, adminLoading, isAdmin, router, pathname])
 
-  if (loading) {
+  if (loading || adminLoading) {
     return (
       <div className="flex min-h-dvh items-center justify-center">
         <Loader2 className="size-6 animate-spin text-muted-foreground" />
@@ -42,7 +38,7 @@ export function RequireAdmin({ children }: { children: React.ReactNode }) {
 
   if (!user) return null
 
-  if (!isAdminRole) {
+  if (!isAdmin) {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center gap-3 px-4 py-8 text-center sm:px-6">
         <ShieldAlert size={28} className="text-muted-foreground" />

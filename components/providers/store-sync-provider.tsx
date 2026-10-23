@@ -80,7 +80,8 @@ const ROOT_BINDINGS: RootBinding[] = [
   { store: usePasswordsStore as unknown as StoreLike, field: 'masterPin', rootKey: 'masterPin', read: false, write: true },
   // Cobrança é somente leitura no cliente. Checkout, teste e cancelamento
   // escrevem estes campos pelas rotas autenticadas no servidor.
-  { store: useSubscriptionStore as unknown as StoreLike, field: 'role', rootKey: 'subscription.role', read: true, write: false },
+  // `role` é derivada da associação Firebase admin/{uid}; o root doc não concede acesso.
+  { store: useSubscriptionStore as unknown as StoreLike, field: 'role', rootKey: 'subscription.role', read: false, write: false },
   { store: useSubscriptionStore as unknown as StoreLike, field: 'plan', rootKey: 'subscription.plan', read: true, write: false },
   { store: useSubscriptionStore as unknown as StoreLike, field: 'status', rootKey: 'subscription.status', read: true, write: false },
   { store: useSubscriptionStore as unknown as StoreLike, field: 'since', rootKey: 'subscription.since', read: true, write: false },
@@ -88,6 +89,8 @@ const ROOT_BINDINGS: RootBinding[] = [
   { store: useSubscriptionStore as unknown as StoreLike, field: 'paidUntil', rootKey: 'subscription.paidUntil', read: true, write: false },
   { store: useSubscriptionStore as unknown as StoreLike, field: 'trialStartedAt', rootKey: 'subscription.trialStartedAt', read: true, write: false },
   { store: useSubscriptionStore as unknown as StoreLike, field: 'cancelledAt', rootKey: 'subscription.cancelledAt', read: true, write: false },
+  { store: useSubscriptionStore as unknown as StoreLike, field: 'gratuityActive', rootKey: 'subscription.gratuityActive', read: true, write: false },
+  { store: useSubscriptionStore as unknown as StoreLike, field: 'gratuityIndefinite', rootKey: 'subscription.gratuityIndefinite', read: true, write: false },
 ]
 
 // O menu do usuário e Configurações existem em todas as telas do app.

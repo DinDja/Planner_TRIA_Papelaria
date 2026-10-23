@@ -5,9 +5,9 @@
 
 ## Princípios
 
-1. **Raiz = usuário.** Todo dado vive em `/users/{uid}/...`. Não há collections
-   globais. O produto hoje é single-user privado, sem features sociais ou
-   colaborativas — então o isolamento é estrito e as regras só liberam o dono.
+1. **Raiz = usuário.** Os dados pessoais vivem em `/users/{uid}/...`. A única
+   coleção global de controle é `/admin/{uid}`, que registra permissões
+   administrativas e tem leitura/escrita limitadas pelas regras.
 2. **Subcollections > documentos gigantes.** Páginas de planner, transações
    financeiras e habit logs crescem sem born; cada um vira subcollection para
    não estourar o limite de 1MB/doc do Firestore.
@@ -53,6 +53,18 @@
 | `useTrashStore`                        | `users/{uid}/trashItems`                   | capped 100 no cliente |
 | `useSubscriptionStore`                 | `users/{uid}` + `billingPayments` + `billingTrials` | assinatura no root; comprovantes append-only |
 
+### Administração
+
+`admin/{uid}` é a fonte de verdade das permissões administrativas. O documento
+é identificado pelo UID do Firebase Auth e contém `uid`, `isAdmin` (booleano),
+`isAdminSystem` (booleano opcional), `email`, `createdAt` e `createdByUid`.
+`isAdmin: true` concede acesso ao painel; `isAdminSystem: true` concede a
+permissão adicional para tornar outras contas adminSystem e remover esse nível.
+Uma conta inicial adminSystem precisa ser marcada por uma operação confiável
+no Firestore. Depois disso, as regras impedem admins comuns de conceder ou
+remover esse privilégio. A usuária autenticada pode ler somente o próprio
+documento; admins podem consultar os vínculos para o painel.
+
 > As stores de UI transient (editor, dialogs, sidebar) **não** vão pro Firestore
 > — permanecem Zustand puramente em memória.
 
@@ -65,7 +77,7 @@ users/{uid} {
   name:        string                            // ProfileStore
   avatar:      string                            // ProfileStore (emoji)
   email:       string                            // ProfileStore
-  role:        'admin'|'subscriber'
+  role:        'admin'|'subscriber'             // compatibilidade da conta; o /admin usa admin/{uid}
   theme:       string                            // AppStore ('light'|'dark')
   settings:    map                               // SettingsStore
     palette:         string                      //   'amber'|'rose'|'ocean'|'forest'|'lavender'|'sunset'|'mono'
@@ -90,7 +102,7 @@ users/{uid} {
   noteFolders:    list<map>                      // NotesStore NoteFolder
     { id: string, name: string, color: string, icon?: string }
   subscription: map
-    role:           'admin'|'subscriber'
+    role:           'admin'|'subscriber'         // admin espelha admin/{uid}
     plan:           'monthly'|'annual'|'trial'|null
     status:         'active'|'past_due'|'cancelled'|'none'
     since:          string|null
@@ -98,6 +110,9 @@ users/{uid} {
     paidUntil:      string|null
     trialStartedAt: string|null
     cancelledAt:    string|null
+    gratuityActive?: bool                  // gratuidade concedida por admin
+    gratuityIndefinite?: bool              // acesso gratuito sem vencimento
+    gratuityPrevious?: map|null            // assinatura anterior restaurada ao remover a gratuidade
   updatedAt:   string  // ISO 8601
 }
 ```

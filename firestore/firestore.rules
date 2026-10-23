@@ -3,10 +3,9 @@ rules_version = '2';
 // ─────────────────────────────────────────────────────────────────────────────
 // Tria Papelaria — Firestore Security Rules
 //
-// Modelo de dados: multi-tenant estrito por usuário. Toda collection vive em
-// /users/{uid}/... e só o dono do uid pode ler/escrever. Não há collections
-// globais compartilhadas (o produto hoje é single-user, sem features sociais ou
-// colaborativas).
+// Modelo de dados: multi-tenant estrito por usuário. Os dados pessoais vivem
+// em /users/{uid}/... e só o dono pode ler/escrever. /admin/{uid} guarda apenas
+// os vínculos de administração; /app/admin contém os dados globais do painel.
 //
 // Convenções:
 //   - timestamps são strings ISO 8601 (UTC) enviadas pelo cliente. As regras só
@@ -34,18 +33,16 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == uid;
     }
 
-    // Admina: usuário cujo doc-raiz tem `role == 'admin'`. A role é
-    // derivada do e-mail no cadastro (seed.ts) e imutável por update da
-    // própria usuária (regra mais abaixo bloqueia mudança de `role`).
+    // Admina: UID presente na coleção privada /admin/{uid}.
     function isAdmin() {
       return isSignedIn()
-        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+        && exists(/databases/$(database)/documents/admin/$(request.auth.uid))
+        && get(/databases/$(database)/documents/admin/$(request.auth.uid)).data.isAdmin == true;
     }
 
-    function isBootstrapAdmin() {
-      return isSignedIn()
-        && request.auth.token.email == 'brunomomoshiki@gmail.com';
+    function isAdminSystem() {
+      return isAdmin()
+        && get(/databases/$(database)/documents/admin/$(request.auth.uid)).data.get('isAdminSystem', false) == true;
     }
 
     function validSubscriptionShape(subscription, role) {
@@ -57,22 +54,18 @@ service cloud.firestore {
         && (!('lastPayment' in subscription) || subscription.lastPayment == null || isTimestampString(subscription.lastPayment))
         && (!('paidUntil' in subscription) || subscription.paidUntil == null || isTimestampString(subscription.paidUntil))
         && (!('trialStartedAt' in subscription) || subscription.trialStartedAt == null || isTimestampString(subscription.trialStartedAt))
-        && (!('cancelledAt' in subscription) || subscription.cancelledAt == null || isTimestampString(subscription.cancelledAt));
+        && (!('cancelledAt' in subscription) || subscription.cancelledAt == null || isTimestampString(subscription.cancelledAt))
+        && (!('gratuityActive' in subscription) || subscription.gratuityActive is bool)
+        && (!('gratuityIndefinite' in subscription) || subscription.gratuityIndefinite is bool)
+        && (!('gratuityPrevious' in subscription) || subscription.gratuityPrevious == null || subscription.gratuityPrevious is map);
     }
 
     function validInitialAccount(data) {
       return validSubscriptionShape(data.subscription, data.role)
         && data.email == request.auth.token.email
-        && (
-          (isBootstrapAdmin()
-            && data.role == 'admin'
-            && data.subscription.plan == null
-            && data.subscription.status == 'active')
-          || (!isBootstrapAdmin()
-            && data.role == 'subscriber'
-            && data.subscription.plan == null
-            && data.subscription.status == 'none')
-        );
+        && data.role == 'subscriber'
+        && data.subscription.plan == null
+        && data.subscription.status == 'none';
     }
 
     function ownManifestMatchesAccount(uid, data) {
@@ -156,7 +149,16 @@ service cloud.firestore {
         ) && (
           !('subscription' in request.resource.data.diff(resource.data).affectedKeys())
           || validSubscriptionShape(request.resource.data.subscription, resource.data.role)
-        )) || isAdmin();
+        ) && (!request.resource.data.get('subscription', {}).get('gratuityActive', false)
+          || resource.data.get('subscription', {}).get('gratuityActive', false))
+        && (!request.resource.data.get('subscription', {}).get('gratuityIndefinite', false)
+          || resource.data.get('subscription', {}).get('gratuityIndefinite', false))
+        && (
+          request.resource.data.get('subscription', {}).get('gratuityPrevious', null)
+          == resource.data.get('subscription', {}).get('gratuityPrevious', null)
+          || request.resource.data.get('subscription', {}).get('gratuityPrevious', null) == null
+        )
+        ) || isAdmin();
       allow delete: if isAdmin();
 
       // Registro append-only usado pelo cliente para não aplicar a mesma
@@ -483,13 +485,19 @@ service cloud.firestore {
       }
     }
 
+    // Permite que a Visão Admin consulte o histórico de pagamentos por collection group.
+    // A regra específica em /users/{uid}/billingPayments continua controlando as escritas.
+    match /{path=**}/billingPayments/{paymentId} {
+      allow read: if isAdmin();
+    }
+
     // ─── Coleções administrativas globais ────────────────────────────────────
     // /app/admin/users/{uid}          — manifest de cada usuária (a própria escreve só o seu)
     // /app/admin/auditLogs/{logId}    — só admina lê/escreve
     // /app/admin/coupons/{couponId}   — admina escreve; qual quer usina lê
     // /app/admin/announcements/{id}   — admina escreve; qual quer lê
     // /app/admin/plans/{planId}       — admina escreve; qual quer lê
-    // /app/admin/admin_emails/{email} — admina escreve; qual quer lê (lista de adminpor e-mail)
+    // /admin/{uid}                   — vínculo de permissão por UID
     match /app/admin/users/{uid} {
       // Cada usinária cria/atualiza só o seu próprio doc de manifest.
       // Admina lê todos (para o painel).
@@ -518,12 +526,30 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    match /app/admin/admin_emails/{emailDoc} {
-      allow read: if isSignedIn();
-      allow write: if isAdmin();
+    // Cada usuária pode consultar somente o próprio vínculo para montar a
+    // sessão. Admins comuns gerenciam vínculos admin; só adminSystem pode
+    // conceder ou remover o campo de privilégio isAdminSystem.
+    match /admin/{uid} {
+      allow get: if owns(uid) || isAdmin();
+      allow list: if isAdmin();
+      allow create: if isAdmin()
+        && request.resource.data.uid == uid
+        && request.resource.data.isAdmin is bool
+        && request.resource.data.get('isAdminSystem', false) is bool
+        && (request.resource.data.get('isAdminSystem', false) == false || isAdminSystem());
+      allow update: if isAdmin()
+        && request.resource.data.uid == uid
+        && request.resource.data.isAdmin is bool
+        && request.resource.data.get('isAdminSystem', false) is bool
+        && (isAdminSystem() || (
+          resource.data.get('isAdminSystem', false) == false
+          && request.resource.data.get('isAdminSystem', false) == false
+        ));
+      allow delete: if isAdminSystem()
+        || (isAdmin() && resource.data.get('isAdminSystem', false) == false);
     }
 
-    // Nega tudo o que não for /users/{uid}/... explicitamente.
+    // Nega tudo o que não tiver uma regra explícita acima.
     match /{document=**} {
       allow read, write: if false;
     }

@@ -5,7 +5,6 @@ import { doc, setDoc, getDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { DEFAULT_SETTINGS } from '@/lib/store/use-settings-store'
 import { DEFAULT_MODULES } from '@/lib/store/use-menu-store'
-import { roleFromEmail } from './roles'
 
 /**
  * Cria o documento-raiz `users/{uid}` com defaults se ainda não existir.
@@ -19,7 +18,6 @@ export async function seedUserDoc(user: User, opts?: { name?: string }) {
 
   const name = opts?.name || user.displayName || ''
   const email = user.email || ''
-  const role = roleFromEmail(email)
 
   await setDoc(ref, {
     name,
@@ -36,12 +34,12 @@ export async function seedUserDoc(user: User, opts?: { name?: string }) {
     sex: null,
     onboarded: false,
     masterPin: '',
-    // Assinatura inicial — gravada no Firestore.
-    // Admina: status ativo sem plano. Assinante comum: sem plano até pagar.
+    role: 'subscriber',
+    // Permissões administrativas são mantidas separadamente em admin/{uid}.
     subscription: {
-      role,
+      role: 'subscriber',
       plan: null,
-      status: role === 'admin' ? 'active' : 'none',
+      status: 'none',
       since: null,
       lastPayment: null,
       paidUntil: null,

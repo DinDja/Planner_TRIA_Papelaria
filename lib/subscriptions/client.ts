@@ -5,6 +5,7 @@ import { doc, runTransaction } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import type { VerifiedPayment } from '@/lib/payments/infinitepay'
 import { getPlanPeriodEnd, isFutureIso } from './period'
+import type { PlanId, SubscriptionStatus } from './plan'
 import type { Subscription } from './use-subscription-store'
 
 export interface PaymentClaimInput {
@@ -18,6 +19,16 @@ type StoredSubscription = Subscription & {
   paymentProvider?: 'infinitepay' | null
   lastOrderNsu?: string
   lastTransactionNsu?: string
+  gratuityPrevious?: {
+    plan: PlanId | null
+    status: SubscriptionStatus | null
+    since: string | null
+    paidUntil: string | null
+    trialStartedAt: string | null
+    cancelledAt: string | null
+    gratuityActive: boolean
+    gratuityIndefinite: boolean
+  } | null
 }
 
 async function postAuthenticated<T>(user: User, path: string, body: unknown): Promise<T> {
@@ -68,6 +79,9 @@ function manifestFields(user: User, data: Record<string, unknown>, subscription:
     since: subscription.since,
     lastPayment: subscription.lastPayment,
     paidUntil: subscription.paidUntil,
+    gratuityActive: subscription.gratuityActive === true,
+    gratuityIndefinite: subscription.gratuityIndefinite === true,
+    gratuityPrevious: subscription.gratuityPrevious ?? null,
     blocked: Boolean(data.blocked),
     updatedAt: new Date().toISOString(),
   }
@@ -115,6 +129,9 @@ export async function claimInfinitePayPayment(
       paidUntil,
       trialStartedAt: typeof current.trialStartedAt === 'string' ? current.trialStartedAt : null,
       cancelledAt: null,
+      gratuityActive: false,
+      gratuityIndefinite: false,
+      gratuityPrevious: null,
       paymentProvider: 'infinitepay',
       lastOrderNsu: payment.orderNsu,
       lastTransactionNsu: payment.transactionNsu,
@@ -167,6 +184,9 @@ export async function startTrialFromClient(user: User): Promise<Subscription> {
       paidUntil: getPlanPeriodEnd('trial', new Date(startedAt)).toISOString(),
       trialStartedAt: startedAt,
       cancelledAt: null,
+      gratuityActive: false,
+      gratuityIndefinite: false,
+      gratuityPrevious: null,
       paymentProvider: null,
     }
 

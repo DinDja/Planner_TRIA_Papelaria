@@ -1,6 +1,5 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { ThemeToggle } from '@/components/auth/theme-toggle'
 import { BrandLogo } from '@/components/brand-logo'
 import { formatBRL, PLAN_ORDER, PLANS } from '@/lib/subscriptions/plan'
 
@@ -58,22 +57,30 @@ export function LandingPage() {
       className="landing-page min-h-dvh overflow-hidden antialiased"
       style={{ fontFamily: 'var(--font-plex), sans-serif' }}
     >
-      <header className="relative mx-auto flex w-full max-w-6xl justify-center px-4 pt-5 sm:pt-8">
-        <div className="absolute right-4 top-5 flex items-center gap-1.5 sm:top-8">
+      <header className="relative mx-auto flex w-full max-w-6xl justify-center px-4 pt-16 sm:pt-8">
+        <div className="absolute right-4 top-4 flex items-center gap-1.5 sm:top-8">
           <Link
             href="/auth/login"
             className="landing-login-link inline-flex min-h-9 items-center justify-center rounded-sm border px-2.5 text-[10px] font-semibold tracking-[0.14em] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--landing-accent)]"
           >
             ENTRAR
           </Link>
-          <ThemeToggle className="landing-theme-toggle rounded-sm border bg-transparent text-[var(--landing-fg)] hover:bg-[var(--landing-benefit-bg)] hover:text-[var(--landing-fg)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--landing-accent)]" />
+          <a
+            href="https://wa.me/5571996621923"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Entrar em contato com a TRIA pelo WhatsApp"
+            className="landing-login-link inline-flex min-h-9 items-center justify-center rounded-sm border px-2.5 text-[10px] font-semibold tracking-[0.1em] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--landing-accent)]"
+          >
+            WHATSAPP
+          </a>
         </div>
         <Link
           href="/"
           aria-label="TRIA Papelaria — página inicial"
           className="flex flex-col items-center rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--landing-accent)]"
         >
-          <span className="landing-accent text-[9px] font-semibold uppercase tracking-[0.52em]">
+          <span className="landing-accent text-[9px] mb-3 font-semibold uppercase tracking-[0.52em]">
             PAPELARIA
           </span>
           <BrandLogo
@@ -267,12 +274,12 @@ export function LandingPage() {
           aria-label="Voltar ao início da TRIA"
           className="flex flex-col items-center rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--landing-accent)]"
         >
-          <span className="landing-accent text-[8px] font-semibold uppercase tracking-[0.48em]">
+          <span className="landing-accent mb-3 text-[8px] font-semibold uppercase tracking-[0.48em]">
             PAPELARIA
           </span>
           <BrandLogo
             alt="TRIA"
-            className="landing-logo -mt-1 h-12 w-36"
+            className="landing-logo -mt-1 h-15 w-36"
             imageClassName="brightness-[.48] saturate-[.6]"
           />
         </Link>

@@ -225,147 +225,124 @@ textarea {
   white-space: pre-wrap;
 }
 
-/* A landing usa a mesma identidade cromática do aplicativo. */
+/* A landing segue a composição de papel, rosé e ocre da identidade da TRIA. */
 .landing-page {
-  --landing-bg: color-mix(in oklab, var(--brand-rose) 38%, #fffaf6);
-  --landing-fg: color-mix(in oklab, var(--brand-green) 74%, #211f1a);
-  --landing-surface: color-mix(in oklab, var(--brand-beige) 34%, white);
-  --landing-surface-hover: color-mix(in oklab, var(--brand-rose) 40%, white);
-  --landing-muted: color-mix(in oklab, var(--landing-fg) 62%, transparent);
-  --landing-subtle: color-mix(in oklab, var(--landing-fg) 54%, transparent);
-  --landing-faint: color-mix(in oklab, var(--landing-fg) 34%, transparent);
-  --landing-line: color-mix(in oklab, var(--brand-green) 18%, transparent);
-  --landing-line-strong: color-mix(in oklab, var(--brand-green) 32%, transparent);
-  --landing-chip: color-mix(in oklab, var(--brand-primary) 52%, transparent);
-  --landing-action-bg: var(--brand-primary);
-  --landing-action-fg: #332c2b;
-  --landing-highlight-bg: var(--brand-primary);
-  --landing-highlight-fg: color-mix(in oklab, var(--brand-green) 76%, #211f1a);
-  background-color: var(--landing-bg);
+  --landing-bg: #e1d9c9;
+  --landing-fg: #655e53;
+  --landing-muted: #625b50;
+  --landing-line: #c8bda9;
+  --landing-accent: #805000;
+  --landing-rose: #d2bdb7;
+  --landing-benefit-bg: #eee8dc;
+  --landing-plan-bg: #eee8dc;
   color: var(--landing-fg);
+  background-color: var(--landing-bg);
 }
 
 .dark .landing-page {
-  --landing-bg: color-mix(in oklab, var(--brand-rose) 14%, #1d1a18);
-  --landing-fg: var(--brand-beige);
-  --landing-surface: color-mix(in oklab, var(--brand-rose) 18%, #26211f);
-  --landing-surface-hover: color-mix(in oklab, var(--brand-rose) 26%, #29231f);
-  --landing-muted: color-mix(in oklab, var(--brand-beige) 66%, transparent);
-  --landing-subtle: color-mix(in oklab, var(--brand-beige) 52%, transparent);
-  --landing-faint: color-mix(in oklab, var(--brand-beige) 34%, transparent);
-  --landing-line: color-mix(in oklab, var(--brand-rose) 22%, transparent);
-  --landing-line-strong: color-mix(in oklab, var(--brand-rose) 38%, transparent);
-  --landing-chip: color-mix(in oklab, var(--brand-primary) 22%, transparent);
-  --landing-action-bg: color-mix(in oklab, var(--brand-primary) 84%, var(--brand-beige));
-  --landing-action-fg: #332c2b;
-  --landing-highlight-bg: var(--brand-primary);
-  --landing-highlight-fg: #332e27;
+  --landing-bg: #292522;
+  --landing-fg: #e5d9c8;
+  --landing-muted: #c5b8a6;
+  --landing-line: #5c5147;
+  --landing-accent: #d49a32;
+  --landing-rose: #594844;
+  --landing-benefit-bg: #332e29;
+  --landing-plan-bg: #332e29;
 }
 
-.landing-nav {
-  background-color: var(--landing-bg);
+.dark .landing-logo img {
+  filter: brightness(0) invert(0.82);
+}
+
+.landing-theme-toggle {
+  border-color: var(--landing-line);
 }
 
 .landing-heading {
   color: var(--landing-fg);
 }
 
-.landing-copy-muted {
+.landing-muted {
   color: var(--landing-muted);
 }
 
-.landing-copy-subtle {
-  color: var(--landing-subtle);
+.landing-accent {
+  color: var(--landing-accent);
 }
 
-.landing-copy-subtle:hover {
+.landing-link {
+  color: var(--landing-fg);
+  text-decoration-color: color-mix(in oklab, var(--landing-accent) 75%, transparent);
+}
+
+.landing-link:hover {
+  color: var(--landing-accent);
+}
+
+.landing-intro {
+  border-color: var(--landing-line);
+  background-color: color-mix(in oklab, var(--landing-benefit-bg) 72%, transparent);
+  color: var(--landing-muted);
+}
+
+.landing-benefit {
+  background-color: var(--landing-benefit-bg);
+  color: var(--landing-muted);
+}
+
+.landing-benefit-link {
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.landing-benefit-link:hover {
+  background-color: var(--landing-rose);
+  color: #514a40;
+}
+
+.landing-highlight,
+.landing-faq-card {
+  background-color: var(--landing-rose);
+}
+
+.landing-highlight,
+.landing-faq-card .landing-heading,
+.landing-faq-card .landing-muted {
+  color: #514a40;
+}
+
+.dark .landing-highlight,
+.dark .landing-faq-card .landing-heading,
+.dark .landing-faq-card .landing-muted {
   color: var(--landing-fg);
 }
 
-.landing-copy-faint {
-  color: var(--landing-faint);
+.landing-plan-banner {
+  --landing-plan-bg: color-mix(in oklab, var(--landing-bg) 78%, white);
+  border-color: color-mix(in oklab, var(--landing-accent) 55%, var(--landing-line));
+  background-color: var(--landing-plan-bg);
+  color: var(--landing-accent);
 }
 
-.landing-border {
+.dark .landing-plan-banner {
+  --landing-plan-bg: color-mix(in oklab, var(--landing-bg) 80%, white 4%);
+}
+
+.landing-plan-row {
   border-color: var(--landing-line);
 }
 
-.landing-chip {
-  background-color: var(--landing-chip);
-  color: var(--landing-subtle);
+.landing-cta {
+  background-color: var(--landing-accent);
+  color: #fffaf1;
 }
 
-.landing-card {
-  background-color: var(--landing-surface);
-  border-color: var(--landing-line);
+.dark .landing-cta {
+  color: #292522;
 }
 
-.landing-card:hover {
-  background-color: var(--landing-surface-hover);
-  border-color: var(--landing-line-strong);
+.landing-cta:hover {
+  background-color: color-mix(in oklab, var(--landing-accent) 84%, var(--landing-fg));
 }
-
-.landing-surface {
-  background-color: var(--landing-surface);
-}
-
-.landing-preview {
-  background-color: var(--landing-surface-hover);
-  border-color: var(--landing-line);
-}
-
-.landing-action {
-  background-color: var(--landing-action-bg);
-  color: var(--landing-action-fg);
-}
-
-.landing-action:hover {
-  background-color: color-mix(in oklab, var(--landing-action-bg) 82%, var(--brand-green));
-}
-
-.landing-action-card {
-  background-color: var(--landing-highlight-bg);
-  border-color: var(--landing-highlight-bg);
-  color: var(--landing-highlight-fg);
-}
-
-.landing-action-inverse {
-  background-color: var(--landing-action-bg);
-  color: var(--landing-action-fg);
-}
-
-.landing-action-inverse:hover {
-  background-color: color-mix(in oklab, var(--landing-action-bg) 82%, var(--brand-green));
-}
-
-.landing-recommendation {
-  background-color: var(--brand-beige);
-  color: var(--landing-highlight-fg);
-}
-
-.landing-on-action-muted {
-  color: color-mix(in oklab, var(--landing-highlight-fg) 70%, transparent);
-}
-
-.landing-dot {
-  background-color: var(--landing-faint);
-}
-
-.landing-on-action-dot {
-  background-color: color-mix(in oklab, var(--landing-highlight-fg) 52%, transparent);
-}
-
-.landing-theme-toggle {
-  border-color: var(--landing-line);
-  background-color: transparent;
-  color: var(--landing-subtle);
-}
-
-.landing-theme-toggle:hover {
-  background-color: var(--landing-chip);
-  color: var(--landing-fg);
-}
-
 @utility glass {
   background: color-mix(in oklab, var(--card) 72%, transparent);
   backdrop-filter: blur(16px) saturate(1.4);

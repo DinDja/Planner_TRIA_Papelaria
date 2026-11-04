@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import { ThemeToggle } from '@/components/auth/theme-toggle'
 
 export const metadata: Metadata = {
@@ -13,6 +14,13 @@ export default function AuthLayout({
 }) {
   return (
     <div className="relative flex min-h-dvh">
+      <Link
+        href="/"
+        className="absolute left-5 top-5 z-50 inline-flex min-h-9 items-center rounded-sm border border-border/50 bg-background/50 px-3 text-xs font-medium text-foreground transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        Voltar à página inicial
+      </Link>
+
       {/* Switch de tema — canto superior direito, acima de tudo */}
       <ThemeToggle className="absolute right-5 top-5 z-50" />
 

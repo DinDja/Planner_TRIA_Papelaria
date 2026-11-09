@@ -132,8 +132,23 @@ export async function createInfinitePayCheckout(
   }
 
   const result = await readProviderJson(response)
-  if (!response.ok || !isTrustedInfinitePayCheckoutUrl(result.url)) {
+  if (!response.ok) {
     console.error('InfinitePay recusou a criação do checkout', response.status, result)
+    if (result.error === 'external_checkout_not_enabled') {
+      throw new PaymentApiError(
+        'Ative o Checkout Integrado no app InfinitePay (Vendas > Checkout > Configurações) para habilitar os pagamentos.',
+        502,
+        'checkout_not_enabled',
+      )
+    }
+    throw new PaymentApiError(
+      'Não foi possível abrir o pagamento agora.',
+      502,
+      'checkout_rejected',
+    )
+  }
+  if (!isTrustedInfinitePayCheckoutUrl(result.url)) {
+    console.error('InfinitePay devolveu um checkout de destino não confiável', result)
     throw new PaymentApiError(
       'Não foi possível abrir o pagamento agora.',
       502,

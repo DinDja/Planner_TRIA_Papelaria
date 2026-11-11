@@ -81,7 +81,6 @@ export function PlannersPage() {
                   active ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
                 )}
               >
-                <span className="size-2.5 shrink-0 rounded-md" style={{ backgroundColor: folder.color }} />
                 <span className="truncate">{folder.name}</span>
                 <span className="ml-auto text-xs tabular-nums text-muted-foreground/70">{count}</span>
               </button>
@@ -147,7 +146,6 @@ export function PlannersPage() {
                 </Tab>
                 {folders.map((folder) => (
                   <Tab key={folder.id} value={`folder-${folder.id}`}>
-                    <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: folder.color }} />
                     {folder.name}
                   </Tab>
                 ))}

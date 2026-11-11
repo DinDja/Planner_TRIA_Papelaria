@@ -3,7 +3,8 @@
 import { useHealthStore } from '@/lib/store/use-health-store'
 import { cn } from '@/lib/utils'
 import type { Doctor } from '@/lib/types'
-import { useEffect, useState } from 'react'
+import { CalendarDays, Clock } from 'lucide-react'
+import { useEffect, useState, type ComponentProps } from 'react'
 import { Button } from '../ui/button'
 import { Dialog, DialogContent } from '../ui/overlays'
 import { Input, Textarea } from '../ui/primitives'
@@ -16,6 +17,40 @@ const dayStr = (): string => {
   const m = String(d.getMonth() + 1).padStart(2, '0')
   const day = String(d.getDate()).padStart(2, '0')
   return `${y}-${m}-${day}`
+}
+
+type PickerInputProps = Omit<ComponentProps<typeof Input>, 'type'>
+
+function DatePickerInput({ className, ...props }: PickerInputProps) {
+  return (
+    <div className="relative">
+      <Input
+        {...props}
+        type="date"
+        className={cn('pr-10 [&::-webkit-calendar-picker-indicator]:opacity-0', className)}
+      />
+      <CalendarDays
+        aria-hidden="true"
+        className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+      />
+    </div>
+  )
+}
+
+function TimePickerInput({ className, ...props }: PickerInputProps) {
+  return (
+    <div className="relative">
+      <Input
+        {...props}
+        type="time"
+        className={cn('pr-10 [&::-webkit-calendar-picker-indicator]:opacity-0', className)}
+      />
+      <Clock
+        aria-hidden="true"
+        className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+      />
+    </div>
+  )
 }
 
 const SPECIALTIES = [
@@ -209,7 +244,7 @@ export function AddWeightDialog({ open, onClose, editId }: { open: boolean; onCl
         <div className="flex flex-col gap-4">
           <div>
             <label className="text-sm font-medium mb-1.5 block">Data</label>
-            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+            <DatePickerInput value={date} onChange={(e) => setDate(e.target.value)} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -299,7 +334,7 @@ export function AddMeasurementDialog({ open, onClose, editId }: { open: boolean;
         <div className="flex flex-col gap-4">
           <div>
             <label className="text-sm font-medium mb-1.5 block">Data</label>
-            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+            <DatePickerInput value={date} onChange={(e) => setDate(e.target.value)} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div><label className="text-sm font-medium mb-1.5 block">Busto (cm)</label><Input type="number" step="0.1" value={bust} onChange={(e) => setBust(e.target.value)} /></div>
@@ -407,7 +442,7 @@ export function AddBioimpedanceDialog({ open, onClose, editId }: { open: boolean
         <div className="flex flex-col gap-4">
           <div>
             <label className="text-sm font-medium mb-1.5 block">Data</label>
-            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+            <DatePickerInput value={date} onChange={(e) => setDate(e.target.value)} />
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-3">
@@ -497,7 +532,7 @@ export function AddSymptomDialog({ open, onClose, editId }: { open: boolean; onC
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-sm font-medium mb-1.5 block">Data</label>
-              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+              <DatePickerInput value={date} onChange={(e) => setDate(e.target.value)} />
             </div>
             <div>
               <label className="text-sm font-medium mb-1.5 block">Sintoma</label>
@@ -506,7 +541,7 @@ export function AddSymptomDialog({ open, onClose, editId }: { open: boolean; onC
           </div>
           <div>
             <label className="text-sm font-medium mb-1.5 block">Horário</label>
-            <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
+            <TimePickerInput value={time} onChange={(e) => setTime(e.target.value)} />
           </div>
           <div>
             <label className="text-sm font-medium mb-1.5 block">Possível causa</label>
@@ -608,15 +643,21 @@ export function AddMedicationDialog({ open, onClose, editId }: { open: boolean; 
             <div><label className="text-sm font-medium mb-1.5 block">Dosagem</label><Input value={dosage} onChange={(e) => setDosage(e.target.value)} placeholder="Ex: 1 comprimido" /></div>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div><label className="text-sm font-medium mb-1.5 block">Data de início</label><Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} /></div>
+            <div><label className="text-sm font-medium mb-1.5 block">Data de início</label><DatePickerInput value={startDate} onChange={(e) => setStartDate(e.target.value)} /></div>
             <div><label className="text-sm font-medium mb-1.5 block">Dias de tratamento</label><Input type="number" min="1" max="3650" value={durationDays} onChange={(e) => setDurationDays(e.target.value)} /></div>
           </div>
           <p className="-mt-2 text-xs text-muted-foreground">
             Data de fim calculada: {calculatedEndDate ? calculatedEndDate.split('-').reverse().join('/') : 'informe a duração'}
           </p>
-          <div className="grid grid-cols-2 gap-3">
-            <div><label className="text-sm font-medium mb-1.5 block">Intervalo entre doses (horas)</label><Input type="number" min="1" max="24" value={intervalHours} onChange={(e) => setIntervalHours(e.target.value)} /></div>
-            <div><label className="text-sm font-medium mb-1.5 block">Primeiro horário</label><Input type="time" value={firstTime} onChange={(e) => setFirstTime(e.target.value)} /></div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="min-w-0">
+              <label className="mb-1.5 block text-sm font-medium sm:min-h-10">Intervalo entre doses (horas)</label>
+              <Input type="number" min="1" max="24" value={intervalHours} onChange={(e) => setIntervalHours(e.target.value)} />
+            </div>
+            <div className="min-w-0">
+              <label className="mb-1.5 block text-sm font-medium sm:min-h-10">Primeiro horário</label>
+              <TimePickerInput value={firstTime} onChange={(e) => setFirstTime(e.target.value)} />
+            </div>
           </div>
           <div className="rounded-xl border border-border/50 bg-muted/20 p-3 space-y-2">
             <p className="text-sm font-medium">Horários calculados automaticamente</p>
@@ -688,8 +729,8 @@ export function AddCycleDialog({ open, onClose, editId }: { open: boolean; onClo
       <DialogContent title={editId ? 'Editar ciclo menstrual' : 'Registrar ciclo menstrual'}>
         <div className="flex flex-col gap-4">
           <div className="grid grid-cols-2 gap-3">
-            <div><label className="text-sm font-medium mb-1.5 block">Data de início</label><Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} /></div>
-            <div><label className="text-sm font-medium mb-1.5 block">Data de fim</label><Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} /></div>
+            <div><label className="text-sm font-medium mb-1.5 block">Data de início</label><DatePickerInput value={startDate} onChange={(e) => setStartDate(e.target.value)} /></div>
+            <div><label className="text-sm font-medium mb-1.5 block">Data de fim</label><DatePickerInput value={endDate} onChange={(e) => setEndDate(e.target.value)} /></div>
           </div>
           <div>
             <label className="text-sm font-medium mb-2 block">Fluxo</label>
@@ -875,8 +916,8 @@ export function AddAppointmentDialog({ open, onClose, doctors, editId }: { open:
             />
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div><label className="text-sm font-medium mb-1.5 block">Data</label><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></div>
-            <div><label className="text-sm font-medium mb-1.5 block">Horário</label><Input type="time" value={time} onChange={(e) => setTime(e.target.value)} /></div>
+            <div><label className="text-sm font-medium mb-1.5 block">Data</label><DatePickerInput value={date} onChange={(e) => setDate(e.target.value)} /></div>
+            <div><label className="text-sm font-medium mb-1.5 block">Horário</label><TimePickerInput value={time} onChange={(e) => setTime(e.target.value)} /></div>
           </div>
           <div>
             <label className="text-sm font-medium mb-1.5 block">O que levar</label>
@@ -979,8 +1020,8 @@ export function AddExamDialog({ open, onClose, editId }: { open: boolean; onClos
             />
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div><label className="text-sm font-medium mb-1.5 block">Data</label><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></div>
-            <div><label className="text-sm font-medium mb-1.5 block">Horário</label><Input type="time" value={time} onChange={(e) => setTime(e.target.value)} /></div>
+            <div><label className="text-sm font-medium mb-1.5 block">Data</label><DatePickerInput value={date} onChange={(e) => setDate(e.target.value)} /></div>
+            <div><label className="text-sm font-medium mb-1.5 block">Horário</label><TimePickerInput value={time} onChange={(e) => setTime(e.target.value)} /></div>
           </div>
           <div>
             <label className="text-sm font-medium mb-1.5 block">Endereço</label>

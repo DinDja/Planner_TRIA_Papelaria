@@ -2,7 +2,7 @@
 
 import { useMemoriesStore } from '@/lib/store/use-memories-store'
 import { cn } from '@/lib/utils'
-import { Check } from 'lucide-react'
+import { CalendarDays } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Button } from '../ui/button'
 import { Dialog, DialogContent } from '../ui/overlays'
@@ -94,7 +94,18 @@ export function AddMemoryDialog({
           </div>
           <div>
             <label className="text-sm font-medium mb-1.5 block">Data</label>
-            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+            <div className="relative">
+              <Input
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="pr-10 [&::-webkit-calendar-picker-indicator]:opacity-0"
+              />
+              <CalendarDays
+                aria-hidden="true"
+                className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+              />
+            </div>
           </div>
           <div>
             <label className="text-sm font-medium mb-1.5 block">Descrição</label>

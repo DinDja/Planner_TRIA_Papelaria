@@ -300,7 +300,7 @@ function PricingPage() {
                     </div>
                   ) : (
                     <Button
-                      variant={id === 'annual' ? 'default' : 'outline'}
+                      variant="default"
                       size="lg"
                       className="w-full"
                       disabled={Boolean(processingPlan) || alreadyUsedTrial}

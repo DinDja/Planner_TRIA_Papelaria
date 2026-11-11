@@ -282,7 +282,6 @@ export function NotesPage() {
                         : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
                     )}
                   >
-                    <span className="size-2.5 rounded-md shrink-0" style={{ backgroundColor: f.color }} />
                     <span className="truncate">{f.name}</span>
                     <span className="ml-auto text-xs text-muted-foreground/60">{count}</span>
                   </button>
@@ -389,7 +388,6 @@ export function NotesPage() {
               </Tab>
               {folders.map((f) => (
                 <Tab key={f.id} value={`folder-${f.id}`}>
-                  <span className="size-1.5 rounded-full shrink-0" style={{ backgroundColor: f.color }} />
                   {f.name}
                 </Tab>
               ))}
@@ -468,7 +466,6 @@ export function NotesPage() {
                       : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
                   )}
                 >
-                  <span className="size-2.5 rounded-md shrink-0" style={{ backgroundColor: f.color }} />
                   <span className="truncate flex-1">{f.name}</span>
                   <span className="text-xs text-muted-foreground/60">{count}</span>
                 </button>

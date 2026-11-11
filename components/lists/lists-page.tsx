@@ -346,7 +346,6 @@ export function ListsPage() {
                     : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
                 )}
               >
-                <span className="size-2.5 shrink-0 rounded-md" style={{ backgroundColor: folder.color }} />
                 <span className="truncate">{folder.name}</span>
                 <span className="ml-auto text-xs text-muted-foreground/60">{count}</span>
               </button>
@@ -400,7 +399,6 @@ export function ListsPage() {
             </Tab>
             {folders.map((folder) => (
               <Tab key={folder.id} value={`folder-${folder.id}`}>
-                <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: folder.color }} />
                 {folder.name}
               </Tab>
             ))}

@@ -150,12 +150,12 @@ export function CalendarEventDialog({
           </div>
 
           {/* Horário / All-day */}
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <button
               type="button"
               onClick={() => setAllDay(!allDay)}
               className={cn(
-                'rounded-xl border px-3 py-2 text-xs font-medium transition-all cursor-pointer',
+                'self-start rounded-xl border px-3 py-2 text-xs font-medium transition-all cursor-pointer sm:self-auto',
                 allDay
                   ? 'border-primary/50 bg-primary/10 text-primary'
                   : 'border-border/60 text-muted-foreground hover:bg-muted/50',
@@ -164,8 +164,8 @@ export function CalendarEventDialog({
               Dia inteiro
             </button>
             {!allDay && (
-              <div className="grid grid-cols-2 gap-2 flex-1">
-                <div>
+              <div className="grid min-w-0 grid-cols-1 gap-2 sm:flex-1 sm:grid-cols-2">
+                <div className="min-w-0">
                   <label className="text-xs text-muted-foreground mb-1 block">Início</label>
                   <Input
                     type="time"
@@ -173,7 +173,7 @@ export function CalendarEventDialog({
                     onChange={(e) => setStartTime(e.target.value)}
                   />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <label className="text-xs text-muted-foreground mb-1 block">Fim</label>
                   <Input
                     type="time"

@@ -494,12 +494,12 @@ export function AddSymptomDialog({ open, onClose, editId }: { open: boolean; onC
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent title={editId ? 'Editar sintoma' : 'Registrar sintoma'}>
         <div className="flex flex-col gap-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="min-w-0">
               <label className="text-sm font-medium mb-1.5 block">Data</label>
               <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
             </div>
-            <div>
+            <div className="min-w-0">
               <label className="text-sm font-medium mb-1.5 block">Sintoma</label>
               <Input value={symptom} onChange={(e) => setSymptom(e.target.value)} placeholder="Ex: Dor de cabeça" autoFocus />
             </div>
@@ -607,16 +607,16 @@ export function AddMedicationDialog({ open, onClose, editId }: { open: boolean; 
             <div><label className="text-sm font-medium mb-1.5 block">Nome</label><Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Vitamina D" autoFocus /></div>
             <div><label className="text-sm font-medium mb-1.5 block">Dosagem</label><Input value={dosage} onChange={(e) => setDosage(e.target.value)} placeholder="Ex: 1 comprimido" /></div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div><label className="text-sm font-medium mb-1.5 block">Data de início</label><Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} /></div>
-            <div><label className="text-sm font-medium mb-1.5 block">Dias de tratamento</label><Input type="number" min="1" max="3650" value={durationDays} onChange={(e) => setDurationDays(e.target.value)} /></div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="min-w-0"><label className="text-sm font-medium mb-1.5 block">Data de início</label><Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} /></div>
+            <div className="min-w-0"><label className="text-sm font-medium mb-1.5 block">Dias de tratamento</label><Input type="number" min="1" max="3650" value={durationDays} onChange={(e) => setDurationDays(e.target.value)} /></div>
           </div>
           <p className="-mt-2 text-xs text-muted-foreground">
             Data de fim calculada: {calculatedEndDate ? calculatedEndDate.split('-').reverse().join('/') : 'informe a duração'}
           </p>
-          <div className="grid grid-cols-2 gap-3">
-            <div><label className="text-sm font-medium mb-1.5 block">Intervalo entre doses (horas)</label><Input type="number" min="1" max="24" value={intervalHours} onChange={(e) => setIntervalHours(e.target.value)} /></div>
-            <div><label className="text-sm font-medium mb-1.5 block">Primeiro horário</label><Input type="time" value={firstTime} onChange={(e) => setFirstTime(e.target.value)} /></div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="min-w-0"><label className="text-sm font-medium mb-1.5 block">Intervalo entre doses (horas)</label><Input type="number" min="1" max="24" value={intervalHours} onChange={(e) => setIntervalHours(e.target.value)} /></div>
+            <div className="min-w-0"><label className="text-sm font-medium mb-1.5 block">Primeiro horário</label><Input type="time" value={firstTime} onChange={(e) => setFirstTime(e.target.value)} /></div>
           </div>
           <div className="rounded-xl border border-border/50 bg-muted/20 p-3 space-y-2">
             <p className="text-sm font-medium">Horários calculados automaticamente</p>
@@ -687,9 +687,9 @@ export function AddCycleDialog({ open, onClose, editId }: { open: boolean; onClo
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent title={editId ? 'Editar ciclo menstrual' : 'Registrar ciclo menstrual'}>
         <div className="flex flex-col gap-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div><label className="text-sm font-medium mb-1.5 block">Data de início</label><Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} /></div>
-            <div><label className="text-sm font-medium mb-1.5 block">Data de fim</label><Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} /></div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="min-w-0"><label className="text-sm font-medium mb-1.5 block">Data de início</label><Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} /></div>
+            <div className="min-w-0"><label className="text-sm font-medium mb-1.5 block">Data de fim</label><Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} /></div>
           </div>
           <div>
             <label className="text-sm font-medium mb-2 block">Fluxo</label>
@@ -874,9 +874,9 @@ export function AddAppointmentDialog({ open, onClose, doctors, editId }: { open:
               placeholder="Selecione um médico cadastrado"
             />
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div><label className="text-sm font-medium mb-1.5 block">Data</label><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></div>
-            <div><label className="text-sm font-medium mb-1.5 block">Horário</label><Input type="time" value={time} onChange={(e) => setTime(e.target.value)} /></div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="min-w-0"><label className="text-sm font-medium mb-1.5 block">Data</label><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></div>
+            <div className="min-w-0"><label className="text-sm font-medium mb-1.5 block">Horário</label><Input type="time" value={time} onChange={(e) => setTime(e.target.value)} /></div>
           </div>
           <div>
             <label className="text-sm font-medium mb-1.5 block">O que levar</label>
@@ -978,9 +978,9 @@ export function AddExamDialog({ open, onClose, editId }: { open: boolean; onClos
               placeholder="Selecione um médico cadastrado"
             />
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div><label className="text-sm font-medium mb-1.5 block">Data</label><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></div>
-            <div><label className="text-sm font-medium mb-1.5 block">Horário</label><Input type="time" value={time} onChange={(e) => setTime(e.target.value)} /></div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="min-w-0"><label className="text-sm font-medium mb-1.5 block">Data</label><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></div>
+            <div className="min-w-0"><label className="text-sm font-medium mb-1.5 block">Horário</label><Input type="time" value={time} onChange={(e) => setTime(e.target.value)} /></div>
           </div>
           <div>
             <label className="text-sm font-medium mb-1.5 block">Endereço</label>

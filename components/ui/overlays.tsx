@@ -75,7 +75,7 @@ function DialogContentW({
             <X size={15} />
           </Dialog.Close>
         )}
-        <div className="overflow-y-auto overscroll-contain scrollbar-thin rounded-[inherit] p-4 sm:p-6">
+        <div className="min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain scrollbar-thin rounded-[inherit] p-4 sm:p-6">
           {title && <Dialog.Title className="text-lg font-semibold mb-1 pr-10">{title}</Dialog.Title>}
           {description && (
             <Dialog.Description className="text-sm text-muted-foreground mb-4 pr-6">

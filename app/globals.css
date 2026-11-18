@@ -225,6 +225,16 @@ textarea {
   white-space: pre-wrap;
 }
 
+/* O Safari do iOS dimensiona date/time pelo controle nativo e o campo estoura
+   colunas estreitas (modais). Mantém o controle dentro do contêiner. */
+input[type='date'],
+input[type='time'],
+input[type='datetime-local'],
+input[type='month'] {
+  min-width: 0;
+  max-width: 100%;
+}
+
 /* A landing segue a composição de papel, rosé e ocre da identidade da TRIA. */
 .landing-page {
   --landing-bg: #e1d9c9;

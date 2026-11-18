@@ -168,12 +168,12 @@ export function AddTransactionDialog({
             <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={type === 'income' ? 'Ex: Salário, Comissão...' : 'Ex: Energia, Supermercado...'} autoFocus
               onKeyDown={(e) => e.key === 'Enter' && handleSave()} />
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="min-w-0">
               <label className="text-sm font-medium mb-1.5 block">Valor</label>
               <AmountInput value={amount} onChange={setAmount} />
             </div>
-            <div>
+            <div className="min-w-0">
               <label className="text-sm font-medium mb-1.5 block">Data</label>
               <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
             </div>

@@ -126,14 +126,14 @@ export function AddHabitDialog({ open, onClose, editId }: { open: boolean; onClo
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent title={editId ? 'Editar hábito' : 'Novo hábito'}>
         <div className="flex flex-col gap-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="min-w-0">
               <label className="text-sm font-medium mb-1.5 block">Nome</label>
               <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Beber 2L de água" autoFocus
                 onKeyDown={(e) => e.key === 'Enter' && handleSave()} />
             </div>
-            <div>
-              <label className="text-sm font-medium mb-2 block">Frequência</label>
+            <div className="min-w-0">
+              <label className="text-sm font-medium mb-1.5 block">Frequência</label>
               <div className="flex gap-2">
                 {(['daily', 'weekly', 'monthly'] as const).map((f) => (
                   <button key={f} type="button" onClick={() => setFrequency(f)}

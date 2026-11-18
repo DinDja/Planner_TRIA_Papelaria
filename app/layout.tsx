@@ -27,8 +27,14 @@ export const metadata: Metadata = {
   description:
     'A TRIA reúne tarefas, agenda, notas, listas e finanças em um só lugar. Organize sua rotina de qualquer dispositivo.',
   icons: {
-    icon: '/triaprojeto.png',
-    apple: '/triaprojeto.png',
+    icon: [
+      { url: '/icons/favicon-16.png', sizes: '16x16', type: 'image/png' },
+      { url: '/icons/favicon-32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
+    ],
+    apple: [{ url: '/apple-icon.png', sizes: '180x180', type: 'image/png' }],
+    shortcut: [{ url: '/icons/favicon-32.png', type: 'image/png' }],
   },
   manifest: '/manifest.webmanifest',
 }

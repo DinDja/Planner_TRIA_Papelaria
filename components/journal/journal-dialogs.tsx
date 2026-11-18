@@ -11,6 +11,10 @@ import { Badge, Input } from '../ui/primitives'
 import { Dialog, DialogContent } from '../ui/overlays'
 import { toast } from '../ui/toaster'
 
+// No iOS, focar um campo com fonte menor que 16px dispara zoom na página.
+// Em telas touch mantemos 16px; no desktop (mouse) o campo segue em 14px.
+const CAMPO_TOQUE = 'text-base pointer-fine:text-sm'
+
 function ColorPicker({ value, onChange }: { value: string; onChange: (c: string) => void }) {
   return (
     <div className="flex gap-2 flex-wrap">
@@ -81,6 +85,7 @@ export function AddEntryDialog({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Ex: Reflexões do fim de tarde"
+              className={CAMPO_TOQUE}
               autoFocus
             />
           </div>
@@ -91,7 +96,10 @@ export function AddEntryDialog({
               onChange={(e) => setContent(e.target.value)}
               placeholder="Escreva livremente..."
               rows={9}
-              className="flex w-full resize-y rounded-xl border border-border bg-background px-3 py-2 text-sm leading-relaxed shadow-sm outline-none transition-colors placeholder:text-muted-foreground/60 focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/20 whitespace-pre-wrap break-words"
+              className={cn(
+                'flex w-full resize-y rounded-xl border border-border bg-background px-3 py-2 leading-relaxed shadow-sm outline-none transition-colors placeholder:text-muted-foreground/60 focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/20 whitespace-pre-wrap break-words',
+                CAMPO_TOQUE,
+              )}
               autoFocus={false}
             />
           </div>
@@ -170,7 +178,7 @@ export function ViewEntryDialog({
           <div className="space-y-4">
             <div>
               <label className="text-sm font-medium mb-1.5 block">Título</label>
-              <Input value={title} onChange={(e) => setTitle(e.target.value)} autoFocus />
+              <Input value={title} onChange={(e) => setTitle(e.target.value)} className={CAMPO_TOQUE} autoFocus />
             </div>
 
             <div>
@@ -181,7 +189,10 @@ export function ViewEntryDialog({
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 rows={9}
-                className="flex w-full resize-y whitespace-pre-wrap break-words rounded-xl border border-border bg-background px-3 py-2 text-sm leading-relaxed shadow-sm outline-none transition-colors"
+                className={cn(
+                  'flex w-full resize-y whitespace-pre-wrap break-words rounded-xl border border-border bg-background px-3 py-2 leading-relaxed shadow-sm outline-none transition-colors',
+                  CAMPO_TOQUE,
+                )}
               />
             </div>
 

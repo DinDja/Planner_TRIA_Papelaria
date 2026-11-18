@@ -144,7 +144,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsAdmin(false)
       setIsAdminSystem(false)
       setAdminLoading(true)
-      useSubscriptionStore.getState().setSubscription({ role: 'subscriber' })
+      useSubscriptionStore.getState().setRole('subscriber')
 
       // A sessão continua válida entre acessos por até sete dias. Cada
       // retorno ao sistema reinicia a janela; atividade na tela a mantém viva.
@@ -175,7 +175,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setIsAdmin(member)
           setIsAdminSystem(systemAdmin)
           setAdminLoading(false)
-          useSubscriptionStore.getState().setSubscription({ role })
+          useSubscriptionStore.getState().setRole(role)
           void writeUserManifest(u, { role }).catch(() => {})
         },
         (error) => {
@@ -184,7 +184,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setIsAdmin(false)
           setIsAdminSystem(false)
           setAdminLoading(false)
-          useSubscriptionStore.getState().setSubscription({ role: 'subscriber' })
+          useSubscriptionStore.getState().setRole('subscriber')
         },
       )
     })

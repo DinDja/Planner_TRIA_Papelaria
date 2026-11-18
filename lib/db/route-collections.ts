@@ -181,27 +181,20 @@ const PLAN: Array<{ match: RegExp; plan: RouteCollectionPlan }> = [
       rootFields: ['theme'],
     },
   },
-  // Plans/admin usam só o root doc (subscription.*) e coleções globais fora do provider.
+  // Plans/admin não abrem coleções. A assinatura é sincronizada pelo
+  // StoreSyncProvider em qualquer rota, junto do gate de acesso.
   {
     match: /^\/plans$/,
     plan: {
       collections: [],
-      rootFields: [
-        'subscription.plan',
-        'subscription.status',
-        'subscription.since',
-        'subscription.lastPayment',
-        'subscription.paidUntil',
-        'subscription.trialStartedAt',
-        'subscription.cancelledAt',
-      ],
+      rootFields: [],
     },
   },
   {
     match: /^\/admin$/,
     plan: {
       collections: [],
-      rootFields: ['subscription.plan', 'subscription.status'],
+      rootFields: [],
     },
   },
   {

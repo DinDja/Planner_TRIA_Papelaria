@@ -127,11 +127,7 @@ export function AddHabitDialog({ open, onClose, editId }: { open: boolean; onClo
       <DialogContent title={editId ? 'Editar hábito' : 'Novo hábito'}>
         <div className="flex flex-col gap-4">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-<<<<<<< HEAD
-            <div>
-=======
             <div className="min-w-0">
->>>>>>> 964430bfb068c9574fff84f97df3181d69f6242b
               <label className="text-sm font-medium mb-1.5 block">Nome</label>
               <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Beber 2L de água" autoFocus
                 onKeyDown={(e) => e.key === 'Enter' && handleSave()} />

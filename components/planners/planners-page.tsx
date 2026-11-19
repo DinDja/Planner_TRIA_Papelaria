@@ -147,7 +147,6 @@ export function PlannersPage() {
                 </Tab>
                 {folders.map((folder) => (
                   <Tab key={folder.id} value={`folder-${folder.id}`}>
-                    <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: folder.color }} />
                     {folder.name}
                   </Tab>
                 ))}

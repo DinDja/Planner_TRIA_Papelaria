@@ -3,7 +3,7 @@
 import { useJournalStore } from '@/lib/store/use-journal-store'
 import { EMOTION_CONFIG, ENTRY_COLORS, type JournalEmotion, type JournalEntry, type MoodSnapshot } from '@/lib/types'
 import { cn } from '@/lib/utils'
-import { Feather, Hand, Pencil, Pin, Trash2 } from 'lucide-react'
+import { Hand, Pencil, Pin, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { DrawingPreview } from './handwriting-canvas'
 import { Button } from '../ui/button'
@@ -261,17 +261,6 @@ export function ViewEntryDialog({
               <p className="text-sm text-muted-foreground/80 italic bg-muted/30 rounded-xl p-3">
                 "{entry.mood.note}"
               </p>
-            )}
-
-            {/* Prompt */}
-            {entry.prompt && (
-              <div className="rounded-xl bg-gradient-to-r from-primary/5 to-transparent p-3 border-l-4" style={{ borderColor: entry.color }}>
-                <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
-                  <Feather size={10} />
-                  Reflexão do dia
-                </p>
-                <p className="text-sm italic">"{entry.prompt}"</p>
-              </div>
             )}
 
             {/* Content */}

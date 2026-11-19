@@ -283,7 +283,7 @@ function PricingPage() {
 
                   {current ? (
                     <div className="space-y-2">
-                      <Button variant="outline" className="w-full cursor-default" disabled>
+                      <Button variant="default" className="w-full cursor-default" disabled>
                         {sub.status === 'cancelled' ? 'Acesso vigente' : 'Seu plano atual'}
                       </Button>
                       {sub.status !== 'cancelled' && (
@@ -300,7 +300,7 @@ function PricingPage() {
                     </div>
                   ) : (
                     <Button
-                      variant={id === 'annual' ? 'default' : 'outline'}
+                      variant="default"
                       size="lg"
                       className="w-full"
                       disabled={Boolean(processingPlan) || alreadyUsedTrial}

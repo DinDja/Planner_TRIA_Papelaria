@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { JournalEmotion, JournalEntry, JournalTimeOfDay, MoodSnapshot } from '../types'
-import { ENTRY_COLORS, JOURNAL_PROMPTS } from '../types'
+import { ENTRY_COLORS } from '../types'
 
 const uid = () => Math.random().toString(36).slice(2, 10)
 const nowISO = () => new Date().toISOString()
@@ -21,11 +21,6 @@ const getTimeOfDay = (): JournalTimeOfDay => {
   return 'night'
 }
 
-const getRandomPrompt = (): string => {
-  const prompts = JOURNAL_PROMPTS
-  return prompts[Math.floor(Math.random() * prompts.length)].text
-}
-
 const seedEntries: JournalEntry[] = [
   {
     id: `journal-seed-1`,
@@ -34,7 +29,6 @@ const seedEntries: JournalEntry[] = [
     date: todayISO(),
     timeOfDay: 'morning',
     mood: { emotions: ['excited', 'hopeful'], energy: 5, note: 'Motivado para começar!' },
-    prompt: 'Por que você está grato(a) agora?',
     tags: ['início', 'propósito'],
     color: ENTRY_COLORS[0],
     createdAt: nowISO(),
@@ -48,7 +42,6 @@ const seedEntries: JournalEntry[] = [
     date: todayISO(),
     timeOfDay: 'evening',
     mood: { emotions: ['calm', 'hopeful'], energy: 3 },
-    prompt: 'O que você aprendeu hoje?',
     tags: ['reflexão'],
     color: ENTRY_COLORS[3],
     createdAt: nowISO(),
@@ -72,7 +65,6 @@ interface JournalState {
     date: string
     timeOfDay?: JournalTimeOfDay
     mood: MoodSnapshot
-    prompt?: string
     tags?: string[]
     color?: string
     drawing?: JournalEntry['drawing']
@@ -86,7 +78,6 @@ interface JournalState {
   getPinnedEntries: () => JournalEntry[]
   getMoodStats: () => MoodStats
   getEmotionTimeline: (days?: number) => { date: string; emotions: JournalEmotion[]; energy: number }[]
-  getPrompt: () => string
   getEntriesGroupedByDate: () => { date: string; entries: JournalEntry[] }[]
 }
 
@@ -212,8 +203,6 @@ export const useJournalStore = create<JournalState>()(
 
         return result.reverse()
       },
-
-      getPrompt: () => getRandomPrompt(),
 
       getEntriesGroupedByDate: () => {
         const groups: { date: string; entries: JournalEntry[] }[] = []

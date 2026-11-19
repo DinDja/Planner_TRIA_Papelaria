@@ -157,7 +157,6 @@ users/{uid}/diarios/{diarioId} {
   rabisco?:    list<map> { x, y, pressure, tiltX?, tiltY?, twist?, pointerType? },
   fixado?:     bool,
   momento?:    'madrugada'|'manha'|'tarde'|'anoitecer'|'noite',
-  prompt?:     string,
   texto?:      string,
   retro?:      { fora: list<string>, dentro: list<string>, proximo: list<string> },
   notas?:      string,
@@ -170,7 +169,7 @@ users/{uid}/diarios/{diarioId} {
 users/{uid}/journalEntries/{entryId} {
   id, title, content, date, timeOfDay: 'morning'|'afternoon'|'evening'|'night',
   mood: { emotions: list<string>, energy: int 1..5, note?: string },
-  prompt?, tags: list<string>, color, createdAt, updatedAt, pinned?, drawing?: list<map>
+  tags: list<string>, color, createdAt, updatedAt, pinned?, drawing?: list<map>
 }
 ```
 

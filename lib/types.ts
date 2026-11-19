@@ -608,14 +608,6 @@ export type JournalEmotion =
 
 export type JournalTimeOfDay = 'morning' | 'afternoon' | 'evening' | 'night'
 
-export type PromptCategory = 'gratitude' | 'reflection' | 'creativity' | 'goals' | 'emotions' | 'memory' | 'inspiration'
-
-export interface JournalPrompt {
-  id: string
-  text: string
-  category: PromptCategory
-}
-
 export interface MoodSnapshot {
   emotions: JournalEmotion[]
   energy: 1 | 2 | 3 | 4 | 5
@@ -629,7 +621,6 @@ export interface JournalEntry {
   date: string
   timeOfDay: JournalTimeOfDay
   mood: MoodSnapshot
-  prompt?: string
   tags: string[]
   color: string
   createdAt: string
@@ -637,21 +628,6 @@ export interface JournalEntry {
   pinned?: boolean
   drawing?: Stroke[]
 }
-
-export const JOURNAL_PROMPTS: JournalPrompt[] = [
-  { id: 'p1', text: 'O que te fez sorrir hoje?', category: 'gratitude' },
-  { id: 'p2', text: 'Se você pudesse mudar algo no dia de hoje, o que seria?', category: 'reflection' },
-  { id: 'p3', text: 'Qual ideia está borbulhando na sua mente?', category: 'creativity' },
-  { id: 'p4', text: 'O que você aprendeu hoje?', category: 'reflection' },
-  { id: 'p5', text: 'Por que você está grato(a) agora?', category: 'gratitude' },
-  { id: 'p6', text: 'Como você quer se sentir amanhã?', category: 'goals' },
-  { id: 'p7', text: 'Qual emoção está mais presente em você agora?', category: 'emotions' },
-  { id: 'p8', text: 'Descreva seu dia em uma palavra e depois explique.', category: 'reflection' },
-  { id: 'p9', text: 'O que te inspirou recentemente?', category: 'inspiration' },
-  { id: 'p10', text: 'Lembre-se de um momento feliz desta semana.', category: 'memory' },
-  { id: 'p11', text: 'Se o dia de hoje fosse uma música, qual seria?', category: 'creativity' },
-  { id: 'p12', text: 'O que você precisa deixar ir?', category: 'emotions' },
-]
 
 export const ENTRY_COLORS = [
   '#d1bdb8', '#b76f06', '#6a634d', '#ddd6c6',

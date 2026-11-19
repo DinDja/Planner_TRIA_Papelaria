@@ -389,7 +389,6 @@ export function NotesPage() {
               </Tab>
               {folders.map((f) => (
                 <Tab key={f.id} value={`folder-${f.id}`}>
-                  <span className="size-1.5 rounded-full shrink-0" style={{ backgroundColor: f.color }} />
                   {f.name}
                 </Tab>
               ))}

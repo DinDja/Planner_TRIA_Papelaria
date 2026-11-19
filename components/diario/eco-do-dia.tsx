@@ -15,8 +15,8 @@ const FONT_SERIF = 'var(--font-instrument), Georgia, serif'
 // O dashboard deixa de ser uma mesa de operações SaaS e vira a primeira
 // página do caderno. Três estados possuem dignidade própria:
 //
-//   1. Silêncio — hoje não foi escrito. Mostramos o prompt e um convite
-//      manuscrito. Nada de "empty state" ilustrado.
+//   1. Silêncio — hoje não foi escrito. Mostramos a página em branco e um
+//      convite manuscrito. Nada de "empty state" ilustrado.
 //
 //   2. Préambulo — hoje tem registro. Mostramos data manuscrita, primeira
 //      frase, emoções, e a linha de energia. Tudo tipográfico, sem card.
@@ -32,8 +32,6 @@ const FONT_SERIF = 'var(--font-instrument), Georgia, serif'
 
 export interface EcoDoDiaProps {
   eco: EcoRasgado | null
-  /** O prompt de hoje (determinístico), já formatado. */
-  promptHoje: string
   /** Momento do dia corrente, derivado da hora. */
   momentoAgora: 'manha' | 'tarde' | 'anoitecer' | 'noite' | 'madrugada'
   className?: string
@@ -41,7 +39,6 @@ export interface EcoDoDiaProps {
 
 export function EcoDoDia({
   eco,
-  promptHoje,
   momentoAgora,
   className,
 }: EcoDoDiaProps) {
@@ -85,7 +82,7 @@ export function EcoDoDia({
       {jaEscrito ? (
         <JaEscrito eco={eco!} />
       ) : (
-        <AindaSilencio promptHoje={promptHoje} />
+        <AindaSilencio />
       )}
     </section>
   )
@@ -93,7 +90,7 @@ export function EcoDoDia({
 
 // ─── Hoje ainda em silêncio — convite à caneta ──────────────────────────────
 
-function AindaSilencio({ promptHoje }: { promptHoje: string }) {
+function AindaSilencio() {
   return (
     <div className="flex flex-col gap-3 py-1">
       <Link href="/diario" className="group flex flex-col gap-1.5 max-w-[28rem]">
@@ -101,13 +98,12 @@ function AindaSilencio({ promptHoje }: { promptHoje: string }) {
           className="font-hand text-foreground"
           style={{ fontFamily: FONT_HAND, fontSize: '1.35rem', lineHeight: 1.18 }}
         >
-          {promptHoje}
+          hoje a página ainda está em branco.
         </span>
         <span className="text-[0.72rem] uppercase tracking-[0.18em] text-muted-foreground/55 transition-colors group-hover:text-foreground/75">
           tomar a caneta
         </span>
       </Link>
-      <LinhaDeEnergia energia={3} cor="var(--muted-foreground)" className="opacity-50" />
     </div>
   )
 }

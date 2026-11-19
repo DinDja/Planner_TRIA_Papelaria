@@ -6,7 +6,6 @@ import type { Stroke, StrokePoint } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import {
   EMOCOES,
-  PROMPTS,
   type Energia,
   type Emocao,
   type Momento,
@@ -16,7 +15,6 @@ import {
 } from '@/lib/diario/types'
 import {
   isoDia,
-  promptDoDia,
   useDiarioStore,
   type EntradaCriar,
 } from '@/lib/diario/use-diario-store'
@@ -35,7 +33,6 @@ import { Input } from '@/components/ui/primitives'
 import { toast } from '@/components/ui/toaster'
 import { LinhaDeEnergia } from './linha-de-energia'
 
-const FONT_HAND = 'var(--font-caveat), "Segoe Script", cursive'
 const FONT_SERIF = 'var(--font-instrument), Georgia, serif'
 
 const PERIODOS: { v: Periodo; rotulo: string }[] = [
@@ -97,7 +94,6 @@ export function EscreverDialog({
   const [emocoes, setEmocoes] = useState<Emocao[]>([])
   const [energia, setEnergia] = useState<Energia>(3)
   const [titulo, setTitulo] = useState('')
-  const [prompt, setPrompt] = useState('')
   const [texto, setTexto] = useState('')
   const [fora, setFora] = useState(['', ''])
   const [dentro, setDentro] = useState(['', ''])
@@ -117,7 +113,6 @@ export function EscreverDialog({
       setEmocoes(editar.emocoes)
       setEnergia(editar.energia)
       setTitulo(editar.titulo ?? '')
-      setPrompt(editar.prompt ?? '')
       setTexto(editar.texto ?? '')
       setFora(editar.retro?.fora ?? ['', ''])
       setDentro(editar.retro?.dentro ?? ['', ''])
@@ -132,7 +127,6 @@ export function EscreverDialog({
       setEmocoes([])
       setEnergia(3)
       setTitulo('')
-      setPrompt((periodoInicial ?? 'dia') === 'dia' ? promptDoDia().texto : '')
       setTexto('')
       setFora(['', ''])
       setDentro(['', ''])
@@ -157,13 +151,6 @@ export function EscreverDialog({
     if (!v || tags.includes(v)) return
     setTags([...tags, v])
     setTagInput('')
-  }
-
-  const trocarPrompt = () => {
-    const outro = PROMPTS.filter((p) => p.texto !== prompt)[
-      Math.floor(Math.random() * PROMPTS.length)
-    ]
-    setPrompt(outro.texto)
   }
 
   const salvar = () => {
@@ -216,7 +203,6 @@ export function EscreverDialog({
       emocoes,
       energia,
       titulo: titulo || undefined,
-      prompt: prompt || undefined,
       texto: texto || undefined,
       tags,
     }
@@ -246,7 +232,6 @@ export function EscreverDialog({
           emocoes={emocoes}
           energia={energia}
           titulo={titulo}
-          prompt={prompt}
           texto={texto}
           fora={fora}
           dentro={dentro}
@@ -263,8 +248,6 @@ export function EscreverDialog({
           toggleEmocao={toggleEmocao}
           setEnergia={setEnergia}
           setTitulo={setTitulo}
-          setPrompt={setPrompt}
-          trocarPrompt={trocarPrompt}
           setTexto={setTexto}
           setFora={setFora}
           setDentro={setDentro}
@@ -292,7 +275,6 @@ interface FolhaEditavelProps {
   emocoes: Emocao[]
   energia: Energia
   titulo: string
-  prompt: string
   texto: string
   fora: string[]
   dentro: string[]
@@ -310,8 +292,6 @@ interface FolhaEditavelProps {
   toggleEmocao: (e: Emocao) => void
   setEnergia: (v: Energia) => void
   setTitulo: (v: string) => void
-  setPrompt: (v: string) => void
-  trocarPrompt: () => void
   setTexto: (v: string) => void
   setFora: (v: string[]) => void
   setDentro: (v: string[]) => void
@@ -427,25 +407,6 @@ function FolhaEditavel(p: FolhaEditavelProps) {
             className="w-full bg-transparent font-serif font-medium outline-none placeholder:text-muted-foreground/35"
             style={{ fontFamily: FONT_SERIF, fontSize: '1.55rem', lineHeight: 1.15 }}
           />
-
-          {/* Prompt do dia (apenas para dia) */}
-          {!p.ehPeriodo && p.prompt && (
-            <div className="-ml-0.5 flex items-baseline gap-2">
-              <span
-                className="flex-1 font-hand text-muted-foreground/80"
-                style={{ fontFamily: FONT_HAND, fontSize: '1.18rem', lineHeight: 1.2 }}
-              >
-                {p.prompt}
-              </span>
-              <button
-                type="button"
-                onClick={p.trocarPrompt}
-                className="shrink-0 text-[0.7rem] uppercase tracking-[0.18em] text-muted-foreground/50 hover:text-foreground transition-colors"
-              >
-                outro
-              </button>
-            </div>
-          )}
 
           {/* Emoções */}
           <div>

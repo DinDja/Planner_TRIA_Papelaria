@@ -117,8 +117,6 @@ export interface Registro {
   // Específico de "dia":
   /** Momento do dia em que a escrita aconteceu. */
   momento?: Momento
-  /** Prompt respondido, quando veio de um. */
-  prompt?: string
   /** Texto da escrita — sempre longa, sem limite artificial. */
   texto?: string
 
@@ -127,32 +125,3 @@ export interface Registro {
   /** Linha corrida para semana/mês — além das listas estruturadas. */
   notas?: string
 }
-
-// ─── Catálogo de prompts ────────────────────────────────────────────────────
-
-export type CategoriaPrompt =
-  | 'gratidao'
-  | 'reflexao'
-  | 'cores'
-  | 'decisao'
-  | 'memoria'
-  | 'corpo'
-
-export interface Prompt {
-  id: string
-  texto: string
-  categoria: CategoriaPrompt
-}
-
-export const PROMPTS: Prompt[] = [
-  { id: 'p1',  texto: 'Que cor teve o seu dia?',                       categoria: 'cores' },
-  { id: 'p2',  texto: 'O que ficou em você depois que o dia passou?',  categoria: 'reflexao' },
-  { id: 'p3',  texto: 'Qual pergunta você não conseguiu responder hoje?', categoria: 'reflexao' },
-  { id: 'p4',  texto: 'Por qual detalhe pequeno você é grato agora?',   categoria: 'gratidao' },
-  { id: 'p5',  texto: 'O que seu corpo pediu hoje e você não ouviu?',    categoria: 'corpo' },
-  { id: 'p6',  texto: 'Que decisão você adiou hoje? Por quê?',          categoria: 'decisao' },
-  { id: 'p7',  texto: 'Descreva um instante em que o tempo parou.',      categoria: 'memoria' },
-  { id: 'p8',  texto: 'O que você quer lembrar da semana que passou?',   categoria: 'memoria' },
-  { id: 'p9',  texto: 'Qual ideia está pedindo passagem?',                categoria: 'reflexao' },
-  { id: 'p10', texto: 'O que você precisa soltar antes de dormir?',      categoria: 'gratidao' },
-]

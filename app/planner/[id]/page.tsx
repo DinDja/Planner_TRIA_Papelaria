@@ -6,6 +6,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { PlannerEditor } from '@/components/editor/planner-editor'
 import { Button } from '@/components/ui/button'
 import { RequireAuth } from '@/components/auth/require-auth'
+import { RequireSubscription } from '@/components/auth/require-subscription'
 import { StoreSyncProvider } from '@/components/providers/store-sync-provider'
 import { useAuth } from '@/lib/auth/auth-context'
 import { db } from '@/lib/firebase'
@@ -16,6 +17,18 @@ import { useAppStore } from '@/lib/store/use-app-store'
 type RemoteStatus = 'loading' | 'found' | 'missing' | 'error'
 
 export default function EditorPage() {
+  return (
+    <RequireAuth>
+      <StoreSyncProvider editorMode>
+        <RequireSubscription>
+          <EditorContent />
+        </RequireSubscription>
+      </StoreSyncProvider>
+    </RequireAuth>
+  )
+}
+
+function EditorContent() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
   const { user } = useAuth()
@@ -129,28 +142,22 @@ export default function EditorPage() {
     })
   }, [id, planner])
 
-  return (
-    <RequireAuth>
-      <StoreSyncProvider editorMode>
-        {planner ? (
-          <PlannerEditor planner={planner} />
-        ) : remoteStatus === 'loading' ? (
-          <div className="flex h-dvh items-center justify-center px-4" role="status" aria-live="polite">
-            <p className="text-sm text-muted-foreground">Abrindo caderno…</p>
-          </div>
-        ) : (
-          <div className="flex h-dvh items-center justify-center px-4">
-            <div className="text-center">
-              <p className="text-lg font-semibold">
-                {remoteStatus === 'error' ? 'Não foi possível carregar este caderno' : 'Caderno não encontrado'}
-              </p>
-              <Button variant="link" onClick={() => router.push('/dashboard')} className="mt-2">
-                Voltar ao Dashboard
-              </Button>
-            </div>
-          </div>
-        )}
-      </StoreSyncProvider>
-    </RequireAuth>
+  return planner ? (
+    <PlannerEditor planner={planner} />
+  ) : remoteStatus === 'loading' ? (
+    <div className="flex h-dvh items-center justify-center px-4" role="status" aria-live="polite">
+      <p className="text-sm text-muted-foreground">Abrindo caderno…</p>
+    </div>
+  ) : (
+    <div className="flex h-dvh items-center justify-center px-4">
+      <div className="text-center">
+        <p className="text-lg font-semibold">
+          {remoteStatus === 'error' ? 'Não foi possível carregar este caderno' : 'Caderno não encontrado'}
+        </p>
+        <Button variant="link" onClick={() => router.push('/dashboard')} className="mt-2">
+          Voltar ao Dashboard
+        </Button>
+      </div>
+    </div>
   )
 }

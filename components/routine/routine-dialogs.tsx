@@ -802,12 +802,12 @@ export function AddSlotDialog({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="min-w-0">
               <label className="text-sm font-medium mb-1.5 block">Início</label>
               <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
             </div>
-            <div>
+            <div className="min-w-0">
               <label className="text-sm font-medium mb-1.5 block">Fim</label>
               <Input
                 type="time"

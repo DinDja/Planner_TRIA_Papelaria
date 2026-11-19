@@ -211,7 +211,7 @@ service cloud.firestore {
       //   criadoEm, atualizadoEm, titulo?, emocoes: list<string>, energia: int 1..5,
       //   cor, tags: list<string>, rabisco?: list<map>, fixado?: bool,
       //   momento?: 'madrugada'|'manha'|'tarde'|'anoitecer'|'noite',
-      //   prompt?: string, texto?: string,
+      //   texto?: string,
       //   retro?: map { fora: list<string>, dentro: list<string>, proximo: list<string> },
       //   notas?: string
       match /diarios/{diarioId} {
@@ -221,7 +221,7 @@ service cloud.firestore {
       // ─── Journal (useJournalStore — legado, mantido p/ migração) ────────
       // /users/{uid}/journalEntries/{entryId}
       //   id, title, content, date, timeOfDay, mood: map { emotions, energy, note? },
-      //   prompt?, tags: list<string>, color, createdAt, updatedAt, pinned?, drawing?
+      //   tags: list<string>, color, createdAt, updatedAt, pinned?, drawing?
       match /journalEntries/{entryId} {
         allow read, write: if owns(uid);
       }

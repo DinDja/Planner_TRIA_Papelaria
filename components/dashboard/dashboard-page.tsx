@@ -106,7 +106,6 @@ export function DashboardPage() {
   const birthdays = useBirthdaysStore((s) => s.entries)
   const tasks = useRoutineStore((s) => s.tasks)
   const recurringTasks = useRoutineStore((s) => s.recurringTasks)
-  const pendingItems = useRoutineStore((s) => s.pendingItems)
   const appointments = useHealthStore((s) => s.appointments)
   const exams = useHealthStore((s) => s.exams)
   const [eventEditId, setEventEditId] = useState<string | undefined>()
@@ -164,7 +163,7 @@ export function DashboardPage() {
     [appointments, exams, currentMonthKey],
   )
 
-  const taskCount = tasks.length + recurringTasks.filter((task) => task.active).length + pendingItems.length
+  const taskCount = tasks.length + recurringTasks.filter((task) => task.active).length
   const healthRecordCount = monthlyHealthRecords.length
 
   const hour = new Date().getHours()

@@ -155,16 +155,6 @@ export function Folha({
               </h2>
             )}
 
-            {/* Prompt respondido — mostrado como convite manuscrito. */}
-            {r.prompt && (
-              <p
-                className="mb-4 -ml-0.5 font-hand text-muted-foreground/80 text-pretty"
-                style={{ fontFamily: FONT_HAND, fontSize: '1.18rem', lineHeight: 1.2 }}
-              >
-                {r.prompt}
-              </p>
-            )}
-
             {/* Emoções */}
             {r.emocoes.length > 0 && (
               <EmocoesLinha emocoes={r.emocoes} className="mb-4 text-[0.95rem]" />

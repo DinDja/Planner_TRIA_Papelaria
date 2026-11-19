@@ -1,6 +1,7 @@
 'use client'
 
 import { useAppStore } from '@/lib/store/use-app-store'
+import { useSubscriptionAccess } from '@/lib/subscriptions/use-access'
 import { ModuloIcon, type ModuloId } from '@/components/icons/modules'
 import { cn } from '@/lib/utils'
 import { motion } from 'framer-motion'
@@ -31,6 +32,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
   const planners = useAppStore((s) => s.planners)
+  const { allowed } = useSubscriptionAccess()
 
   useEffect(() => {
     if (open) {
@@ -40,7 +42,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
     }
   }, [open])
 
-  const baseActions: PaletteItem[] = [
+  const baseActions: PaletteItem[] = allowed ? [
     { id: 'dashboard',     label: 'Dashboard',            iconId: 'dashboard',     href: '/dashboard',     section: 'Navegação' },
     { id: 'diario',        label: 'Diário Digital',        iconId: 'diario',        href: '/diario',        section: 'Navegação' },
     { id: 'notas',         label: 'Notas',                 iconId: 'notas',         href: '/notas',         section: 'Navegação' },
@@ -59,10 +61,12 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
     { id: 'plans',         label: 'Planos',                iconId: 'plans',         href: '/plans',         section: 'Navegação' },
     { id: 'menu',          label: 'Personalizar Menu',     iconId: 'admin',         href: '/menu',          section: 'Sistema' },
     { id: 'lixeira',       label: 'Lixeira',               iconId: 'memorias',      href: '/lixeira',       section: 'Sistema' },
+  ] : [
+    { id: 'plans', label: 'Planos', iconId: 'plans', href: '/plans', section: 'Sua conta' },
   ]
 
   // Planners não são módulos — ganham ponto de cor, não ícone de módulo.
-  const plannerActions: PaletteItem[] = planners.map((p) => ({
+  const plannerActions: PaletteItem[] = (allowed ? planners : []).map((p) => ({
     id: p.id,
     label: p.name,
     dotColor: p.color,
@@ -155,7 +159,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
               setSelectedIdx(0)
             }}
             onKeyDown={onKeyDown}
-            placeholder="Buscar cadernos e páginas..."
+            placeholder={allowed ? 'Buscar cadernos e páginas...' : 'Ir para os planos...'}
             className="flex-1 bg-transparent text-[15px] outline-none placeholder:text-muted-foreground/60"
           />
           <kbd className="inline-flex items-center gap-0.5 rounded-lg border border-border bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">

@@ -38,13 +38,24 @@ export interface Subscription {
   gratuityIndefinite?: boolean
 }
 
+/** Dados de cobrança; o papel nunca vem daqui. */
+export type SubscriptionPlanState = Omit<Subscription, 'role'>
+
 interface SubscriptionState extends Subscription {
-  setSubscription: (s: Partial<Subscription>) => void
+  /** UID cuja assinatura já foi confirmada pelo snapshot do Firestore. */
+  hydratedUid: string | null
+  /** Atualiza apenas os dados de cobrança (o papel é gerido pelo admin/{uid}). */
+  setSubscription: (s: Partial<SubscriptionPlanState>) => void
+  /** Define o papel com base no vínculo administrativo. */
+  setRole: (role: Role) => void
+  /** Aplica a assinatura remota inteira e libera o gate para este UID. */
+  syncFromRemote: (uid: string, value: unknown) => void
+  /** Libera o gate usando o cache quando o Firestore não responde. */
+  markHydrated: (uid: string) => void
   reset: () => void
 }
 
-const EMPTY: Subscription = {
-  role: 'subscriber',
+const EMPTY_PLAN_STATE: SubscriptionPlanState = {
   plan: null,
   status: 'none',
   since: null,
@@ -56,16 +67,82 @@ const EMPTY: Subscription = {
   gratuityIndefinite: false,
 }
 
+const EMPTY: Subscription = {
+  role: 'subscriber',
+  ...EMPTY_PLAN_STATE,
+}
+
+const PLAN_STATE_KEYS = Object.keys(EMPTY_PLAN_STATE) as Array<keyof SubscriptionPlanState>
+
+function asIsoString(value: unknown): string | null {
+  return typeof value === 'string' && Number.isFinite(Date.parse(value)) ? value : null
+}
+
+/**
+ * Normaliza `users/{uid}.subscription` para o formato da store.
+ * Campos ausentes ou inválidos voltam ao padrão — isso impede que um cache
+ * antigo de plano pago sobreviva a uma conta sem assinatura.
+ */
+export function normalizeRemoteSubscription(value: unknown): SubscriptionPlanState {
+  const raw = value && typeof value === 'object' ? value as Record<string, unknown> : {}
+  const plan = raw.plan === 'monthly' || raw.plan === 'annual' || raw.plan === 'trial'
+    ? raw.plan
+    : null
+  const status = raw.status === 'active' || raw.status === 'past_due' || raw.status === 'cancelled'
+    ? raw.status
+    : 'none'
+
+  return {
+    plan,
+    status,
+    since: asIsoString(raw.since),
+    lastPayment: asIsoString(raw.lastPayment),
+    paidUntil: asIsoString(raw.paidUntil),
+    trialStartedAt: asIsoString(raw.trialStartedAt),
+    cancelledAt: asIsoString(raw.cancelledAt),
+    gratuityActive: raw.gratuityActive === true,
+    gratuityIndefinite: raw.gratuityIndefinite === true,
+  }
+}
+
 export const useSubscriptionStore = create<SubscriptionState>()(
   persist(
     (set) => ({
       ...EMPTY,
+      hydratedUid: null,
 
       setSubscription: (patch) => set((s) => ({ ...s, ...patch })),
 
-      reset: () => set(EMPTY),
+      setRole: (role) => set({ role }),
+
+      syncFromRemote: (uid, value) => set((state) => {
+        const next = normalizeRemoteSubscription(value)
+        const changed = PLAN_STATE_KEYS.some((key) => state[key] !== next[key])
+        if (!changed) return state.hydratedUid === uid ? {} : { hydratedUid: uid }
+        return { ...next, hydratedUid: uid }
+      }),
+
+      markHydrated: (uid) => set((state) => (
+        state.hydratedUid === uid ? {} : { hydratedUid: uid }
+      )),
+
+      reset: () => set({ ...EMPTY, hydratedUid: null }),
     }),
-    { name: 'tria-papelaria-subscription' },
+    {
+      name: 'tria-papelaria-subscription',
+      partialize: (s) => ({
+        role: s.role,
+        plan: s.plan,
+        status: s.status,
+        since: s.since,
+        lastPayment: s.lastPayment,
+        paidUntil: s.paidUntil,
+        trialStartedAt: s.trialStartedAt,
+        cancelledAt: s.cancelledAt,
+        gratuityActive: s.gratuityActive,
+        gratuityIndefinite: s.gratuityIndefinite,
+      }),
+    },
   ),
 )
 

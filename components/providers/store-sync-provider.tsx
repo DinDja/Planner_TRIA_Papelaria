@@ -78,19 +78,6 @@ const ROOT_BINDINGS: RootBinding[] = [
   { store: useHealthStore as unknown as StoreLike, field: 'sex', rootKey: 'sex', read: true, write: true },
   { store: useHealthStore as unknown as StoreLike, field: 'onboarded', rootKey: 'onboarded', read: true, write: true },
   { store: usePasswordsStore as unknown as StoreLike, field: 'masterPin', rootKey: 'masterPin', read: false, write: true },
-  // Cobrança é somente leitura no cliente. Checkout, teste e cancelamento
-  // escrevem estes campos pelas rotas autenticadas no servidor.
-  // `role` é derivada da associação Firebase admin/{uid}; o root doc não concede acesso.
-  { store: useSubscriptionStore as unknown as StoreLike, field: 'role', rootKey: 'subscription.role', read: false, write: false },
-  { store: useSubscriptionStore as unknown as StoreLike, field: 'plan', rootKey: 'subscription.plan', read: true, write: false },
-  { store: useSubscriptionStore as unknown as StoreLike, field: 'status', rootKey: 'subscription.status', read: true, write: false },
-  { store: useSubscriptionStore as unknown as StoreLike, field: 'since', rootKey: 'subscription.since', read: true, write: false },
-  { store: useSubscriptionStore as unknown as StoreLike, field: 'lastPayment', rootKey: 'subscription.lastPayment', read: true, write: false },
-  { store: useSubscriptionStore as unknown as StoreLike, field: 'paidUntil', rootKey: 'subscription.paidUntil', read: true, write: false },
-  { store: useSubscriptionStore as unknown as StoreLike, field: 'trialStartedAt', rootKey: 'subscription.trialStartedAt', read: true, write: false },
-  { store: useSubscriptionStore as unknown as StoreLike, field: 'cancelledAt', rootKey: 'subscription.cancelledAt', read: true, write: false },
-  { store: useSubscriptionStore as unknown as StoreLike, field: 'gratuityActive', rootKey: 'subscription.gratuityActive', read: true, write: false },
-  { store: useSubscriptionStore as unknown as StoreLike, field: 'gratuityIndefinite', rootKey: 'subscription.gratuityIndefinite', read: true, write: false },
 ]
 
 // O menu do usuário e Configurações existem em todas as telas do app.
@@ -194,8 +181,16 @@ export function StoreSyncProvider({ children, editorMode = false }: StoreSyncPro
     const wantedRootKeys = new Set([...GLOBAL_ROOT_KEYS, ...(plan.rootFields ?? [])])
     unsubs.push(onSnapshot(rootRef, { includeMetadataChanges: true }, (snapshot) => {
       if (snapshot.metadata.fromCache) return
-      if (!snapshot.exists()) return
+      if (!snapshot.exists()) {
+        // Sem documento-raiz não há assinatura. O snapshot seguinte (quando o
+        // cadastro for gravado) traz os dados reais.
+        useSubscriptionStore.getState().syncFromRemote(user.uid, undefined)
+        return
+      }
       const data = snapshot.data() as Record<string, any>
+      // A assinatura é aplicada inteira em qualquer rota para que o gate de
+      // acesso não dependa do cache local. O papel continua vindo de admin/{uid}.
+      useSubscriptionStore.getState().syncFromRemote(user.uid, data.subscription)
       for (const binding of ROOT_BINDINGS) {
         if (!binding.read) continue
         if (wantedRootKeys.size > 0 && !wantedRootKeys.has(binding.rootKey)) continue
@@ -208,6 +203,9 @@ export function StoreSyncProvider({ children, editorMode = false }: StoreSyncPro
         withRemoteStoreUpdate(() => binding.store.setState({ [binding.field]: normalized }))
       }
     }, (error) => {
+      // Sem resposta do servidor, o gate usa o cache persistido (paidUntil
+      // continua sendo validado localmente por hasAccess).
+      useSubscriptionStore.getState().markHydrated(user.uid)
       console.error('Falha ao carregar dados do perfil', error)
     }))
 

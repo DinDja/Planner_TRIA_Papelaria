@@ -1,6 +1,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { BrandLogo } from '@/components/brand-logo'
+import { cn } from '@/lib/utils'
 import { formatBRL, PLAN_ORDER, PLANS } from '@/lib/subscriptions/plan'
 
 const QUESTIONS = [
@@ -51,6 +52,41 @@ function PlanCalendarMark() {
   )
 }
 
+function ArchedPapelaria({
+  footer = false,
+}: {
+  footer?: boolean
+}) {
+  const pathId = footer ? 'footer-papelaria-arc' : 'header-papelaria-arc'
+
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 120 24"
+      className={cn(
+        'landing-accent mb-1',
+        footer ? 'h-[22px] w-[110px]' : 'h-[26px] w-[130px]',
+      )}
+    >
+      <defs>
+        <path id={pathId} d="M 18 19 Q 60 2 102 19" />
+      </defs>
+      <text
+        fill="currentColor"
+        fontSize="7.5"
+        fontWeight="700"
+        letterSpacing="2"
+        textLength="78"
+        lengthAdjust="spacing"
+      >
+        <textPath href={`#${pathId}`} startOffset="50%" textAnchor="middle">
+          PAPELARIA
+        </textPath>
+      </text>
+    </svg>
+  )
+}
+
 export function LandingPage() {
   return (
     <main
@@ -71,9 +107,7 @@ export function LandingPage() {
           aria-label="TRIA Papelaria — página inicial"
           className="flex flex-col items-center rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--landing-accent)]"
         >
-          <span className="landing-accent text-[9px] mb-3 font-semibold uppercase tracking-[0.52em]">
-            PAPELARIA
-          </span>
+          <ArchedPapelaria />
           <BrandLogo
             alt="TRIA"
             className="landing-logo -mt-1 h-14 w-40 sm:h-16 sm:w-44"
@@ -102,7 +136,7 @@ export function LandingPage() {
 
       <section
         aria-labelledby="landing-title"
-        className="mx-auto flex max-w-6xl flex-col items-center px-4 pb-7 pt-5 text-center sm:px-6 sm:pt-8"
+        className="mx-auto flex max-w-[1600px] flex-col items-center px-4 pb-7 pt-5 text-center sm:px-6 sm:pt-8 lg:px-10 2xl:px-16"
       >
         <h1
           id="landing-title"
@@ -116,7 +150,7 @@ export function LandingPage() {
           E se você pudesse parar de pular entre apps o dia inteiro?
         </h1>
 
-        <p className="landing-intro mt-6 max-w-3xl border px-5 py-4 text-sm leading-relaxed sm:mt-8 sm:px-9 sm:py-5 sm:text-base">
+        <p className="landing-intro mt-6 max-w-3xl border px-5 py-4 text-sm leading-relaxed sm:mt-8 sm:px-9 sm:py-5 sm:text-base lg:max-w-4xl">
           O app TRIA reúne sua rotina em um lugar só: tarefas, agenda, notas,
           listas, finanças, aniversários... tudo do jeito que você sempre quis.
           <br />
@@ -125,19 +159,19 @@ export function LandingPage() {
           </strong>
         </p>
 
-        <figure className="my-5 w-full max-w-[850px] sm:my-8">
+        <figure className="my-5 w-full max-w-[850px] sm:my-8 lg:max-w-[1100px]">
           <Image
             src="/landing/tria-phone-paper-collage.png"
             alt="Tela inicial da TRIA em um celular, ao lado de caderno e recortes de papel em tons de creme, rosé e ocre"
             width={1312}
             height={1199}
             priority
-            sizes="(max-width: 640px) 100vw, (max-width: 900px) 92vw, 850px"
+            sizes="(max-width: 640px) 100vw, (max-width: 1023px) 92vw, (max-width: 1440px) 72vw, 1100px"
             className="h-auto w-full"
           />
         </figure>
 
-        <div className="grid w-full max-w-5xl grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3">
+        <div className="grid w-full max-w-6xl grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3 lg:gap-5">
           <p className="landing-benefit flex min-h-24 items-center justify-center px-5 py-5 text-sm leading-snug sm:min-h-28 sm:px-6">
             Telas desenhadas para simplificar sua rotina.
           </p>
@@ -156,11 +190,11 @@ export function LandingPage() {
         </div>
       </section>
 
-      <section className="px-4 py-7 sm:px-6 sm:py-10">
-        <p className="landing-highlight mx-auto max-w-5xl px-4 py-4 text-center text-base font-semibold leading-snug sm:px-8 sm:py-5 sm:text-xl">
+      <section className="px-4 py-7 sm:px-6 sm:py-10 lg:px-10 2xl:px-16">
+        <p className="landing-highlight mx-auto max-w-6xl px-4 py-4 text-center text-base font-semibold leading-snug sm:px-8 sm:py-5 sm:text-xl">
           O app TRIA cabe na sua rotina, onde você estiver.
         </p>
-        <div className="mx-auto max-w-4xl px-2 pb-3 pt-9 text-center sm:pt-12">
+        <div className="mx-auto max-w-5xl px-2 pb-3 pt-9 text-center sm:pt-12">
           <p className="landing-muted text-sm sm:text-base">
             O app TRIA foi feito para acompanhar você:
           </p>
@@ -170,7 +204,7 @@ export function LandingPage() {
           >
             no trabalho, em casa ou na rua.
           </p>
-          <p className="landing-muted mx-auto mt-2 max-w-3xl text-sm leading-relaxed sm:text-base sm:leading-8">
+          <p className="landing-muted mx-auto mt-2 max-w-4xl text-sm leading-relaxed sm:text-base sm:leading-8">
             Suas tarefas, compromissos e planos ficam sincronizados em um só
             lugar, acessíveis de qualquer dispositivo, não importa onde o dia te
             levar.
@@ -181,7 +215,7 @@ export function LandingPage() {
       <section
         id="planos"
         aria-labelledby="plans-title"
-        className="mx-auto max-w-5xl scroll-mt-8 px-4 py-8 sm:px-6 sm:py-12"
+        className="mx-auto max-w-6xl scroll-mt-8 px-4 py-8 sm:px-6 sm:py-12 lg:px-10 2xl:px-16"
       >
         <div className="landing-plan-banner flex items-center gap-4 border px-4 py-5 sm:gap-6 sm:px-8 sm:py-7">
           <PlanCalendarMark />
@@ -203,7 +237,7 @@ export function LandingPage() {
       <section
         id="perguntas"
         aria-labelledby="faq-title"
-        className="mx-auto max-w-5xl scroll-mt-8 px-4 py-9 sm:px-6 sm:py-14"
+        className="mx-auto max-w-6xl scroll-mt-8 px-4 py-9 sm:px-6 sm:py-14 lg:px-10 2xl:px-16"
       >
         <h2
           id="faq-title"
@@ -283,9 +317,7 @@ export function LandingPage() {
           aria-label="Voltar ao início da TRIA"
           className="flex flex-col items-center rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--landing-accent)]"
         >
-          <span className="landing-accent mb-3 text-[8px] font-semibold uppercase tracking-[0.48em]">
-            PAPELARIA
-          </span>
+          <ArchedPapelaria footer />
           <BrandLogo
             alt="TRIA"
             className="landing-logo -mt-1 h-15 w-36"

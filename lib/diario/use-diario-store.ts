@@ -3,12 +3,10 @@ import { persist } from 'zustand/middleware'
 import type { Stroke } from '@/lib/types'
 import {
   EMOCOES,
-  PROMPTS,
   type Energia,
   type Emocao,
   type Momento,
   type Periodo,
-  type Prompt,
   type Registro,
   type RetroResumo,
 } from './types'
@@ -40,12 +38,6 @@ const momentoAtual = (): Momento => {
   return 'noite'
 }
 
-/** Prompt do dia — determinístico por data. Não muda ao recarregar. */
-export const promptDoDia = (dataISO: string = isoDia()): Prompt => {
-  const nums = dataISO.replace(/-/g, '').split('').reduce((a, b) => a + Number(b), 0)
-  return PROMPTS[nums % PROMPTS.length]
-}
-
 const corPadrao = '#d1bdb8'
 
 // ─── Seeds honestos ───────────────────────────────────────────────────────────
@@ -65,7 +57,6 @@ const seedRegistros: Registro[] = [
     cor: EMOCOES.serenidade.cor,
     tags: ['início'],
     momento: 'manha',
-    prompt: promptDoDia(offsetIso(0)).texto,
     texto:
       'O sol demorou a aparecer hoje. Fiquei olhando a janela por um tempo sem pensar em nada — e foi bom não pensar em nada.\n\nQuero lembrar dessa calma quando a semana apertar.',
     fixado: true,
@@ -154,7 +145,6 @@ export interface EntradaCriar {
   tags?: string[]
   rabisco?: Stroke[]
   momento?: Momento
-  prompt?: string
   texto?: string
   retro?: RetroResumo
   notas?: string
@@ -183,7 +173,6 @@ export const useDiarioStore = create<EstadoDiario>()(
           tags: dados.tags ?? [],
           rabisco: dados.rabisco?.length ? dados.rabisco : undefined,
           momento: dados.momento,
-          prompt: dados.prompt?.trim() || undefined,
           texto: dados.texto?.trim() || undefined,
           retro: dados.retro,
           notas: dados.notas?.trim() || undefined,

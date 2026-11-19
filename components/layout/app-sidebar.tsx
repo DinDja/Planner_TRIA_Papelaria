@@ -2,6 +2,7 @@
 
 import { useMenuStore } from '@/lib/store/use-menu-store'
 import { useAuth } from '@/lib/auth/auth-context'
+import { useSubscriptionAccess } from '@/lib/subscriptions/use-access'
 import { ModuloIcon } from '@/components/icons/modules'
 import { cn } from '@/lib/utils'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -51,6 +52,7 @@ export function AppSidebar({
     ? 'text-muted-foreground hover:bg-muted hover:text-foreground'
     : undefined
   const { user, isAdmin, adminLoading } = useAuth()
+  const { allowed } = useSubscriptionAccess()
   const handleLogout = useAccountLogout()
   const pathname = usePathname()
   const menuModules = useMenuStore((s) => s.modules)
@@ -61,11 +63,21 @@ export function AppSidebar({
     label: 'Admin',
     enabled: true,
   }
-  const enabledModules = menuModules
-    .filter((m) => m.id === 'admin' ? isAdminUser : m.enabled)
-    .map((m) => (m.id === 'admin' ? { ...m, href: '/admin', enabled: true } : m))
-    .concat(isAdminUser && !menuModules.some((m) => m.id === 'admin') ? [adminModule] : [])
-    .map((m) => m.id === 'calendario' ? { ...m, label: 'Agenda' } : m)
+  const plansModule = menuModules.find((m) => m.id === 'plans') ?? {
+    id: 'plans' as const,
+    href: '/plans',
+    label: 'Planos',
+    enabled: true,
+  }
+  // Sem assinatura ativa, só a página de planos fica navegável. Os demais
+  // módulos continuam existindo na store, mas não aparecem para a usuária.
+  const enabledModules = allowed
+    ? menuModules
+      .filter((m) => m.id === 'admin' ? isAdminUser : m.enabled)
+      .map((m) => (m.id === 'admin' ? { ...m, href: '/admin', enabled: true } : m))
+      .concat(isAdminUser && !menuModules.some((m) => m.id === 'admin') ? [adminModule] : [])
+      .map((m) => m.id === 'calendario' ? { ...m, label: 'Agenda' } : m)
+    : [{ ...plansModule, href: '/plans', label: 'Planos', enabled: true }]
   const closeMobileSidebar = () => setMobileOpen(false)
 
   const sidebarContent = (
@@ -133,7 +145,9 @@ export function AppSidebar({
         >
           {collapsed ? <PanelLeftOpen size={15} /> : <PanelLeftClose size={15} />}
         </Button>
-        <ToolLink href="/menu" label="Menu" icon={Menu} onClick={closeMobileSidebar} />
+        {allowed && (
+          <ToolLink href="/menu" label="Menu" icon={Menu} onClick={closeMobileSidebar} />
+        )}
         <ToolLink href="/conta" label="Ajuda" icon={CircleHelp} onClick={closeMobileSidebar} />
         <Button
           variant="ghost"

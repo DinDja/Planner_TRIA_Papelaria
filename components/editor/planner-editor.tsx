@@ -251,6 +251,7 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
                   value={title}
                   onChange={(event) => updatePage(page, { title: event.target.value })}
                   placeholder="Título da página"
+                  data-field-font-size="custom"
                   className="mb-5 w-full border-0 bg-transparent font-serif text-2xl text-foreground outline-none placeholder:text-muted-foreground/55 md:text-3xl"
                 />
 
@@ -266,6 +267,7 @@ export function PlannerEditor({ planner }: { planner: Planner }) {
                   onChange={(event) => handleTextChange(page, event)}
                   placeholder="Comece a escrever…"
                   spellCheck
+                  data-field-font-size="custom"
                   className="min-h-[56vh] w-full flex-1 resize-none border-0 bg-transparent p-0 text-base leading-8 text-foreground outline-none placeholder:text-muted-foreground/55 md:min-h-[62vh] md:text-lg"
                   style={{
                     fontFamily: 'var(--font-plex), sans-serif',

@@ -104,8 +104,6 @@ export interface EcoRasgado {
   preambulo: string | null
   /** Título do primeiro registro do dia, se houver. */
   titulo: string | null
-  /** Prompt que puxou a escrita, se houver. */
-  prompt: string | null
 }
 
 /** EcoRasgado de um dia específico. `null` = silêncio (sem registro). */
@@ -125,7 +123,6 @@ export const ecoDoDia = (registros: Registro[], iso: string): EcoRasgado | null 
     valencia: valenciaDoPeriodo(doDia),
     preambulo,
     titulo: primeiro.titulo ?? null,
-    prompt: primeiro.prompt ?? null,
   }
 }
 
@@ -251,20 +248,19 @@ export const ecoCalendario = (eventos: CalendarEvent[], iso: string): EcoCalenda
 // ─── A ABRIR — gancho à escrita quando o dia ainda não foi escrito ─────────
 
 export type ConviteEscrita =
-  | { preciso: true; prompt: string }
+  | { preciso: true }
   | { preciso: false; jahEscrito: true }
   | { preciso: false; jahEscrito: false }
 
 /**
  * Decide o que dizer quando o usuário abre o dashboard de manhã.
  * - Hoje já foi escrito? Optamos por não insistir (`jahEscrito: true`).
- * - Senão, oferecemos o prompt determinístico do dia (consistente
- *   com `promptDoDia` do store, mas isolado para a camada de eco).
+ * - Senão, abrimos espaço para a escrita, sem sugerir tema.
  */
-export const conviteDeHoje = (registros: Registro[], promptDoDiaFn: () => string): ConviteEscrita => {
+export const conviteDeHoje = (registros: Registro[]): ConviteEscrita => {
   const escHoje = registros.some((r) => r.data === hoje() && r.periodo === 'dia')
   if (escHoje) return { preciso: false, jahEscrito: true }
-  return { preciso: true, prompt: promptDoDiaFn() }
+  return { preciso: true }
 }
 
 // ─── diáspora emocional ─────────────────────────────────────────────────────

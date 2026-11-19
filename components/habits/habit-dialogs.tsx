@@ -127,13 +127,17 @@ export function AddHabitDialog({ open, onClose, editId }: { open: boolean; onClo
       <DialogContent title={editId ? 'Editar hábito' : 'Novo hábito'}>
         <div className="flex flex-col gap-4">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+<<<<<<< HEAD
             <div>
+=======
+            <div className="min-w-0">
+>>>>>>> 964430bfb068c9574fff84f97df3181d69f6242b
               <label className="text-sm font-medium mb-1.5 block">Nome</label>
               <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Beber 2L de água" autoFocus
                 onKeyDown={(e) => e.key === 'Enter' && handleSave()} />
             </div>
-            <div>
-              <label className="text-sm font-medium mb-2 block">Frequência</label>
+            <div className="min-w-0">
+              <label className="text-sm font-medium mb-1.5 block">Frequência</label>
               <div className="flex gap-2">
                 {(['daily', 'weekly', 'monthly'] as const).map((f) => (
                   <button key={f} type="button" onClick={() => setFrequency(f)}
@@ -179,8 +183,8 @@ export function AddHabitDialog({ open, onClose, editId }: { open: boolean; onClo
             </div>
           )}
 
-          <div className="grid grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] gap-3">
-            <div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
+            <div className="min-w-0">
               <label className="text-sm font-medium mb-1.5 block">Horário inicial</label>
               <Input
                 type="time"
@@ -189,7 +193,7 @@ export function AddHabitDialog({ open, onClose, editId }: { open: boolean; onClo
                 aria-label="Horário inicial dos avisos"
               />
             </div>
-            <div>
+            <div className="min-w-0">
               <label className="text-sm font-medium mb-1.5 block">Intervalo dos avisos</label>
               <div className="flex h-9 min-w-0 w-full overflow-hidden rounded-xl border border-border bg-background shadow-sm transition-colors focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20">
                 <Input

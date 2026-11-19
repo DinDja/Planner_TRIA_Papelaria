@@ -308,6 +308,15 @@ function WeightTab() {
 
   return (
     <div>
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-sm text-muted-foreground">
+          {sorted.length} {sorted.length === 1 ? 'registro' : 'registros'}
+        </p>
+        <Button size="sm" className="rounded-xl gap-1.5" onClick={() => setAddOpen(true)}>
+          <Plus size={14} /> Registrar peso
+        </Button>
+      </div>
+
       {/* Stats row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
         <div className="col-span-2 sm:col-span-1">
@@ -473,21 +482,7 @@ function WeightTab() {
         </div>
       )}
 
-      {/* Record button + list */}
-      <div className="flex items-center justify-between mb-2">
-        <p className="text-sm text-muted-foreground">
-          {sorted.length} {sorted.length === 1 ? 'registro' : 'registros'}
-          {height > 0 && latest && (
-            <span className="ml-2 text-[11px]" style={{ color: bmiInfo.color }}>
-              · IMC {bmi.toFixed(1)} kg/m² — {bmiInfo.label}
-            </span>
-          )}
-        </p>
-        <Button size="sm" className="rounded-xl gap-1.5" onClick={() => setAddOpen(true)}>
-          <Plus size={14} /> Registrar peso
-        </Button>
-      </div>
-
+      {/* Weight records */}
       <div className="space-y-1">
         {sorted.map((w) => {
           const wBmi = height > 0 ? calcBMI(w.weight, height) : 0

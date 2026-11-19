@@ -6,14 +6,11 @@ import { cn } from '@/lib/utils'
 import {
   BookOpen,
   CalendarDays,
-  ChevronRight,
-  Feather,
   Hash,
   Heart,
   Pencil,
   Pin,
   Plus,
-  Sparkles,
   Trash2,
 } from 'lucide-react'
 import { useMemo, useState } from 'react'
@@ -133,13 +130,6 @@ function EntryCard({ entry, onDelete, onView, index = 0 }: {
                 </div>
               )}
 
-              {entry.prompt && (
-                <p className="text-xs text-muted-foreground/70 mt-2 italic flex items-center gap-1">
-                  <Feather size={10} />
-                  "{entry.prompt}"
-                </p>
-              )}
-
               <p className="text-sm text-muted-foreground/80 mt-2 line-clamp-2 leading-relaxed">
                 {entry.content.replace(/\n/g, ' ').trim()}
               </p>
@@ -185,12 +175,9 @@ function EntryCard({ entry, onDelete, onView, index = 0 }: {
 export function JournalPage() {
   const entries = useJournalStore((s) => s.entries)
   const deleteEntry = useJournalStore((s) => s.deleteEntry)
-  const getPrompt = useJournalStore((s) => s.getPrompt)
 
   const [addOpen, setAddOpen] = useState(false)
   const [viewEntry, setViewEntry] = useState<JournalEntry | null>(null)
-
-  const todayPrompt = useMemo(() => getPrompt(), [])
 
   const hasTodayEntry = entries.some((e) => e.date === todayISO())
 
@@ -237,28 +224,6 @@ export function JournalPage() {
             {hasTodayEntry ? 'Nova entrada' : 'Escrever hoje'}
           </Button>
         </div>
-
-        {/* Today's Prompt */}
-        {entries.length > 0 && !hasTodayEntry && (
-          <Card className={cn('border-dashed border-2', enter)} style={{ borderColor: '#d1bdb840' }}>
-            <CardContent className="p-5 flex items-center gap-4">
-              <div
-                className="size-12 rounded-2xl flex items-center justify-center shrink-0"
-                style={{ background: 'linear-gradient(135deg, #d1bdb820, #b76f0620)' }}
-              >
-                <Sparkles size={20} className="text-primary" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[10px] text-muted-foreground mb-0.5">PROMPT DO DIA</p>
-                <p className="font-medium text-foreground leading-tight">"{todayPrompt}"</p>
-              </div>
-              <Button size="sm" className="rounded-xl shrink-0" onClick={() => setAddOpen(true)}>
-                Responder
-                <ChevronRight size={14} />
-              </Button>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Entries */}
         <div className={enter}>

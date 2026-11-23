@@ -14,7 +14,7 @@ import {
   signOut,
   type User,
 } from 'firebase/auth'
-import { doc, onSnapshot } from 'firebase/firestore'
+import { doc, getDoc, onSnapshot } from 'firebase/firestore'
 import { auth, db } from '@/lib/firebase'
 import { seedUserDoc } from './seed'
 import { ADMIN_COLLECTION, type Role } from './roles'
@@ -43,6 +43,10 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 const SEED_FLAG_PREFIX = 'tria-papelaria:seeded:'
 const SESSION_ACTIVITY_PREFIX = 'tria-papelaria-auth-last-activity:'
 const SESSION_INACTIVITY_LIMIT_MS = 7 * 24 * 60 * 60 * 1000
+
+// Graça para não travar a sessão quando o Firestore não responde (offline /
+// regras antigas publicadas). Após este prazo, usa o espelho legado.
+const ADMIN_FALLBACK_MS = 4_000
 
 function sessionActivityKey(uid: string) {
   return SESSION_ACTIVITY_PREFIX + uid
@@ -112,6 +116,29 @@ function syncUserDataInBackground(user: User) {
   })()
 }
 
+/**
+ * Fallback de migração: antes do vínculo `admin/{uid}`, o papel ficava
+ * espelhado em `users/{uid}.role` e `users/{uid}.subscription.role`.
+ *
+ * Consultamos o espelho somente quando o vínculo novo não existe ou não pode
+ * ser lido (por exemplo, Firestore Rules antigas ainda publicadas). O espelho
+ * não é um caminho de auto-promoção: as regras impedem a própria usuária de
+ * alterar `role`.
+ */
+async function readLegacyAdminRole(uid: string): Promise<Role | null> {
+  try {
+    const snapshot = await getDoc(doc(db, 'users', uid))
+    if (!snapshot.exists()) return null
+    const data = snapshot.data() as Record<string, unknown>
+    const subscription = data.subscription && typeof data.subscription === 'object'
+      ? data.subscription as Record<string, unknown>
+      : null
+    return data.role === 'admin' || subscription?.role === 'admin' ? 'admin' : 'subscriber'
+  } catch {
+    return null
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
@@ -121,10 +148,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let unsubscribeAdmin: (() => void) | undefined
+    let adminTimeout: ReturnType<typeof setTimeout> | undefined
     let activeUid: string | null = null
+
+    const clearAdminTimeout = () => {
+      if (adminTimeout !== undefined) {
+        clearTimeout(adminTimeout)
+        adminTimeout = undefined
+      }
+    }
 
     const unsub = onAuthStateChanged(auth, (u) => {
       if (!u && auth.currentUser) return
+      clearAdminTimeout()
       unsubscribeAdmin?.()
       unsubscribeAdmin = undefined
       // Limpa assinatura e permissão local ao deslogar; ambas são recarregadas
@@ -145,6 +181,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsAdminSystem(false)
       setAdminLoading(true)
       useSubscriptionStore.getState().setRole('subscriber')
+
+      // Se o onSnapshot não dispara (rede indisponível/offline persistente),
+      // ainda liberamos o acesso via espelho legado depois de um curto prazo
+      // em vez de deixar a tela presa no carregamento.
+      adminTimeout = setTimeout(() => {
+        if (!adminLoading) return
+        if (activeUid !== u.uid) return
+        void applyAdminFromLegacyMirror()
+      }, ADMIN_FALLBACK_MS)
+
+      const applyAdminRole = (member: boolean, systemAdmin: boolean) => {
+        clearAdminTimeout()
+        const role: Role = member ? 'admin' : 'subscriber'
+        setIsAdmin(member)
+        setIsAdminSystem(systemAdmin)
+        setAdminLoading(false)
+        useSubscriptionStore.getState().setRole(role)
+        void writeUserManifest(u, { role }).catch(() => {})
+      }
+
+      // Sem vínculo admin/{uid} (ou sem permissão de lê-lo), usa o espelho
+      // legado em users/{uid}. Isso mantém administradoras antigas com acesso
+      // enquanto as regras publicadas e o vínculo novo não são concluídos.
+      const applyAdminFromLegacyMirror = async () => {
+        const legacyRole = await readLegacyAdminRole(u.uid)
+        if (activeUid !== u.uid) return
+        if (legacyRole === 'admin') {
+          console.warn(
+            'Permissão administrativa recuperada de users/{uid}.role. ' +
+            'Publique as Firestore Rules atuais e crie o vínculo admin/{uid} para concluir a migração.',
+          )
+        }
+        applyAdminRole(legacyRole === 'admin', false)
+      }
 
       // A sessão continua válida entre acessos por até sete dias. Cada
       // retorno ao sistema reinicia a janela; atividade na tela a mantém viva.
@@ -171,20 +241,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (activeUid !== u.uid || snapshot.metadata.fromCache) return
           const member = snapshot.exists() && snapshot.data()?.isAdmin === true
           const systemAdmin = member && snapshot.data()?.isAdminSystem === true
-          const role: Role = member ? 'admin' : 'subscriber'
-          setIsAdmin(member)
-          setIsAdminSystem(systemAdmin)
-          setAdminLoading(false)
-          useSubscriptionStore.getState().setRole(role)
-          void writeUserManifest(u, { role }).catch(() => {})
+          applyAdminRole(member, systemAdmin)
+          if (!member && activeUid === u.uid) {
+            // Vínculo não existe: tenta espelho legado antes de tratar como assinante.
+            void applyAdminFromLegacyMirror()
+          }
         },
         (error) => {
           if (activeUid !== u.uid) return
-          console.error('Falha ao verificar a permissão administrativa', error)
-          setIsAdmin(false)
-          setIsAdminSystem(false)
-          setAdminLoading(false)
-          useSubscriptionStore.getState().setRole('subscriber')
+          clearAdminTimeout()
+          console.warn(
+            'Não foi possível ler o vínculo administrativo. Tentando espelho legado.',
+          )
+          void applyAdminFromLegacyMirror()
         },
       )
     })

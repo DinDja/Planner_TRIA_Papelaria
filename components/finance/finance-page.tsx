@@ -1,7 +1,7 @@
 'use client'
 
 import { useFinanceStore } from '@/lib/store/use-finance-store'
-import type { FinancialAccount } from '@/lib/types'
+import type { FinancialAccount, FixedBill, Installment, Subscription, Transaction } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import {
   ArrowDownRight,
@@ -43,6 +43,87 @@ const formatBRL = (cents: number) =>
 const currentMonthStr = () => {
   const d = new Date()
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+}
+
+function sameMonth(date: string, month: string) {
+  return date.slice(0, 7) === month
+}
+
+function normalizeTitle(value: string) {
+  return value.trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR')
+}
+
+function hasRecordedCharge(
+  transactions: Transaction[],
+  month: string,
+  title: string,
+  amount: number,
+  sourceId?: string,
+) {
+  const normalizedTitle = normalizeTitle(title)
+  return transactions.some((transaction) =>
+    transaction.type === 'expense' && sameMonth(transaction.date, month) &&
+    (sourceId && transaction.fixedBillId === sourceId ||
+      transaction.amount === amount && normalizeTitle(transaction.title) === normalizedTitle),
+  )
+}
+
+function subscriptionChargesThisMonth(subscription: Subscription, month: string) {
+  if (!subscription.active) return 0
+  if (subscription.billingCycle === 'monthly') return 1
+
+  const [year, monthNumber] = month.split('-').map(Number)
+  const start = new Date(`${subscription.nextBilling}T12:00:00`)
+  if (Number.isNaN(start.getTime())) return 0
+  const firstOfMonth = new Date(year, monthNumber - 1, 1, 12)
+  const lastOfMonth = new Date(year, monthNumber, 0, 12)
+  if (start > lastOfMonth) return 0
+
+  if (subscription.billingCycle === 'yearly') {
+    return start.getMonth() === monthNumber - 1 ? 1 : 0
+  }
+
+  const firstOccurrence = new Date(firstOfMonth)
+  firstOccurrence.setDate(firstOccurrence.getDate() + (start.getDay() - firstOccurrence.getDay() + 7) % 7)
+  if (sameMonth(subscription.nextBilling, month) && firstOccurrence < start) {
+    firstOccurrence.setDate(firstOccurrence.getDate() + 7)
+  }
+  if (firstOccurrence > lastOfMonth) return 0
+  return Math.floor((lastOfMonth.getTime() - firstOccurrence.getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1
+}
+
+function installmentIsDueThisMonth(installment: Installment, month: string) {
+  if (installment.currentInstallment > installment.totalInstallments) return false
+  if (!installment.firstInstallment) return true
+
+  const [year, monthNumber] = month.split('-').map(Number)
+  const first = new Date(`${installment.firstInstallment}T12:00:00`)
+  if (Number.isNaN(first.getTime())) return true
+  const dueMonth = new Date(first.getFullYear(), first.getMonth() + installment.currentInstallment - 1, 1, 12)
+  const selectedMonth = new Date(year, monthNumber - 1, 1, 12)
+  return dueMonth <= selectedMonth
+}
+
+function monthlyCommitments(
+  month: string,
+  transactions: Transaction[],
+  fixedBills: FixedBill[],
+  subscriptions: Subscription[],
+  installments: Installment[],
+) {
+  const bills = fixedBills
+    .filter((bill) => bill.active && !hasRecordedCharge(transactions, month, bill.title, bill.amount, bill.id))
+    .reduce((total, bill) => total + bill.amount, 0)
+  const subs = subscriptions
+    .filter((subscription) => subscriptionChargesThisMonth(subscription, month) > 0)
+    .filter((subscription) => !hasRecordedCharge(transactions, month, subscription.name, subscription.amount))
+    .reduce((total, subscription) => total + subscription.amount * subscriptionChargesThisMonth(subscription, month), 0)
+  const installmentsTotal = installments
+    .filter((installment) => installmentIsDueThisMonth(installment, month))
+    .filter((installment) => !hasRecordedCharge(transactions, month, installment.title, installment.installmentAmount))
+    .reduce((total, installment) => total + installment.installmentAmount, 0)
+
+  return bills + subs + installmentsTotal
 }
 
 // ─── Componentes de linha compartilhados ──────────────────────────────────────
@@ -278,11 +359,21 @@ export function FinancePage() {
     .reduce((acc, t) => acc + t.amount, 0)
   const monthExpense = visibleTransactions
     .filter((t) => t.type === 'expense' && t.date.startsWith(currMonth))
-    .reduce((acc, t) => acc + t.amount, 0)
+    .reduce((acc, t) => acc + t.amount, 0) + (
+      selectedAccountId === 'all'
+        ? monthlyCommitments(currMonth, transactions, fixedBills, subscriptions, installments)
+        : 0
+    )
   const totalBoxes = savingsBoxes.reduce((acc, b) => acc + b.currentAmount, 0)
   const activeSubsTotal = subscriptions
     .filter((s) => s.active)
-    .reduce((acc, s) => acc + s.amount, 0)
+    .reduce((acc, s) => acc + (
+      s.billingCycle === 'yearly'
+        ? s.amount / 12
+        : s.billingCycle === 'weekly'
+          ? s.amount * 52 / 12
+          : s.amount
+    ), 0)
 
   const today = new Date().getDate()
   const pendingBills = fixedBills
@@ -357,7 +448,7 @@ export function FinancePage() {
             {[
               { label: 'Receitas do mês', value: monthIncome, icon: TrendingUp, color: '#6a634d' },
               { label: 'Despesas do mês', value: monthExpense, icon: TrendingDown, color: '#d1bdb8' },
-              { label: 'Saldo', value: monthIncome - monthExpense, icon: Banknote, color: monthIncome - monthExpense >= 0 ? '#6a634d' : '#d1bdb8' },
+              { label: 'Saldo do mês', value: monthIncome - monthExpense, icon: Banknote, color: monthIncome - monthExpense >= 0 ? '#6a634d' : '#d1bdb8' },
               { label: 'Em caixinhas', value: totalBoxes, icon: PiggyBank, color: '#b76f06' },
             ].map((s) => (
               <Card key={s.label} glass hover className="relative overflow-hidden">
@@ -374,6 +465,12 @@ export function FinancePage() {
               </Card>
             ))}
           </div>
+
+          <p className="-mt-3 mb-6 text-xs text-muted-foreground">
+            {selectedAccountId === 'all'
+              ? 'As despesas incluem transações do mês, contas fixas, assinaturas e parcelas ativas.'
+              : 'Este resumo considera os lançamentos da conta selecionada; compromissos sem conta vinculada aparecem na visão geral.'}
+          </p>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Próximas contas */}

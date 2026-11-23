@@ -139,9 +139,11 @@ function HabitCard({
           )}
         </button>
 
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <p className="text-base font-semibold truncate">{habit.name}</p>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <p className="min-w-0 text-base font-semibold whitespace-normal [overflow-wrap:anywhere]">
+              {habit.name}
+            </p>
             <Badge variant="outline" className="text-[9px] px-1.5 py-0 shrink-0">
               {freqLabel}
             </Badge>
@@ -163,42 +165,42 @@ function HabitCard({
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Actions */}
-        <div className="flex gap-1 opacity-100">
-          <ReminderButton
-            enabled={habit.reminderEnabled === true}
-            onEnabledChange={(enabled) => updateHabit(habit.id, { reminderEnabled: enabled })}
-            compact
-          />
-          <button
-            onClick={() => onEdit(habit.id)}
-            className="rounded-lg p-1.5 text-muted-foreground/50 hover:text-primary hover:bg-primary/10 transition-all cursor-pointer"
-            aria-label="Editar hábito"
-          >
-            <Pencil size={14} />
-          </button>
-          <button
-            onClick={() => {
-              archiveHabit(habit.id)
-              toast({ title: habit.archived ? 'Hábito ativado' : 'Hábito arquivado', variant: 'success' })
-            }}
-            className="rounded-lg p-1.5 text-muted-foreground/50 hover:text-foreground hover:bg-muted transition-all cursor-pointer"
-            aria-label={habit.archived ? 'Ativar' : 'Arquivar'}
-          >
-            {habit.archived ? <ArchiveRestore size={14} /> : <Archive size={14} />}
-          </button>
-          <button
-            onClick={() => {
-              deleteHabit(habit.id)
-              toast({ title: 'Hábito excluído', variant: 'success' })
-            }}
-            className="rounded-lg p-1.5 text-muted-foreground/50 hover:bg-destructive/10 hover:text-destructive transition-all cursor-pointer"
-            aria-label="Excluir"
-          >
-            <Trash2 size={14} />
-          </button>
-        </div>
+      {/* Ações em linha própria para preservar espaço para o nome do hábito. */}
+      <div className="mt-2 flex justify-end gap-1">
+        <ReminderButton
+          enabled={habit.reminderEnabled === true}
+          onEnabledChange={(enabled) => updateHabit(habit.id, { reminderEnabled: enabled })}
+          compact
+        />
+        <button
+          onClick={() => onEdit(habit.id)}
+          className="rounded-lg p-1.5 text-muted-foreground/50 hover:text-primary hover:bg-primary/10 transition-all cursor-pointer"
+          aria-label="Editar hábito"
+        >
+          <Pencil size={14} />
+        </button>
+        <button
+          onClick={() => {
+            archiveHabit(habit.id)
+            toast({ title: habit.archived ? 'Hábito ativado' : 'Hábito arquivado', variant: 'success' })
+          }}
+          className="rounded-lg p-1.5 text-muted-foreground/50 hover:text-foreground hover:bg-muted transition-all cursor-pointer"
+          aria-label={habit.archived ? 'Ativar' : 'Arquivar'}
+        >
+          {habit.archived ? <ArchiveRestore size={14} /> : <Archive size={14} />}
+        </button>
+        <button
+          onClick={() => {
+            deleteHabit(habit.id)
+            toast({ title: 'Hábito excluído', variant: 'success' })
+          }}
+          className="rounded-lg p-1.5 text-muted-foreground/50 hover:bg-destructive/10 hover:text-destructive transition-all cursor-pointer"
+          aria-label="Excluir"
+        >
+          <Trash2 size={14} />
+        </button>
       </div>
 
       {/* Mini heatmap */}

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import type { User } from 'firebase/auth'
+import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -69,8 +70,10 @@ async function claimPaymentWithRetry(user: User, input: PaymentClaimInput) {
 
 function PricingPage() {
   const { user } = useAuth()
+  const router = useRouter()
   const sub = useSubscriptionStore()
   const callbackHandled = useRef(false)
+  const trialAutoHandled = useRef(false)
   const [processingPlan, setProcessingPlan] = useState<PlanId | 'cancel' | 'confirming' | null>(null)
   const isActive = hasAccess(sub)
   const label = statusLabel(sub)
@@ -133,6 +136,39 @@ function PricingPage() {
     }
     void finishReturn()
   }, [user, sub])
+
+  useEffect(() => {
+    if (!user || trialAutoHandled.current) return
+    const url = new URL(window.location.href)
+    if (url.searchParams.get('startTrial') !== '1') return
+    trialAutoHandled.current = true
+
+    const beginTrial = async () => {
+      setProcessingPlan('trial')
+      try {
+        const subscription = await startTrialFromClient(user)
+        sub.setSubscription(subscription)
+        toast({
+          title: 'Seu mês grátis começou',
+          description: 'Todos os módulos e atualizações estão liberados.',
+          variant: 'success',
+        })
+        router.replace('/dashboard')
+      } catch (error) {
+        toast({
+          title: 'Não foi possível iniciar o teste grátis',
+          description: error instanceof Error ? error.message : 'Tente novamente em instantes.',
+          variant: 'error',
+        })
+        url.searchParams.delete('startTrial')
+        window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`)
+      } finally {
+        setProcessingPlan(null)
+      }
+    }
+
+    void beginTrial()
+  }, [user, sub, router])
 
   const handleChoosePlan = async (planId: PlanId) => {
     if (!user || processingPlan) return

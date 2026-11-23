@@ -40,7 +40,8 @@ export function AuthForm({ initialView = 'login' }: AuthFormProps) {
           router.replace(next ? decodeURIComponent(next) : '/dashboard')
         } else if (view === 'cadastro') {
           await signUp(name, email, password)
-          router.replace('/dashboard')
+          const next = search.get('next')
+          router.replace(next ? decodeURIComponent(next) : '/dashboard')
         } else if (view === 'esqueci-senha') {
           await resetPassword(email)
           setSubmitted(true)

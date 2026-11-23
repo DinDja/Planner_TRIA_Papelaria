@@ -46,7 +46,9 @@ import {
   Ticket,
   Pencil,
   Trash2,
+  RotateCcw,
 } from 'lucide-react'
+import { CurrencyInput, CurrencyDisplay, PercentInput } from './currency-input'
 
 const FONT_HAND = 'var(--font-caveat), "Segoe Script", cursive'
 const FONT_SERIF = 'var(--font-instrument), Georgia, serif'
@@ -304,7 +306,7 @@ export function AdminPage() {
               key={t.id}
               onClick={() => setTab(t.id)}
               className={cn(
-                'flex items-center gap-2 rounded-full px-3.5 py-1.5 text-sm transition-all',
+                'flex items-center gap-2 rounded-full px-3.5 py-1.5 text-sm transition-all cursor-pointer',
                 active
                   ? 'bg-foreground text-background'
                   : 'text-muted-foreground hover:text-foreground hover:bg-muted/60',
@@ -1024,36 +1026,115 @@ function PlanosTab({
     setDrafts(next)
   }, [customPlans])
 
+  // Normaliza o original para comparação (PLANS não tem `active`)
+  const getOriginal = (id: PlanId): PlanDoc => {
+    const custom = customPlans.find((cp) => cp.id === id)
+    if (custom) return custom
+    return {
+      ...PLANS[id],
+      active: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    } as PlanDoc
+  }
+
+  // Helpers para detectar mudanças e reset
+  const isDirty = useMemo(() => {
+    return (Object.keys(drafts) as PlanId[]).some((id) => {
+      const d = drafts[id]
+      const orig = getOriginal(id)
+      return d.price !== orig.price || d.description !== orig.description || d.active !== orig.active
+    })
+  }, [drafts, customPlans])
+
+  const resetAll = () => {
+    const next: Record<string, PlanDoc> = {}
+    ;(Object.keys(PLANS) as PlanId[]).forEach((id) => {
+      next[id] = getOriginal(id)
+    })
+    setDrafts(next)
+  }
+
   return (
     <div className="space-y-4">
+      {isDirty && (
+        <div className="flex items-center justify-between rounded-xl border border-warning/30 bg-warning/5 p-3 text-sm">
+          <span className="text-warning-foreground">Há alterações não salvas</span>
+          <div className="flex gap-2">
+            <Button size="sm" variant="ghost" onClick={resetAll} className="gap-1.5">
+              <RotateCcw size={12} /> Desfazer tudo
+            </Button>
+          </div>
+        </div>
+      )}
+
       {(Object.keys(drafts) as PlanId[]).map((id) => {
         const p = drafts[id]
+        const original = getOriginal(id)
+        const hasChanges = p.price !== original.price || p.description !== original.description || p.active !== original.active
+
         return (
-          <div key={id} className="rounded-2xl border border-border/40 bg-card p-5 space-y-3">
+          <div
+            key={id}
+            className={cn(
+              'rounded-2xl border bg-card p-5 space-y-4 transition-all',
+              hasChanges
+                ? 'border-warning/40 bg-warning/3 ring-1 ring-warning/20'
+                : 'border-border/40',
+            )}
+          >
             <div className="flex items-center justify-between">
-              <span className="font-semibold">{PLANS[id].label}</span>
-              <Badge variant={p.active ? 'default' : 'outline'} className="text-[10px]">
-                {p.active ? 'Ativo' : 'Pausado'}
-              </Badge>
+              <div className="flex items-center gap-3">
+                <span className="font-semibold text-lg">{PLANS[id].label}</span>
+                <Badge variant={p.active ? 'default' : 'outline'} className="text-xs">
+                  {p.active ? 'Ativo' : 'Pausado'}
+                </Badge>
+                {hasChanges && (
+                  <span className="text-xs text-warning-foreground bg-warning/10 px-2 py-0.5 rounded-full">
+                    Modificado
+                  </span>
+                )}
+              </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <label className="text-xs text-muted-foreground">
-                Preço (centavos)
-                <Input
-                  type="number"
-                  value={p.price}
-                  onChange={(e) => setDrafts((s) => ({ ...s, [id]: { ...s[id], price: Number(e.target.value) } }))}
-                />
-              </label>
-              <label className="text-xs text-muted-foreground">
-                Descrição
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <CurrencyInput
+                label="Preço"
+                valueCents={p.price}
+                onChange={(cents) => setDrafts((s) => ({ ...s, [id]: { ...s[id], price: cents } }))}
+                placeholder="0,00"
+                showPreview
+              />
+              <div>
+                <label className="block text-xs text-muted-foreground mb-1.5">Descrição</label>
                 <Input
                   value={p.description}
                   onChange={(e) => setDrafts((s) => ({ ...s, [id]: { ...s[id], description: e.target.value } }))}
+                  placeholder="Descrição do plano"
+                  className={cn(hasChanges && 'border-primary/30 focus:border-primary focus:ring-primary/20')}
                 />
-              </label>
+              </div>
             </div>
-            <div className="flex gap-2">
+
+            {/* Preview rápido do que o usuário vê na página de planos */}
+            <div className="rounded-lg border border-border/30 bg-muted/30 p-3 text-xs space-y-1">
+              <div className="flex items-center justify-between text-muted-foreground">
+                <span>Como aparece no catálogo:</span>
+                <CurrencyDisplay valueCents={p.price} className="text-base font-semibold text-foreground" />
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Período:</span>
+                <span className="font-medium">{PLANS[id].period}</span>
+              </div>
+              {original.savings && p.id === 'annual' && (
+                <div className="flex items-center justify-between text-success text-[10px]">
+                  <span>Economia anual vs mensal:</span>
+                  <span className="font-medium">{original.savings}</span>
+                </div>
+              )}
+            </div>
+
+            <div className="flex flex-wrap gap-2 pt-2 border-t border-border/30">
               <Button
                 size="sm"
                 onClick={() =>
@@ -1063,31 +1144,56 @@ function PlanosTab({
                     active: !p.active,
                   } as PlanDoc)
                 }
-                variant="ghost"
-                className="text-xs"
+                variant={p.active ? 'ghost' : 'outline'}
+                className="gap-1.5"
               >
                 {p.active ? 'Pausar' : 'Ativar'}
               </Button>
               <Button
                 size="sm"
                 onClick={() => onSave({ ...p, updatedAt: new Date().toISOString() } as PlanDoc)}
-                className="text-xs"
+                disabled={!hasChanges}
+                className="gap-1.5"
               >
-                Salvar
+                <span className="flex items-center gap-1">
+                  Salvar
+                  {hasChanges && <span className="size-1.5 rounded-full bg-primary" />}
+                </span>
               </Button>
+              {hasChanges && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    setDrafts((s) => ({
+                      ...s,
+                      [id]: {
+                        ...s[id],
+                        price: original.price,
+                        description: original.description,
+                        active: original.active,
+                      },
+                    }))
+                  }}
+                  className="gap-1.5 text-muted-foreground hover:text-foreground"
+                >
+                  <RotateCcw size={12} /> Reverter
+                </Button>
+              )}
               <Button
                 size="sm"
                 variant="ghost"
                 onClick={() => onDelete(id)}
-                className="text-xs text-destructive"
+                className="text-destructive gap-1.5 ml-auto"
               >
-                Apagar
+                <Trash2 size={12} /> Apagar
               </Button>
             </div>
           </div>
         )
       })}
-      <p className="text-xs text-muted-foreground/55">
+
+      <p className="text-xs text-muted-foreground/55 text-center py-2">
         Alterações aqui só são lidas pelo sistema se você também substituir o
         objeto <code className="font-mono">PLANS</code> em <code className="font-mono">lib/subscriptions/plan.ts</code> — por ora só servem para a admin visualizar o catálogo.
       </p>
@@ -1142,7 +1248,7 @@ function CuponsTab({
 
   const rows = coupons.map((c) => [
     <span key="c" className="font-mono">{c.code}</span>,
-    <span key="k" className="text-xs">
+    <span key="k" className="text-xs font-medium">
       {c.kind === 'percent' ? `${c.value}%` : formatBRLLocal(c.value)}
     </span>,
     <Badge key="a" variant={c.active ? 'default' : 'outline'} className="text-[10px]">
@@ -1163,24 +1269,48 @@ function CuponsTab({
     <div className="space-y-4">
       <div className="rounded-2xl border border-border/40 bg-card p-4 space-y-3">
         <p className="text-xs text-muted-foreground">{editingId ? 'Editar cupom' : 'Novo cupom'}</p>
-        <div className="flex flex-wrap gap-2">
-          <Input placeholder="CÓDIGO" value={code} onChange={(e) => setCode(e.target.value)} className="max-w-[160px]" />
+        <div className="flex flex-wrap items-end gap-3">
+          <Input
+            placeholder="CÓDIGO"
+            value={code}
+            onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
+            className="max-w-[140px] text-sm font-mono uppercase tracking-wide"
+            maxLength={20}
+          />
           <select
             value={kind}
             onChange={(e) => setKind(e.target.value as 'percent' | 'fixed')}
-            className="rounded-lg border border-border bg-background px-2 py-1.5 text-sm"
+            className="rounded-lg border border-border bg-background px-3 py-2 text-sm min-w-[140px]"
           >
-            <option value="percent">Percentual</option>
-            <option value="fixed">valor fixo</option>
+            <option value="percent">Percentual (%)</option>
+            <option value="fixed">Valor fixo (R$)</option>
           </select>
-          <Input
-            type="number"
-            value={value}
-            onChange={(e) => setValue(Number(e.target.value))}
-            className="max-w-[100px]"
-          />
-          {editingId && <Button size="sm" variant="ghost" onClick={() => { setEditingId(null); setCode(''); setKind('percent'); setValue(10) }}>Cancelar</Button>}
-          <Button size="sm" onClick={create}>{editingId ? 'Salvar' : 'Adicionar'}</Button>
+          {kind === 'percent' ? (
+            <PercentInput
+              label=""
+              value={value}
+              onChange={setValue}
+              placeholder="10"
+              className="max-w-[100px]"
+            />
+          ) : (
+            <CurrencyInput
+              label=""
+              valueCents={value}
+              onChange={setValue}
+              placeholder="0,00"
+              showPreview={false}
+              className="max-w-[140px]"
+            />
+          )}
+          {editingId && (
+            <Button size="sm" variant="ghost" onClick={() => { setEditingId(null); setCode(''); setKind('percent'); setValue(10) }} className="gap-1.5">
+              <RotateCcw size={12} /> Cancelar
+            </Button>
+          )}
+          <Button size="sm" onClick={create} className="gap-1.5">
+            {editingId ? 'Salvar' : 'Adicionar'}
+          </Button>
         </div>
       </div>
       <TabelaSimples headers={['Código', 'Desconto', 'Status', 'Usos', '']} rows={rows} empty="Nenhum cupom criado." />

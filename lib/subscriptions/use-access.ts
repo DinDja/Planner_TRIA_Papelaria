@@ -10,13 +10,13 @@ import { hasAccess, useSubscriptionStore } from './use-subscription-store'
  * acesso ainda não liberado.
  */
 export function useSubscriptionAccess() {
-  const { user, adminLoading } = useAuth()
+  const { user, isAdmin, adminLoading } = useAuth()
   const subscription = useSubscriptionStore()
   const ready = Boolean(user) && !adminLoading && subscription.hydratedUid === user?.uid
 
   return {
     subscription,
     ready,
-    allowed: ready && hasAccess(subscription),
+    allowed: ready && (isAdmin || hasAccess(subscription)),
   }
 }

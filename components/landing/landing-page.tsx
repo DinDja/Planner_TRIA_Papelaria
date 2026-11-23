@@ -159,13 +159,6 @@ export function LandingPage() {
           </strong>
         </p>
 
-        <Link
-          href="#planos"
-          className="landing-cta mt-5 inline-flex min-h-11 items-center justify-center border border-[var(--landing-accent)] px-6 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--landing-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--landing-bg)]"
-        >
-          Ver planos
-        </Link>
-
         <figure className="my-5 w-full max-w-[850px] sm:my-8 lg:max-w-[1100px]">
           <Image
             src="/landing/tria-phone-paper-collage.png"
@@ -216,77 +209,6 @@ export function LandingPage() {
             lugar, acessíveis de qualquer dispositivo, não importa onde o dia te
             levar.
           </p>
-        </div>
-      </section>
-
-      <section
-        id="planos"
-        aria-labelledby="plans-title"
-        className="mx-auto max-w-6xl scroll-mt-8 px-4 py-8 sm:px-6 sm:py-12 lg:px-10 2xl:px-16"
-      >
-        <div className="landing-plan-banner flex items-center gap-4 border px-4 py-5 sm:gap-6 sm:px-8 sm:py-7">
-          <PlanCalendarMark />
-          <div>
-            <h2
-              id="plans-title"
-              className="landing-heading text-2xl leading-tight sm:text-3xl"
-              style={{ fontFamily: 'var(--font-instrument), Georgia, serif' }}
-            >
-              Escolha o plano que combina com você.
-            </h2>
-            <p className="landing-muted">
-              Sem fidelidade e com 30 dias grátis. Comece mensal, evolua quando quiser e cancele sem burocracia
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
-          {PLAN_ORDER.map((id) => {
-            const plan = PLANS[id]
-
-            return (
-              <article
-                key={id}
-                className="landing-plan-row flex flex-col border bg-[var(--landing-plan-bg)] p-5"
-              >
-                <div className="mb-4 border-t-2 pt-3" style={{ borderColor: plan.color }}>
-                  <p className="landing-heading text-lg font-semibold">{plan.label}</p>
-                  <p className="landing-muted mt-1 min-h-10 text-sm leading-relaxed">
-                    {plan.description}
-                  </p>
-                </div>
-                <div className="landing-heading border-b border-[var(--landing-line)] pb-4">
-                  {id === 'annual' ? (
-                    <>
-                      <p className="text-2xl font-semibold">12x de {formatBRL(plan.price / 12)}</p>
-                      <p className="landing-muted mt-1 text-xs">{formatBRL(plan.price)} por ano</p>
-                    </>
-                  ) : (
-                    <p className="text-2xl font-semibold">
-                      {id === 'trial' ? 'Grátis' : formatBRL(plan.price)}
-                      <span className="landing-muted ml-1 text-xs font-normal">{plan.period}</span>
-                    </p>
-                  )}
-                </div>
-                <ul className="landing-muted mt-4 space-y-2 text-sm">
-                  {plan.features.map((feature) => (
-                    <li key={feature} className="flex gap-2">
-                      <span aria-hidden="true" className="mt-[0.55rem] h-px w-3 shrink-0 bg-current opacity-50" />
-                      <span>{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-                {id === 'trial' && (
-                  <Link
-                    href="/auth/login?next=%2Fplans%3FstartTrial%3D1"
-                    className="landing-cta mt-6 inline-flex min-h-11 items-center justify-center border border-[var(--landing-accent)] px-4 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--landing-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--landing-plan-bg)]"
-                  >
-                    Testar grátis
-                  </Link>
-                )}
-              </article>
-            )
-          })}
         </div>
       </section>
 
@@ -364,6 +286,77 @@ export function LandingPage() {
               procurar o endereço no navegador a cada acesso.
             </p>
           </article>
+        </div>
+      </section>
+
+      <section
+        id="planos"
+        aria-labelledby="plans-title"
+        className="mx-auto max-w-6xl scroll-mt-8 px-4 py-8 sm:px-6 sm:py-12 lg:px-10 2xl:px-16"
+      >
+        <div className="landing-plan-banner flex items-center gap-4 border px-4 py-5 sm:gap-6 sm:px-8 sm:py-7">
+          <PlanCalendarMark />
+          <div>
+            <h2
+              id="plans-title"
+              className="landing-heading text-2xl leading-tight sm:text-3xl"
+              style={{ fontFamily: 'var(--font-instrument), Georgia, serif' }}
+            >
+              Escolha o plano que combina com você.
+            </h2>
+            <p className="landing-muted">
+              Sem fidelidade e com 30 dias grátis. Comece mensal, evolua quando quiser e cancele sem burocracia
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
+          {PLAN_ORDER.map((id) => {
+            const plan = PLANS[id]
+
+            return (
+              <article
+                key={id}
+                className="landing-plan-row flex flex-col border bg-[var(--landing-plan-bg)] p-5"
+              >
+                <div className="mb-4 border-t-2 pt-3" style={{ borderColor: plan.color }}>
+                  <p className="landing-heading text-lg font-semibold">{plan.label}</p>
+                  <p className="landing-muted mt-1 min-h-10 text-sm leading-relaxed">
+                    {plan.description}
+                  </p>
+                </div>
+                <div className="landing-heading border-b border-[var(--landing-line)] pb-4">
+                  {id === 'annual' ? (
+                    <>
+                      <p className="text-2xl font-semibold">12x de {formatBRL(plan.price / 12)}</p>
+                      <p className="landing-muted mt-1 text-xs">{formatBRL(plan.price)} por ano</p>
+                    </>
+                  ) : (
+                    <p className="text-2xl font-semibold">
+                      {id === 'trial' ? 'Grátis' : formatBRL(plan.price)}
+                      <span className="landing-muted ml-1 text-xs font-normal">{plan.period}</span>
+                    </p>
+                  )}
+                </div>
+                <ul className="landing-muted mt-4 space-y-2 text-sm">
+                  {plan.features.map((feature) => (
+                    <li key={feature} className="flex gap-2">
+                      <span aria-hidden="true" className="mt-[0.55rem] h-px w-3 shrink-0 bg-current opacity-50" />
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+                {id === 'trial' && (
+                  <Link
+                    href="/auth/login?next=%2Fplans%3FstartTrial%3D1"
+                    className="landing-cta mt-6 inline-flex min-h-11 items-center justify-center border border-[var(--landing-accent)] px-4 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--landing-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--landing-plan-bg)]"
+                  >
+                    Testar grátis
+                  </Link>
+                )}
+              </article>
+            )
+          })}
         </div>
       </section>
 

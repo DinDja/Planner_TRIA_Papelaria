@@ -69,14 +69,17 @@ async function claimPaymentWithRetry(user: User, input: PaymentClaimInput) {
 }
 
 function PricingPage() {
-  const { user } = useAuth()
+  const { user, loading, isAdmin, adminLoading } = useAuth()
   const router = useRouter()
   const sub = useSubscriptionStore()
   const callbackHandled = useRef(false)
   const trialAutoHandled = useRef(false)
   const [processingPlan, setProcessingPlan] = useState<PlanId | 'cancel' | 'confirming' | null>(null)
-  const isActive = hasAccess(sub)
-  const label = statusLabel(sub)
+  const isActive = isAdmin || hasAccess(sub)
+  const checkingAccess = loading || Boolean(user && adminLoading)
+  const label = checkingAccess
+    ? 'Verificando acesso…'
+    : isAdmin ? 'Admin · acesso total' : statusLabel(sub)
   const accessUntil = formatAccessDate(sub.paidUntil)
 
   useEffect(() => {
@@ -138,7 +141,7 @@ function PricingPage() {
   }, [user, sub])
 
   useEffect(() => {
-    if (!user || trialAutoHandled.current) return
+    if (!user || adminLoading || isAdmin || trialAutoHandled.current) return
     const url = new URL(window.location.href)
     if (url.searchParams.get('startTrial') !== '1') return
     trialAutoHandled.current = true
@@ -168,10 +171,10 @@ function PricingPage() {
     }
 
     void beginTrial()
-  }, [user, sub, router])
+  }, [user, isAdmin, adminLoading, sub, router])
 
   const handleChoosePlan = async (planId: PlanId) => {
-    if (!user || processingPlan) return
+    if (!user || adminLoading || isAdmin || processingPlan) return
     setProcessingPlan(planId)
 
     try {
@@ -256,7 +259,23 @@ function PricingPage() {
         )}
       </div>
 
-      <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+      {isAdmin ? (
+        <section className="max-w-2xl border-y border-border/50 py-6">
+          <h2 className="text-lg font-semibold">Acesso de administração</h2>
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+            Seu perfil administrativo libera todos os módulos e atualizações sem precisar assinar um plano.
+          </p>
+          <Button className="mt-5" onClick={() => router.replace('/dashboard')}>
+            Abrir meus módulos
+          </Button>
+        </section>
+      ) : checkingAccess ? (
+        <p className="py-6 text-sm text-muted-foreground" role="status" aria-live="polite">
+          Verificando seu acesso antes de mostrar os planos…
+        </p>
+      ) : (
+      <>
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
         {PLAN_ORDER.map((id, index) => {
           const plan = PLANS[id]
           const current = sub.plan === id && isActive
@@ -356,13 +375,15 @@ function PricingPage() {
             </motion.div>
           )
         })}
-      </div>
+        </div>
 
-      <p className="mt-8 max-w-3xl text-xs leading-relaxed text-muted-foreground">
-        Mensal e anual são pagamentos por período no checkout seguro da InfinitePay,
-        por Pix ou cartão, sem débito automático.
-        O teste grátis dura um mês, pode ser usado uma vez por conta e não solicita cartão.
-      </p>
+        <p className="mt-8 max-w-3xl text-xs leading-relaxed text-muted-foreground">
+          Mensal e anual são pagamentos por período no checkout seguro da InfinitePay,
+          por Pix ou cartão, sem débito automático.
+          O teste grátis dura um mês, pode ser usado uma vez por conta e não solicita cartão.
+        </p>
+      </>
+      )}
     </div>
   )
 }

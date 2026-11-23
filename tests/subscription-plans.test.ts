@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { PLANS, monthlyEquivalent } from '@/lib/subscriptions/plan'
 import { addMonthsClamped, getPlanPeriodEnd } from '@/lib/subscriptions/period'
+import { hasAccess } from '@/lib/subscriptions/use-subscription-store'
 import {
   isConfirmedPayment,
   isTrustedInfinitePayCheckoutUrl,
@@ -18,6 +19,21 @@ describe('catálogo de planos', () => {
     expect(PLANS.trial.features).toContain('Acesso a todos os módulos')
     expect(PLANS.trial.features).toContain('Acesso a todas as atualizações')
     expect(PLANS.trial.features).toContain('Não precisa de cartão para testar')
+  })
+})
+
+describe('acesso administrativo', () => {
+  it('libera todos os módulos sem exigir plano ou pagamento', () => {
+    expect(hasAccess({
+      role: 'admin',
+      plan: null,
+      status: 'none',
+      since: null,
+      lastPayment: null,
+      paidUntil: null,
+      trialStartedAt: null,
+      cancelledAt: null,
+    })).toBe(true)
   })
 })
 

@@ -163,7 +163,9 @@ export function DashboardPage() {
     [appointments, exams, currentMonthKey],
   )
 
-  const taskCount = tasks.length + recurringTasks.filter((task) => task.active).length
+  const taskCount =
+    tasks.filter((task) => !task.done).length +
+    recurringTasks.filter((task) => task.active).length
   const healthRecordCount = monthlyHealthRecords.length
 
   const hour = new Date().getHours()
@@ -193,7 +195,7 @@ export function DashboardPage() {
       {/* Stats row */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
         {[
-          { label: 'Tarefas', value: taskCount, icon: CheckCircle2, color: '#d1bdb8' },
+          { label: 'Tarefas pendentes', value: taskCount, icon: CheckCircle2, color: '#d1bdb8' },
           { label: 'Aniversários', value: monthlyBirthdays.length, icon: NotebookPen, color: '#6a634d' },
           { label: 'Consultas e Exames', value: healthRecordCount, icon: HeartPulse, color: '#d1bdb8' },
         ].map((stat) => (

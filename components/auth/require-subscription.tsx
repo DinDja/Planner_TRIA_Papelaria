@@ -20,7 +20,7 @@ const HYDRATION_FALLBACK_MS = 4_000
  * Administradoras passam direto (o papel vem de `admin/{uid}`).
  */
 export function RequireSubscription({ children }: { children: React.ReactNode }) {
-  const { user, loading, adminLoading } = useAuth()
+  const { user, loading, isAdmin, adminLoading } = useAuth()
   const pathname = usePathname() || '/'
   const router = useRouter()
   const subscription = useSubscriptionStore()
@@ -30,7 +30,7 @@ export function RequireSubscription({ children }: { children: React.ReactNode })
   const hydrated = Boolean(user) && subscription.hydratedUid === user?.uid
   const fallbackReady = Boolean(user && fallback && fallback.uid === user.uid && fallback.ready)
   const ready = !loading && !adminLoading && (hydrated || fallbackReady)
-  const canAccess = ready && hasAccess(subscription)
+  const canAccess = ready && (isAdmin || hasAccess(subscription))
 
   useEffect(() => {
     if (exempt || !user || loading || adminLoading || hydrated) return

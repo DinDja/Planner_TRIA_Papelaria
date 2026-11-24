@@ -7,7 +7,7 @@ import { useRoutineStore } from '@/lib/store/use-routine-store'
 import { recurringOccursOn } from '@/lib/routine/occurrences'
 import type { Habit, RecurringTask, Task } from '@/lib/types'
 import { cn } from '@/lib/utils'
-import { ChevronLeft, ChevronRight, ListTodo, Plus } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ListTodo, Plus, Pencil, Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Button } from '../ui/button'
 import { Card } from '../ui/card'
@@ -128,10 +128,14 @@ function sortRoutineItems(items: RoutineCalendarItem[]) {
 function RoutineTaskChip({
   item,
   onComplete,
+  onEdit,
+  onDelete,
   past = false,
 }: {
   item: RoutineCalendarItem
   onComplete: (item: RoutineCalendarItem) => void
+  onEdit: (item: RoutineCalendarItem) => void
+  onDelete: (item: RoutineCalendarItem) => void
   past?: boolean
 }) {
   const task = item.task
@@ -139,24 +143,45 @@ function RoutineTaskChip({
   const color = PRIORITY_COLORS[task.priority]
 
   return (
-    <button
-      type="button"
-      onClick={() => onComplete(item)}
-      className={cn(
-        'w-full truncate rounded-md px-1.5 py-0.5 text-left text-[11px] font-medium transition-all hover:brightness-110 cursor-pointer',
-        (past || done) && 'opacity-60',
-        done && 'line-through',
-      )}
-      style={{
-        backgroundColor: color + '18',
-        color,
-        borderLeft: `2.5px solid ${color}`,
-      }}
-      title={item.kind === 'recurring' ? 'Concluir ocorrência da rotina' : undefined}
-    >
-      <span className="mr-1 opacity-70">{item.kind === 'recurring' ? '↻' : done ? '✓' : '○'}</span>
-      {task.time ? `${task.time} ` : ''}{task.title}
-    </button>
+    <div className="relative group">
+      <button
+        type="button"
+        onClick={() => onComplete(item)}
+        className={cn(
+          'w-full truncate rounded-md px-1.5 py-0.5 text-left text-[11px] font-medium transition-all hover:brightness-110 cursor-pointer',
+          (past || done) && 'opacity-60',
+          done && 'line-through',
+        )}
+        style={{
+          backgroundColor: color + '18',
+          color,
+          borderLeft: `2.5px solid ${color}`,
+        }}
+        title={item.kind === 'recurring' ? 'Concluir ocorrência da rotina' : undefined}
+      >
+        <span className="mr-1 opacity-70">{item.kind === 'recurring' ? '↻' : done ? '✓' : '○'}</span>
+        {task.time ? `${task.time} ` : ''}{task.title}
+      </button>
+
+      <div className="absolute right-1 top-1/2 -translate-y-1/2 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onEdit(item) }}
+                className="p-1.5 rounded hover:bg-white/20 cursor-pointer"
+          aria-label="Editar tarefa"
+        >
+                <Pencil size={12} />
+        </button>
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onDelete(item) }}
+                className="p-1.5 rounded hover:bg-white/20 cursor-pointer"
+          aria-label="Excluir tarefa"
+        >
+                <Trash2 size={12} />
+        </button>
+      </div>
+    </div>
   )
 }
 
@@ -182,12 +207,16 @@ function MonthlyCalendarView({
   routineByDate,
   onAdd,
   onCompleteRoutine,
+  onEdit,
+  onDelete,
 }: {
   weeks: CalendarCell[][]
   today: string
   routineByDate: Map<string, RoutineCalendarItem[]>
   onAdd: (date: string) => void
   onCompleteRoutine: (item: RoutineCalendarItem) => void
+  onEdit: (item: RoutineCalendarItem) => void
+  onDelete: (item: RoutineCalendarItem) => void
 }) {
   return (
     <Card glass className="hidden overflow-hidden md:block">
@@ -243,6 +272,8 @@ function MonthlyCalendarView({
                         item={item}
                         past={isPast}
                         onComplete={onCompleteRoutine}
+                                          onEdit={onEdit}
+                                          onDelete={onDelete}
                       />
                     ))}
                     {hiddenCount > 0 && (
@@ -280,6 +311,8 @@ function MobileMonthlyAgenda({
   onSelectDate,
   onAdd,
   onCompleteRoutine,
+  onEdit,
+  onDelete,
 }: {
   weeks: CalendarCell[][]
   today: string
@@ -288,6 +321,8 @@ function MobileMonthlyAgenda({
   onSelectDate: (date: string) => void
   onAdd: (date: string) => void
   onCompleteRoutine: (item: RoutineCalendarItem) => void
+  onEdit: (item: RoutineCalendarItem) => void
+  onDelete: (item: RoutineCalendarItem) => void
 }) {
   const selectedKey = toDateKey(selectedDate)
   const selectedRoutine = sortRoutineItems(routineByDate.get(selectedKey) ?? [])
@@ -379,32 +414,16 @@ function MobileMonthlyAgenda({
           </Card>
         ) : (
           <div className="space-y-2">
-            {selectedRoutine.map((item) => {
-              const task = item.task
-              const done = item.kind === 'task' && item.task.done
-              const color = PRIORITY_COLORS[task.priority]
-              return (
-                <button
-                  key={`${item.kind}-${task.id}`}
-                  type="button"
-                  onClick={() => onCompleteRoutine(item)}
-                  className={cn(
-                                  'flex w-full min-w-0 items-start gap-2.5 rounded-sm px-3 py-2.5 text-left transition-colors hover:brightness-95 cursor-pointer',
-                    (done || selectedKey < today) && 'opacity-60',
-                  )}
-                  style={{ backgroundColor: color + '18', borderLeft: `3px solid ${color}` }}
-                  title={item.kind === 'recurring' ? 'Concluir ocorrência da rotina' : undefined}
-                >
-                  <span aria-hidden className="mt-0.5 shrink-0 text-xs" style={{ color }}>
-                    {item.kind === 'recurring' ? '↻' : done ? '✓' : '○'}
-                  </span>
-                  <span className={cn('min-w-0 flex-1 break-words text-sm font-medium [overflow-wrap:anywhere]', done && 'line-through')}>
-                    {task.time && <span className="mr-1 text-xs font-normal opacity-70">{task.time}</span>}
-                    {task.title}
-                  </span>
-                </button>
-              )
-            })}
+            {selectedRoutine.map((item) => (
+              <RoutineTaskChip
+                key={`${item.kind}-${item.task.id}`}
+                item={item}
+                past={selectedKey < today}
+                onComplete={onCompleteRoutine}
+                onEdit={onEdit}
+                onDelete={onDelete}
+              />
+            ))}
           </div>
         )}
       </section>
@@ -420,6 +439,8 @@ function PlannerDayBlock({
   onNoteChange,
   onAdd,
   onCompleteRoutine,
+  onEdit,
+  onDelete,
 }: {
   date: Date
   notes: string[]
@@ -428,6 +449,8 @@ function PlannerDayBlock({
   onNoteChange: (index: number, value: string) => void
   onAdd: (date: string) => void
   onCompleteRoutine: (item: RoutineCalendarItem) => void
+  onEdit: (item: RoutineCalendarItem) => void
+  onDelete: (item: RoutineCalendarItem) => void
 }) {
   const key = toDateKey(date)
   const isToday = key === today
@@ -476,6 +499,8 @@ function PlannerDayBlock({
               item={item}
               past={key < today}
               onComplete={onCompleteRoutine}
+                    onEdit={onEdit}
+                    onDelete={onDelete}
             />
           ))}
         </div>
@@ -508,6 +533,8 @@ function PlannerDays({
   onNoteChange,
   onAdd,
   onCompleteRoutine,
+  onEdit,
+  onDelete,
 }: {
   days: Date[]
   weekKey: string
@@ -517,6 +544,8 @@ function PlannerDays({
   onNoteChange: (weekKey: string, date: string, index: number, value: string) => void
   onAdd: (date: string) => void
   onCompleteRoutine: (item: RoutineCalendarItem) => void
+  onEdit: (item: RoutineCalendarItem) => void
+  onDelete: (item: RoutineCalendarItem) => void
 }) {
   return (
     <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-x-7 md:gap-y-6">
@@ -533,6 +562,8 @@ function PlannerDays({
               onNoteChange={(noteIndex, value) => onNoteChange(dayWeekKey, key, noteIndex, value)}
               onAdd={onAdd}
               onCompleteRoutine={onCompleteRoutine}
+              onEdit={onEdit}
+              onDelete={onDelete}
             />
           </div>
         )
@@ -621,6 +652,8 @@ export function CalendarPage() {
   const recurringTasks = useRoutineStore((state) => state.recurringTasks)
   const toggleTask = useRoutineStore((state) => state.toggleTask)
   const completeRecurring = useRoutineStore((state) => state.completeRecurring)
+  const deleteTask = useRoutineStore((state) => state.deleteTask)
+  const deleteRecurring = useRoutineStore((state) => state.deleteRecurring)
   const plannerWeeks = useCalendarPlannerStore((state) => state.weeks)
   const setNote = useCalendarPlannerStore((state) => state.setNote)
 
@@ -690,6 +723,25 @@ export function CalendarPage() {
     setRoutineTaskEditId(undefined)
     setRoutineTaskDate(date)
     setRoutineTaskOpen(true)
+  }
+
+  const handleEdit = (item: RoutineCalendarItem) => {
+    if (item.kind === 'task') {
+      setRoutineTaskEditId(item.task.id)
+      setRoutineTaskDate(item.task.date)
+      setRoutineTaskOpen(true)
+    } else {
+      setRoutineRecurringEditId(item.task.id)
+      setRoutineRecurringOpen(true)
+    }
+  }
+
+  const handleDelete = (item: RoutineCalendarItem) => {
+    if (item.kind === 'task') {
+      deleteTask(item.task.id)
+    } else {
+      deleteRecurring(item.task.id)
+    }
   }
 
   return (
@@ -796,6 +848,8 @@ export function CalendarPage() {
               onCompleteRoutine={(item) => item.kind === 'task'
                 ? toggleTask(item.task.id)
                 : completeRecurring(item.task.id)}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
             />
             <MonthlyCalendarView
               weeks={monthWeeks}
@@ -805,6 +859,8 @@ export function CalendarPage() {
               onCompleteRoutine={(item) => item.kind === 'task'
                 ? toggleTask(item.task.id)
                 : completeRecurring(item.task.id)}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
             />
           </>
         ) : (
@@ -819,6 +875,8 @@ export function CalendarPage() {
             onCompleteRoutine={(item) => item.kind === 'task'
               ? toggleTask(item.task.id)
               : completeRecurring(item.task.id)}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
           />
         )}
       </main>

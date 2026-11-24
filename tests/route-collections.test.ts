@@ -15,7 +15,7 @@ describe('route-collections — pathname resolve plano de coleções', () => {
     expect(plan('/memorias').collections).toEqual(['memories'])
     expect(plan('/notas').collections).toEqual(['notes'])
     expect(plan('/calendario').collections.sort()).toEqual(
-      ['calendarEvents', 'tasks', 'recurringTasks', 'pendingItems', 'routineSlots'].sort(),
+      ['tasks', 'recurringTasks', 'pendingItems', 'routineSlots'].sort(),
     )
   })
 
@@ -61,10 +61,19 @@ describe('route-collections — pathname resolve plano de coleções', () => {
     expect(plan('/calendario').rootFields).toContain('calendarPlanner')
   })
 
-  it('dashboard agrega 4 coleções de 3 módulos diferentes', () => {
+  it('dashboard agrega as coleções exibidas nos cards', () => {
     const collections = plan('/').collections
     expect(collections.sort()).toEqual(
-      ['planners', 'calendarEvents', 'appointments', 'exams'].sort(),
+      [
+        'planners',
+        'tasks',
+        'recurringTasks',
+        'birthdays',
+        'habits',
+        'habitLogs',
+        'appointments',
+        'exams',
+      ].sort(),
     )
   })
 

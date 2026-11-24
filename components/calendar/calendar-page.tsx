@@ -2,10 +2,10 @@
 
 import { useCalendarPlannerStore, EMPTY_CALENDAR_WEEK } from '@/lib/store/use-calendar-planner-store'
 import type { CalendarPlannerWeek } from '@/lib/store/use-calendar-planner-store'
-import { useCalendarStore } from '@/lib/store/use-calendar-store'
 import { useHabitsStore } from '@/lib/store/use-habits-store'
 import { useRoutineStore } from '@/lib/store/use-routine-store'
-import type { CalendarEvent, Habit, RecurringTask, Task } from '@/lib/types'
+import { recurringOccursOn } from '@/lib/routine/occurrences'
+import type { Habit, RecurringTask, Task } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import { ChevronLeft, ChevronRight, ListTodo, Plus } from 'lucide-react'
 import { useMemo, useState } from 'react'
@@ -13,7 +13,6 @@ import { Button } from '../ui/button'
 import { Card } from '../ui/card'
 import { AddRecurringDialog, AddTaskDialog, RoutineTodayDialog } from '../routine/routine-dialogs'
 import { PRIORITY_COLORS } from '../routine/shared'
-import { CalendarEventDialog } from './calendar-dialogs'
 
 const enter = 'animate-in fade-in slide-in-from-bottom-3 duration-500 fill-mode-both'
 
@@ -118,32 +117,6 @@ function formatWeekTitle(date: Date) {
   return `${start.getDate()} de ${MONTHS[start.getMonth()]} de ${start.getFullYear()} – ${end.getDate()} de ${MONTHS[end.getMonth()]} de ${end.getFullYear()}`
 }
 
-function sortEvents(events: CalendarEvent[]) {
-  return [...events].sort((a, b) => {
-    if (a.allDay !== b.allDay) return a.allDay ? -1 : 1
-    return (a.startTime ?? '').localeCompare(b.startTime ?? '')
-  })
-}
-
-function EventChip({ event, onClick, past = false }: { event: CalendarEvent; onClick: () => void; past?: boolean }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        'w-full truncate rounded-sm border-l-2 px-2 py-1 text-left text-[11px] font-medium transition-colors hover:bg-primary/[0.06] cursor-pointer',
-        past && 'opacity-60',
-      )}
-      style={{ borderLeftColor: event.color }}
-    >
-      <span className="text-foreground/65">
-        {event.allDay ? 'Dia inteiro · ' : event.startTime ? `${event.startTime} · ` : ''}
-      </span>
-      {event.title}
-    </button>
-  )
-}
-
 type RoutineCalendarItem =
   | { kind: 'task'; task: Task }
   | { kind: 'recurring'; task: RecurringTask }
@@ -206,18 +179,14 @@ function TaskCount({ count, compact = false }: { count: number; compact?: boolea
 function MonthlyCalendarView({
   weeks,
   today,
-  eventsByDate,
   routineByDate,
   onAdd,
-  onEdit,
   onCompleteRoutine,
 }: {
   weeks: CalendarCell[][]
   today: string
-  eventsByDate: Map<string, CalendarEvent[]>
   routineByDate: Map<string, RoutineCalendarItem[]>
   onAdd: (date: string) => void
-  onEdit: (id: string) => void
   onCompleteRoutine: (item: RoutineCalendarItem) => void
 }) {
   return (
@@ -235,16 +204,14 @@ function MonthlyCalendarView({
           <div key={weekIndex} className="grid grid-cols-7 border-b border-border/20 last:border-0">
             {week.map((cell) => {
               const key = dateKey(cell.year, cell.month, cell.day)
-              const dayEvents = sortEvents(eventsByDate.get(key) ?? [])
               const routineItems = sortRoutineItems(routineByDate.get(key) ?? [])
               const taskCount = routineItems.filter(
                 (item) => item.kind === 'recurring' || !item.task.done,
               ).length
               const isToday = key === today
               const isPast = key < today
-              const visibleEvents = dayEvents.slice(0, 3)
-              const visibleRoutine = routineItems.slice(0, Math.max(0, 3 - visibleEvents.length))
-              const hiddenCount = dayEvents.length + routineItems.length - visibleEvents.length - visibleRoutine.length
+              const visibleRoutine = routineItems.slice(0, 3)
+              const hiddenCount = routineItems.length - visibleRoutine.length
 
               return (
                 <div
@@ -270,24 +237,6 @@ function MonthlyCalendarView({
                   </div>
 
                   <div className="space-y-0.5">
-                    {visibleEvents.map((event) => (
-                      <button
-                        key={event.id}
-                        type="button"
-                        onClick={() => onEdit(event.id)}
-                        className={cn(
-                          'w-full truncate rounded-md px-1.5 py-0.5 text-left text-[11px] font-medium transition-all hover:brightness-110 cursor-pointer',
-                          isPast && 'opacity-60',
-                        )}
-                        style={{
-                          backgroundColor: event.color + '20',
-                          color: event.color,
-                          borderLeft: `2.5px solid ${event.color}`,
-                        }}
-                      >
-                        {event.allDay ? event.title : `${event.startTime} ${event.title}`}
-                      </button>
-                    ))}
                     {visibleRoutine.map((item) => (
                       <RoutineTaskChip
                         key={`${item.kind}-${item.task.id}`}
@@ -308,7 +257,7 @@ function MonthlyCalendarView({
                       type="button"
                       onClick={() => onAdd(key)}
                       className="absolute bottom-1 right-1 flex size-5 items-center justify-center rounded-md hover:bg-muted cursor-pointer"
-                      aria-label="Adicionar evento"
+                      aria-label="Adicionar tarefa"
                     >
                       <Plus size={12} className="text-muted-foreground" />
                     </button>
@@ -327,25 +276,20 @@ function MobileMonthlyAgenda({
   weeks,
   today,
   selectedDate,
-  eventsByDate,
   routineByDate,
   onSelectDate,
   onAdd,
-  onEdit,
   onCompleteRoutine,
 }: {
   weeks: CalendarCell[][]
   today: string
   selectedDate: Date
-  eventsByDate: Map<string, CalendarEvent[]>
   routineByDate: Map<string, RoutineCalendarItem[]>
   onSelectDate: (date: string) => void
   onAdd: (date: string) => void
-  onEdit: (id: string) => void
   onCompleteRoutine: (item: RoutineCalendarItem) => void
 }) {
   const selectedKey = toDateKey(selectedDate)
-  const selectedEvents = sortEvents(eventsByDate.get(selectedKey) ?? [])
   const selectedRoutine = sortRoutineItems(routineByDate.get(selectedKey) ?? [])
   const selectedTitle = formatDayTitle(selectedDate)
 
@@ -363,18 +307,14 @@ function MobileMonthlyAgenda({
           <div key={weekIndex} className="grid grid-cols-7 border-b border-border/20 last:border-0">
             {week.map((cell) => {
               const key = dateKey(cell.year, cell.month, cell.day)
-              const dayEvents = eventsByDate.get(key) ?? []
               const routineItems = routineByDate.get(key) ?? []
-              const itemCount = dayEvents.length + routineItems.length
+              const itemCount = routineItems.length
               const isToday = key === today
               const isSelected = key === selectedKey
-              const markers = [
-                ...dayEvents.map((event) => ({ id: event.id, color: event.color })),
-                ...routineItems.map((item) => ({
-                  id: `${item.kind}-${item.task.id}`,
-                  color: PRIORITY_COLORS[item.task.priority],
-                })),
-              ].slice(0, 3)
+              const markers = routineItems.map((item) => ({
+                id: `${item.kind}-${item.task.id}`,
+                color: PRIORITY_COLORS[item.task.priority],
+              })).slice(0, 3)
 
               return (
                 <button
@@ -384,7 +324,7 @@ function MobileMonthlyAgenda({
                   aria-pressed={isSelected}
                   aria-label={`${formatDayTitle(new Date(cell.year, cell.month, cell.day, 12))}, ${itemCount} ${itemCount === 1 ? 'item' : 'itens'}`}
                   className={cn(
-                    'flex min-h-12 min-w-0 flex-col items-center justify-center gap-0.5 border-r border-border/20 py-1 last:border-0',
+                                  'flex min-h-12 min-w-0 flex-col items-center justify-center gap-0.5 border-r border-border/20 py-1 last:border-0 cursor-pointer',
                     isSelected && 'bg-primary/[0.06]',
                   )}
                 >
@@ -422,42 +362,26 @@ function MobileMonthlyAgenda({
           </div>
           <Button variant="outline" size="sm" onClick={() => onAdd(selectedKey)} className="shrink-0 gap-1.5">
             <Plus size={14} />
-            Evento
+            Tarefa
           </Button>
         </div>
 
-        {selectedEvents.length === 0 && selectedRoutine.length === 0 ? (
+        {selectedRoutine.length === 0 ? (
           <Card glass className="px-4 py-5 text-center">
-            <p className="text-sm text-muted-foreground">Nenhum compromisso neste dia.</p>
+            <p className="text-sm text-muted-foreground">Nenhuma tarefa neste dia.</p>
             <button
               type="button"
               onClick={() => onAdd(selectedKey)}
-              className="mt-1 text-xs font-medium text-primary underline-offset-4 hover:underline"
+                        className="mt-1 text-xs font-medium text-primary underline-offset-4 hover:underline cursor-pointer"
             >
-              Adicionar evento
+              Adicionar tarefa
             </button>
           </Card>
         ) : (
           <div className="space-y-2">
-            {selectedEvents.map((event) => (
-              <button
-                key={event.id}
-                type="button"
-                onClick={() => onEdit(event.id)}
-                className="w-full min-w-0 rounded-sm border-l-[3px] bg-muted/20 px-3 py-2.5 text-left transition-colors hover:bg-muted/40"
-                style={{ borderLeftColor: event.color }}
-              >
-                <span className="block text-[11px] text-muted-foreground">
-                  {event.allDay ? 'Dia inteiro' : event.startTime || 'Horário não definido'}
-                </span>
-                <span className="block break-words text-sm font-medium text-foreground [overflow-wrap:anywhere]">
-                  {event.title}
-                </span>
-              </button>
-            ))}
             {selectedRoutine.map((item) => {
               const task = item.task
-              const done = item.kind === 'task' && task.done
+              const done = item.kind === 'task' && item.task.done
               const color = PRIORITY_COLORS[task.priority]
               return (
                 <button
@@ -465,7 +389,7 @@ function MobileMonthlyAgenda({
                   type="button"
                   onClick={() => onCompleteRoutine(item)}
                   className={cn(
-                    'flex w-full min-w-0 items-start gap-2.5 rounded-sm px-3 py-2.5 text-left transition-colors hover:brightness-95',
+                                  'flex w-full min-w-0 items-start gap-2.5 rounded-sm px-3 py-2.5 text-left transition-colors hover:brightness-95 cursor-pointer',
                     (done || selectedKey < today) && 'opacity-60',
                   )}
                   style={{ backgroundColor: color + '18', borderLeft: `3px solid ${color}` }}
@@ -491,27 +415,22 @@ function MobileMonthlyAgenda({
 function PlannerDayBlock({
   date,
   notes,
-  events,
   routineItems,
   today,
   onNoteChange,
   onAdd,
-  onEdit,
   onCompleteRoutine,
 }: {
   date: Date
   notes: string[]
-  events: CalendarEvent[]
   routineItems: RoutineCalendarItem[]
   today: string
   onNoteChange: (index: number, value: string) => void
   onAdd: (date: string) => void
-  onEdit: (id: string) => void
   onCompleteRoutine: (item: RoutineCalendarItem) => void
 }) {
   const key = toDateKey(date)
   const isToday = key === today
-  const sortedEvents = sortEvents(events)
   const sortedRoutineItems = sortRoutineItems(routineItems)
   const taskCount = sortedRoutineItems.filter(
     (item) => item.kind === 'recurring' || !item.task.done,
@@ -531,7 +450,7 @@ function PlannerDayBlock({
             'flex size-9 shrink-0 items-center justify-center rounded-sm border border-primary/20 bg-primary/[0.045] text-sm font-medium tabular-nums text-foreground/75 transition-colors hover:border-primary/40 hover:bg-primary/[0.08] cursor-pointer',
             isToday && 'border-primary/45 bg-primary/[0.10] text-primary',
           )}
-          aria-label={`Adicionar evento em ${formatDayTitle(date)}`}
+          aria-label={`Adicionar tarefa em ${formatDayTitle(date)}`}
         >
           {String(date.getDate()).padStart(2, '0')}
         </button>
@@ -543,29 +462,13 @@ function PlannerDayBlock({
           type="button"
           onClick={() => onAdd(key)}
           className="flex size-6 items-center justify-center rounded-sm text-muted-foreground/60 hover:bg-primary/[0.06] hover:text-foreground cursor-pointer"
-          aria-label="Adicionar evento"
+          aria-label="Adicionar tarefa"
         >
           <Plus size={13} />
         </button>
       </div>
 
-      {sortedEvents.length > 0 && (
-        <div className="mb-2 space-y-0.5 border-b border-primary/10 pb-2">
-          {sortedEvents.map((event) => (
-            <EventChip key={event.id} event={event} past={key < today} onClick={() => onEdit(event.id)} />
-          ))}
-          {sortedRoutineItems.map((item) => (
-            <RoutineTaskChip
-              key={`${item.kind}-${item.task.id}`}
-              item={item}
-              past={key < today}
-              onComplete={onCompleteRoutine}
-            />
-          ))}
-        </div>
-      )}
-
-      {sortedEvents.length === 0 && sortedRoutineItems.length > 0 && (
+      {sortedRoutineItems.length > 0 && (
         <div className="mb-2 space-y-0.5 border-b border-primary/10 pb-2">
           {sortedRoutineItems.map((item) => (
             <RoutineTaskChip
@@ -600,23 +503,19 @@ function PlannerDays({
   days,
   weekKey,
   plannerWeeks,
-  eventsByDate,
   routineByDate,
   today,
   onNoteChange,
   onAdd,
-  onEdit,
   onCompleteRoutine,
 }: {
   days: Date[]
   weekKey: string
   plannerWeeks: Record<string, CalendarPlannerWeek>
-  eventsByDate: Map<string, CalendarEvent[]>
   routineByDate: Map<string, RoutineCalendarItem[]>
   today: string
   onNoteChange: (weekKey: string, date: string, index: number, value: string) => void
   onAdd: (date: string) => void
-  onEdit: (id: string) => void
   onCompleteRoutine: (item: RoutineCalendarItem) => void
 }) {
   return (
@@ -629,12 +528,10 @@ function PlannerDays({
             <PlannerDayBlock
               date={date}
               notes={plannerWeeks[dayWeekKey]?.notesByDate[key] ?? []}
-              events={eventsByDate.get(key) ?? []}
               routineItems={routineByDate.get(key) ?? []}
               today={today}
               onNoteChange={(noteIndex, value) => onNoteChange(dayWeekKey, key, noteIndex, value)}
               onAdd={onAdd}
-              onEdit={onEdit}
               onCompleteRoutine={onCompleteRoutine}
             />
           </div>
@@ -720,7 +617,6 @@ function HabitRow({
 }
 
 export function CalendarPage() {
-  const events = useCalendarStore((state) => state.events)
   const tasks = useRoutineStore((state) => state.tasks)
   const recurringTasks = useRoutineStore((state) => state.recurringTasks)
   const toggleTask = useRoutineStore((state) => state.toggleTask)
@@ -730,12 +626,10 @@ export function CalendarPage() {
 
   const [view, setView] = useState<CalendarView>('month')
   const [currentDate, setCurrentDate] = useState(() => new Date())
-  const [dialogOpen, setDialogOpen] = useState(false)
-  const [dialogDate, setDialogDate] = useState('')
-  const [editId, setEditId] = useState<string | undefined>()
   const [routineTodayOpen, setRoutineTodayOpen] = useState(false)
   const [routineTaskOpen, setRoutineTaskOpen] = useState(false)
   const [routineRecurringOpen, setRoutineRecurringOpen] = useState(false)
+  const [routineTaskDate, setRoutineTaskDate] = useState(() => toDateKey(new Date()))
   const [routineTaskEditId, setRoutineTaskEditId] = useState<string | undefined>()
   const [routineRecurringEditId, setRoutineRecurringEditId] = useState<string | undefined>()
 
@@ -746,14 +640,6 @@ export function CalendarPage() {
     [currentDate],
   )
   const weekKey = toDateKey(weekDays[0])
-
-  const eventsByDate = useMemo(() => {
-    const map = new Map<string, CalendarEvent[]>()
-    for (const event of events) {
-      map.set(event.date, [...(map.get(event.date) ?? []), event])
-    }
-    return map
-  }, [events])
 
   const visibleDates = view === 'month'
     ? monthWeeks.flat().map((cell) => new Date(cell.year, cell.month, cell.day, 12))
@@ -771,14 +657,8 @@ export function CalendarPage() {
 
     for (const date of visibleDates) {
       const key = toDateKey(date)
-      const weekday = (date.getDay() + 6) % 7
       for (const task of recurringTasks) {
-        if (!task.active || key < task.createdAt.slice(0, 10)) continue
-        const occurs =
-          task.frequency === 'daily' ||
-          (task.frequency === 'weekly' && task.weekdays?.includes(weekday as 0 | 1 | 2 | 3 | 4 | 5 | 6)) ||
-          (task.frequency === 'monthly' && date.getDate() === task.dayOfMonth)
-        if (occurs) add(key, { kind: 'recurring', task })
+        if (recurringOccursOn(task, date)) add(key, { kind: 'recurring', task })
       }
     }
 
@@ -807,15 +687,9 @@ export function CalendarPage() {
   }
 
   const openAdd = (date = toDateKey(currentDate)) => {
-    setEditId(undefined)
-    setDialogDate(date)
-    setDialogOpen(true)
-  }
-
-  const openEdit = (id: string) => {
-    setEditId(id)
-    setDialogDate(events.find((event) => event.id === id)?.date ?? '')
-    setDialogOpen(true)
+    setRoutineTaskEditId(undefined)
+    setRoutineTaskDate(date)
+    setRoutineTaskOpen(true)
   }
 
   return (
@@ -825,7 +699,9 @@ export function CalendarPage() {
           {view === 'month' ? (
             <>
               <h1 className="text-3xl font-bold tracking-tight">Agenda</h1>
-              <p className="mt-2 text-muted-foreground">{events.length + tasks.length} itens agendados</p>
+              <p className="mt-2 text-muted-foreground">
+                {tasks.length + recurringTasks.filter((task) => task.active).length} itens agendados
+              </p>
             </>
           ) : (
             <>
@@ -839,10 +715,7 @@ export function CalendarPage() {
         <div className="flex items-center gap-2">
           <Button
             variant="default"
-            onClick={() => {
-              setRoutineTaskEditId(undefined)
-              setRoutineTaskOpen(true)
-            }}
+            onClick={() => openAdd(toDateKey(currentDate))}
             className="rounded-xl gap-1.5 text-sm"
           >
             <Plus size={14} />
@@ -896,7 +769,7 @@ export function CalendarPage() {
                 aria-pressed={view === option.id}
                 onClick={() => setView(option.id)}
                 className={cn(
-                  'px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground transition-colors sm:px-3',
+                              'px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground transition-colors sm:px-3 cursor-pointer',
                   view === option.id ? 'border-b border-primary text-foreground' : 'hover:text-foreground',
                 )}
               >
@@ -914,14 +787,12 @@ export function CalendarPage() {
               weeks={monthWeeks}
               today={today}
               selectedDate={currentDate}
-              eventsByDate={eventsByDate}
               routineByDate={routineByDate}
               onSelectDate={(date) => {
                 const [year, month, day] = date.split('-').map(Number)
                 setCurrentDate(new Date(year, month - 1, day, 12))
               }}
               onAdd={openAdd}
-              onEdit={openEdit}
               onCompleteRoutine={(item) => item.kind === 'task'
                 ? toggleTask(item.task.id)
                 : completeRecurring(item.task.id)}
@@ -929,10 +800,8 @@ export function CalendarPage() {
             <MonthlyCalendarView
               weeks={monthWeeks}
               today={today}
-              eventsByDate={eventsByDate}
               routineByDate={routineByDate}
               onAdd={openAdd}
-              onEdit={openEdit}
               onCompleteRoutine={(item) => item.kind === 'task'
                 ? toggleTask(item.task.id)
                 : completeRecurring(item.task.id)}
@@ -943,28 +812,16 @@ export function CalendarPage() {
             days={view === 'day' ? [currentDate] : weekDays}
             weekKey={weekKey}
             plannerWeeks={plannerWeeks}
-            eventsByDate={eventsByDate}
             routineByDate={routineByDate}
             today={today}
             onNoteChange={(dayWeekKey, date, index, value) => setNote(dayWeekKey, date, index, value)}
             onAdd={openAdd}
-            onEdit={openEdit}
             onCompleteRoutine={(item) => item.kind === 'task'
               ? toggleTask(item.task.id)
               : completeRecurring(item.task.id)}
           />
         )}
       </main>
-
-      <CalendarEventDialog
-        open={dialogOpen}
-        onClose={() => {
-          setDialogOpen(false)
-          setEditId(undefined)
-        }}
-        defaultDate={dialogDate}
-        editId={editId}
-      />
 
       <RoutineTodayDialog
         open={routineTodayOpen}
@@ -973,16 +830,17 @@ export function CalendarPage() {
         onEditRecurring={(id) => { setRoutineTodayOpen(false); setRoutineRecurringEditId(id); setRoutineRecurringOpen(true) }}
         onAddTask={() => {
           setRoutineTodayOpen(false)
+          setRoutineTaskDate(toDateKey(new Date()))
           setRoutineTaskOpen(true)
         }}
       />
 
       <AddTaskDialog
-        key={toDateKey(currentDate)}
+        key={routineTaskDate}
         open={routineTaskOpen}
         editId={routineTaskEditId}
         onClose={() => { setRoutineTaskOpen(false); setRoutineTaskEditId(undefined) }}
-        defaultDate={toDateKey(currentDate)}
+        defaultDate={routineTaskDate}
       />
       <AddRecurringDialog
         open={routineRecurringOpen}

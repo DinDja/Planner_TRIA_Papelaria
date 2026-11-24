@@ -2,8 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { useAppStore } from '@/lib/store/use-app-store'
-import type { Planner } from '@/lib/types'
-import { useCalendarStore } from '@/lib/store/use-calendar-store'
+import type { Planner, TaskPriority } from '@/lib/types'
 import { useBirthdaysStore } from '@/lib/store/use-birthdays-store'
 import { useHabitsStore } from '@/lib/store/use-habits-store'
 import { useHealthStore } from '@/lib/store/use-health-store'
@@ -11,13 +10,14 @@ import { useRoutineStore } from '@/lib/store/use-routine-store'
 import { isoDia } from '@/lib/diario/use-diario-store'
 import { useProfileStore } from '@/lib/store/use-profile-store'
 import { useAuth } from '@/lib/auth/auth-context'
+import { recurringOccursOn } from '@/lib/routine/occurrences'
 import { cn } from '@/lib/utils'
 import { ModuloIcon } from '@/components/icons/modules'
 import { PlannerPagePreview } from '@/components/planner-page-preview'
 import {
-  ArrowUpRight,
   Calendar,
   CheckCircle2,
+  Circle,
   HeartPulse,
   NotebookPen,
   Pencil,
@@ -27,8 +27,18 @@ import {
 import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { DeletePlannerDialog } from '../planners/delete-planner-dialog'
-import { CalendarEventDialog } from '../calendar/calendar-dialogs'
 import { CreatePlannerDialog } from './create-planner-dialog'
+import { PRIORITY_COLORS } from '../routine/shared'
+
+type AgendaItem = {
+  id: string
+  taskId: string
+  kind: 'task' | 'recurring'
+  title: string
+  time?: string
+  priority: TaskPriority
+  done: boolean
+}
 
 function HabitsSummary({ todayISO }: { todayISO: string }) {
   const habits = useHabitsStore((s) => s.habits)
@@ -101,14 +111,13 @@ export function DashboardPage() {
   const [editTarget, setEditTarget] = useState<Planner | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Planner | null>(null)
   const favorites = planners.filter((p) => p.favorite)
-  const calendarEvents = useCalendarStore((s) => s.events)
-  const deleteEvent = useCalendarStore((s) => s.deleteEvent)
   const birthdays = useBirthdaysStore((s) => s.entries)
   const tasks = useRoutineStore((s) => s.tasks)
   const recurringTasks = useRoutineStore((s) => s.recurringTasks)
+  const toggleTask = useRoutineStore((s) => s.toggleTask)
+  const completeRecurring = useRoutineStore((s) => s.completeRecurring)
   const appointments = useHealthStore((s) => s.appointments)
   const exams = useHealthStore((s) => s.exams)
-  const [eventEditId, setEventEditId] = useState<string | undefined>()
 
   const now = new Date()
   const todayISO = isoDia(now)
@@ -119,13 +128,47 @@ export function DashboardPage() {
   const daysInMonth = new Date(year, now.getMonth() + 1, 0).getDate()
   const firstDay = (new Date(year, now.getMonth(), 1).getDay() + 6) % 7
   const today = now.getDate()
-  const todayEvents = useMemo(
-    () =>
-      calendarEvents
-        .filter((event) => event.date === todayISO)
-        .sort((a, b) => a.startTime.localeCompare(b.startTime)),
-    [calendarEvents, todayISO],
-  )
+  const todayAgenda = useMemo<AgendaItem[]>(() => {
+    const todayDate = new Date(`${todayISO}T12:00:00`)
+
+    const singleTasks = tasks
+      .filter((task) => task.date === todayISO)
+      .map((task) => ({
+        id: `task-${task.id}`,
+        taskId: task.id,
+        kind: 'task' as const,
+        title: task.title,
+        time: task.time,
+        priority: task.priority,
+        done: task.done,
+      }))
+
+    const recurringToday = recurringTasks
+      .filter((task) => recurringOccursOn(task, todayDate))
+      .map((task) => ({
+        id: `recurring-${task.id}`,
+        taskId: task.id,
+        kind: 'recurring' as const,
+        title: task.title,
+        time: task.time,
+        priority: task.priority,
+        done: task.lastDone === todayISO,
+      }))
+
+    return [...singleTasks, ...recurringToday].sort((a, b) => {
+      if (a.done !== b.done) return a.done ? 1 : -1
+      const byTime = (a.time ?? '99:99').localeCompare(b.time ?? '99:99')
+      return byTime !== 0 ? byTime : a.title.localeCompare(b.title)
+    })
+  }, [recurringTasks, tasks, todayISO])
+
+  const toggleAgendaItem = (item: AgendaItem) => {
+    if (item.kind === 'task') {
+      toggleTask(item.taskId)
+      return
+    }
+    if (!item.done) completeRecurring(item.taskId)
+  }
 
   const monthlyBirthdays = useMemo(() => {
     return birthdays
@@ -226,48 +269,66 @@ export function DashboardPage() {
               <CardTitle className="text-base flex items-center gap-2">
                 <Calendar size={16} className="text-primary" />
                 Agenda diária
+                <span className="text-xs font-normal text-muted-foreground">
+                  {todayAgenda.length} {todayAgenda.length === 1 ? 'tarefa' : 'tarefas'}
+                </span>
               </CardTitle>
               <Link href="/calendario" className="text-xs text-primary hover:underline">Ver agenda</Link>
             </CardHeader>
             <div className="px-5 py-3">
-              {todayEvents.length > 0 ? (
+              {todayAgenda.length > 0 ? (
                 <div className="space-y-2">
-                  {todayEvents.map((event) => (
+                  {todayAgenda.map((item) => (
                     <div
-                      key={event.id}
-                      className="group flex items-center gap-3 rounded-xl p-2.5 hover:bg-muted/40 transition-colors"
+                      key={item.id}
+                      className={cn(
+                        'group flex items-center gap-3 rounded-xl p-2.5 hover:bg-muted/40 transition-colors',
+                        item.done && 'opacity-60',
+                      )}
                     >
                       <div className="flex flex-col items-center shrink-0 w-12">
-                        <span className="text-xs font-semibold">{event.startTime}</span>
+                        <span className="text-xs font-semibold">{item.time || '—'}</span>
                         <span className="text-[10px] text-muted-foreground">
-                          {event.allDay ? 'dia todo' : event.endTime ?? ''}
+                          {item.kind === 'recurring' ? 'rotina' : 'tarefa'}
                         </span>
                       </div>
-                      <div className="w-0.5 h-8 rounded-full shrink-0" style={{ backgroundColor: event.color }} />
-                      <span className="min-w-0 flex-1 truncate text-sm">{event.title}</span>
-                      <div className="flex shrink-0 items-center gap-0.5">
-                        <button
-                          type="button"
-                          onClick={() => setEventEditId(event.id)}
-                          className="rounded-md p-1 text-muted-foreground hover:bg-primary/10 hover:text-primary cursor-pointer"
-                          aria-label={`Editar ${event.title}`}
-                        >
-                          <Pencil size={12} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => deleteEvent(event.id)}
-                          className="rounded-md p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive cursor-pointer"
-                          aria-label={`Excluir ${event.title}`}
-                        >
-                          <Trash2 size={12} />
-                        </button>
-                      </div>
+                      <div
+                        className="w-0.5 h-8 rounded-full shrink-0"
+                        style={{ backgroundColor: PRIORITY_COLORS[item.priority] }}
+                      />
+                      <span
+                        className={cn(
+                          'min-w-0 flex-1 truncate text-sm',
+                          item.done && 'line-through text-muted-foreground',
+                        )}
+                      >
+                        {item.title}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => toggleAgendaItem(item)}
+                        disabled={item.kind === 'recurring' && item.done}
+                        className={cn(
+                          'shrink-0 rounded-md p-1 text-muted-foreground',
+                          item.kind === 'task' || !item.done
+                            ? 'hover:bg-primary/10 hover:text-primary cursor-pointer'
+                            : 'cursor-default',
+                        )}
+                        aria-label={
+                          item.kind === 'recurring'
+                            ? item.done ? `${item.title}: rotina concluída hoje` : `Concluir rotina ${item.title}`
+                            : item.done ? `Desmarcar ${item.title}` : `Concluir ${item.title}`
+                        }
+                      >
+                        {item.done
+                          ? <CheckCircle2 size={16} className="text-success" />
+                          : <Circle size={16} />}
+                      </button>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground text-center py-4">Nenhum evento para hoje.</p>
+                <p className="text-sm text-muted-foreground text-center py-4">Nenhuma tarefa para hoje.</p>
               )}
             </div>
           </Card>
@@ -428,11 +489,6 @@ export function DashboardPage() {
         onClose={() => setEditTarget(null)}
       />
       <DeletePlannerDialog planner={deleteTarget} onClose={() => setDeleteTarget(null)} />
-      <CalendarEventDialog
-        open={eventEditId !== undefined}
-        editId={eventEditId}
-        onClose={() => setEventEditId(undefined)}
-      />
     </div>
   )
 }

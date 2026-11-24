@@ -41,11 +41,20 @@ const PLAN: Array<{ match: RegExp; plan: RouteCollectionPlan }> = [
       rootFields: ['folders', 'plannerTags', 'theme'],
     },
   },
-  // Dashboard agrega tarefas, favoritos, aniversários e saúde mensal.
+  // Dashboard agrega tarefas do dia, favoritos, hábitos, aniversários e saúde mensal.
   {
     match: /^\/(|dashboard)$/,
     plan: {
-      collections: ['planners', 'calendarEvents', 'appointments', 'exams'],
+      collections: [
+        'planners',
+        'tasks',
+        'recurringTasks',
+        'birthdays',
+        'habits',
+        'habitLogs',
+        'appointments',
+        'exams',
+      ],
       rootFields: ['name', 'avatar', 'theme', 'modules'],
     },
   },
@@ -139,7 +148,7 @@ const PLAN: Array<{ match: RegExp; plan: RouteCollectionPlan }> = [
   {
     match: /^\/calendario$/,
     plan: {
-      collections: ['calendarEvents', 'tasks', 'recurringTasks', 'pendingItems', 'routineSlots'],
+      collections: ['tasks', 'recurringTasks', 'pendingItems', 'routineSlots'],
       rootFields: ['theme', 'calendarPlanner'],
     },
   },

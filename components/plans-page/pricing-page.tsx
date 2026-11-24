@@ -259,22 +259,24 @@ function PricingPage() {
         )}
       </div>
 
-      {isAdmin ? (
-        <section className="max-w-2xl border-y border-border/50 py-6">
-          <h2 className="text-lg font-semibold">Acesso de administração</h2>
-          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            Seu perfil administrativo libera todos os módulos e atualizações sem precisar assinar um plano.
-          </p>
-          <Button className="mt-5" onClick={() => router.replace('/dashboard')}>
-            Abrir meus módulos
-          </Button>
-        </section>
-      ) : checkingAccess ? (
+      {checkingAccess ? (
         <p className="py-6 text-sm text-muted-foreground" role="status" aria-live="polite">
           Verificando seu acesso antes de mostrar os planos…
         </p>
       ) : (
       <>
+        {isAdmin && (
+          <section className="mb-8 max-w-2xl border-y border-border/50 py-6">
+            <h2 className="text-lg font-semibold">Acesso de administração</h2>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              Seu perfil administrativo libera todos os módulos e atualizações sem precisar assinar um plano.
+              Os planos abaixo ficam visíveis apenas para referência, com assinatura desativada para o seu perfil.
+            </p>
+            <Button className="mt-5" onClick={() => router.replace('/dashboard')}>
+              Abrir meus módulos
+            </Button>
+          </section>
+        )}
         <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
         {PLAN_ORDER.map((id, index) => {
           const plan = PLANS[id]
@@ -336,7 +338,11 @@ function PricingPage() {
                     ))}
                   </ul>
 
-                  {current ? (
+                  {isAdmin ? (
+                    <Button variant="outline" className="w-full cursor-default" disabled>
+                      Incluído no acesso admin
+                    </Button>
+                  ) : current ? (
                     <div className="space-y-2">
                       <Button variant="default" className="w-full cursor-default" disabled>
                         {sub.status === 'cancelled' ? 'Acesso vigente' : 'Seu plano atual'}

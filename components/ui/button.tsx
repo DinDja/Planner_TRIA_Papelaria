@@ -10,14 +10,14 @@ const buttonVariants = cva(
       variant: {
         default: 'bg-primary text-primary-foreground hover:bg-primary/80',
         outline:
-          'border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 aria-expanded:bg-primary/20 aria-expanded:text-primary dark:border-primary/40 dark:bg-primary/10 dark:hover:bg-primary/20',
+              'border-primary/30 bg-primary/10 text-primary-foreground hover:bg-primary/20 aria-expanded:bg-primary/20 aria-expanded:text-primary-foreground dark:border-primary/40 dark:bg-primary/10 dark:hover:bg-primary/20',
         secondary:
-          'bg-primary/15 text-primary hover:bg-primary/25 aria-expanded:bg-primary/25 aria-expanded:text-primary',
+              'bg-primary/15 text-primary-foreground hover:bg-primary/25 aria-expanded:bg-primary/25 aria-expanded:text-primary-foreground',
         ghost:
-          'hover:bg-primary/10 hover:text-primary aria-expanded:bg-primary/10 aria-expanded:text-primary dark:hover:bg-primary/15',
+              'hover:bg-primary/10 hover:text-primary-foreground aria-expanded:bg-primary/10 aria-expanded:text-primary-foreground dark:hover:bg-primary/15',
         destructive:
           'bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40',
-        link: 'text-primary underline-offset-4 hover:underline',
+            link: 'text-primary-foreground underline-offset-4 hover:underline',
       },
       size: {
         default:

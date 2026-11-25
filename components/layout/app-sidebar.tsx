@@ -109,7 +109,7 @@ export function AppSidebar({
                 className={cn(
                   'flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-all duration-200',
                   active
-                                      ? 'bg-primary text-primary-foreground'
+                                      ? 'bg-primary/15 text-primary-foreground dark:bg-primary/20'
                     : 'text-muted-foreground hover:text-foreground hover:bg-muted/60',
                   collapsed && 'justify-center px-0 py-2',
                 )}

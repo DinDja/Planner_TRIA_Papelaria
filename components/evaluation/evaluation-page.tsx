@@ -173,7 +173,7 @@ export function EvaluationPage() {
           onClick={() => setFilter('all')}
           className={cn(
             'flex items-center gap-2.5 w-full rounded-xl px-3 py-2 text-sm font-medium transition-colors text-left cursor-pointer',
-            filter === 'all' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
+            filter === 'all' ? 'bg-primary/10 text-palette-selected' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
           )}
         >
           <List size={15} />
@@ -191,7 +191,7 @@ export function EvaluationPage() {
               onClick={() => setFilter(type)}
               className={cn(
                 'flex items-center gap-2.5 w-full rounded-xl px-3 py-2 text-sm font-medium transition-colors text-left cursor-pointer',
-                filter === type ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
+                filter === type ? 'bg-primary/10 text-palette-selected' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
               )}
             >
               <TypeIcon size={15} />

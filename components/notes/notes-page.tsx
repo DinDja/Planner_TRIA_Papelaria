@@ -256,7 +256,7 @@ export function NotesPage() {
           className={cn(
             'flex items-center gap-2.5 w-full rounded-xl px-3 py-2 text-sm font-medium transition-colors text-left cursor-pointer',
             tab === 'all'
-              ? 'bg-primary/10 text-primary'
+              ? 'bg-primary/10 text-palette-selected'
               : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
           )}
         >
@@ -278,7 +278,7 @@ export function NotesPage() {
                     className={cn(
                       'flex items-center gap-2.5 flex-1 rounded-xl px-3 py-2 text-sm font-medium transition-colors text-left cursor-pointer min-w-0',
                       tab === `folder-${f.id}`
-                        ? 'bg-primary/10 text-primary'
+                        ? 'bg-primary/10 text-palette-selected'
                         : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
                     )}
                   >
@@ -319,7 +319,7 @@ export function NotesPage() {
                   className={cn(
                     'rounded-full px-2.5 py-0.5 text-[10px] font-medium transition-colors cursor-pointer',
                     tab === `tag-${t}`
-                      ? 'bg-primary/15 text-primary'
+                      ? 'bg-primary/15 text-palette-selected'
                       : 'bg-muted/60 text-muted-foreground hover:bg-muted',
                   )}
                 >

@@ -227,24 +227,24 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
           )}
         </div>
 
-        <div className="flex items-center gap-4 border-t border-border/30 px-5 py-2.5 text-[10px] text-muted-foreground/80">
+        <div className="command-palette-shortcuts flex items-center gap-4 border-t border-border/30 px-5 py-2.5 text-[10px] text-muted-foreground/80">
           <span className="inline-flex items-center gap-1.5">
-            <kbd className="inline-flex items-center rounded-md border border-border/60 bg-muted/60 px-1.5 py-0.5">
-              <ArrowUp size={10} />
+            <kbd className="inline-flex size-6 items-center justify-center rounded-md border border-border bg-background text-foreground">
+              <ArrowUp size={12} strokeWidth={2.5} className="text-foreground" />
             </kbd>
-            <kbd className="inline-flex items-center rounded-md border border-border/60 bg-muted/60 px-1.5 py-0.5">
-              <ArrowDown size={10} />
+            <kbd className="inline-flex size-6 items-center justify-center rounded-md border border-border bg-background text-foreground">
+              <ArrowDown size={12} strokeWidth={2.5} className="text-foreground" />
             </kbd>
             navegar
           </span>
           <span className="inline-flex items-center gap-1.5">
-            <kbd className="inline-flex items-center rounded-md border border-border/60 bg-muted/60 px-1.5 py-0.5">
-              <CornerDownLeft size={10} />
+            <kbd className="inline-flex size-6 items-center justify-center rounded-md border border-border bg-background text-foreground">
+              <CornerDownLeft size={12} strokeWidth={2.5} className="text-foreground" />
             </kbd>
             abrir
           </span>
           <span className="inline-flex items-center gap-1.5">
-            <kbd className="inline-flex items-center rounded-md border border-border/60 bg-muted/60 px-1.5 py-0.5 font-medium">
+            <kbd className="inline-flex h-6 items-center justify-center rounded-md border border-border bg-background px-1.5 text-foreground font-medium">
               esc
             </kbd>
             fechar

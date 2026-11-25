@@ -10,13 +10,15 @@ export interface CalendarPlannerWeek {
 interface CalendarPlannerState {
   weeks: Record<string, CalendarPlannerWeek>
   setNote: (weekKey: string, date: string, index: number, value: string) => void
-  setObjective: (weekKey: string, index: number, value: string) => void
+  addObjective: (weekKey: string, objective: string) => void
+  updateObjective: (weekKey: string, index: number, objective: string) => void
+  removeObjective: (weekKey: string, index: number) => void
   setGratitude: (weekKey: string, value: string) => void
 }
 
 export const EMPTY_CALENDAR_WEEK: CalendarPlannerWeek = {
   notesByDate: {},
-  objectives: ['', '', '', ''],
+  objectives: [],
   gratitude: '',
 }
 
@@ -44,11 +46,29 @@ export const useCalendarPlannerStore = create<CalendarPlannerState>()(
           }
         }),
 
-      setObjective: (weekKey, index, value) =>
+      addObjective: (weekKey, objective) =>
+        set((state) => {
+          const current = getWeek(state.weeks, weekKey)
+          const objectives = [...current.objectives.filter((item) => item.trim()), objective]
+          return {
+            weeks: { ...state.weeks, [weekKey]: { ...current, objectives } },
+          }
+        }),
+
+      updateObjective: (weekKey, index, objective) =>
         set((state) => {
           const current = getWeek(state.weeks, weekKey)
           const objectives = [...current.objectives]
-          objectives[index] = value
+          objectives[index] = objective
+          return {
+            weeks: { ...state.weeks, [weekKey]: { ...current, objectives } },
+          }
+        }),
+
+      removeObjective: (weekKey, index) =>
+        set((state) => {
+          const current = getWeek(state.weeks, weekKey)
+          const objectives = current.objectives.filter((_, objectiveIndex) => objectiveIndex !== index)
           return {
             weeks: { ...state.weeks, [weekKey]: { ...current, objectives } },
           }

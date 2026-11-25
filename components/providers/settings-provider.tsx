@@ -33,6 +33,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     const ring = 'var(--brand-primary)'
     root.style.setProperty('--brand-primary', selectedPalette.value)
     root.style.setProperty('--brand-primary-rgb', selectedPalette.rgb)
+    root.style.setProperty('--palette-selected-foreground', selectedPalette.selectedText)
     root.style.setProperty('--primary', primary)
     root.style.setProperty('--ring', ring)
     root.style.setProperty('--sidebar-primary', primary)
@@ -76,6 +77,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       root.style.removeProperty('--primary-rgb')
       root.style.removeProperty('--brand-primary')
       root.style.removeProperty('--brand-primary-rgb')
+      root.style.removeProperty('--palette-selected-foreground')
       root.style.removeProperty('--radius')
       root.style.removeProperty('font-size')
       root.style.setProperty('--radius', defRadius)

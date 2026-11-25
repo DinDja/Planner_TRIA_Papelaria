@@ -323,7 +323,7 @@ export function ListsPage() {
           className={cn(
             'flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-sm font-medium transition-colors cursor-pointer',
             tab === 'all'
-              ? 'bg-primary/10 text-primary'
+              ? 'bg-primary/10 text-palette-selected'
               : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
           )}
         >
@@ -342,7 +342,7 @@ export function ListsPage() {
                 className={cn(
                   'flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-sm font-medium transition-colors cursor-pointer',
                   tab === `folder-${folder.id}`
-                    ? 'bg-primary/10 text-primary'
+                    ? 'bg-primary/10 text-palette-selected'
                     : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
                 )}
               >

@@ -55,6 +55,12 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+@layer utilities {
+  .text-palette-selected {
+    color: var(--palette-selected-foreground);
+  }
+}
+
 @theme {
   /* Sombra em camadas para o papel do editor */
   --shadow-paper:
@@ -207,6 +213,10 @@
    continuam herdando a cor do próprio botão para manter contraste. */
 svg.lucide {
   color: var(--primary) !important;
+}
+
+.command-palette-shortcuts kbd svg.lucide {
+  color: var(--foreground) !important;
 }
 
 button svg.lucide,

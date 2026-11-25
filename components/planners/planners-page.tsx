@@ -47,7 +47,7 @@ export function PlannersPage() {
           className={cn(
             'flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-sm font-medium transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
             tab === 'all'
-              ? 'bg-primary/10 text-primary'
+              ? 'bg-primary/10 text-palette-selected'
               : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
           )}
         >
@@ -78,7 +78,7 @@ export function PlannersPage() {
                 aria-pressed={active}
                 className={cn(
                   'flex min-w-0 flex-1 cursor-pointer items-center gap-2.5 rounded-xl px-3 py-2 text-left text-sm font-medium transition-colors',
-                  active ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
+                  active ? 'bg-primary/10 text-palette-selected' : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
                 )}
               >
                 <span className="truncate">{folder.name}</span>

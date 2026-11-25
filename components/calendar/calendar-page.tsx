@@ -1,16 +1,17 @@
 'use client'
 
 import { useCalendarPlannerStore, EMPTY_CALENDAR_WEEK } from '@/lib/store/use-calendar-planner-store'
-import type { CalendarPlannerWeek } from '@/lib/store/use-calendar-planner-store'
 import { useHabitsStore } from '@/lib/store/use-habits-store'
 import { useRoutineStore } from '@/lib/store/use-routine-store'
 import { recurringOccursOn } from '@/lib/routine/occurrences'
 import type { Habit, RecurringTask, Task } from '@/lib/types'
 import { cn } from '@/lib/utils'
-import { ChevronLeft, ChevronRight, ListTodo, Plus, Pencil, Trash2 } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ListTodo, Plus, Pencil, Trash2, MoreHorizontal } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Button } from '../ui/button'
 import { Card } from '../ui/card'
+import { Dialog, DialogContent } from '../ui/overlays'
+import { Input } from '../ui/primitives'
 import { AddRecurringDialog, AddTaskDialog, RoutineTodayDialog } from '../routine/routine-dialogs'
 import { PRIORITY_COLORS } from '../routine/shared'
 
@@ -138,17 +139,26 @@ function RoutineTaskChip({
   onDelete: (item: RoutineCalendarItem) => void
   past?: boolean
 }) {
+  const [actionsOpen, setActionsOpen] = useState(false)
   const task = item.task
   const done = item.kind === 'task' && item.task.done
   const color = PRIORITY_COLORS[task.priority]
 
   return (
-    <div className="relative group">
+    <div
+      className="relative flex min-w-0 items-center gap-1"
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setActionsOpen(false)
+      }}
+      onKeyDown={(event) => {
+        if (event.key === 'Escape') setActionsOpen(false)
+      }}
+    >
       <button
         type="button"
         onClick={() => onComplete(item)}
         className={cn(
-          'w-full truncate rounded-md px-1.5 py-0.5 text-left text-[11px] font-medium transition-all hover:brightness-110 cursor-pointer',
+          'min-w-0 flex-1 truncate rounded-md px-1.5 py-0.5 text-left text-[11px] font-medium transition-all hover:brightness-110 cursor-pointer',
           (past || done) && 'opacity-60',
           done && 'line-through',
         )}
@@ -163,23 +173,39 @@ function RoutineTaskChip({
         {task.time ? `${task.time} ` : ''}{task.title}
       </button>
 
-      <div className="absolute right-1 top-1/2 -translate-y-1/2 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="relative shrink-0">
         <button
           type="button"
-          onClick={(e) => { e.stopPropagation(); onEdit(item) }}
-                className="p-1.5 rounded hover:bg-white/20 cursor-pointer"
-          aria-label="Editar tarefa"
+          onClick={() => setActionsOpen((open) => !open)}
+          className="flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          aria-label={`Ações para ${task.title}`}
+          aria-expanded={actionsOpen}
+          aria-haspopup="menu"
         >
-                <Pencil size={12} />
+          <MoreHorizontal size={15} />
         </button>
-        <button
-          type="button"
-          onClick={(e) => { e.stopPropagation(); onDelete(item) }}
-                className="p-1.5 rounded hover:bg-white/20 cursor-pointer"
-          aria-label="Excluir tarefa"
-        >
-                <Trash2 size={12} />
-        </button>
+        {actionsOpen && (
+          <div role="menu" className="absolute right-0 top-full z-50 mt-1 min-w-32 rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg">
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => { setActionsOpen(false); onEdit(item) }}
+              className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-xs hover:bg-muted focus-visible:bg-muted focus-visible:outline-none"
+            >
+              <Pencil size={13} />
+              Editar tarefa
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => { setActionsOpen(false); onDelete(item) }}
+              className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-xs text-destructive hover:bg-destructive/10 focus-visible:bg-destructive/10 focus-visible:outline-none"
+            >
+              <Trash2 size={13} />
+              Excluir tarefa
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -218,6 +244,8 @@ function MonthlyCalendarView({
   onEdit: (item: RoutineCalendarItem) => void
   onDelete: (item: RoutineCalendarItem) => void
 }) {
+  const [expandedDays, setExpandedDays] = useState<Set<string>>(() => new Set())
+
   return (
     <Card glass className="hidden overflow-hidden md:block">
       <div className="grid grid-cols-7 border-b border-border/40 bg-muted/30">
@@ -239,8 +267,10 @@ function MonthlyCalendarView({
               ).length
               const isToday = key === today
               const isPast = key < today
+              const isExpanded = expandedDays.has(key)
               const visibleRoutine = routineItems.slice(0, 3)
               const hiddenCount = routineItems.length - visibleRoutine.length
+              const displayedRoutine = isExpanded ? routineItems : visibleRoutine
 
               return (
                 <div
@@ -266,7 +296,7 @@ function MonthlyCalendarView({
                   </div>
 
                   <div className="space-y-0.5">
-                    {visibleRoutine.map((item) => (
+                    {displayedRoutine.map((item) => (
                       <RoutineTaskChip
                         key={`${item.kind}-${item.task.id}`}
                         item={item}
@@ -277,21 +307,33 @@ function MonthlyCalendarView({
                       />
                     ))}
                     {hiddenCount > 0 && (
-                      <p className="pl-1.5 text-[10px] font-medium text-muted-foreground">
-                        +{hiddenCount} mais
-                      </p>
+                      <button
+                        type="button"
+                        aria-expanded={isExpanded}
+                        onClick={() => setExpandedDays((days) => {
+                          const next = new Set(days)
+                          if (next.has(key)) next.delete(key)
+                          else next.add(key)
+                          return next
+                        })}
+                        className="pl-1.5 text-[10px] font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        {isExpanded ? 'Mostrar menos' : `+${hiddenCount} mais`}
+                      </button>
                     )}
                   </div>
 
                   {cell.isCurrentMonth && (
-                    <button
-                      type="button"
-                      onClick={() => onAdd(key)}
-                      className="absolute bottom-1 right-1 flex size-5 items-center justify-center rounded-md hover:bg-muted cursor-pointer"
-                      aria-label="Adicionar tarefa"
-                    >
-                      <Plus size={12} className="text-muted-foreground" />
-                    </button>
+                    <div className="mt-1 flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => onAdd(key)}
+                        className="flex size-5 items-center justify-center rounded-md hover:bg-muted cursor-pointer"
+                        aria-label="Adicionar tarefa"
+                      >
+                        <Plus size={12} className="text-muted-foreground" />
+                      </button>
+                    </div>
                   )}
                 </div>
               )
@@ -433,20 +475,16 @@ function MobileMonthlyAgenda({
 
 function PlannerDayBlock({
   date,
-  notes,
   routineItems,
   today,
-  onNoteChange,
   onAdd,
   onCompleteRoutine,
   onEdit,
   onDelete,
 }: {
   date: Date
-  notes: string[]
   routineItems: RoutineCalendarItem[]
   today: string
-  onNoteChange: (index: number, value: string) => void
   onAdd: (date: string) => void
   onCompleteRoutine: (item: RoutineCalendarItem) => void
   onEdit: (item: RoutineCalendarItem) => void
@@ -458,7 +496,6 @@ function PlannerDayBlock({
   const taskCount = sortedRoutineItems.filter(
     (item) => item.kind === 'recurring' || !item.task.done,
   ).length
-  const noteLines = Array.from({ length: 5 }, (_, index) => notes[index] ?? '')
 
   return (
     <section className={cn(
@@ -506,20 +543,6 @@ function PlannerDayBlock({
         </div>
       )}
 
-      <div className="space-y-2.5">
-        {noteLines.map((note, index) => (
-          <label key={index} className="flex items-center gap-2.5">
-            <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-primary/30" />
-            <input
-              value={note}
-              onChange={(event) => onNoteChange(index, event.target.value)}
-              aria-label={`Anotação ${index + 1} de ${formatDayTitle(date)}`}
-              className="min-w-0 flex-1 border-0 border-b border-dashed border-muted-foreground/20 bg-transparent px-0 py-0.5 text-xs text-foreground/75 outline-none placeholder:text-transparent focus:border-primary/45"
-              placeholder=" "
-            />
-          </label>
-        ))}
-      </div>
     </section>
   )
 }
@@ -527,10 +550,8 @@ function PlannerDayBlock({
 function PlannerDays({
   days,
   weekKey,
-  plannerWeeks,
   routineByDate,
   today,
-  onNoteChange,
   onAdd,
   onCompleteRoutine,
   onEdit,
@@ -538,10 +559,8 @@ function PlannerDays({
 }: {
   days: Date[]
   weekKey: string
-  plannerWeeks: Record<string, CalendarPlannerWeek>
   routineByDate: Map<string, RoutineCalendarItem[]>
   today: string
-  onNoteChange: (weekKey: string, date: string, index: number, value: string) => void
   onAdd: (date: string) => void
   onCompleteRoutine: (item: RoutineCalendarItem) => void
   onEdit: (item: RoutineCalendarItem) => void
@@ -551,15 +570,12 @@ function PlannerDays({
     <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-x-7 md:gap-y-6">
       {days.map((date, index) => {
         const key = toDateKey(date)
-        const dayWeekKey = toDateKey(startOfWeek(date))
         return (
           <div key={key} className={index === days.length - 1 && days.length % 2 === 1 && days.length !== 7 ? 'md:col-span-2' : undefined}>
             <PlannerDayBlock
               date={date}
-              notes={plannerWeeks[dayWeekKey]?.notesByDate[key] ?? []}
               routineItems={routineByDate.get(key) ?? []}
               today={today}
-              onNoteChange={(noteIndex, value) => onNoteChange(dayWeekKey, key, noteIndex, value)}
               onAdd={onAdd}
               onCompleteRoutine={onCompleteRoutine}
               onEdit={onEdit}
@@ -579,8 +595,13 @@ function PlannerDays({
 
 function PlannerFooter({ weekKey, weekDays }: { weekKey: string; weekDays: Date[] }) {
   const week = useCalendarPlannerStore((state) => state.weeks[weekKey]) ?? EMPTY_CALENDAR_WEEK
-  const setObjective = useCalendarPlannerStore((state) => state.setObjective)
+  const addObjective = useCalendarPlannerStore((state) => state.addObjective)
+  const updateObjective = useCalendarPlannerStore((state) => state.updateObjective)
+  const removeObjective = useCalendarPlannerStore((state) => state.removeObjective)
   const setGratitude = useCalendarPlannerStore((state) => state.setGratitude)
+  const [objectiveDialogOpen, setObjectiveDialogOpen] = useState(false)
+  const [objectiveTitle, setObjectiveTitle] = useState('')
+  const [editingObjectiveIndex, setEditingObjectiveIndex] = useState<number | null>(null)
   const habits = useHabitsStore((state) => state.habits)
   const logs = useHabitsStore((state) => state.logs)
   const toggleLog = useHabitsStore((state) => state.toggleLog)
@@ -591,21 +612,106 @@ function PlannerFooter({ weekKey, weekDays }: { weekKey: string; weekDays: Date[
   return (
     <div className="space-y-8">
       <section>
-        <h2 className="mb-4 text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">Objetivos da Semana</h2>
-        <div className="grid grid-cols-1 gap-x-7 gap-y-3">
-          {week.objectives.map((objective, index) => (
-            <label key={index} className="flex items-center gap-2.5 rounded-sm border border-primary/10 bg-primary/[0.025] px-3 py-2.5">
-              <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-primary/30" />
-              <input
-                value={objective}
-                onChange={(event) => setObjective(weekKey, index, event.target.value)}
-                aria-label={`Objetivo ${index + 1} da semana`}
-                placeholder="escreva um objetivo"
-                className="min-w-0 flex-1 bg-transparent text-xs text-foreground/75 outline-none placeholder:text-muted-foreground/40"
-              />
-            </label>
-          ))}
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h2 className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">Objetivos da Semana</h2>
+          <button
+            type="button"
+            onClick={() => {
+              setEditingObjectiveIndex(null)
+              setObjectiveTitle('')
+              setObjectiveDialogOpen(true)
+            }}
+            className="flex size-7 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-primary/[0.06] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            aria-label="Adicionar objetivo da semana"
+            title="Adicionar objetivo"
+          >
+            <Plus size={15} />
+          </button>
         </div>
+        <div className="grid grid-cols-1 gap-x-7 gap-y-2">
+          {(week.objectives ?? []).map((objective, index) => objective.trim() ? (
+            <div key={`${index}-${objective}`} className="flex items-center gap-2 border-b border-primary/10 py-1">
+              <p className="min-w-0 flex-1 py-0.5 text-xs text-foreground/75">{objective}</p>
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingObjectiveIndex(index)
+                  setObjectiveTitle(objective)
+                  setObjectiveDialogOpen(true)
+                }}
+                className="flex size-7 shrink-0 items-center justify-center rounded-sm text-muted-foreground/70 transition-colors hover:bg-primary/[0.06] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label={`Editar objetivo: ${objective}`}
+                title="Editar objetivo"
+              >
+                <Pencil size={13} />
+              </button>
+              <button
+                type="button"
+                onClick={() => removeObjective(weekKey, index)}
+                className="flex size-7 shrink-0 items-center justify-center rounded-sm text-muted-foreground/70 transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label={`Excluir objetivo: ${objective}`}
+                title="Excluir objetivo"
+              >
+                <Trash2 size={13} />
+              </button>
+            </div>
+          ) : null)}
+        </div>
+        <Dialog
+          open={objectiveDialogOpen}
+          onOpenChange={(open) => {
+            setObjectiveDialogOpen(open)
+            if (!open) {
+              setObjectiveTitle('')
+              setEditingObjectiveIndex(null)
+            }
+          }}
+        >
+          <DialogContent
+            title={editingObjectiveIndex === null ? 'Novo objetivo da semana' : 'Editar objetivo da semana'}
+            description={editingObjectiveIndex === null
+              ? 'Escreva o que deseja alcançar nesta semana.'
+              : 'Atualize o texto do objetivo.'}
+          >
+            <form
+              className="space-y-4"
+              onSubmit={(event) => {
+                event.preventDefault()
+                const objective = objectiveTitle.trim()
+                if (!objective) return
+                if (editingObjectiveIndex === null) addObjective(weekKey, objective)
+                else updateObjective(weekKey, editingObjectiveIndex, objective)
+                setObjectiveTitle('')
+                setEditingObjectiveIndex(null)
+                setObjectiveDialogOpen(false)
+              }}
+            >
+              <Input
+                autoFocus
+                value={objectiveTitle}
+                onChange={(event) => setObjectiveTitle(event.target.value)}
+                placeholder="Ex.: Separar materiais para a semana"
+                aria-label="Objetivo da semana"
+              />
+              <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setObjectiveTitle('')
+                    setEditingObjectiveIndex(null)
+                    setObjectiveDialogOpen(false)
+                  }}
+                >
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={!objectiveTitle.trim()}>
+                  {editingObjectiveIndex === null ? 'Adicionar objetivo' : 'Salvar alterações'}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </section>
 
     </div>
@@ -654,9 +760,6 @@ export function CalendarPage() {
   const completeRecurring = useRoutineStore((state) => state.completeRecurring)
   const deleteTask = useRoutineStore((state) => state.deleteTask)
   const deleteRecurring = useRoutineStore((state) => state.deleteRecurring)
-  const plannerWeeks = useCalendarPlannerStore((state) => state.weeks)
-  const setNote = useCalendarPlannerStore((state) => state.setNote)
-
   const [view, setView] = useState<CalendarView>('month')
   const [currentDate, setCurrentDate] = useState(() => new Date())
   const [routineTodayOpen, setRoutineTodayOpen] = useState(false)
@@ -867,10 +970,8 @@ export function CalendarPage() {
           <PlannerDays
             days={view === 'day' ? [currentDate] : weekDays}
             weekKey={weekKey}
-            plannerWeeks={plannerWeeks}
             routineByDate={routineByDate}
             today={today}
-            onNoteChange={(dayWeekKey, date, index, value) => setNote(dayWeekKey, date, index, value)}
             onAdd={openAdd}
             onCompleteRoutine={(item) => item.kind === 'task'
               ? toggleTask(item.task.id)
